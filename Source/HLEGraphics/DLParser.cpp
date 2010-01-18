@@ -1935,14 +1935,11 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 
 	use(pcBase);
 
-	bool handled = false;
-
 	switch (type)
 	{
 	case G_GBI2_MV_VIEWPORT:
 		{
 			RDP_MoveMemViewport( address );
-			handled = true;
 		}
 		break;
 	case G_GBI2_MV_LIGHT:
@@ -1953,13 +1950,11 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 		case 0x00:
 			{
 				DL_PF("    G_MV_LOOKATX %f %f %f", f32(pcBase[8 ^ 0x3]), f32(pcBase[9 ^ 0x3]), f32(pcBase[10 ^ 0x3]));
-				handled = true;
 			}
 			break;
 		case 0x18:
 			{
 				DL_PF("    G_MV_LOOKATY %f %f %f", f32(pcBase[8 ^ 0x3]), f32(pcBase[9 ^ 0x3]), f32(pcBase[10 ^ 0x3]));
-				handled = true;
 			}
 			break;
 		default:		//0x30/48/60
@@ -1967,7 +1962,6 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 				u32 light_idx = (offset2 - 0x30)/0x18;
 				DL_PF("    Light %d:", light_idx);
 				RDP_MoveMemLight(light_idx, address);
-				handled = true;
 			}
 			break;
 		}
@@ -1977,7 +1971,6 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 	 case G_GBI2_MV_MATRIX:
 		DL_PF("		Force Matrix: addr=%08X", address);
 		RDP_GFX_Force_Matrix(address);
-		handled = true;
 		break;
 	case G_GBI2_MVO_L0:
 	case G_GBI2_MVO_L1:
@@ -1994,7 +1987,6 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 		DL_PF("Zelda Move Point");
 		RDP_NOIMPL_WARN("Zelda Move Point Not Implemented");
 		break;
-
 	case G_GBI2_MVO_LOOKATX:
 		if( (command.cmd0) == 0xDC170000 && ((command.cmd1)&0xFF000000) == 0x80000000 )
 		{
@@ -2015,10 +2007,7 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 			RDP_NOIMPL_WARN("G_GBI2_MV_0x02 Not Implemented");
 			break;
 		}
-	}
-
-	if (!handled)
-	{
+	default: //Unhandled
 		DBGConsole_Msg(0, "GBI2 MoveMem: Unknown Type. 0x%08x 0x%08x", command.cmd0, command.cmd1);
 		u32 * base = (u32 *)pcBase;
 		
@@ -2027,6 +2016,7 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 			DL_PF("    %08x %08x %08x %08x", base[0], base[1], base[2], base[3]);
 			base+=4;
 		}
+		break;
 	}
 }
 
@@ -2475,7 +2465,7 @@ void DLParser_SetCImg( MicroCodeCommand command )
 	u32 size   = (command.cmd0>>19)&0x3;
 	u32 width  = (command.cmd0&0x0FFF) + 1;
 	u32 newaddr	= RDPSegAddr(command.cmd1) & 0x00FFFFFF;
-	u32 bpl		= width << size >> 1;	// Bpl doesn't seem to exist on real N64, but it seems to help...
+	//u32 bpl		= width << size >> 1;	// Bpl doesn't seem to exist on real N64, but it seems to help.. Unused for now..
 
 	DL_PF("    Image: 0x%08x", RDPSegAddr(command.cmd1));
 	DL_PF("    Fmt: %s Size: %s Width: %d", gFormatNames[ format ], gSizeNames[ size ], width);
@@ -2483,11 +2473,11 @@ void DLParser_SetCImg( MicroCodeCommand command )
 	if( g_CI.Address == newaddr && g_CI.Format == format && g_CI.Size == size && g_CI.Width == width )
 	{
 		DL_PF("    Set CIMG to the same address, no change, skipped");
-		//DAEDALUS_DL_ERROR(0, "SetCImg: Addr=0x%08X, Fmt:%s-%sb, Width=%d\n", g_CI.Address, gFormatNames[ format ], gSizeNames[ size ], width);
+		//DBGConsole_Msg(0, "SetCImg: Addr=0x%08X, Fmt:%s-%sb, Width=%d\n", g_CI.Address, gFormatNames[ format ], gSizeNames[ size ], width);
 		return;
 	}
 
-	g_CI.Bpl = bpl;
+	//g_CI.Bpl = bpl;
 	g_CI.Address = newaddr;
 	g_CI.Format = format;
 	g_CI.Size = size;

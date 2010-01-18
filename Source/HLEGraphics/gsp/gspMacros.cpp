@@ -330,12 +330,11 @@ void DLParser_GBI2_PopMtx( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_CullDL( MicroCodeCommand command )
 {
-        if( gCullingDisabled )
-		{
-			return;	//Disable Culling
-		}
+		return;
+		// Broken we need to fix it !
+		// Enabling it brakes several Fast3D games, see : AeroGauge and Space Station SV
+		// Need to find out why, most likely we'll have to separate this from GBI1/GBI0?
 
-        u32 i;
         u32 first = ((command.cmd0) & 0xFFF) / gVertexStride;
         u32 last  = ((command.cmd1) & 0xFFF) / gVertexStride;
 
@@ -346,8 +345,7 @@ void DLParser_GBI1_CullDL( MicroCodeCommand command )
         last &= 0x1f;
 
 		if( last < first )	return;
-
-        for (i = first; i <= last; i++)
+		for (u32 i=first; i<=last; i++)
         {
                 if (PSPRenderer::Get()->GetVtxFlags( i ) == 0)
                 {
@@ -368,13 +366,11 @@ void DLParser_GBI1_CullDL( MicroCodeCommand command )
 
 void DLParser_GBI2_CullDL( MicroCodeCommand command )
 {
-		if( gCullingDisabled )
-		{
-			return;	//Disable Culling
-		}
 
         u32 first = ((command.cmd0) & 0xfff) / 2;
         u32 last  = ((command.cmd1) & 0xfff) / 2;
+
+		if( last < first )	return;		// Fixes Aidyn Chronicles
 
         DL_PF("    Culling using verts %d to %d", first, last);
 

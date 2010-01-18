@@ -118,7 +118,7 @@ std::string				gSaveStateFilename	= "";
 //*****************************************************************************
 //
 //*****************************************************************************
-const  u32			VI_INTR_CYCLES_INIT = 62500 * 3;
+const  u32			VI_INTR_CYCLES_INIT = 62500;
 static u32			gVerticalInterrupts( 0 );
 static u32			VI_INTR_CYCLES( VI_INTR_CYCLES_INIT );
 
@@ -687,11 +687,11 @@ void CPU_HANDLE_COUNT_INTERRUPT()
 			u32		vertical_sync_reg( Memory_VI_GetRegister( VI_V_SYNC_REG ) );
 			if (vertical_sync_reg == 0)
 			{
-				VI_INTR_CYCLES = 62500 * 3;
+				VI_INTR_CYCLES = 62500;
 			}
 			else
 			{
-				VI_INTR_CYCLES = (vertical_sync_reg+1) * 1500 * 3;
+				VI_INTR_CYCLES = (vertical_sync_reg+1) * 1500;
 			}
 
 			// Add another Interrupt at the next time:

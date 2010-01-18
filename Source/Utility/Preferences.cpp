@@ -157,6 +157,14 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		FLOAT_SETTING( gGlobalPreferences, StickMinDeadzone, defaults );
 		FLOAT_SETTING( gGlobalPreferences, StickMaxDeadzone, defaults );
 
+		if( section->FindProperty( "ForceTextureFilter", &property ) )
+		{
+			u32 value( property->GetIntValue(defaults.ForceTextureFilter) );
+			if( value < NUM_FILTER_TYPES ) //value >= 0 && not needed as it's always True
+			{
+				gGlobalPreferences.ForceTextureFilter = EForceTextureFilter( value );
+			}
+		}
 		if( section->FindProperty( "ViewportType", &property ) )
 		{
 			u32	value( property->GetIntValue( defaults.ViewportType ) );
@@ -230,10 +238,6 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		{
 			preferences.CleanSceneEnabled = property->GetBooleanValue( false );
 		}
-		if( section->FindProperty( "CullingDisabled", &property ) )
-		{
-			preferences.CullingDisabled = property->GetBooleanValue( false );
-		}
 		if( section->FindProperty( "ForceDepthBuffer", &property ) )
 		{
 			preferences.ForceDepthBuffer = property->GetBooleanValue( true );
@@ -299,9 +303,8 @@ void IPreferences::OutputSectionDetails( const RomID & id, const SRomPreferences
 	fprintf(fh, "ViewPortHackEnabled=%d\n",preferences.ViewPortHackEnabled);
 	fprintf(fh, "FlatShadeDisabled=%d\n",preferences.FlatShadeDisabled);
 	fprintf(fh, "CleanSceneEnabled=%d\n",preferences.CleanSceneEnabled);
-	fprintf(fh, "CullingDisabled=%d\n",preferences.CleanSceneEnabled);
 	fprintf(fh, "ForceDepthBuffer=%d\n",preferences.ForceDepthBuffer);
-	fprintf(fh, "FlushTrisHack=%d\n",preferences.ForceDepthBuffer);
+	fprintf(fh, "FlushTrisHack=%d\n",preferences.FlushTrisHack);
 	fprintf(fh, "CheckTextureHashFrequency=%d\n", ROM_GetTexureHashFrequencyAsFrames( preferences.CheckTextureHashFrequency ) );
 	fprintf(fh, "Frameskip=%d\n", ROM_GetFrameskipValueAsInt( preferences.Frameskip ) );
 	fprintf(fh, "AudioEnabled=%d\n", preferences.AudioEnabled);
@@ -330,6 +333,7 @@ void IPreferences::Commit()
 		OUTPUT_BOOL( gGlobalPreferences, BatteryWarning, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, LogMicrocodes, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, LargeROMBuffer, defaults );
+		OUTPUT_INT( gGlobalPreferences, ForceTextureFilter, defaults );
 		OUTPUT_FLOAT( gGlobalPreferences, StickMinDeadzone, defaults );
 		OUTPUT_FLOAT( gGlobalPreferences, StickMaxDeadzone, defaults );
 		OUTPUT_INT( gGlobalPreferences, ViewportType, defaults );
@@ -396,6 +400,7 @@ SGlobalPreferences::SGlobalPreferences()
 ,	BatteryWarning( false )
 ,	LogMicrocodes( false )
 ,	LargeROMBuffer( true )
+,	ForceTextureFilter( FORCE_DEFAULT_FILTER )
 ,	StickMinDeadzone( 0.28f )
 ,	StickMaxDeadzone( 1.0f )
 ,	ViewportType( VT_FULLSCREEN )
@@ -428,7 +433,6 @@ SRomPreferences::SRomPreferences()
 	,	ViewPortHackEnabled( false )
 	,	FlatShadeDisabled( false )
 	,	CleanSceneEnabled( false )
-	,	CullingDisabled( false )
 	,	ForceDepthBuffer( true )
 	,	FlushTrisHack( false )
 	,	CheckTextureHashFrequency( THF_DISABLED )
@@ -455,7 +459,6 @@ void SRomPreferences::Reset()
 	ViewPortHackEnabled = false;
 	FlatShadeDisabled = false;
 	CleanSceneEnabled = false;
-	CullingDisabled = false;
 	ForceDepthBuffer = true;
 	FlushTrisHack = false;
 	CheckTextureHashFrequency = THF_DISABLED;
@@ -482,7 +485,6 @@ void	SRomPreferences::Apply() const
 	gViewPortHackEnabled = g_ROM.settings.ViewPortHackEnabled || ViewPortHackEnabled;
 	gFlatShadeDisabled = g_ROM.settings.FlatShadeDisabled || FlatShadeDisabled;
 	gCleanSceneEnabled = g_ROM.settings.CleanSceneEnabled || CleanSceneEnabled;
-	gCullingDisabled = g_ROM.settings.CullingDisabled || CullingDisabled;
 	gForceDepthBuffer = g_ROM.settings.ForceDepthBuffer || ForceDepthBuffer;
 	gFlushTrisHack = g_ROM.settings.FlushTrisHack || FlushTrisHack;
 	gCheckTextureHashFrequency = ROM_GetTexureHashFrequencyAsFrames( CheckTextureHashFrequency );

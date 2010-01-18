@@ -61,7 +61,6 @@ extern bool gSimulateDoubleDisabled;
 extern bool gViewPortHackEnabled;
 extern bool gFlatShadeDisabled;
 extern bool	gCleanSceneEnabled;
-extern bool	gCullingDisabled;
 extern bool gForceDepthBuffer;
 extern bool	gFlushTrisHack;
 // Needs moving to Graphics plugin config

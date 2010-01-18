@@ -46,7 +46,7 @@ struct SImageDescriptor
 	u32 Size;
 	u32 Width;
 	u32 Address;
-	u32 Bpl;
+	//u32 Bpl; Unused for now
 
 	u32		GetPitch() const
 	{

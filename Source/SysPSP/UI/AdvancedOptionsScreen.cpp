@@ -130,7 +130,6 @@ IAdvancedOptionsScreen::IAdvancedOptionsScreen( CUIContext * p_context, const Ro
 	mElements.Add( new CBoolSetting( &mRomPreferences.DoubleDisplayEnabled, "Double Display Lists", "Whether or not Double Display Lists are enabled", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.ViewPortHackEnabled, "View Port Hack", "This is a hack, only for a few games, Super Bowling 64 need this", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.FlatShadeDisabled, "Disable Flat Shade", "Whether Flat Shade is Disabled", "Yes", "No" ) );
-	mElements.Add( new CBoolSetting( &mRomPreferences.CullingDisabled, "Disable Culling", "If enabled, it will disable the CullDL ucode", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.SimulateDoubleDisabled, "Disable Simulate Double", "Whether Simulate Double is Disabled", "Yes", "No" ) );
 	//	mElements.Add( new CUISpacer( 16 ) );
 

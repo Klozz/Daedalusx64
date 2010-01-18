@@ -777,17 +777,36 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 
 	sceGuShadeModel( mSmooth ? GU_SMOOTH : GU_FLAT );
 
-		switch ( gRDPOtherMode.text_filt )
-		{
-//			case 0:			//G_TF_POINT:	// 0 Defualt Case
-			case 2:			//G_TF_BILERP:	// 2
-				sceGuTexFilter(GU_LINEAR,GU_LINEAR);
-				break;
-//			case 3:			//G_TF_AVERAGE:	// 3?
-			default:			//G_TF_POINT:	// 0
-				sceGuTexFilter(GU_NEAREST,GU_NEAREST);
-				break;
-		}
+	//
+	// Our filtering starts here.
+	// I don't like to do our filtering here...
+	// I think is a better idea doing it on the microcode itself
+	// Ex : DLParser_XXX_SetOtherModeH and DLParser_RDPSetOtherMode
+	// But there has to be a good reason why we do filtering, blender, othermode init, and zbuffer here?
+	//
+	switch( gGlobalPreferences.ForceTextureFilter )
+	{
+		case FORCE_DEFAULT_FILTER:
+			switch(gRDPOtherMode.text_filt)
+			{
+				case G_TF_BILERP:
+					sceGuTexFilter(GU_LINEAR,GU_LINEAR);
+					break;
+				default:
+					sceGuTexFilter(GU_NEAREST,GU_NEAREST);
+					break;
+			}
+			break;
+		case FORCE_POINT_FILTER:
+			sceGuTexFilter(GU_NEAREST,GU_NEAREST);
+			break;
+		case FORCE_LINEAR_FILTER:
+			sceGuTexFilter(GU_LINEAR,GU_LINEAR);
+			break;
+	}
+
+
+
 
 /*
 

@@ -40,7 +40,6 @@ bool	gSimulateDoubleDisabled		= false;	// Hack to disable SimulateDoubles, fixes
 bool	gViewPortHackEnabled		= false;	// Hack to set correct Viewport of Super Bowling 64
 bool	gFlatShadeDisabled			= false;	// Hack to fix the shading issues on Tigger's Honey Hunt
 bool	gCleanSceneEnabled			= false;	// Clean our Scenes, it gets rid of many glitches
-bool	gCullingDisabled			= false;	// Hack to disable culling, fixes Aidyn Chronicles
 bool	gForceDepthBuffer			= true;		// Used for BranchZ, do not set it to false. Will be used to hook WIP options as well :)
 bool	gFlushTrisHack				= false;	// Hack for Pilot Wings to get rid of black tris under your plane
 u32		gControllerIndex			= 0;		// Which controller config to set

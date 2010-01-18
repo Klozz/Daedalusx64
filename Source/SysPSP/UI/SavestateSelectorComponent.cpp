@@ -132,9 +132,16 @@ namespace
 		char    sub_path[ MAX_PATH ];
 		sprintf( filename, "saveslot%u.ss", slot_idx );
 		sprintf( sub_path, "SaveStates/%s", slot_path);
-		IO::Path::Combine( path, gDaedalusExePath, sub_path );
-		IO::Directory::EnsureExists( path );		// Ensure this dir exists
-
+		if(!IO::Directory::IsDirectory( "ms0:/n64/SaveStates/" ))
+		{
+			IO::Path::Combine( path, gDaedalusExePath, sub_path );
+			IO::Directory::EnsureExists( path );		// Ensure this dir exists
+		}
+		else
+		{
+			IO::Path::Combine( path, "ms0:/n64/", sub_path );
+			IO::Directory::EnsureExists( path );		// Ensure this dir exists
+		}
 		IO::Path::Append( path, filename );
 	}
 }
@@ -172,11 +179,13 @@ void ISavestateSelectorComponent::LoadFolders(){
 	char full_path[MAX_PATH];
 	// We're using the same vector for directory names and slots, so we have to clear it
 	mElements.Clear();
-	if(IO::FindFileOpen( "SaveStates", &find_handle, find_data))
+	if (IO::FindFileOpen( "ms0:/n64/SaveStates" , &find_handle, find_data))
 	{
-		do {
-			IO::Path::Combine( full_path, "SaveStates", find_data.Name);
-			if(IO::Directory::IsDirectory(full_path) && strlen( find_data.Name ) > 2 ){
+		do 
+		{
+			IO::Path::Combine( full_path, "ms0:/n64/SaveStates", find_data.Name);
+			if(IO::Directory::IsDirectory(full_path) && strlen( find_data.Name ) > 2 )
+			{
 				COutputStringStream             str;
 				CUIElement *    		element;
 				str << find_data.Name;
@@ -190,10 +199,30 @@ void ISavestateSelectorComponent::LoadFolders(){
 		}
 		while(IO::FindFileNext( find_handle, find_data ));
 		IO::FindFileClose( find_handle );
-
 	}
-	// Add a message if we can't find any folders
-	if(i == 0){
+	else if(IO::FindFileOpen( "SaveStates" , &find_handle, find_data))
+	{
+		do 
+		{
+			IO::Path::Combine( full_path, "SaveStates", find_data.Name);
+			if(IO::Directory::IsDirectory(full_path) && strlen( find_data.Name ) > 2 )
+			{
+				COutputStringStream             str;
+				CUIElement *    		element;
+				str << find_data.Name;
+				CFunctor1< u32 > *	functor_1( new CMemberFunctor1< ISavestateSelectorComponent, u32 >( this, &ISavestateSelectorComponent::OnFolderSelected ) );
+				CFunctor *		curried( new CCurriedFunctor< u32 >( functor_1, i++ ) );
+
+				element = new CUICommandImpl( curried, str.c_str(), description_text );
+				mElements.Add( element );
+				mElementTitle.push_back(find_data.Name);
+			}
+		}
+		while(IO::FindFileNext( find_handle, find_data ));
+		IO::FindFileClose( find_handle );
+	}
+	else
+	{
 		CUIElement *                    element;
 		element = new CUICommandDummy( "There are no Savestates to load", "There are no Savestates to load" );
 		mElements.Add( element );
@@ -354,10 +383,17 @@ void	ISavestateSelectorComponent::deleteSlot(u32 id_ss)
     char	sub_path[ MAX_PATH ];
     sprintf( filename, "saveslot%u.ss", id_ss );
     sprintf( sub_path, "SaveStates/%s", current_slot_path);
-    IO::Path::Combine( ss_path, gDaedalusExePath, sub_path);
-    IO::Path::Append( ss_path, filename );
+	if(!IO::Directory::IsDirectory( "ms0:/n64/SaveStates/" ))
+	{
+		IO::Path::Combine( ss_path, gDaedalusExePath, sub_path );
+	}
+	else
+	{
+		IO::Path::Combine( ss_path, "ms0:/n64/", sub_path );
+	}
+	IO::Path::Append( ss_path, filename );
 
-    if (IO::File::Exists(ss_path))
+	if (IO::File::Exists(ss_path))
     {
       remove(ss_path);
       deleteButtonTriggered=false;

@@ -316,10 +316,6 @@ bool IRomSettingsDB::OpenSettingsFile( const char * filename )
 		{
 			settings.CleanSceneEnabled = p_property->GetBooleanValue( false );
 		}
-		if( p_section->FindProperty( "CullingDisabled", &p_property ) )
-		{
-			settings.CullingDisabled = p_property->GetBooleanValue( false );
-		}
 		if( p_section->FindProperty( "ForceDepthBuffer", &p_property ) )
 		{
 			settings.ForceDepthBuffer = p_property->GetBooleanValue( true );
@@ -450,7 +446,6 @@ void IRomSettingsDB::OutputSectionDetails( const RomID & id, const RomSettings &
 	if( settings.ViewPortHackEnabled )			fprintf(fh, "ViewPortHackEnabled=yes\n");
 	if( settings.FlatShadeDisabled )			fprintf(fh, "FlatShadeDisabled=yes\n");
 	if( settings.CleanSceneEnabled )			fprintf(fh, "CleanSceneEnabled=yes\n");
-	if( settings.CleanSceneEnabled )			fprintf(fh, "CullingDisabled=yes\n");
 	if( settings.ForceDepthBuffer )				fprintf(fh, "ForceDepthBuffer=no\n");
 	if( settings.FlushTrisHack )				fprintf(fh, "FlushTrisHack=yes\n");
 
@@ -513,7 +508,6 @@ RomSettings::RomSettings()
 ,	ViewPortHackEnabled( false )
 ,	FlatShadeDisabled( false )
 ,	CleanSceneEnabled( false )
-,	CullingDisabled( false )
 ,	ForceDepthBuffer( true )
 ,	FlushTrisHack( false )
 ,	RescanCount(0)
@@ -548,7 +542,6 @@ void	RomSettings::Reset()
 	ViewPortHackEnabled = false;
 	FlatShadeDisabled = false;
 	CleanSceneEnabled = false;
-	CullingDisabled = false;
 	ForceDepthBuffer = true;
 	FlushTrisHack = false;
 	RescanCount = 0;

@@ -786,13 +786,20 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	//
 	switch( gGlobalPreferences.ForceTextureFilter )
 	{
-		case FORCE_DEFAULT_FILTER:
+			// Reverted back to old N64 filter, since the new filter
+			// doesn't seem work if isn't done on SetOtherModeH...
+			// Until we move all our othermode related to its proper ucode
+			// we'll continue using this old filter.
+			//
+			case FORCE_DEFAULT_FILTER:
 			switch(gRDPOtherMode.text_filt)
 			{
-				case G_TF_BILERP:
+//				case 0:			//G_TF_POINT:	// 0 Defualt Case
+				case 2:			//G_TF_BILERP:	// 2
 					sceGuTexFilter(GU_LINEAR,GU_LINEAR);
 					break;
-				default:
+//				case 3:			//G_TF_AVERAGE:	// 3?
+				default:			//G_TF_POINT:	// 0
 					sceGuTexFilter(GU_NEAREST,GU_NEAREST);
 					break;
 			}

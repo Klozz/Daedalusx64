@@ -741,7 +741,8 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 {
 	DAEDALUS_PROFILE( "PSPRenderer::RenderUsingCurrentBlendMode" );
 
-	if ( disable_zbuffer )
+	// Only update if ZBuffer is enabled
+	if ( disable_zbuffer && !m_bZBuffer )
 	{
 		sceGuDisable(GU_DEPTH_TEST);
 		sceGuDepthMask( GL_TRUE );	// GL_TRUE to disable z-writes
@@ -752,21 +753,12 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 			(gRDPOtherMode._u64 != gLastRDPOtherMode._u64) ||
 			 (m_bZBuffer != gLastUseZBuffer) )
 		{
-			// Only update if ZBuffer is enabled
-			if (m_bZBuffer)
-			{
-				if(gRDPOtherMode.z_cmp)
-					sceGuEnable(GU_DEPTH_TEST);
-				else
-					sceGuDisable(GU_DEPTH_TEST);
-
-				sceGuDepthMask( gRDPOtherMode.z_upd ? GL_FALSE : GL_TRUE );	// GL_TRUE to disable z-writes
-			}
+			if(gRDPOtherMode.z_cmp)
+				sceGuEnable(GU_DEPTH_TEST);
 			else
-			{
 				sceGuDisable(GU_DEPTH_TEST);
-				sceGuDepthMask( GL_TRUE );	// GL_TRUE to disable z-writes
-			}
+
+			sceGuDepthMask(gRDPOtherMode.z_upd ? GL_FALSE : GL_TRUE); // no depth buffer writes
 
 			gNeedZBufferUdate = false;
 			gLastUseZBuffer = m_bZBuffer;
@@ -777,29 +769,16 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 
 	sceGuShadeModel( mSmooth ? GU_SMOOTH : GU_FLAT );
 
-	//
-	// Our filtering starts here.
-	// I don't like to do our filtering here...
-	// I think is a better idea doing it on the microcode itself
-	// Ex : DLParser_XXX_SetOtherModeH and DLParser_RDPSetOtherMode
-	// But there has to be a good reason why we do filtering, blender, othermode init, and zbuffer here?
-	//
+	//This sets our filtering either through gRDPOtherMode by default or we force it
 	switch( gGlobalPreferences.ForceTextureFilter )
 	{
-			// Reverted back to old N64 filter, since the new filter
-			// doesn't seem work if isn't done on SetOtherModeH...
-			// Until we move all our othermode related to its proper ucode
-			// we'll continue using this old filter.
-			//
-			case FORCE_DEFAULT_FILTER:
+		case FORCE_DEFAULT_FILTER:
 			switch(gRDPOtherMode.text_filt)
 			{
-//				case 0:			//G_TF_POINT:	// 0 Defualt Case
 				case 2:			//G_TF_BILERP:	// 2
 					sceGuTexFilter(GU_LINEAR,GU_LINEAR);
 					break;
-//				case 3:			//G_TF_AVERAGE:	// 3?
-				default:			//G_TF_POINT:	// 0
+				default:		//G_TF_POINT:	// 0
 					sceGuTexFilter(GU_NEAREST,GU_NEAREST);
 					break;
 			}

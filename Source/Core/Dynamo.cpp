@@ -558,21 +558,18 @@ void Dynamo_SelectCore()
 	bool run_rsp( RSP_IsRunningLLE() );
 	bool trace_enabled = gTraceRecorder.IsTraceActive();
 
-	if (gDynarecEnabled)
+	if (trace_enabled)
 	{
-		if (trace_enabled)
-		{
-			if (run_rsp)
-				g_pCPUCore = CPU_Go< true, true >;
-			else
-				g_pCPUCore = CPU_Go< true, false >;
-		}
+		if (run_rsp)
+			g_pCPUCore = CPU_Go< true, true >;
 		else
-		{
-			if (run_rsp)
-				g_pCPUCore = CPU_Go< false, true >;
-			else
-				g_pCPUCore = CPU_Go< false, false >;
-		}
+			g_pCPUCore = CPU_Go< true, false >;
+	}
+	else
+	{
+		if (run_rsp)
+			g_pCPUCore = CPU_Go< false, true >;
+		else
+			g_pCPUCore = CPU_Go< false, false >;
 	}
 }

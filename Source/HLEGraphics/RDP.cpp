@@ -201,24 +201,22 @@ void	RDP_LoadTile( RDP_TileSize tile_size  )
 //*************************************************************************************
 void	RDP_LoadTLut( RDP_TileSize load_tlut )
 {
-	u32 dwOffset;
 	u32 dwULS   = ((load_tlut.cmd0 >> 12) & 0xfff)/4;
 	u32 dwULT   = ((load_tlut.cmd0      ) & 0xfff)/4;
-	//u32 dwTile  = ((load_tlut.cmd1 >> 24) & 0x07);
 	u32 dwLRS   = ((load_tlut.cmd1 >> 12) & 0xfff)/4;
-	//u32 dwLRT   = ((load_tlut.cmd1      ) & 0xfff)/4;
+
+	//This corresponds to the number of palette entries (16 or 256)
 	u32 dwCount = (dwLRS - dwULS)+1;
 
 	// Format is always 16bpp - RGBA16 or IA16:
-	// I've no idea why these two are added - seems to work for 007!
-	dwOffset = (dwULS + dwULT*g_TI.Width )*2;
+	u32 dwOffset = (dwULS + dwULT*g_TI.Width)*2;
 
 	//Copy PAL to the PAL memory
 	u32 tmem = gRDPTiles[ load_tlut.tile_idx ].tmem << 3;
 	u16 * p_source = (u16 *)&g_pu8RamBase[ g_TI.Address + dwOffset ];
 	u16 * p_dest = (u16*)&gTextureMemory[ tmem ];
 
-	for (u32 i=0; i<dwCount && i<0x100; i++)
+	for (u32 i=0; i<dwCount; i++)
 	{
 		p_dest[ i ] = p_source[ i ];
 	}

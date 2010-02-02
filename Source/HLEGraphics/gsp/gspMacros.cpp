@@ -52,11 +52,11 @@ void DLParser_GBI0_Vtx( MicroCodeCommand command )
         // Check that address is valid...
         if ( (address + (n*16)) > MAX_RAM_ADDRESS )
         {
-                DBGConsole_Msg( 0, "SetNewVertexInfo: Address out of range (0x%08x)", address );
+                DBGConsole_Msg( 0, "SetNewVertexInfoVFPU: Address out of range (0x%08x)", address );
         }
         else
         {
-                PSPRenderer::Get()->SetNewVertexInfo( address, v0, n );
+                PSPRenderer::Get()->SetNewVertexInfoVFPU( address, v0, n );
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
                 gNumVertices += n;
@@ -102,7 +102,7 @@ void DLParser_GBI1_Vtx( MicroCodeCommand command )
                 return;
         }
 
-        PSPRenderer::Get()->SetNewVertexInfo( address, v0, n );
+        PSPRenderer::Get()->SetNewVertexInfoVFPU( address, v0, n );
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
         gNumVertices += n;
@@ -130,11 +130,11 @@ void DLParser_GBI2_Vtx( MicroCodeCommand command )
         // Check that address is valid...
         if ( (address + (n*16) ) > MAX_RAM_ADDRESS )
         {
-                DBGConsole_Msg( 0, "SetNewVertexInfo: Address out of range (0x%08x)", address );
+                DBGConsole_Msg( 0, "SetNewVertexInfoVFPU: Address out of range (0x%08x)", address );
         }
         else
         {
-                PSPRenderer::Get()->SetNewVertexInfo( address, v0, n );
+                PSPRenderer::Get()->SetNewVertexInfoVFPU( address, v0, n );
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
                 gNumVertices += n;
@@ -504,6 +504,7 @@ static void DLParser_InitGeometryMode()
         bool bCullBack          = (gGeometryMode & G_CULL_BACK) ? true : false;
 		if( bCullFront && bCullBack ) // should never cull front
 		{
+			DAEDALUS_ERROR("	Warning : Both front and back are culled ");
 			bCullFront = false;
 		}
         bool bShade                     = (gGeometryMode & G_SHADE) ? true : false;
@@ -543,17 +544,17 @@ void DLParser_GBI1_ClearGeometryMode( MicroCodeCommand command )
         if (gDisplayListFile != NULL)
         {
                 DL_PF("    Mask=0x%08x", mask);
-                if (mask & G_ZBUFFER)                                   DL_PF("  Disabling ZBuffer");
+                if (mask & G_ZBUFFER)                           DL_PF("  Disabling ZBuffer");
                 if (mask & G_TEXTURE_ENABLE)                    DL_PF("  Disabling Texture");
-                if (mask & G_SHADE)                                             DL_PF("  Disabling Shade");
+                if (mask & G_SHADE)                             DL_PF("  Disabling Shade");
                 if (mask & G_SHADING_SMOOTH)                    DL_PF("  Disabling Smooth Shading");
-                if (mask & G_CULL_FRONT)                                DL_PF("  Disabling Front Culling");
-                if (mask & G_CULL_BACK)                                 DL_PF("  Disabling Back Culling");
-                if (mask & G_FOG)                                               DL_PF("  Disabling Fog");
-                if (mask & G_LIGHTING)                                  DL_PF("  Disabling Lighting");
-                if (mask & G_TEXTURE_GEN)                               DL_PF("  Disabling Texture Gen");
+                if (mask & G_CULL_FRONT)                        DL_PF("  Disabling Front Culling");
+                if (mask & G_CULL_BACK)                         DL_PF("  Disabling Back Culling");
+                if (mask & G_FOG)                               DL_PF("  Disabling Fog");
+                if (mask & G_LIGHTING)                          DL_PF("  Disabling Lighting");
+                if (mask & G_TEXTURE_GEN)                       DL_PF("  Disabling Texture Gen");
                 if (mask & G_TEXTURE_GEN_LINEAR)                DL_PF("  Disabling Texture Gen Linear");
-                if (mask & G_LOD)                                               DL_PF("  Disabling LOD (no impl)");
+                if (mask & G_LOD)                               DL_PF("  Disabling LOD (no impl)");
         }
 #endif
 }
@@ -573,17 +574,17 @@ void DLParser_GBI1_SetGeometryMode(  MicroCodeCommand command  )
         if (gDisplayListFile != NULL)
         {
                 DL_PF("    Mask=0x%08x", mask);
-                if (mask & G_ZBUFFER)                                   DL_PF("  Enabling ZBuffer");
+                if (mask & G_ZBUFFER)                           DL_PF("  Enabling ZBuffer");
                 if (mask & G_TEXTURE_ENABLE)                    DL_PF("  Enabling Texture");
-                if (mask & G_SHADE)                                             DL_PF("  Enabling Shade");
+                if (mask & G_SHADE)                             DL_PF("  Enabling Shade");
                 if (mask & G_SHADING_SMOOTH)                    DL_PF("  Enabling Smooth Shading");
-                if (mask & G_CULL_FRONT)                                DL_PF("  Enabling Front Culling");
-                if (mask & G_CULL_BACK)                                 DL_PF("  Enabling Back Culling");
-                if (mask & G_FOG)                                               DL_PF("  Enabling Fog");
-                if (mask & G_LIGHTING)                                  DL_PF("  Enabling Lighting");
-                if (mask & G_TEXTURE_GEN)                               DL_PF("  Enabling Texture Gen");
+                if (mask & G_CULL_FRONT)                        DL_PF("  Enabling Front Culling");
+                if (mask & G_CULL_BACK)                         DL_PF("  Enabling Back Culling");
+                if (mask & G_FOG)                               DL_PF("  Enabling Fog");
+                if (mask & G_LIGHTING)                          DL_PF("  Enabling Lighting");
+                if (mask & G_TEXTURE_GEN)                       DL_PF("  Enabling Texture Gen");
                 if (mask & G_TEXTURE_GEN_LINEAR)                DL_PF("  Enabling Texture Gen Linear");
-                if (mask & G_LOD)                                               DL_PF("  Enabling LOD (no impl)");
+                if (mask & G_LOD)                               DL_PF("  Enabling LOD (no impl)");
         }
 #endif
 }
@@ -764,12 +765,61 @@ void DLParser_GBI2_Texture( MicroCodeCommand command )
         PSPRenderer::Get()->SetTextureScale( scale_s, scale_t );
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
+void DLParser_GBI2_Quad( MicroCodeCommand command )
+{
+		// Ok this using the same fucntion as Line3D, which is wrong
+		// This command is supposed to draw the missing heart on Zelda: OOT and MM.
+		// Because of that we are marking Quad cmd as unimplemented, since we are still mising the heart.
+
+
+        // While the next command pair is Tri2, add vertices
+        u32 pc = gDisplayListStack.back().addr;
+        u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
+
+        bool tris_added = false;
+
+        while ( command.cmd == G_GBI2_QUAD )
+        {
+                // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
+                u32 v2_idx = ((command.cmd1>>16)&0xFF)/2;
+                u32 v1_idx = ((command.cmd1>>8 )&0xFF)/2;
+                u32 v0_idx = ((command.cmd1    )&0xFF)/2;
+
+                u32 v5_idx = ((command.cmd0>>16)&0xFF)/2;
+                u32 v4_idx = ((command.cmd0>>8 )&0xFF)/2;
+                u32 v3_idx = ((command.cmd0    )&0xFF)/2;
+
+                tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+                tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
+
+                command.cmd0 = *pCmdBase++;
+                command.cmd1 = *pCmdBase++;
+                pc += 8;
+
+                if ( command.cmd == G_GBI2_QUAD )
+                {
+                        DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.cmd0, command.cmd1, gInstructionName[ command.cmd ]);
+                }
+        }
+
+        gDisplayListStack.back().addr = pc-8;
+
+        if (tris_added)
+        {
+                PSPRenderer::Get()->FlushTris();
+        }
+}
 
 //*****************************************************************************
 //
 //*****************************************************************************
+// XXX SpiderMan uses this command.
 void DLParser_GBI2_Line3D( MicroCodeCommand command )
 {
+		
         // While the next command pair is Tri2, add vertices
         u32 pc = gDisplayListStack.back().addr;
         u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
@@ -807,8 +857,6 @@ void DLParser_GBI2_Line3D( MicroCodeCommand command )
                 PSPRenderer::Get()->FlushTris();
         }
 }
-
-
 
 //*****************************************************************************
 //

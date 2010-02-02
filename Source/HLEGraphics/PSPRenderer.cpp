@@ -1740,11 +1740,6 @@ bool	PSPRenderer::RenderTriangleList( const DaedalusVtx * p_verts, u32 num_verts
 //*****************************************************************************
 //
 //*****************************************************************************
-void PSPRenderer::SetNewVertexInfo(u32 dwAddress, u32 dwV0, u32 dwNum)
-{
-	//DAEDALUS_PROFILE( "PSPRenderer::SetNewVertexInfo" );
-	SetNewVertexInfoVFPU(dwAddress, dwV0, dwNum);
-}
 
 static u32 CalcClipFlags( const v4 & projected )
 {
@@ -1901,9 +1896,9 @@ void PSPRenderer::ProcessVerts( u32 v0, u32 num, const FiddledVtx * verts, const
 //*****************************************************************************
 //
 //*****************************************************************************
-void PSPRenderer::SetNewVertexInfoVFPU(u32 dwAddress, u32 dwV0, u32 dwNum)
+void PSPRenderer::SetNewVertexInfoVFPU(u32 address, u32 v0, u32 n)
 {
-	const FiddledVtx * const pVtxBase( (const FiddledVtx*)(g_pu8RamBase + dwAddress) );
+	const FiddledVtx * const pVtxBase( (const FiddledVtx*)(g_pu8RamBase + address) );
 
 	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );
 	const Matrix4x4 & matWorldProject( GetWorldProject() );
@@ -1911,31 +1906,31 @@ void PSPRenderer::SetNewVertexInfoVFPU(u32 dwAddress, u32 dwV0, u32 dwNum)
 	switch( mTnLModeFlags & (TNL_TEXTURE|TNL_TEXGEN|TNL_FOG|TNL_LIGHT) )
 	{
 		// TNL_TEXGEN is ignored when TNL_LIGHT is disabled
-	case                                   0: _TransformVerticesWithColour_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[dwV0], dwNum, &mTnLParams ); break;
-	case                         TNL_TEXTURE: _TransformVerticesWithColour_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[dwV0], dwNum, &mTnLParams ); break;
-	case            TNL_TEXGEN              : _TransformVerticesWithColour_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[dwV0], dwNum, &mTnLParams ); break;
-	case            TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithColour_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[dwV0], dwNum, &mTnLParams ); break;
-	case  TNL_FOG                           : _TransformVerticesWithColour_f1_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[dwV0], dwNum, &mTnLParams ); break;
-	case  TNL_FOG |              TNL_TEXTURE: _TransformVerticesWithColour_f1_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[dwV0], dwNum, &mTnLParams ); break;
-	case  TNL_FOG | TNL_TEXGEN              : _TransformVerticesWithColour_f1_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[dwV0], dwNum, &mTnLParams ); break;
-	case  TNL_FOG | TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithColour_f1_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[dwV0], dwNum, &mTnLParams ); break;
+	case                                   0: _TransformVerticesWithColour_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
+	case                         TNL_TEXTURE: _TransformVerticesWithColour_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
+	case            TNL_TEXGEN              : _TransformVerticesWithColour_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
+	case            TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithColour_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
+	case  TNL_FOG                           : _TransformVerticesWithColour_f1_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
+	case  TNL_FOG |              TNL_TEXTURE: _TransformVerticesWithColour_f1_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
+	case  TNL_FOG | TNL_TEXGEN              : _TransformVerticesWithColour_f1_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
+	case  TNL_FOG | TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithColour_f1_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
 
 		// TNL_TEXGEN is ignored when TNL_TEXTURE is disabled
-	case TNL_LIGHT                                     : _TransformVerticesWithLighting_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[dwV0], dwNum, &mTnLParams, mLights, m_dwNumLights ); break;
-	case TNL_LIGHT |                        TNL_TEXTURE: _TransformVerticesWithLighting_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[dwV0], dwNum, &mTnLParams, mLights, m_dwNumLights ); break;
-	case TNL_LIGHT |           TNL_TEXGEN              : _TransformVerticesWithLighting_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[dwV0], dwNum, &mTnLParams, mLights, m_dwNumLights ); break;
-	case TNL_LIGHT |           TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithLighting_f0_t2( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[dwV0], dwNum, &mTnLParams, mLights, m_dwNumLights ); break;
-	case TNL_LIGHT | TNL_FOG                           : _TransformVerticesWithLighting_f1_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[dwV0], dwNum, &mTnLParams, mLights, m_dwNumLights ); break;
-	case TNL_LIGHT | TNL_FOG |              TNL_TEXTURE: _TransformVerticesWithLighting_f1_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[dwV0], dwNum, &mTnLParams, mLights, m_dwNumLights ); break;
-	case TNL_LIGHT | TNL_FOG | TNL_TEXGEN              : _TransformVerticesWithLighting_f1_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[dwV0], dwNum, &mTnLParams, mLights, m_dwNumLights ); break;
-	case TNL_LIGHT | TNL_FOG | TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithLighting_f1_t2( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[dwV0], dwNum, &mTnLParams, mLights, m_dwNumLights ); break;
+	case TNL_LIGHT                                     : _TransformVerticesWithLighting_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+	case TNL_LIGHT |                        TNL_TEXTURE: _TransformVerticesWithLighting_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+	case TNL_LIGHT |           TNL_TEXGEN              : _TransformVerticesWithLighting_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+	case TNL_LIGHT |           TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithLighting_f0_t2( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+	case TNL_LIGHT | TNL_FOG                           : _TransformVerticesWithLighting_f1_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+	case TNL_LIGHT | TNL_FOG |              TNL_TEXTURE: _TransformVerticesWithLighting_f1_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+	case TNL_LIGHT | TNL_FOG | TNL_TEXGEN              : _TransformVerticesWithLighting_f1_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+	case TNL_LIGHT | TNL_FOG | TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithLighting_f1_t2( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
 
 	default:
 		NODEFAULT;
 		break;
 	}
 
-	//TestVFPUVerts( dwV0, dwNum, pVtxBase, matWorld );
+	//TestVFPUVerts( v0, n, pVtxBase, matWorld );
 }
 
 //*****************************************************************************

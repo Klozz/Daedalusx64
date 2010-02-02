@@ -50,8 +50,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	G_GBI2_BRANCH_Z			0x04
 #define	G_GBI2_TRI1				0x05
 #define G_GBI2_TRI2				0x06
-#define G_GBI2_LINE3D			0x07
-
+#define G_GBI2_QUAD				0x07
+#define G_GBI2_LINE3D			0x08
 
 //*****************************************************************************
 // GBI1

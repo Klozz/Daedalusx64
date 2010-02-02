@@ -40,6 +40,7 @@ bool IsRomfilename( const char * rom_filename )
 		    _strcmpi(last_period, ".z64") == 0 ||
 		    _strcmpi(last_period, ".n64") == 0 ||
 		    _strcmpi(last_period, ".rom") == 0 ||
+			_strcmpi(last_period, ".bin") == 0 ||
 		    _strcmpi(last_period, ".jap") == 0 ||
 		    _strcmpi(last_period, ".pal") == 0 ||
 		    _strcmpi(last_period, ".usa") == 0 ||

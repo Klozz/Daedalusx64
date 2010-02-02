@@ -66,6 +66,9 @@ void DLParser_S2DEX_ObjMoveMem		( MicroCodeCommand command );
 void DLParser_S2DEX_Bg1cyc			( MicroCodeCommand command );
 void DLParser_S2DEX_ObjRectangleR	( MicroCodeCommand command );
 
+//*****************************************************************************
+// 
+//*****************************************************************************
 struct uObjBg
 {
         u16 imageW;
@@ -90,6 +93,39 @@ struct uObjBg
         u16 tmemLoadSH;
         u16 tmemSize;
         u16 tmemSizeW;
+};
+
+//*****************************************************************************
+//
+//*****************************************************************************
+struct	uObjScaleBg
+{	
+  u16	imageW;		
+  u16	imageX;		
+
+  u16	frameW;		
+  s16	frameX;		
+
+  u16	imageH;		
+  u16	imageY; 	
+
+  u16	frameH;		
+  s16	frameY;		
+
+  u32	imagePtr;	
+
+  u8	imageSiz;	
+  u8	imageFmt;	
+  u16	imageLoad;	
+
+  u16	imageFlip;	
+  u16	imagePal; 	
+
+  u16	scaleH;		
+  u16	scaleW;		
+
+  s32	imageYorig;	
+  u8	padding[4];
 };
 
 #endif /* GSP_S2DEX_H */

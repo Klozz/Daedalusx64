@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __ULTRA_MBI_H__
 #define __ULTRA_MBI_H__
 
+#define M_BADTASK	0
 #define	M_GFXTASK	1
 #define	M_AUDTASK	2
 #define	M_VIDTASK	3

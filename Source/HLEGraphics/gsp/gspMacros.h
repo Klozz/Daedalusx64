@@ -24,88 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef GSP_MACROS_H
 #define GSP_MACROS_H
 
-// gSP1Quadrangle
-// gSP1Triangle			- DLParser_GBI1_Tri1_T/DLParser_GBI2_Tri1
-// gSP2Triangles		- DLParser_GBI0_Tri2/DLParser_GBI2_Tri2/DLParser_GBI1_Tri2_T
-// gSPBgRect1Cyc
-// gSPBgRectCopy
-// gSPBranchLessZ		- DLParser_GBI1_BranchZ
-// gSPBranchLessZrg
-// gSPBranchList
-// gSPClearGeometryMode		- DLParser_GBI1_ClearGeometryMode
-// gSPClipRatio
-// gSPCullDisplayList		- DLParser_GBI1_CullDL/DLParser_GBI2_CullDL
-// gSPDIsplayList		- DLParser_GBI1_DL/DLParser_GBI2_DL
-// gSPEndDIsplayList		- DLParser_GBI1_EndDL/DLParser_GBI2_EndDL
-// gSPFogPosition
-// gSPForceMatrix
-// gSPGeometryMode		- DLParser_GBI2_GeometryMode
-// gSPInsertMatrix
-// gSPLight
-// gSPLightColor
-// gSPLine3D			- DLParser_GBI2_Line3D/DLParser_GBI1_Line3D_T
-// gSPLineW3D
-// gSPLoadUcode			- DLParser_GBI1_LoadUCode
-// gSPLoadUcodeL
-// gSPLookAt
-// gSPLookAtX
-// gSPLookAtY
-// gSPMatrix			- DLParser_GBI1_Mtx/DLParser_GBI2_Mtx
-// gSPModifyVertex		- DLParser_GBI1_ModifyVtx
-// gSPNearClip
-// gSPNumLights
-// gSPObjLoadTxRect
-// gSPObjLoadTxRectR
-// gSPObjLoadTxSprite
-// gSPObjLoadTxtr
-// gSPObjMatrix
-// gSPObjRectangle
-// gSPObjRectangleR
-// gSPObjRenderMode
-// gSPObjSprite
-// gSPObjSubMatrix
-// gSPPerspNormalize
-// gSPPopMatrix			- DLParser_GBI1_PopMtx/DLParser_GBI2_PopMtx
-// gSPScisTextureRectangle
-// gSPSegment
-// gSPSelectBranchDL
-// gSPSelectDL
-// gSPSetGeometryMode		- DLParser_GBI1_SetGeometryMode
-// gSPSetLights
-// gSPSetOtherMode		- DLParser_GBI1_SetOtherModeL/DLParser_GBI1_SetOtherModeH/DLParser_GBI2_SetOtherModeL/DLParser_GBI2_SetOtherModeH
-// gSPSetStatus
-// gSPSprite2DBase		- At gspSprite2D.h
-// gSPSprite2DDraw		- At gspSprite2D.h
-// gSPSprite2DScaleFlip		- At gspSprite2D.h
-// gSPTexture			- DLParser_GBI1_Texture/DLParser_GBI2_Texture
-// gSPTextureRectangle
-// gSPTextureRectangleFlip
-// gSPVertex			- DLParser_GBI0_Vtx/DLParser_GBI1_Vtx/DLParser_GBI2_Vtx
-// gSPViewport
-// gSPZGetMtx
-// gSPZGetUMem
-// gSPZLight
-// gSPZLightMaterial
-// gSPZLinkSubDL
-// gSPZMixS16
-// gSPZMixS8
-// gSPZMixU8
-// gSPZMtxCat
-// gSPZMtxTrnsp3x3
-// gSPZMultMPMtx
-// gSPZPerspNormalize
-// gSPZRdpCmd
-// gSPZSegment
-// gSPZSendMessage
-// gSPZSetAmbient
-// gSPZSetDefuse
-// gSPZSetLookAt
-// gSPZSetMtx
-// gSPZSetSubDL
-// gSPZSetUMem
-// gSPZViewPort
-// gSPZWaitSignal
-// gSPZXfmLights
 
 //***************************************************************************** 
 // Used by
@@ -135,46 +53,46 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define G_CLIPPING              0x00800000
 
 
-void DLParser_GBI1_CullDL				( MicroCodeCommand command );
-void DLParser_GBI2_CullDL				( MicroCodeCommand command );
-void DLParser_GBI1_DL					( MicroCodeCommand command );
-void DLParser_GBI2_DL					( MicroCodeCommand command );
-void DLParser_GBI1_EndDL				( MicroCodeCommand command );
-void DLParser_GBI2_EndDL				( MicroCodeCommand command );
+void DLParser_GBI1_CullDL( MicroCodeCommand command );
+void DLParser_GBI2_CullDL( MicroCodeCommand command );
+void DLParser_GBI1_DL( MicroCodeCommand command );
+void DLParser_GBI2_DL( MicroCodeCommand command );
+void DLParser_GBI1_EndDL( MicroCodeCommand command );
+void DLParser_GBI2_EndDL( MicroCodeCommand command );
 
-void DLParser_GBI1_BranchZ				( MicroCodeCommand command );
+void DLParser_GBI1_BranchZ( MicroCodeCommand command );
 
-void DLParser_GBI1_LoadUCode				( MicroCodeCommand command );
+void DLParser_GBI1_LoadUCode( MicroCodeCommand command );
 
-void DLParser_GBI1_SetGeometryMode			( MicroCodeCommand command );
-void DLParser_GBI1_ClearGeometryMode			( MicroCodeCommand command );
-void DLParser_GBI2_GeometryMode				( MicroCodeCommand command );
+void DLParser_GBI1_SetGeometryMode( MicroCodeCommand command );
+void DLParser_GBI1_ClearGeometryMode( MicroCodeCommand command );
+void DLParser_GBI2_GeometryMode	( MicroCodeCommand command );
 
-void DLParser_GBI1_SetOtherModeL			( MicroCodeCommand command );
-void DLParser_GBI1_SetOtherModeH			( MicroCodeCommand command );
-void DLParser_GBI2_SetOtherModeL			( MicroCodeCommand command );
-void DLParser_GBI2_SetOtherModeH			( MicroCodeCommand command );
+void DLParser_GBI1_SetOtherModeL( MicroCodeCommand command );
+void DLParser_GBI1_SetOtherModeH( MicroCodeCommand command );
+void DLParser_GBI2_SetOtherModeL( MicroCodeCommand command );
+void DLParser_GBI2_SetOtherModeH( MicroCodeCommand command );
 
-void DLParser_GBI1_Texture				( MicroCodeCommand command );
-void DLParser_GBI2_Texture				( MicroCodeCommand command );
+void DLParser_GBI1_Texture( MicroCodeCommand command );
+void DLParser_GBI2_Texture( MicroCodeCommand command );
 
-void DLParser_GBI0_Vtx					( MicroCodeCommand command );
-void DLParser_GBI1_Vtx					( MicroCodeCommand command );
-void DLParser_GBI2_Vtx					( MicroCodeCommand command );
-void DLParser_GBI1_ModifyVtx				( MicroCodeCommand command );
-//void DLParser_GBI2_ModifyVtx				( MicroCodeCommand command );
+void DLParser_GBI0_Vtx( MicroCodeCommand command );
+void DLParser_GBI1_Vtx( MicroCodeCommand command );
+void DLParser_GBI2_Vtx( MicroCodeCommand command );
+void DLParser_GBI1_ModifyVtx( MicroCodeCommand command );
 
-void DLParser_GBI1_Mtx					( MicroCodeCommand command );
-void DLParser_GBI2_Mtx					( MicroCodeCommand command );
+void DLParser_GBI1_Mtx( MicroCodeCommand command );
+void DLParser_GBI2_Mtx( MicroCodeCommand command );
 
-void DLParser_GBI1_PopMtx				( MicroCodeCommand command );
-void DLParser_GBI2_PopMtx				( MicroCodeCommand command );
+void DLParser_GBI1_PopMtx( MicroCodeCommand command );
+void DLParser_GBI2_PopMtx( MicroCodeCommand command );
 
-void DLParser_GBI2_Line3D				( MicroCodeCommand command );
+void DLParser_GBI2_Quad( MicroCodeCommand command );
+void DLParser_GBI2_Line3D( MicroCodeCommand command );
 
-void DLParser_GBI2_Tri1					( MicroCodeCommand command );
-void DLParser_GBI0_Tri2					( MicroCodeCommand command );
-void DLParser_GBI2_Tri2					( MicroCodeCommand command );
+void DLParser_GBI2_Tri1( MicroCodeCommand command );
+void DLParser_GBI0_Tri2( MicroCodeCommand command );
+void DLParser_GBI2_Tri2( MicroCodeCommand command );
 
 // For some reason these have to be declared here.
 // Local Functions

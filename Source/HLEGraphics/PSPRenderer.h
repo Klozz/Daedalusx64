@@ -124,8 +124,8 @@ public:
 	void				PopProjection();
 	void				PopWorldView();
 
-	// Vertex stuff
-	void				SetNewVertexInfo(u32 dwAddress, u32 dwV0, u32 dwNum);	// Assumes dwAddress has already been checked!	
+	// Vertex stuff	
+	void				SetNewVertexInfoVFPU(u32 address, u32 v0, u32 n);	// Assumes dwAddress has already been checked!	
 	void				ModifyVertexInfo(u32 offset, u32 vert, u32 val);
 	void				SetNewVertexInfoDKR(u32 dwAddress, u32 dwV0, u32 dwNum);	// Assumes dwAddress has already been checked!	
 	void				SetVtxColor( u32 vert, c32 color );
@@ -199,7 +199,6 @@ private:
 	template< bool FogEnable, int TextureMode >
 	void ProcessVerts( u32 v0, u32 num, const FiddledVtx * verts, const Matrix4x4 & mat_world );
 
-	void				SetNewVertexInfoVFPU(u32 dwAddress, u32 dwV0, u32 dwNum);	// Assumes dwAddress has already been checked!	
 	void				SetNewVertexInfoCPU(u32 dwAddress, u32 dwV0, u32 dwNum);	// Assumes dwAddress has already been checked!	
 
 

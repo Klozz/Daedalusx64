@@ -308,6 +308,9 @@ void RSP_HLE_ProcessTask()
 
 	switch ( pTask->t.type )
 	{
+		case M_BADTASK:
+			break;
+
 		case M_GFXTASK:
 			result = RSP_HLE_Graphics();
 			break;

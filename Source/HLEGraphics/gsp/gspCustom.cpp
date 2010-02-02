@@ -22,6 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 // DKR verts are extra 4 bytes
+//*****************************************************************************
+//
+//*****************************************************************************
 void DLParser_DumpVtxInfoDKR(u32 address, u32 v0_idx, u32 num_verts)
 {
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
@@ -109,7 +112,7 @@ void DLParser_GBI0_Vtx_Gemini( MicroCodeCommand command )
 	// Check that address is valid...
 	if ((address + (num_verts*16)) > MAX_RAM_ADDRESS)
 	{
-		DBGConsole_Msg(0, "SetNewVertexInfo: Address out of range (0x%08x)", address);
+		DBGConsole_Msg(0, "SetNewVertexInfoDKR: Address out of range (0x%08x)", address);
 	}
 	else
 	{
@@ -122,6 +125,9 @@ void DLParser_GBI0_Vtx_Gemini( MicroCodeCommand command )
 	}
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 // MOVE!
 void DLParser_GBI0_Vtx_ShadowOfEmpire( MicroCodeCommand command )
 {
@@ -144,178 +150,12 @@ void DLParser_GBI0_Vtx_ShadowOfEmpire( MicroCodeCommand command )
               n = 32 - v0;
       }
 
-      PSPRenderer::Get()->SetNewVertexInfo( address, v0, n );
+      PSPRenderer::Get()->SetNewVertexInfoVFPU( address, v0, n );
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
       gNumVertices += n;
       DLParser_DumpVtxInfo( address, v0, n );
 #endif
-}
-
-//*****************************************************************************
-
-//IS called Last Legion, but is used for several other games like: Dark Rift, Toukon Road, Toukon Road 2.
-
-//*****************************************************************************
-// Only thing I can't figure out why are the characters on those games invisble?
-// Dark Rift runs properly without custom microcodes, and has the same symptoms...
-// We need Turbo3D ucode support, actually a modified version of it, thanks Gonetz for the info :D
-
-void DLParser_RSP_Last_Legion_0x80( MicroCodeCommand command )
-{     
-      gDisplayListStack.back().addr += 16;
-	  DL_PF("DLParser_RSP_Last_Legion_0x80");
-}
-void DLParser_RSP_Last_Legion_0x00( MicroCodeCommand command )
-{
-
-      gDisplayListStack.back().addr += 16;
-	  DL_PF("DLParser_RSP_Last_Legion_0x00");
-
-      if( (command.cmd0) == 0 && (command.cmd1) )
-      {
-              u32 newaddr = RDPSegAddr((command.cmd1));
-              if( newaddr >= MAX_RAM_ADDRESS )
-              {
-                      DLParser_PopDL();
-                      return;
-              }
-
-              u32 pc1 = *(u32 *)(g_pu8RamBase + newaddr+8*1+4);
-              u32 pc2 = *(u32 *)(g_pu8RamBase + newaddr+8*4+4);
-              pc1 = RDPSegAddr(pc1);
-              pc2 = RDPSegAddr(pc2);
-
-              if( pc1 && pc1 != 0xffffff && pc1 < MAX_RAM_ADDRESS)
-              {
-                      // Need to call both DL
-                      DList dl;
-                      dl.addr = pc1;
-                      dl.limit = ~0;
-                      gDisplayListStack.push_back(dl);
-              }
-
-              if( pc2 && pc2 != 0xffffff && pc2 < MAX_RAM_ADDRESS )
-              {
-                      DList dl;
-                      dl.addr = pc2;
-                      dl.limit = ~0;
-                      gDisplayListStack.push_back(dl);
-              }
-      }
-      else if( (command.cmd1) == 0 )
-      {
-              DLParser_PopDL();
-      }
-      else
-      {
-              DLParser_Nothing( command );
-              DLParser_PopDL();
-      }
-}
-
-void DLParser_TexRect_Last_Legion( MicroCodeCommand command )
-{
-	u32 pc = gDisplayListStack.back().addr;		// This points to the next instruction
-	u32 command2 = *(u32 *)(g_ps8RamBase + pc);
-	u32 command3 = *(u32 *)(g_ps8RamBase + pc+4);
-
-	gDisplayListStack.back().addr += 8;
-
-	DL_PF("0x%08x: %08x %08x", pc, *(u32 *)(g_ps8RamBase + pc+0), *(u32 *)(g_ps8RamBase + pc+4));
-
-
-	RDP_TexRect tex_rect;
-	tex_rect.cmd0 = command.cmd0;
-	tex_rect.cmd1 = command.cmd1;
-	
-	//Fisnihing up instructions ! 
-	tex_rect.cmd2 = command2;
-	tex_rect.cmd3 = command3;
-
-	v2 d( tex_rect.dsdx / 1024.0f, tex_rect.dtdy / 1024.0f );
-	v2 xy0( tex_rect.x0 / 4.0f, tex_rect.y0 / 4.0f );
-	v2 xy1( tex_rect.x1 / 4.0f, tex_rect.y1 / 4.0f );
-	v2 uv0( tex_rect.s / 32.0f, tex_rect.t / 32.0f );
-	v2 uv1;
-
-	if ((gOtherModeH & G_CYC_COPY) == G_CYC_COPY)
-	{
-		d.x /= 4.0f;	// In copy mode 4 pixels are copied at once.
-	}
-
-	uv1.x = uv0.x + d.x * ( xy1.x - xy0.x );
-	uv1.y = uv0.y + d.y * ( xy1.y - xy0.y );
-
-	PSPRenderer::Get()->TexRect( tex_rect.tile_idx, xy0, xy1, uv0, uv1 );
-}
-//*****************************************************************************
-//*GoldenEye 007 - Sky Fix
-//*****************************************************************************
-void DLParser_RDPHalf_1_0xb4_GoldenEye( MicroCodeCommand command )
-{
-	if( (command.cmd1>>24) == 0xce )
-		{
-		//
-		// Fetch the next two instructions
-		//
-		MicroCodeCommand command2;
-		MicroCodeCommand command3;
-
-
-	//for debugging
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-		u32 address = gDisplayListStack.back().addr;		// This points to the next instruction
-		u32 dw1 = *(u32 *)(g_ps8RamBase + address+8*0+4);
-		u32 dw2 = *(u32 *)(g_ps8RamBase + address+8*1+4);
-		u32 dw3 = *(u32 *)(g_ps8RamBase + address+8*2+4);
-		u32 dw4 = *(u32 *)(g_ps8RamBase + address+8*3+4);
-		u32 dw5 = *(u32 *)(g_ps8RamBase + address+8*4+4);
-		u32 dw6 = *(u32 *)(g_ps8RamBase + address+8*5+4);
-		u32 dw7 = *(u32 *)(g_ps8RamBase + address+8*6+4);
-		u32 dw8 = *(u32 *)(g_ps8RamBase + address+8*7+4);
-		u32 dw9 = *(u32 *)(g_ps8RamBase + address+8*8+4);
-#endif
-
-
-		if( !DLParser_FetchNextCommand( &command2 ) ||
-			!DLParser_FetchNextCommand( &command3 ) )
-			return;
-
-		RDP_TexRect tex_rect;
-		tex_rect.cmd0 = command.cmd0;
-		tex_rect.cmd1 = command.cmd1;
-		tex_rect.cmd2 = command2.cmd1;
-		tex_rect.cmd3 = command3.cmd1;
-
-		v2 d( tex_rect.dsdx / 1024.0f, tex_rect.dtdy / 1024.0f );
-		v2 xy0( tex_rect.x0 / 4.0f, tex_rect.y0 / 4.0f );
-		v2 xy1( tex_rect.x1 / 4.0f, tex_rect.y1 / 4.0f );
-		v2 uv0( tex_rect.s / 32.0f, tex_rect.t / 32.0f );
-		v2 uv1;
-
-		if ((gOtherModeH & G_CYC_COPY) == G_CYC_COPY)
-		{
-			d.x /= 4.0f;	// In copy mode 4 pixels are copied at once.
-		}
-
-		uv1.x = uv0.x + d.x * ( xy1.x - xy0.x );
-		uv1.y = uv0.y + d.y * ( xy1.y - xy0.y );
-
-		DL_PF("Golden Eye Sky Debug ");
-		DL_PF("    Tile:%d Screen(%f,%f) -> (%f,%f)",				   tex_rect.tile_idx, xy0.x, xy0.y, xy1.x, xy1.y);
-		DL_PF("           Tex:(%#5f,%#5f) -> (%#5f,%#5f) (DSDX:%#5f DTDY:%#5f)",          uv0.x, uv0.y, uv1.x, uv1.y, d.x, d.y);
-		DL_PF(" Word 1: %u, Word 2: %u, Word 3: %u, Word 4: %u, Word 5: %u, Word 6: %u, Word 7: %u, Word 8: %u, Word 9: %u", dw1, dw2, dw3, dw4, dw5, dw6, dw7, dw8, dw9);
-		DL_PF(" ");
-
-		PSPRenderer::Get()->TexRect( tex_rect.tile_idx, xy0, xy1, uv0, uv1 );
-	}
-
-	 //Skips the next few uneeded RDP_Half commands since we use them here or they are unneeded
-	gDisplayListStack.back().addr += 312;
-
-	gRDPHalf1 = u32(command._u64 & 0xffffffff);
-
 }
 
 //*****************************************************************************
@@ -346,6 +186,9 @@ void DLParser_DLInMem( MicroCodeCommand command )
 	}
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 /*
 00229C28: 01400040 002327C0 CMD G_MTX  {Matrix} at 802327C0 ind 1  Load:Mod 
 00229BB8: 01400040 00232740 CMD G_MTX  {Matrix} at 80232740 ind 1  Load:Mod 
@@ -450,8 +293,9 @@ void DLParser_MtxDKR( MicroCodeCommand command )
 	}*/
 }
 
-//static u32 gAmbientLightIdx = 0;
+//*****************************************************************************
 //
+//*****************************************************************************
 void DLParser_MoveWord_DKR( MicroCodeCommand command )
 {
 	u32 num_lights;
@@ -501,7 +345,7 @@ void DLParser_GBI0_Vtx_DKR( MicroCodeCommand command )
 	// Check that address is valid...
 	if ((address + (num_verts*16)) > MAX_RAM_ADDRESS)
 	{
-		DBGConsole_Msg(0, "SetNewVertexInfo: Address out of range (0x%08x)", address);
+		DBGConsole_Msg(0, "SetNewVertexInfoDKR: Address out of range (0x%08x)", address);
 	}
 	else
 	{
@@ -542,7 +386,7 @@ void DLParser_GBI0_Vtx_WRUS( MicroCodeCommand command )
 		return;
 	}
 
-	PSPRenderer::Get()->SetNewVertexInfo( address, v0, n );
+	PSPRenderer::Get()->SetNewVertexInfoVFPU( address, v0, n );
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	gNumVertices += n;
@@ -602,4 +446,177 @@ void DLParser_DmaTri( MicroCodeCommand command )
 	{
 		PSPRenderer::Get()->FlushTris();
 	}
+}
+//*****************************************************************************
+
+//IS called Last Legion, but is used for several other games like: Dark Rift, Toukon Road, Toukon Road 2.
+
+//*****************************************************************************
+// Only thing I can't figure out why are the characters on those games invisble?
+// Dark Rift runs properly without custom microcodes, and has the same symptoms...
+// We need Turbo3D ucode support, actually a modified version of it, thanks Gonetz for the info :D
+
+void DLParser_RSP_Last_Legion_0x80( MicroCodeCommand command )
+{     
+      gDisplayListStack.back().addr += 16;
+	  DL_PF("DLParser_RSP_Last_Legion_0x80");
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void DLParser_RSP_Last_Legion_0x00( MicroCodeCommand command )
+{
+
+      gDisplayListStack.back().addr += 16;
+	  DL_PF("DLParser_RSP_Last_Legion_0x00");
+
+      if( (command.cmd0) == 0 && (command.cmd1) )
+      {
+              u32 newaddr = RDPSegAddr((command.cmd1));
+              if( newaddr >= MAX_RAM_ADDRESS )
+              {
+                      DLParser_PopDL();
+                      return;
+              }
+
+              u32 pc1 = *(u32 *)(g_pu8RamBase + newaddr+8*1+4);
+              u32 pc2 = *(u32 *)(g_pu8RamBase + newaddr+8*4+4);
+              pc1 = RDPSegAddr(pc1);
+              pc2 = RDPSegAddr(pc2);
+
+              if( pc1 && pc1 != 0xffffff && pc1 < MAX_RAM_ADDRESS)
+              {
+                      // Need to call both DL
+                      DList dl;
+                      dl.addr = pc1;
+                      dl.limit = ~0;
+                      gDisplayListStack.push_back(dl);
+              }
+
+              if( pc2 && pc2 != 0xffffff && pc2 < MAX_RAM_ADDRESS )
+              {
+                      DList dl;
+                      dl.addr = pc2;
+                      dl.limit = ~0;
+                      gDisplayListStack.push_back(dl);
+              }
+      }
+      else if( (command.cmd1) == 0 )
+      {
+              DLParser_PopDL();
+      }
+      else
+      {
+              DLParser_Nothing( command );
+              DLParser_PopDL();
+      }
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void DLParser_TexRect_Last_Legion( MicroCodeCommand command )
+{
+	u32 pc = gDisplayListStack.back().addr;		// This points to the next instruction
+	u32 command2 = *(u32 *)(g_ps8RamBase + pc);
+	u32 command3 = *(u32 *)(g_ps8RamBase + pc+4);
+
+	gDisplayListStack.back().addr += 8;
+
+	DL_PF("0x%08x: %08x %08x", pc, *(u32 *)(g_ps8RamBase + pc+0), *(u32 *)(g_ps8RamBase + pc+4));
+
+
+	RDP_TexRect tex_rect;
+	tex_rect.cmd0 = command.cmd0;
+	tex_rect.cmd1 = command.cmd1;
+	
+	//Fisnihing up instructions ! 
+	tex_rect.cmd2 = command2;
+	tex_rect.cmd3 = command3;
+
+	v2 d( tex_rect.dsdx / 1024.0f, tex_rect.dtdy / 1024.0f );
+	v2 xy0( tex_rect.x0 / 4.0f, tex_rect.y0 / 4.0f );
+	v2 xy1( tex_rect.x1 / 4.0f, tex_rect.y1 / 4.0f );
+	v2 uv0( tex_rect.s / 32.0f, tex_rect.t / 32.0f );
+	v2 uv1;
+
+	if ((gOtherModeH & G_CYC_COPY) == G_CYC_COPY)
+	{
+		d.x /= 4.0f;	// In copy mode 4 pixels are copied at once.
+	}
+
+	uv1.x = uv0.x + d.x * ( xy1.x - xy0.x );
+	uv1.y = uv0.y + d.y * ( xy1.y - xy0.y );
+
+	PSPRenderer::Get()->TexRect( tex_rect.tile_idx, xy0, xy1, uv0, uv1 );
+}
+
+//*****************************************************************************
+//*GoldenEye 007 - Sky Fix
+//*****************************************************************************
+void DLParser_RDPHalf_1_0xb4_GoldenEye( MicroCodeCommand command )
+{
+	if( (command.cmd1>>24) == 0xce )
+		{
+		//
+		// Fetch the next two instructions
+		//
+		MicroCodeCommand command2;
+		MicroCodeCommand command3;
+
+
+	//for debugging
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+		u32 address = gDisplayListStack.back().addr;		// This points to the next instruction
+		u32 dw1 = *(u32 *)(g_ps8RamBase + address+8*0+4);
+		u32 dw2 = *(u32 *)(g_ps8RamBase + address+8*1+4);
+		u32 dw3 = *(u32 *)(g_ps8RamBase + address+8*2+4);
+		u32 dw4 = *(u32 *)(g_ps8RamBase + address+8*3+4);
+		u32 dw5 = *(u32 *)(g_ps8RamBase + address+8*4+4);
+		u32 dw6 = *(u32 *)(g_ps8RamBase + address+8*5+4);
+		u32 dw7 = *(u32 *)(g_ps8RamBase + address+8*6+4);
+		u32 dw8 = *(u32 *)(g_ps8RamBase + address+8*7+4);
+		u32 dw9 = *(u32 *)(g_ps8RamBase + address+8*8+4);
+#endif
+
+
+		if( !DLParser_FetchNextCommand( &command2 ) ||
+			!DLParser_FetchNextCommand( &command3 ) )
+			return;
+
+		RDP_TexRect tex_rect;
+		tex_rect.cmd0 = command.cmd0;
+		tex_rect.cmd1 = command.cmd1;
+		tex_rect.cmd2 = command2.cmd1;
+		tex_rect.cmd3 = command3.cmd1;
+
+		v2 d( tex_rect.dsdx / 1024.0f, tex_rect.dtdy / 1024.0f );
+		v2 xy0( tex_rect.x0 / 4.0f, tex_rect.y0 / 4.0f );
+		v2 xy1( tex_rect.x1 / 4.0f, tex_rect.y1 / 4.0f );
+		v2 uv0( tex_rect.s / 32.0f, tex_rect.t / 32.0f );
+		v2 uv1;
+
+		if ((gOtherModeH & G_CYC_COPY) == G_CYC_COPY)
+		{
+			d.x /= 4.0f;	// In copy mode 4 pixels are copied at once.
+		}
+
+		uv1.x = uv0.x + d.x * ( xy1.x - xy0.x );
+		uv1.y = uv0.y + d.y * ( xy1.y - xy0.y );
+
+		DL_PF("Golden Eye Sky Debug ");
+		DL_PF("    Tile:%d Screen(%f,%f) -> (%f,%f)",				   tex_rect.tile_idx, xy0.x, xy0.y, xy1.x, xy1.y);
+		DL_PF("           Tex:(%#5f,%#5f) -> (%#5f,%#5f) (DSDX:%#5f DTDY:%#5f)",          uv0.x, uv0.y, uv1.x, uv1.y, d.x, d.y);
+		DL_PF(" Word 1: %u, Word 2: %u, Word 3: %u, Word 4: %u, Word 5: %u, Word 6: %u, Word 7: %u, Word 8: %u, Word 9: %u", dw1, dw2, dw3, dw4, dw5, dw6, dw7, dw8, dw9);
+		DL_PF(" ");
+
+		PSPRenderer::Get()->TexRect( tex_rect.tile_idx, xy0, xy1, uv0, uv1 );
+	}
+
+	 //Skips the next few uneeded RDP_Half commands since we use them here or they are unneeded
+	gDisplayListStack.back().addr += 312;
+
+	gRDPHalf1 = u32(command._u64 & 0xffffffff);
+
 }

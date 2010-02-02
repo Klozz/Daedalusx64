@@ -114,7 +114,7 @@ namespace
 	{
 		"Daedalus could not find any roms to load.",
 		"You can add roms to both the \\N64\\ directory on your memory stick (e.g. P:\\N64\\) or the Roms directory within the Daedalus folder (e.g. P:\\PSP\\GAME\\Daedalus\\Roms\\).",
-		"Daedalus recognises a number of different filetypes, including .zip, .z64, .v64, .rom, .pal, .usa and .jap.",
+		"Daedalus recognises a number of different filetypes, including .zip, .z64, .v64, .rom, .bin, .pal, .usa and .jap.",
 	};
 
 	const u32				CATEGORY_AREA_TOP = TEXT_AREA_TOP + TEXT_AREA_HEIGHT + 5;

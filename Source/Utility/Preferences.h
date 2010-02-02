@@ -124,7 +124,6 @@ struct SRomPreferences
 	bool						ViewPortHackEnabled;
 	bool						FlatShadeDisabled;
 	bool						CleanSceneEnabled;
-	bool						CullingDisabled;
 	bool						ForceDepthBuffer;
 	bool						FlushTrisHack;
 

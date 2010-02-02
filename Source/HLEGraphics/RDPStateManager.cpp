@@ -240,12 +240,8 @@ const TextureInfo & CRDPStateManager::GetTextureDescriptor( u32 idx ) const
 			ti.SetFormat( G_IM_FMT_CI );
 		}
 
-		if (ti.GetFormat() == G_IM_FMT_CI)
-		{
-			if (ti.GetTLutFormat() == G_TT_NONE)
-				ti.SetTLutFormat( G_TT_RGBA16 );		// Force RGBA
-
-		}
+		if (ti.GetFormat() == G_IM_FMT_CI && ti.GetTLutFormat() == G_TT_NONE )
+			ti.SetTLutFormat( G_TT_RGBA16 );		// Force RGBA
 
 		mTileTextureInfoValid[ idx ] = true;
 	}

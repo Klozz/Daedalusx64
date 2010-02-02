@@ -44,7 +44,10 @@ u32 s_nNumSPTransfers = 0;			// Incremented on every RDRAM->SPMem Xfer
 u32 s_nTotalSPTransferSize = 0;	// Total size of every RDRAM->SPMem Xfer
 
 bool gDMAUsed = false;
+
+#ifndef DAEDALUS_PUBLIC_RELEASE
 bool gLogSpDMA = false;
+#endif
 
 
 //*****************************************************************************
@@ -81,11 +84,12 @@ void DMA_SP_CopyFromRDRAM()
 //		DBGConsole_Msg( 0, "SP DMA to RDRAM crosses memory segment" );
 		return;
 	}
-
+#ifndef DAEDALUS_PUBLIC_RELEASE
 	if ( gLogSpDMA )
 	{
 		DBGConsole_Msg( 0, "SP: DMA 0x%08x <- 0x%08x L:%08x C:%02x S:%03x", spmem_address, rdram_address, length+1, count, skip );
 	}
+#endif
 
 //Todo:Try to optimize futher Little Endian code
 //Big Endian
@@ -102,7 +106,7 @@ void DMA_SP_CopyFromRDRAM()
 //Little Endian
 	if (skip != 0 || count != 0)
 	{
-		u32 i, c;
+		u32 c;
 
 		for ( c = 0; c <= count; c++ )
 		{
@@ -201,12 +205,12 @@ void DMA_SP_CopyToRDRAM()
 		DBGConsole_Msg( 0, "SP DMA to RDRAM crosses memory segment" );
 		return;
 	}
-
+#ifndef DAEDALUS_PUBLIC_RELEASE
 	if ( gLogSpDMA )
 	{
 		DBGConsole_Msg( 0, "SP: DMA 0x%08x -> 0x%08x L:%08x C:%02x S:%03x", spmem_address, rdram_address, length+1, count, skip );
 	}
-
+#endif
 //Todo:Try to optimize futher Little Endian code
 //Big Endian
 /*	for ( u32 c = 0; c <= count; c++ )
@@ -252,12 +256,14 @@ void DMA_SI_CopyFromDRAM( )
 
 	memcpy(p_dst, p_src, 64);
 
+#ifndef DAEDALUS_PUBLIC_RELEASE
 	u8 control_byte = p_dst[ 63 ^ U8_TWIDDLE ];
 
 	if ( control_byte > 0x01 )
 	{
 		DBGConsole_Msg(0, "[WTransfer wrote 0x%02x to the status reg]", control_byte );
 	}
+#endif
 
 	Memory_SI_SetRegisterBits(SI_STATUS_REG, SI_STATUS_INTERRUPT);
 	Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_SI);
@@ -365,6 +371,16 @@ void DMA_PI_CopyToRDRAM()
 
 	bool copy_succeeded;
 
+	if(pi_length_reg & 0x1)
+	{
+		DBGConsole_Msg(0, "PI Copy CART to RDRAM %db from %08X to %08X", pi_length_reg, cart_address|0xA0000000, mem_address);
+		DBGConsole_Msg(0, "Warning, PI DMA, odd length");
+
+		//This makes Doraemon 3 work !
+
+		pi_length_reg ++;
+	}
+
 	if ( IsDom2Addr1( cart_address ) )
 	{
 		//DBGConsole_Msg(0, "[YReading from Cart domain 2/addr1]");
@@ -438,8 +454,11 @@ void DMA_PI_CopyToRDRAM()
 
 		//CDebugConsole::Get()->Stats( STAT_PI, "PI: C->R %d %dMB", s_nNumDmaTransfers, s_nTotalDmaTransferSize/(1024*1024));
 	}
+// XXX irrelevant to end user
+#ifndef DAEDALUS_PUBLIC_RELEASE
 	else
 	{
+		// Road Rash triggers this !
 		DBGConsole_Msg(0, "PI: Copying 0x%08x bytes of data from 0x%08x to 0x%08x",
 			Memory_PI_GetRegister(PI_WR_LEN_REG),
 			Memory_PI_GetRegister(PI_CART_ADDR_REG),
@@ -447,7 +466,8 @@ void DMA_PI_CopyToRDRAM()
 		DBGConsole_Msg(0, "PIXFer: Copy overlaps RAM/ROM boundary");
 		DBGConsole_Msg(0, "PIXFer: Not copying, but issuing interrupt");
 	}
-
+#endif
+	// Is this a hack?
 	if (!gDMAUsed)
 	{ 
 		gDMAUsed = true;
@@ -475,6 +495,16 @@ void DMA_PI_CopyFromRDRAM()
 	DPF(DEBUG_MEMORY_PI, "PI: Copying %d bytes of data from 0x%08x to 0x%08x", pi_length_reg, mem_address, cart_address );
 
 	bool copy_succeeded;
+
+	if(pi_length_reg & 0x1)
+	{
+		DBGConsole_Msg(0, "PI Copy RDRAM to CART %db from %08X to %08X", pi_length_reg, cart_address|0xA0000000, mem_address);
+		DBGConsole_Msg(0, "Warning, PI DMA, odd length");
+
+		// Tonic Trouble triggers this !
+
+		pi_length_reg ++;
+	}
 
 	if ( IsDom2Addr1( cart_address ) ) //  0x05000000
 	{
@@ -528,7 +558,8 @@ void DMA_PI_CopyFromRDRAM()
 		R4300_Interrupt_UpdateCause3();
 		return;
 	}
-
+// XXX irrelevant to end user
+#ifndef DAEDALUS_PUBLIC_RELEASE
 	if (copy_succeeded)
 	{
 		// Nothing to do
@@ -540,6 +571,7 @@ void DMA_PI_CopyFromRDRAM()
 		DBGConsole_Msg(0, "PIXFer: Copy overlaps RAM/ROM boundary");
 		DBGConsole_Msg(0, "PIXFer: Not copying, but issuing interrupt");
 	}
+#endif
 
 	Memory_PI_ClrRegisterBits(PI_STATUS_REG, PI_STATUS_DMA_BUSY);
 	Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_PI);

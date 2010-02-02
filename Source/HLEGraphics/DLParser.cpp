@@ -543,12 +543,8 @@ static void DLParser_SetuCode( GBIVersion gbi_version, UCodeVersion ucode_versio
 			DLParser_GBI1_Line3D_Instruction = DLParser_GBI1_Line3D_T< 10 >;
 			break;
 		case GBI_0_WR:
-			gVertexStride = 5;	
-			DLParser_GBI1_Tri1_Instruction = DLParser_GBI1_Tri1_T< 5 >;
-			DLParser_GBI1_Tri2_Instruction = DLParser_GBI1_Tri2_T< 5 >;
-			DLParser_GBI1_Line3D_Instruction = DLParser_GBI1_Line3D_T< 5 >;
 		case GBI_0_SE:
-			gVertexStride = 5; // Don't set higher than this
+			gVertexStride = 5;	
 			DLParser_GBI1_Tri1_Instruction = DLParser_GBI1_Tri1_T< 5 >;
 			DLParser_GBI1_Tri2_Instruction = DLParser_GBI1_Tri2_T< 5 >;
 			DLParser_GBI1_Line3D_Instruction = DLParser_GBI1_Line3D_T< 5 >;
@@ -713,6 +709,7 @@ static void DLParser_SetuCode( GBIVersion gbi_version, UCodeVersion ucode_versio
 		SetCommand( G_GBI2_BRANCH_Z			, DLParser_GBI1_BranchZ );
 		SetCommand( G_GBI2_TRI1				, DLParser_GBI2_Tri1 );
 		SetCommand( G_GBI2_TRI2				, DLParser_GBI2_Tri2 );
+		SetCommand( G_GBI2_QUAD				, DLParser_GBI2_Quad );
 		SetCommand( G_GBI2_LINE3D			, DLParser_GBI2_Line3D );
 
 		if( ucode_version == S2DEX )

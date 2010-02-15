@@ -128,10 +128,12 @@ void DLParser_GBI1_Tri2_T( MicroCodeCommand command )
                 command.cmd1= *pCmdBase++;
                 pc += 8;
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
                 if ( command.cmd == G_GBI1_TRI2 )
                 {
 //                        DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.cmd0, command.cmd1, gInstructionName[ command.cmd ]);
                 }
+#endif
         }
         gDisplayListStack.back().addr = pc-8;
 
@@ -169,10 +171,12 @@ void DLParser_GBI1_Line3D_T( MicroCodeCommand command )
                 command.cmd1 = *pCmdBase++;
                 pc += 8;
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
                 if ( command.cmd == G_GBI1_LINE3D )
                 {
 //                        DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.cmd0, command.cmd1, gInstructionName[ command.cmd ]);
                 }
+#endif
         }
 
         gDisplayListStack.back().addr = pc-8;
@@ -211,10 +215,12 @@ void DLParser_GBI1_Tri1_T( MicroCodeCommand command )
                 command.cmd1= *pCmdBase++;
                 pc += 8;
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
                 if ( command.cmd == G_GBI1_TRI1 )
                 {
   //                      DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.cmd0, command.cmd1, gInstructionName[ command.cmd ]);
                 }
+#endif
         }
 
         gDisplayListStack.back().addr = pc-8;

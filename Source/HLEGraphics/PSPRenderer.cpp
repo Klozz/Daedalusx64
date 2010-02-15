@@ -741,8 +741,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 {
 	DAEDALUS_PROFILE( "PSPRenderer::RenderUsingCurrentBlendMode" );
 
-	// Only update if ZBuffer is enabled
-	if ( disable_zbuffer && !m_bZBuffer )
+	if ( disable_zbuffer )
 	{
 		sceGuDisable(GU_DEPTH_TEST);
 		sceGuDepthMask( GL_TRUE );	// GL_TRUE to disable z-writes
@@ -753,12 +752,21 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 			(gRDPOtherMode._u64 != gLastRDPOtherMode._u64) ||
 			 (m_bZBuffer != gLastUseZBuffer) )
 		{
-			if(gRDPOtherMode.z_cmp)
-				sceGuEnable(GU_DEPTH_TEST);
-			else
-				sceGuDisable(GU_DEPTH_TEST);
+			// Only update if ZBuffer is enabled
+			if (m_bZBuffer)
+			{
+				if(gRDPOtherMode.z_cmp)
+					sceGuEnable(GU_DEPTH_TEST);
+				else
+					sceGuDisable(GU_DEPTH_TEST);
 
-			sceGuDepthMask(gRDPOtherMode.z_upd ? GL_FALSE : GL_TRUE); // no depth buffer writes
+				sceGuDepthMask( gRDPOtherMode.z_upd ? GL_FALSE : GL_TRUE );	// GL_TRUE to disable z-writes
+			}
+			else
+			{
+				sceGuDisable(GU_DEPTH_TEST);
+				sceGuDepthMask( GL_TRUE );	// GL_TRUE to disable z-writes
+			}
 
 			gNeedZBufferUdate = false;
 			gLastUseZBuffer = m_bZBuffer;
@@ -858,6 +866,9 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 #define BLEND_MEM1				0x4c400000		// Mem*0 + Mem*(1-0)?!
 #define BLEND_MEM2				0x13100000		// Mem*0 + Mem*(1-0)?!
 
+#define BLEND_NOOP3				0x0c480000		// In * 0 + Mem * 1
+#define BLEND_NOOP4				0xcc080000		// Fog * 0 + In * 1
+
 
 	if ( gRDPOtherMode.cycle_type == CYCLE_FILL )
 	{
@@ -921,6 +932,10 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		case MAKE_BLEND_MODE( BLEND_MEM1, BLEND_MEM2 ):
 			enable_blend = false;
 			DL_PF( "      Blend: MEM/MEM" );
+			break;
+		case MAKE_BLEND_MODE( BLEND_NOOP4, BLEND_NOOP2 ):	// Used by Space Station SL
+			enable_blend = false;
+			DL_PF( "      Blend: NOOP4/NOOP2" );
 			break;
 		default:
 			blend_op = GU_ADD; blend_src = GU_SRC_ALPHA; blend_dst = GU_ONE_MINUS_SRC_ALPHA;

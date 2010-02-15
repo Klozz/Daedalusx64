@@ -29,7 +29,7 @@ class v2;
 
 class CUIContext
 {
-	public:
+	public://
 		virtual ~CUIContext();
 
 		static CUIContext *			Create();
@@ -50,7 +50,7 @@ class CUIContext
 
 		virtual void				RenderTexture( const CNativeTexture * texture, const v2 & tl, const v2 & wh, c32 colour ) = 0;
 		virtual void				RenderTexture( const CNativeTexture * texture, s32 x, s32 y, c32 colour ) = 0;
-				void				ClearBackground()		{ ClearBackground( GetBackgroundColour() ); }
+				void				ClearBackground()		{ ClearBackground( c32::Black ); }
 		virtual void				ClearBackground( c32 colour ) = 0;
 		virtual void				DrawRect( s32 x, s32 y, u32 w, u32 h, c32 colour ) = 0;
 		virtual void				DrawLine( s32 x0, s32 y0, s32 x1, s32 y1, c32 colour ) = 0;

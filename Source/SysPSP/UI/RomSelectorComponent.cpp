@@ -51,6 +51,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <map>
 #include <algorithm>
 
+int romselmenuani = 0;
+int romselmenufs = 31;
+int romselmenudir = 0;
 
 namespace
 {
@@ -100,14 +103,14 @@ namespace
 		return gCategoryLetters[ category ];
 	}
 
-	const u32				ICON_AREA_TOP = 32;
-	const u32				ICON_AREA_LEFT = 20;
-	const u32				ICON_AREA_WIDTH = 128;
-	const u32				ICON_AREA_HEIGHT = 96;
+	const u32				ICON_AREA_TOP = 48;
+	u32				ICON_AREA_LEFT = 20;
+	const u32				ICON_AREA_WIDTH = 256;
+	const u32				ICON_AREA_HEIGHT = 177;
 
 	const u32				TEXT_AREA_TOP = 32;
-	const u32				TEXT_AREA_LEFT = 20 + 128 + 10;
-	const u32				TEXT_AREA_WIDTH = 480 - TEXT_AREA_LEFT;
+	u32				TEXT_AREA_LEFT = 300;
+	const u32				TEXT_AREA_WIDTH = 148;
 	const u32				TEXT_AREA_HEIGHT = 216;
 
 	const char * const		gNoRomsText[] =
@@ -122,8 +125,8 @@ namespace
 
 	const char * const		gPreviewDirectory = DAEDALUS_PSP_PATH( "Resources/Preview/" );
 
-	const f32				PREVIEW_SCROLL_WAIT = 0.75f;		// seconds to wait for scrolling to stop before loading preview (prevent thrashing)
-	const f32				PREVIEW_FADE_TIME = 0.5f;		// seconds
+	const f32				PREVIEW_SCROLL_WAIT = 0.65f;		// seconds to wait for scrolling to stop before loading preview (prevent thrashing)
+	const f32				PREVIEW_FADE_TIME = 0.50f;		// seconds
 }
 
 //*************************************************************************************
@@ -362,8 +365,8 @@ void IRomSelectorComponent::DrawInfoText(  CUIContext * p_context, s32 y, const 
 {
 	c32			colour(	p_context->GetDefaultTextColour() );
 
-	p_context->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_LEFT, y, field_txt, colour );
-	p_context->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_RIGHT, y, value_txt, colour );
+	p_context->DrawTextAlign( TEXT_AREA_LEFT, TEXT_AREA_LEFT + TEXT_AREA_WIDTH, AT_LEFT, y, field_txt, colour );
+	p_context->DrawTextAlign( TEXT_AREA_LEFT, TEXT_AREA_LEFT + TEXT_AREA_WIDTH, AT_RIGHT, y, value_txt, colour );
 }
 
 //*************************************************************************************
@@ -371,63 +374,148 @@ void IRomSelectorComponent::DrawInfoText(  CUIContext * p_context, s32 y, const 
 //*************************************************************************************
 void IRomSelectorComponent::RenderPreview()
 {
-	mpContext->DrawRect( ICON_AREA_LEFT-2, ICON_AREA_TOP-2, ICON_AREA_WIDTH+4, ICON_AREA_HEIGHT+4, c32::White );
-	mpContext->DrawRect( ICON_AREA_LEFT-1, ICON_AREA_TOP-1, ICON_AREA_WIDTH+2, ICON_AREA_HEIGHT+2, mpContext->GetBackgroundColour() );
+	const char * noimage = "No Image Available";
 
-	v2	tl( ICON_AREA_LEFT, ICON_AREA_TOP );
-	v2	wh( ICON_AREA_WIDTH, ICON_AREA_HEIGHT );
-
-	if( mpPreviewTexture != NULL )
-	{
-		c32		colour( c32::White );
-
-		if ( mPreviewLoadedTime < PREVIEW_FADE_TIME )
-		{
-			colour = c32( 255, 255, 255, u8( mPreviewLoadedTime * 255.f / PREVIEW_FADE_TIME ) );
+	romselmenufs++;
+	if (romselmenufs >= 3000) { romselmenufs = 51; }
+	if (romselmenuani == 1) {
+		romselmenufs = 1; 
+		romselmenuani = 0;
+	}
+	
+	if (romselmenufs < 31) {	
+		if ((romselmenufs < 6) && (romselmenudir == 1)) { ICON_AREA_LEFT = -391; TEXT_AREA_LEFT = -111; }		
+		else if ((romselmenufs < 11) && (romselmenudir == 1)) { ICON_AREA_LEFT = -322; TEXT_AREA_LEFT = -42; }
+		else if ((romselmenufs < 16) && (romselmenudir == 1)) { ICON_AREA_LEFT = -254; TEXT_AREA_LEFT = 26; }
+		else if ((romselmenufs < 21) && (romselmenudir == 1)) { ICON_AREA_LEFT = -185; TEXT_AREA_LEFT = 95; }
+		else if ((romselmenufs < 26) && (romselmenudir == 1)) { ICON_AREA_LEFT = -117; TEXT_AREA_LEFT = 163; }
+		else if ((romselmenufs < 31) && (romselmenudir == 1)) { ICON_AREA_LEFT = -48; TEXT_AREA_LEFT = 232; }
+		if ((romselmenufs < 6) && (romselmenudir == 2)) { ICON_AREA_LEFT = 431; TEXT_AREA_LEFT = 711; }
+		else if ((romselmenufs < 11) && (romselmenudir == 2)) { ICON_AREA_LEFT = 362; TEXT_AREA_LEFT = 642; }
+		else if ((romselmenufs < 16) && (romselmenudir == 2)) { ICON_AREA_LEFT = 294; TEXT_AREA_LEFT = 574; }
+		else if ((romselmenufs < 21) && (romselmenudir == 2)) { ICON_AREA_LEFT = 225; TEXT_AREA_LEFT = 505; }
+		else if ((romselmenufs < 26) && (romselmenudir == 2)) { ICON_AREA_LEFT = 157; TEXT_AREA_LEFT = 437; }
+		else if ((romselmenufs < 31) && (romselmenudir == 2)) { ICON_AREA_LEFT = 88; TEXT_AREA_LEFT = 368; }
+		
+		if (romselmenufs > 16) {
+		mpContext->DrawRect( ICON_AREA_LEFT-2, ICON_AREA_TOP-2, ICON_AREA_WIDTH+4, ICON_AREA_HEIGHT+4, c32::White );
+		mpContext->DrawRect( ICON_AREA_LEFT-1, ICON_AREA_TOP-1, ICON_AREA_WIDTH+2, ICON_AREA_HEIGHT+2, mpContext->GetBackgroundColour() ); 
 		}
 
-		mpContext->DrawRect( ICON_AREA_LEFT, ICON_AREA_TOP, ICON_AREA_WIDTH, ICON_AREA_HEIGHT, c32::Black );
-		mpContext->RenderTexture( mpPreviewTexture, tl, wh, colour );
+		v2	tl( ICON_AREA_LEFT, ICON_AREA_TOP );
+		v2	wh( ICON_AREA_WIDTH, ICON_AREA_HEIGHT );
+
+		if( mpPreviewTexture != NULL )
+		{
+			c32		colour( c32::White );
+			mpContext->DrawRect( ICON_AREA_LEFT, ICON_AREA_TOP, ICON_AREA_WIDTH, ICON_AREA_HEIGHT, c32::Black );
+		}
+		else
+		{
+			mpContext->DrawRect( ICON_AREA_LEFT, ICON_AREA_TOP, ICON_AREA_WIDTH, ICON_AREA_HEIGHT, c32::Black );
+			mpContext->DrawText( (ICON_AREA_LEFT + (ICON_AREA_WIDTH / 2)) - (mpContext->GetTextWidth(noimage) / 2), ICON_AREA_TOP + (ICON_AREA_HEIGHT / 2), noimage, mpContext->GetDefaultTextColour() );
+		}
+
+
+		u32		font_height( mpContext->GetFontHeight() );
+		u32		line_height( font_height + 2 );
+
+		s32 y = 156 - (( line_height * 3) + 12);
+
+		if( mCurrentSelection < mRomsList.size() )
+		{
+			SRomInfo *	p_rominfo( mRomsList[ mCurrentSelection ] );
+
+			const char *	cic_name( ROM_GetCicName( p_rominfo->mCicType ) );
+			const char *	country( ROM_GetCountryNameFromID( p_rominfo->mRomID.CountryID ) );
+			u32				rom_size( p_rominfo->mRomSize );
+
+			char buffer[ 32 ];
+			sprintf( buffer, "%d MB", rom_size / (1024*1024) ); 
+
+			DrawInfoText( mpContext, y, "Boot:", cic_name );	y += line_height + 5;
+			DrawInfoText( mpContext, y, "Country:", country );	y += line_height + 5;
+			DrawInfoText( mpContext, y, "Size:", buffer );	y += line_height + 5;
+
+			DrawInfoText( mpContext, y, "Save:", ROM_GetSaveTypeName( p_rominfo->mSettings.SaveType ) ); y += line_height + 5;
+			DrawInfoText( mpContext, y, "EPak:", ROM_GetExpansionPakUsageName( p_rominfo->mSettings.ExpansionPakUsage ) ); y += line_height + 5;
+			DrawInfoText( mpContext, y, "Dynarec:", p_rominfo->mSettings.DynarecSupported ? "Supported" : "Unsupported" ); y += line_height + 5;
+		}
+		else
+		{
+			DrawInfoText( mpContext, y, "Boot:", "" );		y += line_height + 5;
+			DrawInfoText( mpContext, y, "Country:", "" );	y += line_height + 5;
+			DrawInfoText( mpContext, y, "Size:", "" );		y += line_height + 5;
+
+			DrawInfoText( mpContext, y, "Save:", "" );		y += line_height + 5;
+			DrawInfoText( mpContext, y, "EPak:", "" );		y += line_height + 5;
+			DrawInfoText( mpContext, y, "Dynarec:", "" );	y += line_height + 5;
+		}	
+		ICON_AREA_LEFT = 20;
+		TEXT_AREA_LEFT = 300;
 	}
-	else
-	{
-		mpContext->DrawRect( ICON_AREA_LEFT, ICON_AREA_TOP, ICON_AREA_WIDTH, ICON_AREA_HEIGHT, c32::Black );
-	}
+	else {
+		mpContext->DrawRect( ICON_AREA_LEFT-2, ICON_AREA_TOP-2, ICON_AREA_WIDTH+4, ICON_AREA_HEIGHT+4, c32::White );
+		mpContext->DrawRect( ICON_AREA_LEFT-1, ICON_AREA_TOP-1, ICON_AREA_WIDTH+2, ICON_AREA_HEIGHT+2, mpContext->GetBackgroundColour() );
+
+		v2	tl( ICON_AREA_LEFT, ICON_AREA_TOP );
+		v2	wh( ICON_AREA_WIDTH, ICON_AREA_HEIGHT );
+
+		if( mpPreviewTexture != NULL )
+		{
+			c32		colour( c32::White );
+
+			if ( mPreviewLoadedTime < PREVIEW_FADE_TIME )
+			{
+				colour = c32( 255, 255, 255, u8( mPreviewLoadedTime * 255.f / PREVIEW_FADE_TIME ) );
+			}
+
+			mpContext->DrawRect( ICON_AREA_LEFT, ICON_AREA_TOP, ICON_AREA_WIDTH, ICON_AREA_HEIGHT, c32::Black );
+			if (romselmenufs > 46) {
+				mpContext->RenderTexture( mpPreviewTexture, tl, wh, colour );
+			}
+		}
+		else
+		{
+			mpContext->DrawRect( ICON_AREA_LEFT, ICON_AREA_TOP, ICON_AREA_WIDTH, ICON_AREA_HEIGHT, c32::Black );
+			mpContext->DrawText( (ICON_AREA_LEFT + (ICON_AREA_WIDTH / 2)) - (mpContext->GetTextWidth(noimage) / 2), ICON_AREA_TOP + (ICON_AREA_HEIGHT / 2), noimage, mpContext->GetDefaultTextColour() );
+		}
 
 
-	u32		font_height( mpContext->GetFontHeight() );
-	u32		line_height( font_height + 2 );
+		u32		font_height( mpContext->GetFontHeight() );
+		u32		line_height( font_height + 2 );
 
-	s32 y = ICON_AREA_TOP + ICON_AREA_HEIGHT + 10 + font_height;
+		s32 y = 156 - (( line_height * 3) + 12);
 
-	if( mCurrentSelection < mRomsList.size() )
-	{
-		SRomInfo *	p_rominfo( mRomsList[ mCurrentSelection ] );
+		if( mCurrentSelection < mRomsList.size() )
+		{
+			SRomInfo *	p_rominfo( mRomsList[ mCurrentSelection ] );
 
-		const char *	cic_name( ROM_GetCicName( p_rominfo->mCicType ) );
-		const char *	country( ROM_GetCountryNameFromID( p_rominfo->mRomID.CountryID ) );
-		u32				rom_size( p_rominfo->mRomSize );
+			const char *	cic_name( ROM_GetCicName( p_rominfo->mCicType ) );
+			const char *	country( ROM_GetCountryNameFromID( p_rominfo->mRomID.CountryID ) );
+			u32				rom_size( p_rominfo->mRomSize );
 
-		char buffer[ 32 ];
-		sprintf( buffer, "%d MB", rom_size / (1024*1024) );
+			char buffer[ 32 ];
+			sprintf( buffer, "%d MB", rom_size / (1024*1024) ); 
 
-		DrawInfoText( mpContext, y, "Boot:", cic_name );	y += line_height;
-		DrawInfoText( mpContext, y, "Country:", country );	y += line_height;
-		DrawInfoText( mpContext, y, "Size:", buffer );	y += line_height;
+			DrawInfoText( mpContext, y, "Boot:", cic_name );	y += line_height + 5;
+			DrawInfoText( mpContext, y, "Country:", country );	y += line_height + 5;
+			DrawInfoText( mpContext, y, "Size:", buffer );	y += line_height + 5;
 
-		DrawInfoText( mpContext, y, "Save:", ROM_GetSaveTypeName( p_rominfo->mSettings.SaveType ) ); y += line_height;
-		DrawInfoText( mpContext, y, "EPak:", ROM_GetExpansionPakUsageName( p_rominfo->mSettings.ExpansionPakUsage ) ); y += line_height;
-		DrawInfoText( mpContext, y, "Dynarec:", p_rominfo->mSettings.DynarecSupported ? "Supported" : "Unsupported" ); y += line_height;
-	}
-	else
-	{
-		DrawInfoText( mpContext, y, "Boot:", "" );		y += line_height;
-		DrawInfoText( mpContext, y, "Country:", "" );	y += line_height;
-		DrawInfoText( mpContext, y, "Size:", "" );		y += line_height;
+			DrawInfoText( mpContext, y, "Save:", ROM_GetSaveTypeName( p_rominfo->mSettings.SaveType ) ); y += line_height + 5;
+			DrawInfoText( mpContext, y, "EPak:", ROM_GetExpansionPakUsageName( p_rominfo->mSettings.ExpansionPakUsage ) ); y += line_height + 5;
+			DrawInfoText( mpContext, y, "Dynarec:", p_rominfo->mSettings.DynarecSupported ? "Supported" : "Unsupported" ); y += line_height + 5;
+		}
+		else
+		{
+			DrawInfoText( mpContext, y, "Boot:", "" );		y += line_height + 5;
+			DrawInfoText( mpContext, y, "Country:", "" );	y += line_height + 5;
+			DrawInfoText( mpContext, y, "Size:", "" );		y += line_height + 5;
 
-		DrawInfoText( mpContext, y, "Save:", "" );		y += line_height;
-		DrawInfoText( mpContext, y, "EPak:", "" );		y += line_height;
-		DrawInfoText( mpContext, y, "Dynarec:", "" );	y += line_height;
+			DrawInfoText( mpContext, y, "Save:", "" );		y += line_height + 5;
+			DrawInfoText( mpContext, y, "EPak:", "" );		y += line_height + 5;
+			DrawInfoText( mpContext, y, "Dynarec:", "" );	y += line_height + 5;
+		}
 	}
 }
 
@@ -435,55 +523,123 @@ void IRomSelectorComponent::RenderPreview()
 //
 //*************************************************************************************
 void IRomSelectorComponent::RenderRomList()
-{
-	u32		font_height( mpContext->GetFontHeight() );
-	u32		line_height( font_height + 2 );
-
-	s32		x,y;
-	x = TEXT_AREA_LEFT;
-	y = TEXT_AREA_TOP + mCurrentScrollOffset + font_height;
-
-	sceGuEnable(GU_SCISSOR_TEST);
-	sceGuScissor(TEXT_AREA_LEFT, TEXT_AREA_TOP, TEXT_AREA_LEFT+TEXT_AREA_WIDTH, TEXT_AREA_TOP+TEXT_AREA_HEIGHT);
-
-	const char * const	ptr_text( "o " );
-	u32					ptr_text_width( mpContext->GetTextWidth( ptr_text ) );
-
-	for(u32 i = 0; i < mRomsList.size(); ++i)
+{	
+	const char *	pre2p_gamename = NULL;
+	const char *	prevp_gamename = NULL;
+	const char *	p_gamename;
+	const char *	nextp_gamename = NULL;
+	const char *	nex2p_gamename = NULL;
+	c32		colour;
+	
+	if( mDisplayFilenames )
 	{
-		const char *	p_gamename;
-		if( mDisplayFilenames )
-		{
-			p_gamename = mRomsList[ i ]->mFilename.c_str();
+		if (mCurrentSelection > 1) {
+			pre2p_gamename = mRomsList[ mCurrentSelection - 2 ]->mFilename.c_str();
 		}
-		else
-		{
-			p_gamename = mRomsList[ i ]->mSettings.GameName.c_str();
+		if (mCurrentSelection > 0) {
+			prevp_gamename = mRomsList[ mCurrentSelection - 1 ]->mFilename.c_str();
 		}
-
-		//
-		// Check if this entry would be onscreen
-		//
-		if((y+line_height) >= s32(TEXT_AREA_TOP) && (y-line_height) < s32(TEXT_AREA_TOP + TEXT_AREA_HEIGHT))
+		
+		p_gamename = mRomsList[ mCurrentSelection ]->mFilename.c_str();
+		
+		if (mCurrentSelection < mRomsList.size()) {
+			nextp_gamename = mRomsList[ mCurrentSelection + 1 ]->mFilename.c_str();
+		}
+		if (mCurrentSelection < mRomsList.size() - 1) {
+			nex2p_gamename = mRomsList[ mCurrentSelection + 2 ]->mFilename.c_str();
+		}
+	}
+	else
+	{
+		if (mCurrentSelection > 1) {
+			pre2p_gamename = mRomsList[ mCurrentSelection - 2 ]->mSettings.GameName.c_str();
+		}
+		if (mCurrentSelection > 0) {
+			prevp_gamename = mRomsList[ mCurrentSelection - 1 ]->mSettings.GameName.c_str();
+		}
+		
+		p_gamename = mRomsList[ mCurrentSelection ]->mSettings.GameName.c_str();
+		
+		if (mCurrentSelection < mRomsList.size()) {
+			nextp_gamename = mRomsList[ mCurrentSelection + 1 ]->mSettings.GameName.c_str();
+		}
+		if (mCurrentSelection < mRomsList.size() - 1) {
+			nex2p_gamename = mRomsList[ mCurrentSelection + 2 ]->mSettings.GameName.c_str();
+		}
+	}
+		
+	if (romselmenufs < 21) {		
+		if (romselmenudir == 1) 
 		{
-			c32		colour;
-
-			if(i == mCurrentSelection)
-			{
-				colour = mpContext->GetSelectedTextColour();
-				mpContext->DrawText( x, y, ptr_text, colour );
-			}
-			else
+			if (mCurrentSelection > 0)
 			{
 				colour = mpContext->GetDefaultTextColour();
+				mpContext->DrawText( 210 - ((mpContext->GetTextWidth( p_gamename )) + (mpContext->GetTextWidth( prevp_gamename ))), 265, prevp_gamename, colour );
 			}
-			mpContext->DrawText( x + ptr_text_width, y, p_gamename, colour );
-		}
-		y += line_height;
-	}
 
-	// Restore scissoring
-	sceGuScissor(0,0, 480,272);
+			colour = mpContext->GetDefaultTextColour();
+			mpContext->DrawText( 230 - (mpContext->GetTextWidth( p_gamename )), 265, p_gamename, colour );	
+			
+			if (mCurrentSelection < mRomsList.size() - 1)
+			{
+				colour = mpContext->GetDefaultTextColour();
+				mpContext->DrawText( 250, 265, nextp_gamename, colour );
+			}
+			if (mCurrentSelection < mRomsList.size() - 2)
+			{
+				colour = mpContext->GetDefaultTextColour();
+				mpContext->DrawText( 270 + (mpContext->GetTextWidth( nextp_gamename )), 265, nex2p_gamename, colour );
+			}
+		}
+		else if (romselmenudir == 2) 
+		{
+			if (mCurrentSelection > 1)
+			{
+				colour = mpContext->GetDefaultTextColour();
+				mpContext->DrawText( 210 - ((mpContext->GetTextWidth( prevp_gamename )) + (mpContext->GetTextWidth( pre2p_gamename ))), 265, pre2p_gamename, colour );
+			}
+			if (mCurrentSelection > 0)
+			{
+				colour = mpContext->GetDefaultTextColour();
+				mpContext->DrawText( 230 - (mpContext->GetTextWidth( prevp_gamename )), 265, prevp_gamename, colour );
+			}
+
+			colour = mpContext->GetDefaultTextColour();
+			mpContext->DrawText( 250, 265, p_gamename, colour );	
+			
+			if (mCurrentSelection < mRomsList.size() - 1)
+			{
+				colour = mpContext->GetDefaultTextColour();
+				mpContext->DrawText( 270 + (mpContext->GetTextWidth( p_gamename )), 265, nextp_gamename, colour );
+			}
+		}
+	}	
+	else {
+		if (mCurrentSelection > 1)
+		{
+			colour = mpContext->GetDefaultTextColour();
+			mpContext->DrawText( 200 - ((mpContext->GetTextWidth( p_gamename ) / 2) + (mpContext->GetTextWidth( prevp_gamename )) + (mpContext->GetTextWidth( pre2p_gamename ))), 265, pre2p_gamename, colour );
+		}
+		if (mCurrentSelection > 0)
+		{
+			colour = mpContext->GetDefaultTextColour();
+			mpContext->DrawText( 220 - ((mpContext->GetTextWidth( p_gamename ) / 2) + (mpContext->GetTextWidth( prevp_gamename ))), 265, prevp_gamename, colour );
+		}
+
+		colour = mpContext->GetSelectedTextColour();
+		mpContext->DrawText( 240 - (mpContext->GetTextWidth( p_gamename ) / 2), 255, p_gamename, colour );	
+		
+		if (mCurrentSelection < mRomsList.size() - 1)
+		{
+			colour = mpContext->GetDefaultTextColour();
+			mpContext->DrawText( 260 + (mpContext->GetTextWidth( p_gamename ) / 2), 265, nextp_gamename, colour );
+		}
+		if (mCurrentSelection < mRomsList.size() - 2)
+		{
+			colour = mpContext->GetDefaultTextColour();
+			mpContext->DrawText( 280 + ((mpContext->GetTextWidth( p_gamename ) / 2) + (mpContext->GetTextWidth( nextp_gamename ))), 265, nex2p_gamename, colour );
+		}
+	}
 }
 
 
@@ -492,6 +648,7 @@ void IRomSelectorComponent::RenderRomList()
 //*************************************************************************************
 void IRomSelectorComponent::RenderCategoryList()
 {
+/*DISABLED
 	s32 x = CATEGORY_AREA_LEFT;
 	s32 y = CATEGORY_AREA_TOP + mpContext->GetFontHeight();
 
@@ -523,6 +680,7 @@ void IRomSelectorComponent::RenderCategoryList()
 		sprintf( str, "%c ", GetCategoryLetter( category ) );
 		x += mpContext->DrawText( x, y, str, colour );
 	}
+*/
 }
 
 //*************************************************************************************
@@ -537,7 +695,7 @@ void IRomSelectorComponent::Render()
 		s32 offset( 0 );
 		for( u32 i = 0; i < ARRAYSIZE( gNoRomsText ); ++i )
 		{
-			offset += mpContext->DrawTextArea( TEXT_AREA_LEFT, TEXT_AREA_TOP + offset, TEXT_AREA_WIDTH, TEXT_AREA_HEIGHT - offset, gNoRomsText[ i ], DrawTextUtilities::TextWhite, VA_TOP );
+			offset += mpContext->DrawTextArea( 20 + 128 + 10, TEXT_AREA_TOP + offset, 480, TEXT_AREA_HEIGHT - offset, gNoRomsText[ i ], DrawTextUtilities::TextWhite, VA_TOP );
 			offset += 4;
 		}
 	}
@@ -560,7 +718,7 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 	/*Apply stick deadzone preference in the RomSelector menu*/
 	v2 stick_dead(ApplyDeadzone( stick, gGlobalPreferences.StickMinDeadzone, gGlobalPreferences.StickMaxDeadzone ));
 	
-	mSelectionAccumulator += stick_dead.y * SCROLL_RATE_PER_SECOND * elapsed_time; 
+	mSelectionAccumulator += stick_dead.x * SCROLL_RATE_PER_SECOND * elapsed_time; 
 	
 	/*Tricky thing to get the stick to work in every cases
 	  for the 100/100 case for example
@@ -570,8 +728,6 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 	if( !(mSelectionAccumulator<0) && !(mSelectionAccumulator>0))
 	  mSelectionAccumulator=0.0f;
 
-	ECategory current_category( GetCurrentCategory() );
-
 	u32				initial_selection( mCurrentSelection );
 
 	mDisplayFilenames = (new_buttons & PSP_CTRL_TRIANGLE) != 0;
@@ -580,46 +736,20 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 	{
 		if(new_buttons & PSP_CTRL_LEFT)
 		{
-			// Search for the next valid predecessor
-			while(current_category > 0)
+			if(mCurrentSelection > 0)
 			{
-				current_category = ECategory( current_category - 1 );
-				AlphaMap::const_iterator it( mRomCategoryMap.find( current_category ) );
-				if( it != mRomCategoryMap.end() )
-				{
-					mCurrentSelection = it->second;
-					break;
-				}
+				mCurrentSelection--;
+				romselmenuani = 1;
+				romselmenudir = 1;
 			}
 		}
 		if(new_buttons & PSP_CTRL_RIGHT)
 		{
-			// Search for the next valid predecessor
-			while(current_category < NUM_CATEGORIES-1)
-			{
-				current_category = ECategory( current_category + 1 );
-				AlphaMap::const_iterator it( mRomCategoryMap.find( current_category ) );
-				if( it != mRomCategoryMap.end() )
-				{
-					mCurrentSelection = it->second;
-					break;
-				}
-			}
-		}
-
-
-		if(new_buttons & PSP_CTRL_UP)
-		{
-			if(mCurrentSelection > 0)
-			{
-				mCurrentSelection--;
-			}
-		}
-		if(new_buttons & PSP_CTRL_DOWN)
-		{
 			if(mCurrentSelection < mRomsList.size() - 1)
 			{
 				mCurrentSelection++;
+				romselmenuani = 1;
+				romselmenudir = 2;
 			}
 		}
 

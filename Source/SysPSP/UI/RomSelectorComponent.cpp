@@ -54,6 +54,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 int romselmenuani = 0;
 int romselmenufs = 31;
 int romselmenudir = 0;
+int showmoreinfo = 0;
 
 namespace
 {
@@ -108,7 +109,7 @@ namespace
 	const u32				ICON_AREA_WIDTH = 256;
 	const u32				ICON_AREA_HEIGHT = 177;
 
-	const u32				TEXT_AREA_TOP = 32;
+	const u32				TEXT_AREA_TOP = 70;
 	u32				TEXT_AREA_LEFT = 300;
 	const u32				TEXT_AREA_WIDTH = 148;
 	const u32				TEXT_AREA_HEIGHT = 216;
@@ -375,29 +376,44 @@ void IRomSelectorComponent::DrawInfoText(  CUIContext * p_context, s32 y, const 
 void IRomSelectorComponent::RenderPreview()
 {
 	const char * noimage = "No Image Available";
+	c32	clrGREY = c32( 195, 195, 195, 0 );
+	c32	clrORANGE = c32( 255, 128, 0, 0 );
+	c32	clrYELLOW = c32( 255, 255, 0, 0 );
 
 	romselmenufs++;
 	if (romselmenufs >= 3000) { romselmenufs = 51; }
 	if (romselmenuani == 1) {
-		romselmenufs = 1; 
-		romselmenuani = 0;
+		romselmenufs = 1;
+		romselmenuani = 0; 
 	}
 	
 	if (romselmenufs < 31) {	
-		if ((romselmenufs < 6) && (romselmenudir == 1)) { ICON_AREA_LEFT = -391; TEXT_AREA_LEFT = -111; }		
-		else if ((romselmenufs < 11) && (romselmenudir == 1)) { ICON_AREA_LEFT = -322; TEXT_AREA_LEFT = -42; }
-		else if ((romselmenufs < 16) && (romselmenudir == 1)) { ICON_AREA_LEFT = -254; TEXT_AREA_LEFT = 26; }
-		else if ((romselmenufs < 21) && (romselmenudir == 1)) { ICON_AREA_LEFT = -185; TEXT_AREA_LEFT = 95; }
-		else if ((romselmenufs < 26) && (romselmenudir == 1)) { ICON_AREA_LEFT = -117; TEXT_AREA_LEFT = 163; }
-		else if ((romselmenufs < 31) && (romselmenudir == 1)) { ICON_AREA_LEFT = -48; TEXT_AREA_LEFT = 232; }
-		if ((romselmenufs < 6) && (romselmenudir == 2)) { ICON_AREA_LEFT = 431; TEXT_AREA_LEFT = 711; }
-		else if ((romselmenufs < 11) && (romselmenudir == 2)) { ICON_AREA_LEFT = 362; TEXT_AREA_LEFT = 642; }
-		else if ((romselmenufs < 16) && (romselmenudir == 2)) { ICON_AREA_LEFT = 294; TEXT_AREA_LEFT = 574; }
-		else if ((romselmenufs < 21) && (romselmenudir == 2)) { ICON_AREA_LEFT = 225; TEXT_AREA_LEFT = 505; }
-		else if ((romselmenufs < 26) && (romselmenudir == 2)) { ICON_AREA_LEFT = 157; TEXT_AREA_LEFT = 437; }
-		else if ((romselmenufs < 31) && (romselmenudir == 2)) { ICON_AREA_LEFT = 88; TEXT_AREA_LEFT = 368; }
+		if ((romselmenufs < 4) && (romselmenudir == 1)) { ICON_AREA_LEFT = -440; TEXT_AREA_LEFT = -160; }	
+		else if ((romselmenufs < 7) && (romselmenudir == 1)) { ICON_AREA_LEFT = -394; TEXT_AREA_LEFT = -114; }
+		else if ((romselmenufs < 10) && (romselmenudir == 1)) { ICON_AREA_LEFT = -348; TEXT_AREA_LEFT = -68; }
+		else if ((romselmenufs < 13) && (romselmenudir == 1)) { ICON_AREA_LEFT = -302; TEXT_AREA_LEFT = -22; }
+		else if ((romselmenufs < 16) && (romselmenudir == 1)) { ICON_AREA_LEFT = -256; TEXT_AREA_LEFT = 24; }	
+		else if ((romselmenufs < 19) && (romselmenudir == 1)) { ICON_AREA_LEFT = -210; TEXT_AREA_LEFT = 70; }
+		else if ((romselmenufs < 21) && (romselmenudir == 1)) { ICON_AREA_LEFT = -164; TEXT_AREA_LEFT = 116; }
+		else if ((romselmenufs < 25) && (romselmenudir == 1)) { ICON_AREA_LEFT = -118; TEXT_AREA_LEFT = 162; }
+		else if ((romselmenufs < 28) && (romselmenudir == 1)) { ICON_AREA_LEFT = -72; TEXT_AREA_LEFT = 208; }
+		else if ((romselmenufs < 31) && (romselmenudir == 1)) { ICON_AREA_LEFT = -26; TEXT_AREA_LEFT = 254; }
+		if ((romselmenufs < 4) && (romselmenudir == 2)) { ICON_AREA_LEFT = 480; TEXT_AREA_LEFT = 760; }
+		else if ((romselmenufs < 7) && (romselmenudir == 2)) { ICON_AREA_LEFT = 434; TEXT_AREA_LEFT = 714; }
+		else if ((romselmenufs < 10) && (romselmenudir == 2)) { ICON_AREA_LEFT = 388; TEXT_AREA_LEFT = 668; }
+		else if ((romselmenufs < 13) && (romselmenudir == 2)) { ICON_AREA_LEFT = 342; TEXT_AREA_LEFT = 622; }
+		else if ((romselmenufs < 16) && (romselmenudir == 2)) { ICON_AREA_LEFT = 296; TEXT_AREA_LEFT = 576; }
+		else if ((romselmenufs < 19) && (romselmenudir == 2)) { ICON_AREA_LEFT = 250; TEXT_AREA_LEFT = 530; }
+		else if ((romselmenufs < 22) && (romselmenudir == 2)) { ICON_AREA_LEFT = 204; TEXT_AREA_LEFT = 484; }
+		else if ((romselmenufs < 25) && (romselmenudir == 2)) { ICON_AREA_LEFT = 158; TEXT_AREA_LEFT = 438; }
+		else if ((romselmenufs < 28) && (romselmenudir == 2)) { ICON_AREA_LEFT = 112; TEXT_AREA_LEFT = 392; }
+		else if ((romselmenufs < 31) && (romselmenudir == 2)) { ICON_AREA_LEFT = 66; TEXT_AREA_LEFT = 346; }
 		
-		if (romselmenufs > 16) {
+		if ((romselmenufs > 13) && (romselmenudir == 1)) {
+		mpContext->DrawRect( ICON_AREA_LEFT-2, ICON_AREA_TOP-2, ICON_AREA_WIDTH+4, ICON_AREA_HEIGHT+4, c32::White );
+		mpContext->DrawRect( ICON_AREA_LEFT-1, ICON_AREA_TOP-1, ICON_AREA_WIDTH+2, ICON_AREA_HEIGHT+2, mpContext->GetBackgroundColour() ); 
+		}
+		else if (romselmenudir == 2) {
 		mpContext->DrawRect( ICON_AREA_LEFT-2, ICON_AREA_TOP-2, ICON_AREA_WIDTH+4, ICON_AREA_HEIGHT+4, c32::White );
 		mpContext->DrawRect( ICON_AREA_LEFT-1, ICON_AREA_TOP-1, ICON_AREA_WIDTH+2, ICON_AREA_HEIGHT+2, mpContext->GetBackgroundColour() ); 
 		}
@@ -420,7 +436,7 @@ void IRomSelectorComponent::RenderPreview()
 		u32		font_height( mpContext->GetFontHeight() );
 		u32		line_height( font_height + 2 );
 
-		s32 y = 156 - (( line_height * 3) + 12);
+		s32 y = TEXT_AREA_TOP;
 
 		if( mCurrentSelection < mRomsList.size() )
 		{
@@ -439,7 +455,35 @@ void IRomSelectorComponent::RenderPreview()
 
 			DrawInfoText( mpContext, y, "Save:", ROM_GetSaveTypeName( p_rominfo->mSettings.SaveType ) ); y += line_height + 5;
 			DrawInfoText( mpContext, y, "EPak:", ROM_GetExpansionPakUsageName( p_rominfo->mSettings.ExpansionPakUsage ) ); y += line_height + 5;
-			DrawInfoText( mpContext, y, "Dynarec:", p_rominfo->mSettings.DynarecSupported ? "Supported" : "Unsupported" ); y += line_height + 5;
+			DrawInfoText( mpContext, y, "Dynarec:", p_rominfo->mSettings.DynarecSupported ? "Supported" : "Unsupported" ); y += line_height + 15;
+					
+			if ( p_rominfo->mSettings.Comment[0] == 'U' ) {
+				DrawInfoText( mpContext, y, "    Compatibility Info", "" ); y += line_height + 5;				
+				DrawInfoText( mpContext, y, "       Not Available", "" ); y += line_height + 5; 
+			} else if (romselmenufs > 10) {
+				if (p_rominfo->mSettings.Comment[0] == '0') {
+					DrawInfoText( mpContext, y, "Compatibility:", "" );
+					mpContext->DrawRect( TEXT_AREA_LEFT + TEXT_AREA_WIDTH - 10, y - 10, 10, 10, clrGREY ); y += line_height + 5;
+				}	else if ( p_rominfo->mSettings.Comment[0] == '1' ) {
+					DrawInfoText( mpContext, y, "Compatibility:", "" );
+					mpContext->DrawRect( TEXT_AREA_LEFT + TEXT_AREA_WIDTH - 10, y - 10, 10, 10, c32::Red ); y += line_height + 5;
+				}	else if ( p_rominfo->mSettings.Comment[0] == '2' ) {
+					DrawInfoText( mpContext, y, "Compatibility:", "" );
+					mpContext->DrawRect( TEXT_AREA_LEFT + TEXT_AREA_WIDTH - 10, y - 10, 10, 10, clrORANGE ); y += line_height + 5;
+				}	else if ( p_rominfo->mSettings.Comment[0] == '3' ) {
+					DrawInfoText( mpContext, y, "Compatibility:", "" );
+					mpContext->DrawRect( TEXT_AREA_LEFT + TEXT_AREA_WIDTH - 10, y - 10, 10, 10, clrYELLOW ); y += line_height + 5;
+				}	else if ( p_rominfo->mSettings.Comment[0] == '4' ) {
+					DrawInfoText( mpContext, y, "Compatibility:", "" );
+					mpContext->DrawRect( TEXT_AREA_LEFT + TEXT_AREA_WIDTH - 10, y - 10, 10, 10, c32::Green ); y += line_height + 5;
+				}	else if ( p_rominfo->mSettings.Comment[0] == '5' ) {
+					DrawInfoText( mpContext, y, "Compatibility:", "" );
+					mpContext->DrawRect( TEXT_AREA_LEFT + TEXT_AREA_WIDTH - 10, y - 10, 10, 10, c32::Blue ); y += line_height + 5;
+				}
+					DrawInfoText( mpContext, y, "Hold     for more info.", "" );				
+					mpContext->DrawRect( TEXT_AREA_LEFT + 36, y - 8, 7, 7, c32::White );
+					mpContext->DrawRect( TEXT_AREA_LEFT + 37, y - 7, 5, 5, c32::Black ); y += line_height + 5;				
+			}
 		}
 		else
 		{
@@ -485,7 +529,7 @@ void IRomSelectorComponent::RenderPreview()
 		u32		font_height( mpContext->GetFontHeight() );
 		u32		line_height( font_height + 2 );
 
-		s32 y = 156 - (( line_height * 3) + 12);
+		s32 y = TEXT_AREA_TOP;
 
 		if( mCurrentSelection < mRomsList.size() )
 		{
@@ -498,13 +542,223 @@ void IRomSelectorComponent::RenderPreview()
 			char buffer[ 32 ];
 			sprintf( buffer, "%d MB", rom_size / (1024*1024) ); 
 
-			DrawInfoText( mpContext, y, "Boot:", cic_name );	y += line_height + 5;
+			DrawInfoText( mpContext, y, "Boot:", cic_name );	y += line_height + 5; 
 			DrawInfoText( mpContext, y, "Country:", country );	y += line_height + 5;
 			DrawInfoText( mpContext, y, "Size:", buffer );	y += line_height + 5;
 
 			DrawInfoText( mpContext, y, "Save:", ROM_GetSaveTypeName( p_rominfo->mSettings.SaveType ) ); y += line_height + 5;
 			DrawInfoText( mpContext, y, "EPak:", ROM_GetExpansionPakUsageName( p_rominfo->mSettings.ExpansionPakUsage ) ); y += line_height + 5;
-			DrawInfoText( mpContext, y, "Dynarec:", p_rominfo->mSettings.DynarecSupported ? "Supported" : "Unsupported" ); y += line_height + 5;
+			DrawInfoText( mpContext, y, "Dynarec:", p_rominfo->mSettings.DynarecSupported ? "Supported" : "Unsupported" ); y += line_height + 15;
+
+			if ( p_rominfo->mSettings.Comment[0] == 'U' ) {
+				DrawInfoText( mpContext, y, "    Compatibility Info", "" ); y += line_height + 5;				
+				DrawInfoText( mpContext, y, "       Not Available", "" ); y += line_height + 5; 
+			} else {
+				if ( p_rominfo->mSettings.Comment[0] == '0' ) {
+					DrawInfoText( mpContext, y, "Compatibility:", "" );
+					mpContext->DrawRect( TEXT_AREA_LEFT + TEXT_AREA_WIDTH - 10, y - 10, 10, 10, clrGREY ); y += line_height + 5;
+				}	else if ( p_rominfo->mSettings.Comment[0] == '1' ) {
+					DrawInfoText( mpContext, y, "Compatibility:", "" );
+					mpContext->DrawRect( TEXT_AREA_LEFT + TEXT_AREA_WIDTH - 10, y - 10, 10, 10, c32::Red ); y += line_height + 5;
+				}	else if ( p_rominfo->mSettings.Comment[0] == '2' ) {
+					DrawInfoText( mpContext, y, "Compatibility:", "" );
+					mpContext->DrawRect( TEXT_AREA_LEFT + TEXT_AREA_WIDTH - 10, y - 10, 10, 10, clrORANGE ); y += line_height + 5;
+				}	else if ( p_rominfo->mSettings.Comment[0] == '3' ) {
+					DrawInfoText( mpContext, y, "Compatibility:", "" );
+					mpContext->DrawRect( TEXT_AREA_LEFT + TEXT_AREA_WIDTH - 10, y - 10, 10, 10, clrYELLOW ); y += line_height + 5;
+				}	else if ( p_rominfo->mSettings.Comment[0] == '4' ) {
+					DrawInfoText( mpContext, y, "Compatibility:", "" );
+					mpContext->DrawRect( TEXT_AREA_LEFT + TEXT_AREA_WIDTH - 10, y - 10, 10, 10, c32::Green ); y += line_height + 5;
+				}	else if ( p_rominfo->mSettings.Comment[0] == '5' ) {
+					DrawInfoText( mpContext, y, "Compatibility:", "" );
+					mpContext->DrawRect( TEXT_AREA_LEFT + TEXT_AREA_WIDTH - 10, y - 10, 10, 10, c32::Blue ); y += line_height + 5;
+				}				
+					DrawInfoText( mpContext, y, "Hold     for more info.", "" );				
+					mpContext->DrawRect( TEXT_AREA_LEFT + 36, y - 8, 7, 7, c32::White );
+					mpContext->DrawRect( TEXT_AREA_LEFT + 37, y - 7, 5, 5, c32::Black ); y += line_height + 5;
+			}
+			if ( p_rominfo->mSettings.Comment[0] != 'U' ) {
+				if(showmoreinfo) {					
+					const char *compatver = p_rominfo->mSettings.Comment + 15;
+					y = 44 + line_height;
+					mpContext->DrawRect( 100, 40, 280, 192, c32::White );
+					mpContext->DrawRect( 102, 42, 276, 188, c32::Black );
+					mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Recommended Settings:          Alpha", c32::White );					
+					mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, compatver, c32::White );	y += line_height + 15;
+
+					if ( p_rominfo->mSettings.Comment[1] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Texture Update Check:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[1] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Every Frame", c32::White );  y += line_height + 5;
+						}
+						else if ( p_rominfo->mSettings.Comment[1] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Every 3", c32::White );  y += line_height + 5;
+						}
+						else if ( p_rominfo->mSettings.Comment[1] == '3' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Every 5", c32::White );  y += line_height + 5;
+						}
+						else if ( p_rominfo->mSettings.Comment[1] == '4' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Every 10", c32::White );  y += line_height + 5;
+						}
+						else if ( p_rominfo->mSettings.Comment[1] == '5' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Every 15", c32::White );  y += line_height + 5;
+						}
+						else if ( p_rominfo->mSettings.Comment[1] == '6' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Every 20", c32::White );  y += line_height + 5;
+						}
+						else if ( p_rominfo->mSettings.Comment[1] == '7' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Every 30", c32::White );  y += line_height + 5;
+						}
+					}
+					if ( p_rominfo->mSettings.Comment[2] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "FrameSkip:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[2] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "1", c32::White );  y += line_height + 5;
+						}						
+						else if ( p_rominfo->mSettings.Comment[2] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "2", c32::White );  y += line_height + 5;
+						}
+						else if ( p_rominfo->mSettings.Comment[2] == '3' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "3", c32::White );  y += line_height + 5;
+						}
+						else if ( p_rominfo->mSettings.Comment[2] == '4' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "5", c32::White );  y += line_height + 5;
+						}
+						else if ( p_rominfo->mSettings.Comment[2] == '5' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "7", c32::White );  y += line_height + 5;
+						}
+						else if ( p_rominfo->mSettings.Comment[2] == '6' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "10", c32::White );  y += line_height + 5;
+						}
+
+					}
+					if ( p_rominfo->mSettings.Comment[3] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Limit Framerate:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[3] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Yes", c32::White );  y += line_height + 5;
+						}						
+						else if ( p_rominfo->mSettings.Comment[3] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "No", c32::White );  y += line_height + 5;
+						}
+					}
+					if ( p_rominfo->mSettings.Comment[4] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Dynamic Recompilation:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[4] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
+						}						
+						else if ( p_rominfo->mSettings.Comment[4] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
+						}
+					}
+					if ( p_rominfo->mSettings.Comment[5] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Dynamic Stack Optimisation:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[5] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
+						}						
+						else if ( p_rominfo->mSettings.Comment[5] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
+						}
+					}
+					if ( p_rominfo->mSettings.Comment[6] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "High Level Emulation:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[6] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
+						}						
+						else if ( p_rominfo->mSettings.Comment[6] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
+						}
+					}
+					if ( p_rominfo->mSettings.Comment[7] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Audio:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[7] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Async", c32::White );  y += line_height + 5;
+						}						
+						else if ( p_rominfo->mSettings.Comment[7] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Sync", c32::White );  y += line_height + 5;
+						}
+						else if ( p_rominfo->mSettings.Comment[7] == '3' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
+						}
+					}
+					if ( p_rominfo->mSettings.Comment[8] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Clean Scene:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[8] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
+						}						
+						else if ( p_rominfo->mSettings.Comment[8] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
+						}
+					}
+					if ( p_rominfo->mSettings.Comment[9] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Use Flushtris:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[9] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Yes", c32::White );  y += line_height + 5;
+						}						
+						else if ( p_rominfo->mSettings.Comment[9] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "No", c32::White );  y += line_height + 5;
+						}
+					}
+					if ( p_rominfo->mSettings.Comment[10] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Dynamic Stack Optimisation:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[10] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
+						}						
+						else if ( p_rominfo->mSettings.Comment[10] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
+						}
+					}
+					if ( p_rominfo->mSettings.Comment[11] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Double Display Lists:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[11] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
+						}						
+						else if ( p_rominfo->mSettings.Comment[11] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
+						}
+					}
+					if ( p_rominfo->mSettings.Comment[12] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "View Port Hack:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[12] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
+						}						
+						else if ( p_rominfo->mSettings.Comment[12] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
+						}
+					}
+					if ( p_rominfo->mSettings.Comment[13] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Disable Flat Shade:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[13] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Yes", c32::White );  y += line_height + 5;
+						}						
+						else if ( p_rominfo->mSettings.Comment[13] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "No", c32::White );  y += line_height + 5;
+						}
+					}
+					if ( p_rominfo->mSettings.Comment[14] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Disable Simulate Double:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[14] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Yes", c32::White );  y += line_height + 5;
+						}						
+						else if ( p_rominfo->mSettings.Comment[14] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "No", c32::White );  y += line_height + 5;
+						}
+					}
+				}
+			}
 		}
 		else
 		{
@@ -542,10 +796,10 @@ void IRomSelectorComponent::RenderRomList()
 		
 		p_gamename = mRomsList[ mCurrentSelection ]->mFilename.c_str();
 		
-		if (mCurrentSelection < mRomsList.size()) {
+		if (mCurrentSelection < mRomsList.size() - 1) {
 			nextp_gamename = mRomsList[ mCurrentSelection + 1 ]->mFilename.c_str();
 		}
-		if (mCurrentSelection < mRomsList.size() - 1) {
+		if (mCurrentSelection < mRomsList.size() - 2) {
 			nex2p_gamename = mRomsList[ mCurrentSelection + 2 ]->mFilename.c_str();
 		}
 	}
@@ -560,15 +814,15 @@ void IRomSelectorComponent::RenderRomList()
 		
 		p_gamename = mRomsList[ mCurrentSelection ]->mSettings.GameName.c_str();
 		
-		if (mCurrentSelection < mRomsList.size()) {
+		if (mCurrentSelection < mRomsList.size() - 1) {
 			nextp_gamename = mRomsList[ mCurrentSelection + 1 ]->mSettings.GameName.c_str();
 		}
-		if (mCurrentSelection < mRomsList.size() - 1) {
+		if (mCurrentSelection < mRomsList.size() - 2) {
 			nex2p_gamename = mRomsList[ mCurrentSelection + 2 ]->mSettings.GameName.c_str();
 		}
 	}
 		
-	if (romselmenufs < 21) {		
+	if (romselmenufs < 21)  {		
 		if (romselmenudir == 1) 
 		{
 			if (mCurrentSelection > 0)
@@ -614,6 +868,10 @@ void IRomSelectorComponent::RenderRomList()
 			}
 		}
 	}	
+	else if (mRomsList.size() == 1) {
+		colour = mpContext->GetSelectedTextColour();
+		mpContext->DrawText( 240 - (mpContext->GetTextWidth( p_gamename ) / 2), 255, p_gamename, colour );	
+	}
 	else {
 		if (mCurrentSelection > 1)
 		{
@@ -641,8 +899,6 @@ void IRomSelectorComponent::RenderRomList()
 		}
 	}
 }
-
-
 //*************************************************************************************
 //
 //*************************************************************************************
@@ -766,8 +1022,14 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 				}
 			}
 		}
+		
 	}
-
+	if(new_buttons & PSP_CTRL_SQUARE)	
+	{			
+		showmoreinfo = 1;
+	}
+	else { showmoreinfo = 0; }
+	
 	//
 	//	Apply the selection accumulator
 	//

@@ -733,6 +733,11 @@ void PSPRenderer::RenderUsingRenderSettings( const CBlendStates * states, Daedal
 		sceGuDrawArray( GU_TRIANGLES, render_flags, num_vertices, NULL, p_vertices );
 	}
 }
+//*****************************************************************************
+//
+//*****************************************************************************
+
+void InitBlenderMode();
 
 //*****************************************************************************
 //
@@ -799,161 +804,9 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 			break;
 	}
 
-
-
-
-/*
-
-// P or M
-#define	G_BL_CLR_IN	0
-#define	G_BL_CLR_MEM	1
-#define	G_BL_CLR_BL	2
-#define	G_BL_CLR_FOG	3
-
-// A inputs
-#define	G_BL_A_IN	0
-#define	G_BL_A_FOG	1
-#define	G_BL_A_SHADE	2
-#define	G_BL_0		3
-
-// B inputs
-#define	G_BL_1MA	0
-#define	G_BL_A_MEM	1
-#define	G_BL_1		2
-#define	G_BL_0		3
-
-#define	GBL_c1(m1a, m1b, m2a, m2b)	\
-	(m1a) << 30 | (m1b) << 26 | (m2a) << 22 | (m2b) << 18
-#define	GBL_c2(m1a, m1b, m2a, m2b)	\
-	(m1a) << 28 | (m1b) << 24 | (m2a) << 20 | (m2b) << 16
-
-#define	RM_AA_ZB_OPA_SURF(clk)					\
-	AA_EN | Z_CMP | Z_UPD | IM_RD | CVG_DST_CLAMP |		\
-	ZMODE_OPA | ALPHA_CVG_SEL |				\
-	GBL_c##clk(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_MEM, G_BL_A_MEM)
-
-#define	G_RM_FOG_SHADE_A		GBL_c1(G_BL_CLR_FOG, G_BL_A_SHADE, G_BL_CLR_IN, G_BL_1MA)
-#define	G_RM_FOG_PRIM_A			GBL_c1(G_BL_CLR_FOG, G_BL_A_FOG, G_BL_CLR_IN, G_BL_1MA)
-#define	G_RM_PASS				GBL_c1(G_BL_CLR_IN, G_BL_0, G_BL_CLR_IN, G_BL_1)
-#define	RM_AA_ZB_OPA_SURF(clk)	GBL_c##clk(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_MEM, G_BL_A_MEM)
-*/
-	u32 blendmode = u32( gRDPOtherMode._u64 & 0xffff0000 );
-
-	int		blend_op = GU_ADD;
-	int		blend_src = GU_SRC_ALPHA;
-	int		blend_dst = GU_ONE_MINUS_SRC_ALPHA;
-	bool	enable_blend( false );
-
-#define MAKE_BLEND_MODE( a, b )			( (a) | (b) )
-#define BLEND_NOOP1				0x00000000		//GBL_c1(G_BL_CLR_IN, G_BL_1MA, G_BL_CLR_IN, G_BL_1MA)
-#define BLEND_NOOP2				0x00000000
-
-#define BLEND_FOG_ASHADE1		0xc8000000
-#define BLEND_FOG_APRIM1		0xc4000000
-
-#define BLEND_PASS1				0x0c080000		//GBL_c1(G_BL_CLR_IN, G_BL_0, G_BL_CLR_IN, G_BL_1)
-#define BLEND_PASS2				0x03020000
-
-#define BLEND_OPA1				0x00440000
-#define BLEND_OPA2				0x00110000
-
-#define BLEND_XLU1				0x00400000
-#define BLEND_XLU2				0x00100000
-
-#define BLEND_ADD1				0x04400000		//GBL_c##clk(G_BL_CLR_IN, G_BL_A_FOG, G_BL_CLR_MEM, G_BL_1)
-#define BLEND_ADD2				0x01100000
-
-#define BLEND_MEM1				0x4c400000		// Mem*0 + Mem*(1-0)?!
-#define BLEND_MEM2				0x13100000		// Mem*0 + Mem*(1-0)?!
-
-#define BLEND_NOOP3				0x0c480000		// In * 0 + Mem * 1
-#define BLEND_NOOP4				0xcc080000		// Fog * 0 + In * 1
-
-
-	if ( gRDPOtherMode.cycle_type == CYCLE_FILL )
-	{
-		enable_blend = false;
-	}
-	else
-	{
-		switch( blendmode )
-		{
-		case MAKE_BLEND_MODE( BLEND_NOOP1, BLEND_NOOP2 ):
-			blend_op = GU_ADD; blend_src = GU_SRC_ALPHA; blend_dst = GU_ONE_MINUS_SRC_ALPHA;
-			enable_blend = true;
-			DL_PF( "      Blend: NOOP/NOOP" );
-			break;
-		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_OPA2 ):
-			enable_blend = false;
-			DL_PF( "      Blend: FOG_ASHADE/OPA" );
-			break;
-		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_XLU2 ):
-			blend_op = GU_ADD; blend_src = GU_SRC_ALPHA; blend_dst = GU_ONE_MINUS_SRC_ALPHA;
-			enable_blend = true;
-			DL_PF( "      Blend: FOG_ASHADE/XLU" );
-			break;
-		case MAKE_BLEND_MODE( BLEND_XLU1, BLEND_XLU2 ):
-			blend_op = GU_ADD; blend_src = GU_SRC_ALPHA; blend_dst = GU_ONE_MINUS_SRC_ALPHA;
-			enable_blend = true;
-			DL_PF( "      Blend: XLU/XLU" );
-			break;
-		case MAKE_BLEND_MODE( BLEND_XLU1, BLEND_NOOP2 ):
-			blend_op = GU_ADD; blend_src = GU_SRC_ALPHA; blend_dst = GU_ONE_MINUS_SRC_ALPHA;
-			enable_blend = true;
-			DL_PF( "      Blend: XLU/NOOP" );
-			break;
-		case MAKE_BLEND_MODE( BLEND_XLU1, BLEND_ADD2 ):
-			// XXXX
-			blend_op = GU_ADD; blend_src = GU_SRC_COLOR; blend_dst = GU_DST_COLOR;
-			enable_blend = true;
-			DL_PF( "      Blend: XLU/ADD" );
-			break;
-		case MAKE_BLEND_MODE( BLEND_OPA1, BLEND_OPA2 ):
-			enable_blend = false;
-			DL_PF( "      Blend: OPA/OPA" );
-			break;
-		case MAKE_BLEND_MODE( BLEND_OPA1, BLEND_NOOP2 ):
-			enable_blend = false;
-			DL_PF( "      Blend: OPA/NOOP" );
-			break;
-		case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_PASS2 ):
-			enable_blend = false;
-			DL_PF( "      Blend: PASS/PASS" );
-			break;
-		case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_XLU2 ):
-			blend_op = GU_ADD; blend_src = GU_SRC_ALPHA; blend_dst = GU_ONE_MINUS_SRC_ALPHA;
-			enable_blend = true;
-			DL_PF( "      Blend: PASS/XLU" );
-			break;
-		case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_OPA2 ):
-			enable_blend = false;
-			DL_PF( "      Blend: PASS/OPA" );
-			break;
-		case MAKE_BLEND_MODE( BLEND_MEM1, BLEND_MEM2 ):
-			enable_blend = false;
-			DL_PF( "      Blend: MEM/MEM" );
-			break;
-		case MAKE_BLEND_MODE( BLEND_NOOP4, BLEND_NOOP2 ):	// Used by Space Station SL
-			enable_blend = false;
-			DL_PF( "      Blend: NOOP4/NOOP2" );
-			break;
-		default:
-			blend_op = GU_ADD; blend_src = GU_SRC_ALPHA; blend_dst = GU_ONE_MINUS_SRC_ALPHA;
-			enable_blend = true;
-			DL_PF( "      Blend: SRCALPHA/INVSRCALPHA (default: 0x%04x)", gRDPOtherMode.blender );
-			break;
-		}
-	}
-
-	if( enable_blend )
-	{
-		sceGuBlendFunc( blend_op, blend_src, blend_dst, 0, 0);
-		sceGuEnable( GU_BLEND );
-	}
-	else
-	{
-		sceGuDisable( GU_BLEND );
-	}
+	// Initiate Blender
+	//
+	InitBlenderMode();
 
 	//
 	// I can't think why the hand in mario's menu screen is rendered with an opaque rendermode,

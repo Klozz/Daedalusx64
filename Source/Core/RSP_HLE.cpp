@@ -308,9 +308,6 @@ void RSP_HLE_ProcessTask()
 
 	switch ( pTask->t.type )
 	{
-		case M_BADTASK:
-			break;
-
 		case M_GFXTASK:
 			result = RSP_HLE_Graphics();
 			break;
@@ -329,10 +326,12 @@ void RSP_HLE_ProcessTask()
 
 		default:
 			// Can't handle
+#ifndef DAEDALUS_PUBLIC_RELEASE
 			DBGConsole_Msg(0, "Unknown task: %08x", pTask->t.type );
 			//	RSP_HLE_DumpTaskInfo( pTask );
 			//	RDP_DumpRSPCode("boot",    0xDEAFF00D, (u32*)(g_pu8RamBase + (((u32)pTask->t.ucode_boot)&0x00FFFFFF)), 0x04001000, pTask->t.ucode_boot_size);
 			//	RDP_DumpRSPCode("unkcode", 0xDEAFF00D, (u32*)(g_pu8RamBase + (((u32)pTask->t.ucode)&0x00FFFFFF)),      0x04001080, 0x1000 - 0x80);//pTask->t.ucode_size);
+#endif
 			break;
 	}
 

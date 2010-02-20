@@ -106,9 +106,7 @@ void DMA_SP_CopyFromRDRAM()
 //Little Endian
 	if (skip != 0 || count != 0)
 	{
-		u32 c;
-
-		for ( c = 0; c <= count; c++ )
+		for ( u32 c = 0; c <= count; c++ )
 		{
 			for ( i = 0; i <= length; i++ )
 			{

@@ -1608,7 +1608,6 @@ bool	PSPRenderer::RenderTriangleList( const DaedalusVtx * p_verts, u32 num_verts
 //*****************************************************************************
 //
 //*****************************************************************************
-
 static u32 CalcClipFlags( const v4 & projected )
 {
 	u32 clip_flags = 0;

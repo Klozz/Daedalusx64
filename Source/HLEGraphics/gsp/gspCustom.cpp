@@ -252,23 +252,7 @@ void DLParser_MtxDKR( MicroCodeCommand command )
 	}
 
 	// Load matrix from address
-	Matrix4x4 mat;
-	MatrixFromN64FixedPoint( mat, address );
-
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	if (gDisplayListFile != NULL)
-	{
-		DL_PF(
-			" %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-			" %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-			" %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-			" %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n",
-			mat.m[0][0], mat.m[0][1], mat.m[0][2], mat.m[0][3],
-			mat.m[1][0], mat.m[1][1], mat.m[1][2], mat.m[1][3],
-			mat.m[2][0], mat.m[2][1], mat.m[2][2], mat.m[2][3],
-			mat.m[3][0], mat.m[3][1], mat.m[3][2], mat.m[3][3]);
-	}
-#endif
+	MatrixFromN64FixedPoint( address );
 
 	//mat.m[3][0] = mat.m[3][1] = mat.m[3][2] = 0;
 	//mat.m[3][3] = 1;

@@ -1803,6 +1803,10 @@ void PSPRenderer::SetNewVertexInfoVFPU(u32 address, u32 v0, u32 n)
 //*****************************************************************************
 //
 //*****************************************************************************
+/*
+//
+// Ununsed... we might remove this, or keep it for check-in
+//
 void PSPRenderer::SetNewVertexInfoCPU(u32 dwAddress, u32 dwV0, u32 dwNum)
 {
 	//DBGConsole_Msg(0, "In SetNewVertexInfo");
@@ -1873,6 +1877,7 @@ void PSPRenderer::SetNewVertexInfoCPU(u32 dwAddress, u32 dwV0, u32 dwNum)
 		break;
 	}
 }
+*/
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -1898,10 +1903,32 @@ void PSPRenderer::ModifyVertexInfo(u32 where, u32 vert, u32 val)
 
 		case G_MWO_POINT_XYSCREEN:
 			{
-				u16 x = u16(val>>16);
-				u16 y = u16(val & 0xFFFF);
-				DL_PF( "      Setting XY Screen to 0x%08x (%d,%d)", val, x, y );
-				SetVtxXY( vert, x / 4.0f, y / 4.0f );
+				
+				u16 nX = (u16)(val>>16);
+				s16 x = *((s16*)&nX);
+				x /= 4;
+
+				u16 nY = u16(val&0xFFFF);
+				s16 y = *((s16*)&nY);
+				y /= 4;
+
+				DL_PF("		Modify vert %d: x=%d, y=%d", vert, x, y);
+
+				// Let's do viewport compare.
+				x -= sViWidth/2;
+				y = sViHeight/2-y;
+				//
+
+				if((Memory_VI_GetRegister( VI_X_SCALE_REG )&0xF) != 0 )
+				{
+					// Tarzan... I don't know why is so different...
+					SetVtxXY( vert, x , y  );
+				}
+				else
+				{	
+					// Megaman and other games
+					SetVtxXY( vert, x*2 , y*2  );
+				}
 			}
 			break;
 

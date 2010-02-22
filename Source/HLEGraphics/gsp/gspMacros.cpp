@@ -193,23 +193,7 @@ void DLParser_GBI1_Mtx( MicroCodeCommand command )
                 length, address);
 
         // Load matrix from address
-        Matrix4x4 mat;
-        MatrixFromN64FixedPoint( mat, address );
-
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-        if (gDisplayListFile != NULL)
-        {
-                DL_PF(
-                        " %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-                        " %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-                        " %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-                        " %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n",
-                        mat.m[0][0], mat.m[0][1], mat.m[0][2], mat.m[0][3],
-                        mat.m[1][0], mat.m[1][1], mat.m[1][2], mat.m[1][3],
-                        mat.m[2][0], mat.m[2][1], mat.m[2][2], mat.m[2][3],
-                        mat.m[3][0], mat.m[3][1], mat.m[3][2], mat.m[3][3]);
-        }
-#endif
+        MatrixFromN64FixedPoint( address );
 
         PSPRenderer::EMatrixLoadStyle load_command = mtx_command & G_GBI1_MTX_LOAD ? PSPRenderer::MATRIX_LOAD : PSPRenderer::MATRIX_MUL;
         bool push( (mtx_command & G_GBI1_MTX_PUSH) != 0 );
@@ -250,23 +234,7 @@ void DLParser_GBI2_Mtx( MicroCodeCommand command )
         }
 
         // Load matrix from address     
-        Matrix4x4 mat;
-        MatrixFromN64FixedPoint( mat, address );
-
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-        if (gDisplayListFile != NULL)
-        {
-                DL_PF(
-                        " %#+12.5f %#+12.5f %#+12.5f %#+12.5f\r\n"
-                        " %#+12.5f %#+12.5f %#+12.5f %#+12.5f\r\n"
-                        " %#+12.5f %#+12.5f %#+12.5f %#+12.5f\r\n"
-                        " %#+12.5f %#+12.5f %#+12.5f %#+12.5f\r\n",
-                        mat.m[0][0], mat.m[0][1], mat.m[0][2], mat.m[0][3],
-                        mat.m[1][0], mat.m[1][1], mat.m[1][2], mat.m[1][3],
-                        mat.m[2][0], mat.m[2][1], mat.m[2][2], mat.m[2][3],
-                        mat.m[3][0], mat.m[3][1], mat.m[3][2], mat.m[3][3]);
-        }
-#endif
+        MatrixFromN64FixedPoint( address );
 
         PSPRenderer::EMatrixLoadStyle load_command = (mtx_command & G_GBI2_MTX_LOAD) ? PSPRenderer::MATRIX_LOAD : PSPRenderer::MATRIX_MUL;
         bool push( ( mtx_command & G_GBI2_MTX_NOPUSH ) == 0 );

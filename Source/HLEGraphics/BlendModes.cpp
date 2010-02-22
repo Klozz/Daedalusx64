@@ -1090,13 +1090,11 @@ void BlendMode_0x0040fe8155fef97cLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined
 void BlendMode_0x0012680322fd7eb8LL (BLEND_MODE_ARGS)
 {
+	// We neeeded XXX blender, now ground looks perfect :)
 	details.InstallTexture = true;
 	details.ColourAdjuster.SetRGB( details.PrimColour );
-
-	//XXX We need to add a constant placeholder on top.
-	//Fixes ghosting and other issues present on the game.
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
-	sceGuTexFunc(GU_TFX_ADD,GU_TCC_RGBA);	
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);	
 }
 
 /*

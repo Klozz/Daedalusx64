@@ -199,7 +199,7 @@ private:
 	template< bool FogEnable, int TextureMode >
 	void ProcessVerts( u32 v0, u32 num, const FiddledVtx * verts, const Matrix4x4 & mat_world );
 
-	void				SetNewVertexInfoCPU(u32 dwAddress, u32 dwV0, u32 dwNum);	// Assumes dwAddress has already been checked!	
+	//void				SetNewVertexInfoCPU(u32 dwAddress, u32 dwV0, u32 dwNum);	// Assumes dwAddress has already been checked!	
 
 
 	void				PrepareTrisClipped( DaedalusVtx ** p_p_vertices, u32 * p_num_vertices ) const;

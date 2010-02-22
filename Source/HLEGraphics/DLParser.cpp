@@ -72,29 +72,40 @@ const char *	gDisplayListDumpPathFormat = "dl%04d.txt";
 
 void	RDP_GFX_Force_Matrix(u32 address);
 
-void	MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address )
+Matrix4x4 mat;
+//*************************************************************************************
+// 
+//*************************************************************************************
+void MatrixFromN64FixedPoint( u32 address )
 {
-	const f32 fRecip = 1.0f / 65536.0f;
-
 	const u8 *	base( g_pu8RamBase );
 
-	if (address + 64 <= MAX_RAM_ADDRESS)
-	{
-		for (u32 i = 0; i < 4; i++)
-		{
-			for (u32 j = 0; j < 4; j++)
-			{
-				s16 hi = *(s16 *)(base + ((address+(i<<3)+(j<<1)     )^0x2));
-				u16 lo = *(u16 *)(base + ((address+(i<<3)+(j<<1) + 32)^0x2));
+	int i, j;
 
-				mat.m[i][j] = ((hi<<16) | lo ) * fRecip;
-			}
+	for (i = 0; i < 4; i++)
+	{
+		for (j = 0; j < 4; j++) 
+		{
+			int hi = *(s16 *)(base + ((address+(i<<3)+(j<<1)     )^0x2));
+			u16 lo = *(u16 *)(base + ((address+(i<<3)+(j<<1) + 32)^0x2));
+
+			mat.m[i][j] = (f32)((hi<<16) | (lo))/ 65536.0f;
 		}
 	}
-	//else
-	//{
-	//	DBGConsole_Msg(0, "Mtx: Address invalid (0x%08x)", address);
-	//}
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+    if (gDisplayListFile != NULL)
+    {
+            DL_PF(
+                    " %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
+                    " %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
+                    " %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
+                    " %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n",
+                    mat.m[0][0], mat.m[0][1], mat.m[0][2], mat.m[0][3],
+                    mat.m[1][0], mat.m[1][1], mat.m[1][2], mat.m[1][3],
+                    mat.m[2][0], mat.m[2][1], mat.m[2][2], mat.m[2][3],
+                    mat.m[3][0], mat.m[3][1], mat.m[3][2], mat.m[3][3]);
+    }
+#endif
 }
 
 //*************************************************************************************
@@ -1903,9 +1914,8 @@ void RDP_GFX_Force_Matrix(u32 address)
 		return;
 	}
 
-    Matrix4x4 mat;
-	MatrixFromN64FixedPoint(mat, address);
-	PSPRenderer::Get()->SetProjection(mat, true, PSPRenderer::MATRIX_LOAD);
+	MatrixFromN64FixedPoint(address);
+	PSPRenderer::Get()->SetProjection(mat, true, PSPRenderer::MATRIX_LOAD);	// Arrrg this isn't right, fix me !
 }
 
 

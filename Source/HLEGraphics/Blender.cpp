@@ -26,6 +26,46 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspgu.h>
 
 
+/* 
+
+To Devs:
+
+ Once blenders are complete please clean up after yourself before commiting.
+ Incomplete blenders shouldn't be summitted, also please test and make sure the XX blender actually works !
+ also please check common games (Mario, Zelda, Majora's Mask before commiting)
+ Note : Please edo not create extra brakes and such, only do so if is really needed.
+		For example adding a hack on XXX blender.
+
+ Deafult case, should work most of the time, ignore most unknown blenders, if the XXX looks correct of course.
+
+ Please avoid using 0xXXXX, instead use our defines for ex : BLEND_NOOP1
+
+ To create new blenders :
+
+ Daedalus should output everything you need to create new blenders, for example :
+ Blender: c800 - First:  Fog * AShade + In * 1-A 0000 - Second:  In * AIn + In * 1-A
+
+ As you can see c800 goes first, and is our defined ==> BLEND_FOG_ASHADE1,
+ now our second is 0000, which is a BLEND_NOOP1.
+
+ Now our blender has been finished, this how it looks
+ case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_NOOP1 ):
+
+ Next step is figuring out how to handled the created blender.
+ I'll leave this step to common sense since you only have three choices :) 
+
+ The format that our blenders should be for example :
+
+	// Blender:
+	// Used on the F-Zero - Tracks Correction
+case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_PASS3 ):
+	// c800 - First:  Fog * AShade + In * 1-A 
+	// 3200 - Second:  Fog * AShade + In * 1-A
+
+
+*/
+
+
 /*
 // P or M
 #define	G_BL_CLR_IN	0
@@ -73,6 +113,10 @@ const char * sc_szBlA1[4]  = { "AIn", "AFog", "AShade", "0" };
 const char * sc_szBlA2[4]  = { "1-A", "AMem", "1",      "?" };
 #endif
 
+//*****************************************************************************
+//
+//*****************************************************************************
+
 #define MAKE_BLEND_MODE( a, b )			( (a) | (b) )
 #define BLEND_NOOP1				0x00000000		//GBL_c1(G_BL_CLR_IN, G_BL_1MA, G_BL_CLR_IN, G_BL_1MA)
 #define BLEND_NOOP2				0x00000000
@@ -80,9 +124,11 @@ const char * sc_szBlA2[4]  = { "1-A", "AMem", "1",      "?" };
 #define BLEND_FOG_ASHADE1		0xc8000000		// Fog * AShade + In * 1-A
 #define BLEND_FOG_ASHADE2		0xc8000000		// Fog * AShade + In * 1-A
 #define BLEND_FOG_APRIM1		0xc4000000
+#define BLEND_FOG_3				0xc0000000		// Fog * AIn + In * 1-A
 
 #define BLEND_PASS1				0x0c080000		//GBL_c1(G_BL_CLR_IN, G_BL_0, G_BL_CLR_IN, G_BL_1)
 #define BLEND_PASS2				0x03020000
+#define BLEND_PASS3				0x32000000
 
 #define BLEND_OPA1				0x00440000
 #define BLEND_OPA2				0x00110000
@@ -90,8 +136,8 @@ const char * sc_szBlA2[4]  = { "1-A", "AMem", "1",      "?" };
 #define BLEND_XLU1				0x00400000
 #define BLEND_XLU2				0x00100000
 
-#define BLEND_ADD1				0x04400000		//GBL_c##clk(G_BL_CLR_IN, G_BL_A_FOG, G_BL_CLR_MEM, G_BL_1)
-#define BLEND_ADD2				0x01100000
+#define BLEND_ADD3				0x44000000		//GBL_c##clk(G_BL_CLR_IN, G_BL_A_FOG, G_BL_CLR_MEM, G_BL_1)
+#define BLEND_ADD4				0x11000000
 
 #define BLEND_BI_AFOG			0x84000000		// Bl * AFog + In * 1-A
 
@@ -100,6 +146,8 @@ const char * sc_szBlA2[4]  = { "1-A", "AMem", "1",      "?" };
 
 #define BLEND_NOOP3				0x0c480000		// In * 0 + Mem * 1
 #define BLEND_NOOP4				0xcc080000		// Fog * 0 + In * 1
+#define BLEND_NOOP5				0xcc480000		// Fog * 0 + Mem * 1
+#define BLEND_UNK				0x33120000
 
 
 //*****************************************************************************
@@ -111,8 +159,6 @@ void InitBlenderMode()					// Set Alpha Blender mode
 
 
 	u32 blendmode = u32( gRDPOtherMode._u64 & 0xffff0000 );
-	u32 blendmode_1 = u32( gRDPOtherMode.blender & 0xcccc );
-	u32 blendmode_2 = u32( gRDPOtherMode.blender & 0x3333 );
 	u32 cycletype = gRDPOtherMode.cycle_type;
 
 	int		blend_op = GU_ADD;
@@ -120,7 +166,7 @@ void InitBlenderMode()					// Set Alpha Blender mode
 	int		blend_dst = GU_ONE_MINUS_SRC_ALPHA;
 	bool	enable_blend( false );
 
-	if ( gRDPOtherMode.cycle_type == G_CYC_FILL )
+	if ( cycletype == G_CYC_FILL )
 	{
 		enable_blend = false;
 	}
@@ -136,15 +182,26 @@ void InitBlenderMode()					// Set Alpha Blender mode
 		case MAKE_BLEND_MODE( BLEND_MEM1, BLEND_MEM2 ):
 			// Used on SSV - TV window
 		case MAKE_BLEND_MODE( BLEND_NOOP4, BLEND_NOOP2 ):
-			// Blender: c800 - Cycle1:  Fog * AShade + In * 1-A 3200 - Cycle2:  Fog * AShade + In * 1-A
+			// Blender:
 			// Used on the F-Zero - Tracks Correction
-		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, 0x32000000 ):
-			// Blender: c800 - Cycle1:  Fog * AShade + In * 1-A 0302 - Cycle2:  In * 0 + In * 1
-			// Used on Hey You Pikachu ! - Body and Face Correction, Automobili
+		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_PASS3 ):
+			// c800 - First:  Fog * AShade + In * 1-A 
+			// 3200 - Second:  Fog * AShade + In * 1-A
+			// Blender:
+			// Used on Hey You Pikachu ! - Body and Face Correction, Automobili..
 		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_PASS2 ):
-			// Blender: c800 - Cycle1:  Fog * AShade + In * 1-A 0000 - Cycle2:  In * AIn + In * 1-A
+			// c800 - First:  Fog * AShade + In * 1-A 
+			// 0302 - Second:  In * 0 + In * 1
+			// Blender: 
 			// Used on the F-Zero - Cars Correction
 		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_NOOP1 ):
+			// c800 - First:  Fog * AShade + In * 1-A 
+			// 0000 - Second:  In * AIn + In * 1-A
+			// Blender:
+			// Used on ISC64 - Ground and field correction
+		case MAKE_BLEND_MODE( BLEND_FOG_3, BLEND_PASS2 ):
+			// c000 - First:Fog * AIn + In * 1-A
+			// 0302 - Second:In * 0 + In * 1
 			enable_blend = false;
 			break;
 		case MAKE_BLEND_MODE( BLEND_NOOP1, BLEND_NOOP2 ):
@@ -152,19 +209,25 @@ void InitBlenderMode()					// Set Alpha Blender mode
 		case MAKE_BLEND_MODE( BLEND_XLU1, BLEND_NOOP2 ):
 		case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_XLU2 ):
 		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_XLU2 ):
-			// Blender: 0000 - Cycle1:  In * AIn + In * 1-A 0010 - Cycle2:  In * AIn + Mem * 1-A
+			// Blender:
 			// Used on Hey You Pikachu ! - Shade Correction
 		case MAKE_BLEND_MODE( BLEND_NOOP1, BLEND_XLU2 ):
+			// 0000 - First:  In * AIn + In * 1-A 
+			// 0010 - Second:  In * AIn + Mem * 1-A
 			blend_op = GU_ADD; blend_src = GU_SRC_ALPHA; blend_dst = GU_ONE_MINUS_SRC_ALPHA;
 			enable_blend = true;
 			break;
 			// XXXX
-			// Force Transparency
+			// Transparency
 			blend_op = GU_ADD; blend_src = GU_SRC_COLOR; blend_dst = GU_DST_COLOR;
 			enable_blend = true;
 			break;
 		default:
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST	// Might need to make my own tag?
+
+			u32 blendmode_1 = u32( gRDPOtherMode.blender & 0xcccc );
+			u32 blendmode_2 = u32( gRDPOtherMode.blender & 0x3333 );
+
 			u32 m1A_1 = (gRDPOtherMode.blender>>14) & 0x3;
 			u32 m1B_1 = (gRDPOtherMode.blender>>10) & 0x3;
 			u32 m2A_1 = (gRDPOtherMode.blender>>6) & 0x3;
@@ -175,13 +238,13 @@ void InitBlenderMode()					// Set Alpha Blender mode
 			u32 m2A_2 = (gRDPOtherMode.blender>>4) & 0x3;
 			u32 m2B_2 = (gRDPOtherMode.blender   ) & 0x3;
 
-			DL_PF( "		 Blend: SRCALPHA/INVSRCALPHA (default: 0x%04x)", gRDPOtherMode.blender );
-			DAEDALUS_ERROR( "Blender:%04x - Cycle1:%s * %s + %s * %s || %04x - Cycle2:%s * %s + %s * %s", blendmode_1,
+			DAEDALUS_ERROR( "Blender:%04x - First:%s * %s + %s * %s || %04x - Second:%s * %s + %s * %s", blendmode_1,
 					sc_szBlClr[m1A_1], sc_szBlA1[m1B_1], sc_szBlClr[m2A_1], sc_szBlA2[m2B_1], blendmode_2,
 					sc_szBlClr[m1A_2], sc_szBlA1[m1B_2], sc_szBlClr[m2A_2], sc_szBlA2[m2B_2]);
 
 
 #endif
+			DL_PF( "		 Blend: SRCALPHA/INVSRCALPHA (default: 0x%04x)", gRDPOtherMode.blender );
 			blend_op = GU_ADD; blend_src = GU_SRC_ALPHA; blend_dst = GU_ONE_MINUS_SRC_ALPHA;
 			enable_blend = true;
 			break;

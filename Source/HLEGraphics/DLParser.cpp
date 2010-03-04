@@ -55,8 +55,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 const u32	MAX_RAM_ADDRESS = (8*1024*1024);
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 const char *	gDisplayListRootPath = "DisplayLists";
 const char *	gDisplayListDumpPathFormat = "dl%04d.txt";
+#endif
 
 #define N64COL_GETR( col )		(u8((col) >> 24))
 #define N64COL_GETG( col )		(u8((col) >> 16))
@@ -109,17 +111,8 @@ void MatrixFromN64FixedPoint( u32 address )
 }
 
 //*************************************************************************************
-// Macros
+//
 //*************************************************************************************
-#ifdef DAEDALUS_GFX_PLUGIN
-
-inline void FinishRDPJob()
-{
-	*g_GraphicsInfo.xMI_INTR_REG |= MI_INTR_DP;
-	g_GraphicsInfo.CheckInterrupts();
-}
-
-#else
 
 inline void 	FinishRDPJob()
 {
@@ -127,12 +120,12 @@ inline void 	FinishRDPJob()
 	gCPUState.AddJob(CPU_CHECK_INTERRUPTS);
 }
 
-#endif
-
+//*************************************************************************************
+//
+//*************************************************************************************
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 void DLParser_DumpVtxInfo(u32 address, u32 v0_idx, u32 num_verts);
-//void DLParser_DumpVtxInfoDKR(u32 address, u32 v0_idx, u32 num_verts);
 
 u32 gNumDListsCulled;
 u32 gNumVertices;
@@ -191,13 +184,6 @@ SImageDescriptor g_TI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
 SImageDescriptor g_CI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
 SImageDescriptor g_DI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
 
-
-
-
-
-
-
-
 //u32		gPalAddresses[ 4096 ];
 
 
@@ -219,15 +205,13 @@ static u32					gTotalInstructionCount = 0;
 static u32					gInstructionCountLimit = UNLIMITED_INSTRUCTION_COUNT;
 #endif
 
-u32 gAmbientLightIdx = 0;
+static bool gFirstCall = true;										// Used to keep track of when we're processing the first display list
 
+u32 gAmbientLightIdx = 0;
 u32 gTextureTile = 0;
 u32 gTextureLevel = 0;
 
 static u32 gFillColor		= 0xFFFFFFFF;
-
-static bool gFirstCall = true;				// Used to keep track of when we're processing the first display list
-
 
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
@@ -375,12 +359,13 @@ MicroCodeInstruction gInstructionLookup[256];
 //*****************************************************************************
 bool DLParser_Initialise()
 {
-	gFirstCall = true;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	gDumpNextDisplayList = false;
 	gDisplayListFile = NULL;
 #endif
+
+	gFirstCall = true;
 
 	//
 	// Reset all the RDP registers
@@ -647,26 +632,25 @@ static void DLParser_SetuCode( GBIVersion gbi_version, UCodeVersion ucode_versio
 			gInstructionLookup[G_GBI1_VTX] = DLParser_GBI0_Vtx_WRUS;	gInstructionName[G_GBI1_VTX]		= "G_GBI0_VTX_WRUS";
 		} 
 		else if (gbi_version == GBI_0_DKR || gbi_version == GBI_0_JFG)
-		//if (gbi_version equals a certain number, OR gbi_version is non-zero) 
-		//{....we need if (gbi_version equalt this number OR gbi_version eqauls that number)
-		//therefor, we need to repeat the gbi_verion ==
 		{
 			// DKR
 			SetCommand( G_DMATRI					, DLParser_DmaTri );
 			SetCommand( G_DLINMEM					, DLParser_DLInMem );
-			//LoadedUcodeMap[0xbf]=DLParser_Set_Addr_Ucode6;
+
 			gInstructionLookup[G_GBI1_MOVEWORD] = DLParser_MoveWord_DKR;		gInstructionName[G_GBI1_MOVEWORD]		= "G_MoveWord_DKR";
+			gInstructionLookup[G_GBI1_MTX] = DLParser_MtxDKR;					gInstructionName[G_GBI1_MTX]			= "G_MtxDKR";
+			gInstructionLookup[G_GBI1_TRI2] = DLParser_GBI0_Tri2;				gInstructionName[G_GBI1_TRI2]			= "G_GBI0_TRI2";
 
-			gInstructionLookup[G_GBI1_TRI2] = DLParser_GBI0_Tri2;		gInstructionName[G_GBI1_TRI2]		= "G_GBI0_TRI2";
-
+			//if (gbi_version equals a certain number, OR gbi_version is non-zero) 
+			//{....we need if (gbi_version equalt this number OR gbi_version eqauls that number)
+			//therefor, we need to repeat the gbi_verion ==
 			if( gbi_version == GBI_0_JFG )	
 			{
-				gInstructionLookup[G_GBI1_VTX] = DLParser_GBI0_Vtx_Gemini;		gInstructionName[G_GBI1_VTX]		= "G_GBI0_Vtx_Gemini";
+				gInstructionLookup[G_GBI1_VTX] = DLParser_GBI0_Vtx_Gemini;		gInstructionName[G_GBI1_VTX]			= "G_GBI0_Vtx_Gemini";
 			}
 			else
 			{
-				gInstructionLookup[G_GBI1_MTX] = DLParser_MtxDKR;		gInstructionName[G_GBI1_MTX]		= "G_MtxDKR";
-				gInstructionLookup[G_GBI1_VTX] = DLParser_GBI0_Vtx_DKR;		gInstructionName[G_GBI1_VTX]		= "G_GBI0_VTX_DKR";
+				gInstructionLookup[G_GBI1_VTX] = DLParser_GBI0_Vtx_DKR;			gInstructionName[G_GBI1_VTX]			= "G_GBI0_VTX_DKR";
 
 			}
 
@@ -832,12 +816,12 @@ bool	DLParser_FetchNextCommand( MicroCodeCommand * p_command )
 	return true;
 }
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*************************************************************************************
 // 
 //*************************************************************************************
 static void HandleDumpDisplayList( OSTask * pTask )
 {
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	if (gDumpNextDisplayList)
 	{
 		DBGConsole_Msg( 0, "Dumping display list" );
@@ -866,9 +850,8 @@ static void HandleDumpDisplayList( OSTask * pTask )
 		// Clear flag as we're done
 		gDumpNextDisplayList = false;
 	}
-#endif
 }
-
+#endif
 //*****************************************************************************
 // 
 //*****************************************************************************
@@ -1004,7 +987,9 @@ void DLParser_Process()
 	//
 	// Prepare to dump this displaylist, if necessary
 	//
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	HandleDumpDisplayList( pTask );
+#endif
 
 	DL_PF("DP: Firing up RDP!");
 
@@ -1191,12 +1176,7 @@ void DLParser_GBI2_SpNoop( MicroCodeCommand command )
 {
 	// Noop
 }
-/* Duplicated Command <== Remove me
-void DLParser_GBI2_RDPHalf_1( MicroCodeCommand command )
-{
-	gRDPHalf1 = u32(command._u64 & 0xffffffff);
-}
-*/
+
 void DLParser_GBI2_RDPHalf_2( MicroCodeCommand command )
 {
 
@@ -1456,28 +1436,7 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 	case G_MW_MATRIX:
 		DL_PF("    G_MW_MATRIX");
 		RDP_NOIMPL_WARN("GBI1: G_MW_MATRIX Not Implemented");
-
-		//printf( "GBI1: MW_MATRIX: %08x %08x\n", command.cmd0, command.cmd1 );
-		//switch( offset )
-		//{
-		//case G_MWO_MATRIX_XX_XY_I:
-		//case G_MWO_MATRIX_XZ_XW_I:
-		//case G_MWO_MATRIX_YX_YY_I:
-		//case G_MWO_MATRIX_YZ_YW_I:
-		//case G_MWO_MATRIX_ZX_ZY_I:
-		//case G_MWO_MATRIX_ZZ_ZW_I:
-		//case G_MWO_MATRIX_WX_WY_I:
-		//case G_MWO_MATRIX_WZ_WW_I:
-		//case G_MWO_MATRIX_XX_XY_F:
-		//case G_MWO_MATRIX_XZ_XW_F:
-		//case G_MWO_MATRIX_YX_YY_F:
-		//case G_MWO_MATRIX_YZ_YW_F:
-		//case G_MWO_MATRIX_ZX_ZY_F:
-		//case G_MWO_MATRIX_ZZ_ZW_F:
-		//case G_MWO_MATRIX_WX_WY_F:
-		//case G_MWO_MATRIX_WZ_WW_F:
-		//}
-
+		// Insert Matrix is needed here !
 		break;
 	case G_MW_NUMLIGHT:
 		//#define NUML(n)		(((n)+1)*32 + 0x80000000)
@@ -1490,18 +1449,17 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 
 		}
 		break;
-	case G_MW_CLIP:
+	case G_MW_CLIP:	// Seems to be unused?
 		{
 			switch (offset)
 			{
-			case G_MWO_CLIP_RNX:		DL_PF("    G_MW_CLIP  NegX: %d", (s32)(s16)command.cmd1);			break;
-			case G_MWO_CLIP_RNY:		DL_PF("    G_MW_CLIP  NegY: %d", (s32)(s16)command.cmd1);			break;
-			case G_MWO_CLIP_RPX:		DL_PF("    G_MW_CLIP  PosX: %d", (s32)(s16)command.cmd1);			break;
-			case G_MWO_CLIP_RPY:		DL_PF("    G_MW_CLIP  PosY: %d", (s32)(s16)command.cmd1);			break;
+			case G_MWO_CLIP_RNX:
+			case G_MWO_CLIP_RNY:
+			case G_MWO_CLIP_RPX:
+			case G_MWO_CLIP_RPY:
+				break;
 			default:					DL_PF("    G_MW_CLIP  ?   : 0x%08x", command.cmd1);					break;
 			}
-
-			//RDP_NOIMPL_WARN("G_MW_CLIP Not Implemented");
 		}
 		break;
 	case G_MW_SEGMENT:
@@ -1525,7 +1483,6 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 			PSPRenderer::Get()->SetFogMult( 255.0f * fMult );
 			PSPRenderer::Get()->SetFogOffset( 255.0f * fOff );
 		}
-		//RDP_NOIMPL_WARN("G_MW_FOG Not Implemented");
 		break;
 	case G_MW_LIGHTCOL:
 		{
@@ -1561,13 +1518,13 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 		}
 
 		break;
-	case G_MW_POINTS:
+	case G_MW_POINTS:	// Used in FIFA 98
 		{
 			u32 vtx = offset/40;
 			u32 where = offset - vtx*40;
 			u32 val = command.cmd1;	// Odd value given
 
-			DL_PF("    G_MW_POINTS"); // Used in FIFA 98
+			DL_PF("    G_MW_POINTS");
 
 			PSPRenderer::Get()->ModifyVertexInfo(where, vtx, val);
 		}
@@ -1597,51 +1554,12 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 	u32 type   = (command.cmd0 >> 16) & 0xFF;
 	u32 offset = (command.cmd0      ) & 0xFFFF;
 
-# define G_MW_FORCEMTX		0x0c
-/*
-#define G_MW_MATRIX			0x00
-#define G_MW_NUMLIGHT		0x02
-#define G_MW_CLIP			0x04
-#define G_MW_SEGMENT		0x06
-#define G_MW_FOG			0x08
-#define G_MW_LIGHTCOL		0x0a
-#ifdef	F3DEX_GBI_2x
-# define G_MW_FORCEMTX		0x0c
-#else	// F3DEX_GBI_2
-# define G_MW_POINTS		0x0c
-#endif	// F3DEX_GBI_2
-#define	G_MW_PERSPNORM		0x0e
-*/
-
 	switch (type)
 	{
 	case G_MW_MATRIX:
-		{
-			RDP_NOIMPL_WARN( "GBI2: G_MW_MATRIX not implemented" );
-
-			//printf( "GBI2: MW_MATRIX: %08x %08x\n", command.cmd0, command.cmd1 );
-
-		//switch( offset )
-		//{
-		//case G_MWO_MATRIX_XX_XY_I:
-		//case G_MWO_MATRIX_XZ_XW_I:
-		//case G_MWO_MATRIX_YX_YY_I:
-		//case G_MWO_MATRIX_YZ_YW_I:
-		//case G_MWO_MATRIX_ZX_ZY_I:
-		//case G_MWO_MATRIX_ZZ_ZW_I:
-		//case G_MWO_MATRIX_WX_WY_I:
-		//case G_MWO_MATRIX_WZ_WW_I:
-		//case G_MWO_MATRIX_XX_XY_F:
-		//case G_MWO_MATRIX_XZ_XW_F:
-		//case G_MWO_MATRIX_YX_YY_F:
-		//case G_MWO_MATRIX_YZ_YW_F:
-		//case G_MWO_MATRIX_ZX_ZY_F:
-		//case G_MWO_MATRIX_ZZ_ZW_F:
-		//case G_MWO_MATRIX_WX_WY_F:
-		//case G_MWO_MATRIX_WZ_WW_F:
-		//}
-
-		}
+		DL_PF("    G_MW_MATRIX");
+		RDP_NOIMPL_WARN( "GBI2: G_MW_MATRIX not implemented" );
+		// Insert Matrix is needed here !
 		break;
 	case G_MW_NUMLIGHT:
 		{
@@ -1658,17 +1576,17 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 		}
 		break;
 
-	case G_MW_CLIP:
+	case G_MW_CLIP:	// Seems to be unused?
 		{
 			switch (offset)
 			{
-			case G_MWO_CLIP_RNX:		DL_PF("     G_MW_CLIP  NegX: %d", (s32)(s16)command.cmd1);			break;
-			case G_MWO_CLIP_RNY:		DL_PF("     G_MW_CLIP  NegY: %d", (s32)(s16)command.cmd1);			break;
-			case G_MWO_CLIP_RPX:		DL_PF("     G_MW_CLIP  PosX: %d", (s32)(s16)command.cmd1);			break;
-			case G_MWO_CLIP_RPY:		DL_PF("     G_MW_CLIP  PosY: %d", (s32)(s16)command.cmd1);			break;
+			case G_MWO_CLIP_RNX:
+			case G_MWO_CLIP_RNY:
+			case G_MWO_CLIP_RPX:
+			case G_MWO_CLIP_RPY:
+				break;
 			default:					DL_PF("     G_MW_CLIP");											break;
 			}
-			//RDP_NOIMPL_WARN("G_MW_CLIP Not Implemented");
 		}
 		break;
 
@@ -1730,12 +1648,12 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 		}
 		break;
 
-	case G_MW_FORCEMTX:
-		RDP_NOIMPL_WARN( "G_MW_FORCEMTX not implemented" );
-		break;
-
 	case G_MW_PERSPNORM:
 		DL_PF("     G_MW_PERSPNORM 0x%04x", (s16)command.cmd1);
+		break;
+
+	case G_MW_POINTS:
+		DL_PF("     Ignored : Force Matrix");
 		break;
 
 	default:
@@ -1783,11 +1701,6 @@ void DLParser_GBI1_MoveMem( MicroCodeCommand command )
 			{
 				u32 light_idx = (type-G_MV_L0)/2;
 				DL_PF("    G_MV_L%d", light_idx);
-
-				// Ensure type == G_MV_L0 -- G_MV_L7
-				//	if (type < G_MV_L0 || type > G_MV_L7 || ((type & 0x1) != 0))
-				//		break;
-
 				DL_PF("    Light%d: Length:0x%04x, Address: 0x%08x", light_idx, length, address);
 
 				RDP_MoveMemLight(light_idx, address);
@@ -1795,28 +1708,17 @@ void DLParser_GBI1_MoveMem( MicroCodeCommand command )
 			break;
 		case G_MV_TXTATT:
 			DL_PF("    G_MV_TXTATT");
-			RDP_NOIMPL_WARN("G_MV_TXTATT Not Implemented");
 			break;
-			//Next 3 MATRIX commands should be ignored since they were in the previous command.
 		case G_MV_MATRIX_1:
 			RDP_GFX_Force_Matrix(address);
 			break;
-		case G_MV_MATRIX_2:	/*IGNORED*/
-			break;
-		case G_MV_MATRIX_3:	/*IGNORED*/
-			break;
-		case G_MV_MATRIX_4:	/*IGNORED*/
-			break;
+		//Next 3 MATRIX commands should be ignored, since they were in the previous command.
+		case G_MV_MATRIX_2:	/*IGNORED*/	DL_PF("     G_MV_MATRIX_2");											break;
+		case G_MV_MATRIX_3:	/*IGNORED*/	DL_PF("     G_MV_MATRIX_3");											break;
+		case G_MV_MATRIX_4:	/*IGNORED*/	DL_PF("     G_MV_MATRIX_4");											break;
 		default:
-			DL_PF("    Type: Unknown");
-			{
-				static bool warned = false;
-				if (!warned)
-				{
-					DBGConsole_Msg(0, "Unknown Move Type: %d", type);
-					warned = true;
-				}
-			}
+			DL_PF("    MoveMem Type: Unknown");
+			DBGConsole_Msg(0, "MoveMem: Unknown, cmd=%08X, %08X", command.cmd0, command.cmd1);
 			break;
 	}
 }
@@ -1873,39 +1775,6 @@ ZeldaMoveMem: 0xdc080008 0x8010e3c0 Type: 08 Len: 08 Off: 4000
 
 */
 
-# define G_GBI1_MV_VIEWPORT	0x80
-# define G_GBI1_MV_LOOKATY	0x82
-# define G_GBI1_MV_LOOKATX	0x84
-# define G_GBI1_MV_L0	0x86
-# define G_GBI1_MV_L1	0x88
-# define G_GBI1_MV_L2	0x8a
-# define G_GBI1_MV_L3	0x8c
-# define G_GBI1_MV_L4	0x8e
-# define G_GBI1_MV_L5	0x90
-# define G_GBI1_MV_L6	0x92
-# define G_GBI1_MV_L7	0x94
-# define G_GBI1_MV_TXTATT	0x96
-# define G_GBI1_MV_MATRIX_1	0x9e	// NOTE: this is in moveword table
-# define G_GBI1_MV_MATRIX_2	0x98
-# define G_GBI1_MV_MATRIX_3	0x9a
-# define G_GBI1_MV_MATRIX_4	0x9c
-
-// 0,2,4,6 are reserved by G_MTX
-# define G_GBI2_MV_VIEWPORT	8
-# define G_GBI2_MV_LIGHT	10
-# define G_GBI2_MV_POINT	12
-# define G_GBI2_MV_MATRIX	14		// NOTE: this is in moveword table
-# define G_GBI2_MVO_LOOKATX	(0*24)
-# define G_GBI2_MVO_LOOKATY	(1*24)
-# define G_GBI2_MVO_L0	(2*24)
-# define G_GBI2_MVO_L1	(3*24)
-# define G_GBI2_MVO_L2	(4*24)
-# define G_GBI2_MVO_L3	(5*24)
-# define G_GBI2_MVO_L4	(6*24)
-# define G_GBI2_MVO_L5	(7*24)
-# define G_GBI2_MVO_L6	(8*24)
-# define G_GBI2_MVO_L7	(9*24)
-
 void RDP_GFX_Force_Matrix(u32 address)
 {
 	if (address + 64 > MAX_RAM_ADDRESS)
@@ -1917,30 +1786,17 @@ void RDP_GFX_Force_Matrix(u32 address)
 	MatrixFromN64FixedPoint(address);
 	PSPRenderer::Get()->SetProjection(mat, true, PSPRenderer::MATRIX_LOAD);	// Arrrg this isn't right, fix me !
 }
-
+//*****************************************************************************
+//
+//*****************************************************************************
 
 void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 {
 
-
 	u32 address	 = RDPSegAddr(command.cmd1);
 	//u32 offset = (command.cmd0 >> 8) & 0xFFFF;
 	u32 type	 = (command.cmd0     ) & 0xFE;
-
-	u32 length  = (command.cmd0 >> 16) & 0xFF;
-	u32 offset2 = (command.cmd0 >> 5) & 0x3FFF;
-
-	use(length);
-
-	DL_PF("    Type: %02x Len: %02x Off: %04x", type, length, offset2);
-
-	//ZeldaMoveMem: Unknown Type. 0xdc08030a 0x80063160
-	// offset = 0803
-	// type = 0a
-
-	s8 * pcBase = g_ps8RamBase + address;
-
-	use(pcBase);
+	//u32 length  = (command.cmd0 >> 16) & 0xFF;
 
 	switch (type)
 	{
@@ -1951,6 +1807,10 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 		break;
 	case G_GBI2_MV_LIGHT:
 		{
+			u32 offset2 = (command.cmd0 >> 5) & 0x3FFF;
+
+			s8 * pcBase = g_ps8RamBase + address;
+			use(pcBase);
 
 		switch (offset2)
 		{
@@ -2014,15 +1874,9 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 			RDP_NOIMPL_WARN("G_GBI2_MV_0x02 Not Implemented");
 			break;
 		}
-	default: //Unhandled
+	default:
+		DL_PF("    GBI2 MoveMem Type: Unknown");
 		DBGConsole_Msg(0, "GBI2 MoveMem: Unknown Type. 0x%08x 0x%08x", command.cmd0, command.cmd1);
-		u32 * base = (u32 *)pcBase;
-		
-		for (u32 i = 0; i < 4; i++)
-		{
-			DL_PF("    %08x %08x %08x %08x", base[0], base[1], base[2], base[3]);
-			base+=4;
-		}
 		break;
 	}
 }

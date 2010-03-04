@@ -136,6 +136,8 @@ const char * sc_szBlA2[4]  = { "1-A", "AMem", "1",      "?" };
 #define BLEND_XLU1				0x00400000
 #define BLEND_XLU2				0x00100000
 
+#define BLEND_ADD1				0x04400000		//GBL_c##clk(G_BL_CLR_IN, G_BL_A_FOG, G_BL_CLR_MEM, G_BL_1)
+#define BLEND_ADD2				0x01100000
 #define BLEND_ADD3				0x44000000		//GBL_c##clk(G_BL_CLR_IN, G_BL_A_FOG, G_BL_CLR_MEM, G_BL_1)
 #define BLEND_ADD4				0x11000000
 
@@ -182,26 +184,31 @@ void InitBlenderMode()					// Set Alpha Blender mode
 		case MAKE_BLEND_MODE( BLEND_MEM1, BLEND_MEM2 ):
 			// Used on SSV - TV window
 		case MAKE_BLEND_MODE( BLEND_NOOP4, BLEND_NOOP2 ):
-			// Blender:
+		// Blender:
 			// Used on the F-Zero - Tracks Correction
 		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_PASS3 ):
 			// c800 - First:  Fog * AShade + In * 1-A 
 			// 3200 - Second:  Fog * AShade + In * 1-A
-			// Blender:
+		// Blender:
 			// Used on Hey You Pikachu ! - Body and Face Correction, Automobili..
 		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_PASS2 ):
 			// c800 - First:  Fog * AShade + In * 1-A 
 			// 0302 - Second:  In * 0 + In * 1
-			// Blender: 
+		// Blender: 
 			// Used on the F-Zero - Cars Correction
 		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_NOOP1 ):
 			// c800 - First:  Fog * AShade + In * 1-A 
 			// 0000 - Second:  In * AIn + In * 1-A
-			// Blender:
+		// Blender:
 			// Used on ISC64 - Ground and field correction
 		case MAKE_BLEND_MODE( BLEND_FOG_3, BLEND_PASS2 ):
 			// c000 - First:Fog * AIn + In * 1-A
 			// 0302 - Second:In * 0 + In * 1
+		//Blender:
+			// Used on 1080 - Sky
+		case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_NOOP1 ):
+			// 0c08 - First:In * 0 + In * 1
+			// 0000 - Second:In * AIn + In * 1-A 
 			enable_blend = false;
 			break;
 		case MAKE_BLEND_MODE( BLEND_NOOP1, BLEND_NOOP2 ):
@@ -209,7 +216,7 @@ void InitBlenderMode()					// Set Alpha Blender mode
 		case MAKE_BLEND_MODE( BLEND_XLU1, BLEND_NOOP2 ):
 		case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_XLU2 ):
 		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_XLU2 ):
-			// Blender:
+		// Blender:
 			// Used on Hey You Pikachu ! - Shade Correction
 		case MAKE_BLEND_MODE( BLEND_NOOP1, BLEND_XLU2 ):
 			// 0000 - First:  In * AIn + In * 1-A 
@@ -218,6 +225,7 @@ void InitBlenderMode()					// Set Alpha Blender mode
 			enable_blend = true;
 			break;
 			// XXXX
+		case MAKE_BLEND_MODE( BLEND_XLU1, BLEND_ADD2 ):
 			// Transparency
 			blend_op = GU_ADD; blend_src = GU_SRC_COLOR; blend_dst = GU_DST_COLOR;
 			enable_blend = true;
@@ -238,7 +246,7 @@ void InitBlenderMode()					// Set Alpha Blender mode
 			u32 m2A_2 = (gRDPOtherMode.blender>>4) & 0x3;
 			u32 m2B_2 = (gRDPOtherMode.blender   ) & 0x3;
 
-			DAEDALUS_ERROR( "Blender:%04x - First:%s * %s + %s * %s || %04x - Second:%s * %s + %s * %s", blendmode_1,
+			DAEDALUS_ERROR( "Unknown Blender:%04x - :%s * %s + %s * %s || %04x - :%s * %s + %s * %s", blendmode_1,
 					sc_szBlClr[m1A_1], sc_szBlA1[m1B_1], sc_szBlClr[m2A_1], sc_szBlA2[m2B_1], blendmode_2,
 					sc_szBlClr[m1A_2], sc_szBlA1[m1B_2], sc_szBlClr[m2A_2], sc_szBlA2[m2B_2]);
 

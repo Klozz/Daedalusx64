@@ -377,6 +377,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define G_MV_MATRIX_3	0x9a
 #define G_MV_MATRIX_4	0x9c
 
+// 0,2,4,6 are reserved by G_MTX
+# define G_GBI2_MV_VIEWPORT	8
+# define G_GBI2_MV_LIGHT	10
+# define G_GBI2_MV_POINT	12
+# define G_GBI2_MV_MATRIX	14		// NOTE: this is in moveword table
+# define G_GBI2_MVO_LOOKATX	(0*24)
+# define G_GBI2_MVO_LOOKATY	(1*24)
+# define G_GBI2_MVO_L0	(2*24)
+# define G_GBI2_MVO_L1	(3*24)
+# define G_GBI2_MVO_L2	(4*24)
+# define G_GBI2_MVO_L3	(5*24)
+# define G_GBI2_MVO_L4	(6*24)
+# define G_GBI2_MVO_L5	(7*24)
+# define G_GBI2_MVO_L6	(8*24)
+# define G_GBI2_MVO_L7	(9*24)
+
 //
 // MOVEWORD indices
 //

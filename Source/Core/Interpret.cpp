@@ -17,10 +17,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "stdafx.h"
-
-
-
 // Stuff to handle Processor
 #include "stdafx.h"
 
@@ -35,8 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Interpret.h"
 
 #include "Utility/Synchroniser.h"
-
-#include "Resources/resource.h"
 
 #include "Debug/DebugLog.h"
 #include "Debug/DBGConsole.h"

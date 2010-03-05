@@ -110,6 +110,9 @@ void DLParser_GBI1_Vtx( MicroCodeCommand command )
 #endif
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 void DLParser_GBI2_Vtx( MicroCodeCommand command )
 {
         u32 address = RDPSegAddr(command.cmd1);
@@ -175,6 +178,9 @@ void DLParser_GBI1_ModifyVtx( MicroCodeCommand command )
 	}
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 //
 // gSPMatrix
 //
@@ -210,6 +216,9 @@ void DLParser_GBI1_Mtx( MicroCodeCommand command )
         }
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 void DLParser_GBI2_Mtx( MicroCodeCommand command )
 {
         u32 address = RDPSegAddr(command.cmd1);
@@ -251,7 +260,6 @@ void DLParser_GBI2_Mtx( MicroCodeCommand command )
         }
 }
 
-
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -275,6 +283,9 @@ void DLParser_GBI1_PopMtx( MicroCodeCommand command )
         }
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 void DLParser_GBI2_PopMtx( MicroCodeCommand command )
 {
         u8 mtx_command = (u8)(command.cmd0 & 0xFF);
@@ -332,6 +343,9 @@ void DLParser_GBI1_CullDL( MicroCodeCommand command )
 
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 void DLParser_GBI2_CullDL( MicroCodeCommand command )
 {
 
@@ -384,6 +398,9 @@ void DLParser_GBI1_DL( MicroCodeCommand command )
         }
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 void DLParser_GBI2_DL(  MicroCodeCommand command  )
 {
         u32             push( (command.cmd0 >> 16) & 0x01 );
@@ -416,6 +433,9 @@ void DLParser_GBI1_EndDL( MicroCodeCommand command )
         DLParser_PopDL();
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 void DLParser_GBI2_EndDL( MicroCodeCommand command )
 {
         DLParser_PopDL();
@@ -424,7 +444,6 @@ void DLParser_GBI2_EndDL( MicroCodeCommand command )
 //*****************************************************************************
 // When the depth is less than the z value provided, branch to given address
 //*****************************************************************************
-
 void DLParser_GBI1_BranchZ( MicroCodeCommand command )
 {
 		u32 vtx = (command.cmd0 & 0xFFF) >> 1;
@@ -448,10 +467,12 @@ void DLParser_GBI1_BranchZ( MicroCodeCommand command )
                 gDisplayListStack.push_back(Dl);
         }
 }
+
 //***************************************************************************** 
 // 
 //***************************************************************************** 
 // AST, Yoshi's World and Mario Golf use this 
+//
 void DLParser_GBI1_LoadUCode( MicroCodeCommand command ) 
 { 
         u32 pc = gDisplayListStack.back().addr;
@@ -463,29 +484,28 @@ void DLParser_GBI1_LoadUCode( MicroCodeCommand command )
 		DLParser_InitMicrocode( code_base, code_size, data_base, data_size ); 
 }
 
-
 //*****************************************************************************
 //
 //*****************************************************************************
 static void DLParser_InitGeometryMode()
 {
-        bool bCullFront         = (gGeometryMode & G_CULL_FRONT) ? true : false;
-        bool bCullBack          = (gGeometryMode & G_CULL_BACK) ? true : false;
-		if( bCullFront && bCullBack ) // should never cull front
+        bool bCullFront         = (gGeometryMode & G_CULL_FRONT)		? true : false;
+        bool bCullBack          = (gGeometryMode & G_CULL_BACK)			? true : false;
+		if( bCullFront && bCullBack )
 		{
-			DAEDALUS_ERROR("	Warning : Both front and back are culled ");
-			bCullFront = false;
+			DAEDALUS_ERROR(" Warning : Both front and back are culled ");
+			bCullFront = false; // should never cull front
 		}
-        bool bShade                     = (gGeometryMode & G_SHADE) ? true : false;
-        bool bShadeSmooth       = (gGeometryMode & G_SHADING_SMOOTH) ? true : false;
+		PSPRenderer::Get()->SetCullMode(bCullFront, bCullBack);
 
-        bool bFog                       = (gGeometryMode & G_FOG) ? true : false;
-        bool bTextureGen        = (gGeometryMode & G_TEXTURE_GEN) ? true : false;
+        bool bShade				= (gGeometryMode & G_SHADE)				? true : false;
+        bool bShadeSmooth       = (gGeometryMode & G_SHADING_SMOOTH)	? true : false;
 
-        bool bLighting      = (gGeometryMode & G_LIGHTING) ? true : false;
-        bool bZBuffer           = (gGeometryMode & G_ZBUFFER) ? true : false;
+        bool bFog				= (gGeometryMode & G_FOG)				? true : false;
+        bool bTextureGen        = (gGeometryMode & G_TEXTURE_GEN)		? true : false;
 
-        PSPRenderer::Get()->SetCullMode(bCullFront, bCullBack);
+        bool bLighting			= (gGeometryMode & G_LIGHTING)			? true : false;
+        bool bZBuffer           = (gGeometryMode & G_ZBUFFER)			? true : false;
 
         PSPRenderer::Get()->SetSmooth( bShade );
         PSPRenderer::Get()->SetSmoothShade( bShadeSmooth );
@@ -533,99 +553,98 @@ void DLParser_GBI1_ClearGeometryMode( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_SetGeometryMode(  MicroCodeCommand command  )
 {
-        u32 mask = command.cmd1;
+    u32 mask = command.cmd1;
 
-        gGeometryMode |= mask;
+    gGeometryMode |= mask;
 
-        DLParser_InitGeometryMode();
+    DLParser_InitGeometryMode();
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-        if (gDisplayListFile != NULL)
-        {
-                DL_PF("    Mask=0x%08x", mask);
-                if (mask & G_ZBUFFER)                           DL_PF("  Enabling ZBuffer");
-                if (mask & G_TEXTURE_ENABLE)                    DL_PF("  Enabling Texture");
-                if (mask & G_SHADE)                             DL_PF("  Enabling Shade");
-                if (mask & G_SHADING_SMOOTH)                    DL_PF("  Enabling Smooth Shading");
-                if (mask & G_CULL_FRONT)                        DL_PF("  Enabling Front Culling");
-                if (mask & G_CULL_BACK)                         DL_PF("  Enabling Back Culling");
-                if (mask & G_FOG)                               DL_PF("  Enabling Fog");
-                if (mask & G_LIGHTING)                          DL_PF("  Enabling Lighting");
-                if (mask & G_TEXTURE_GEN)                       DL_PF("  Enabling Texture Gen");
-                if (mask & G_TEXTURE_GEN_LINEAR)                DL_PF("  Enabling Texture Gen Linear");
-                if (mask & G_LOD)                               DL_PF("  Enabling LOD (no impl)");
-        }
+    if (gDisplayListFile != NULL)
+    {
+            DL_PF("    Mask=0x%08x", mask);
+            if (mask & G_ZBUFFER)                           DL_PF("  Enabling ZBuffer");
+            if (mask & G_TEXTURE_ENABLE)                    DL_PF("  Enabling Texture");
+            if (mask & G_SHADE)                             DL_PF("  Enabling Shade");
+            if (mask & G_SHADING_SMOOTH)                    DL_PF("  Enabling Smooth Shading");
+            if (mask & G_CULL_FRONT)                        DL_PF("  Enabling Front Culling");
+            if (mask & G_CULL_BACK)                         DL_PF("  Enabling Back Culling");
+            if (mask & G_FOG)                               DL_PF("  Enabling Fog");
+            if (mask & G_LIGHTING)                          DL_PF("  Enabling Lighting");
+            if (mask & G_TEXTURE_GEN)                       DL_PF("  Enabling Texture Gen");
+            if (mask & G_TEXTURE_GEN_LINEAR)                DL_PF("  Enabling Texture Gen Linear");
+            if (mask & G_LOD)                               DL_PF("  Enabling LOD (no impl)");
+    }
 #endif
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
+//
 // Seems to be AND (command.cmd0&0xFFFFFF) OR (command.cmd1&0xFFFFFF)
+//
 void DLParser_GBI2_GeometryMode( MicroCodeCommand command )
 {
-        u32 and_bits = (command.cmd0) & 0x00FFFFFF;
-        u32 or_bits  = (command.cmd1) & 0x00FFFFFF;
+    u32 and_bits = (command.cmd0) & 0x00FFFFFF;
+    u32 or_bits  = (command.cmd1) & 0x00FFFFFF;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-        if (gDisplayListFile != NULL)
-        {
-                DL_PF("    0x%08x 0x%08x =(x & 0x%08x) | 0x%08x", command.cmd0, command.cmd1, and_bits, or_bits);
+    if (gDisplayListFile != NULL)
+    {
+            DL_PF("    0x%08x 0x%08x =(x & 0x%08x) | 0x%08x", command.cmd0, command.cmd1, and_bits, or_bits);
 
-                if ((~and_bits) & G_ZELDA_ZBUFFER)                              DL_PF("  Disabling ZBuffer");
-        //      if ((~and_bits) & G_ZELDA_TEXTURE_ENABLE)               DL_PF("  Disabling Texture");
-        //      if ((~and_bits) & G_ZELDA_SHADE)                                DL_PF("  Disabling Shade");
-                if ((~and_bits) & G_ZELDA_SHADING_FLAT)                 DL_PF("  Disabling Flat Shading");
-                if ((~and_bits) & G_ZELDA_CULL_FRONT)                   DL_PF("  Disabling Front Culling");
-                if ((~and_bits) & G_ZELDA_CULL_BACK)                    DL_PF("  Disabling Back Culling");
-                if ((~and_bits) & G_ZELDA_FOG)                                  DL_PF("  Disabling Fog");
-                if ((~and_bits) & G_ZELDA_LIGHTING)                             DL_PF("  Disabling Lighting");
-                if ((~and_bits) & G_ZELDA_TEXTURE_GEN)                  DL_PF("  Disabling Texture Gen");
-        //      if ((~and_bits) & G_ZELDA_TEXTURE_GEN_LINEAR)   DL_PF("  Disabling Texture Gen Linear");
-        //      if ((~and_bits) & G_ZELDA_LOD)                                  DL_PF("  Disabling LOD (no impl)");
+            if ((~and_bits) & G_ZELDA_ZBUFFER)						DL_PF("  Disabling ZBuffer");
+            if ((~and_bits) & G_ZELDA_SHADING_SMOOTH)				DL_PF("  Disabling Flat Shading");
+            if ((~and_bits) & G_ZELDA_CULL_FRONT)                   DL_PF("  Disabling Front Culling");
+            if ((~and_bits) & G_ZELDA_CULL_BACK)                    DL_PF("  Disabling Back Culling");
+            if ((~and_bits) & G_ZELDA_FOG)							DL_PF("  Disabling Fog");
+            if ((~and_bits) & G_ZELDA_LIGHTING)						DL_PF("  Disabling Lighting");
+            if ((~and_bits) & G_ZELDA_TEXTURE_GEN)                  DL_PF("  Disabling Texture Gen");
+			if ((~and_bits) & G_ZELDA_TEXTURE_GEN_LINEAR)			DL_PF("  Enabling Texture Gen Linear");
 
-                if (or_bits & G_ZELDA_ZBUFFER)                                  DL_PF("  Enabling ZBuffer");
-        //      if (or_bits & G_ZELDA_TEXTURE_ENABLE)                   DL_PF("  Enabling Texture");
-        //      if (or_bits & G_ZELDA_SHADE)                                    DL_PF("  Enabling Shade");
-                if (or_bits & G_ZELDA_SHADING_FLAT)                             DL_PF("  Enabling Flat Shading");
-                if (or_bits & G_ZELDA_CULL_FRONT)                               DL_PF("  Enabling Front Culling");
-                if (or_bits & G_ZELDA_CULL_BACK)                                DL_PF("  Enabling Back Culling");
-                if (or_bits & G_ZELDA_FOG)                                              DL_PF("  Enabling Fog");
-                if (or_bits & G_ZELDA_LIGHTING)                                 DL_PF("  Enabling Lighting");
-                if (or_bits & G_ZELDA_TEXTURE_GEN)                              DL_PF("  Enabling Texture Gen");
-        //      if (or_bits & G_ZELDA_TEXTURE_GEN_LINEAR)               DL_PF("  Enabling Texture Gen Linear");
-        //      if (or_bits & G_ZELDA_LOD)                                              DL_PF("  Enabling LOD (no impl)");
-
-        }
+            if (or_bits & G_ZELDA_ZBUFFER)							DL_PF("  Enabling ZBuffer");
+            if (or_bits & G_ZELDA_SHADING_FLAT)						DL_PF("  Enabling Flat Shading");
+            if (or_bits & G_ZELDA_CULL_FRONT)						DL_PF("  Enabling Front Culling");
+            if (or_bits & G_ZELDA_CULL_BACK)						DL_PF("  Enabling Back Culling");
+            if (or_bits & G_ZELDA_FOG)								DL_PF("  Enabling Fog");
+            if (or_bits & G_ZELDA_LIGHTING)							DL_PF("  Enabling Lighting");
+            if (or_bits & G_ZELDA_TEXTURE_GEN)						DL_PF("  Enabling Texture Gen");
+			if (or_bits & G_ZELDA_TEXTURE_GEN_LINEAR)               DL_PF("  Enabling Texture Gen Linear");
+    }
 #endif
 
-        gGeometryMode &= and_bits;
-        gGeometryMode |= or_bits;
+    gGeometryMode &= and_bits;
+    gGeometryMode |= or_bits;
 
 
-        bool bCullFront         = (gGeometryMode & G_ZELDA_CULL_FRONT) ? true : false;
-        bool bCullBack          = (gGeometryMode & G_ZELDA_CULL_BACK) ? true : false;
+    bool bCullFront         = (gGeometryMode & G_ZELDA_CULL_FRONT)			? true : false;
+    bool bCullBack          = (gGeometryMode & G_ZELDA_CULL_BACK)			? true : false;
 
-        //bool bShade                   = (gGeometryMode & G_ZELDA_SHADE) ? true : false;
-        bool bFlatShade         = (gGeometryMode & G_ZELDA_SHADING_FLAT) ? true : false;
-        if (gFlatShadeDisabled)
-                bFlatShade              = false;
+//  bool bShade				= (gGeometryMode & G_SHADE)						? true : false;
+//  bool bFlatShade         = (gGeometryMode & G_ZELDA_SHADING_SMOOTH)		? true : false;
+	bool bFlatShade         = (gGeometryMode & G_ZELDA_TEXTURE_GEN_LINEAR)	? true : false;
+    if (gFlatShadeDisabled)
+		bFlatShade			= false;	// Hack for Tiger Honey Hunt
 
-        bool bFog                       = (gGeometryMode & G_ZELDA_FOG) ? true : false;
-        bool bTextureGen        = (gGeometryMode & G_ZELDA_TEXTURE_GEN) ? true : false;
+    bool bFog				= (gGeometryMode & G_ZELDA_FOG)					? true : false;
+    bool bTextureGen        = (gGeometryMode & G_ZELDA_TEXTURE_GEN)			? true : false;
 
-        bool bLighting      = (gGeometryMode & G_ZELDA_LIGHTING) ? true : false;
-        bool bZBuffer           = (gGeometryMode & G_ZELDA_ZBUFFER)     ? true : false;
+    bool bLighting			= (gGeometryMode & G_ZELDA_LIGHTING)			? true : false;
+    bool bZBuffer           = (gGeometryMode & G_ZELDA_ZBUFFER)				? true : false;
 
-        PSPRenderer::Get()->SetCullMode(bCullFront, bCullBack);
+    PSPRenderer::Get()->SetCullMode(bCullFront, bCullBack);
 
-        PSPRenderer::Get()->SetSmooth( !bFlatShade );
-        PSPRenderer::Get()->SetSmoothShade( true );             // Always do this - not sure which bit to use
+    PSPRenderer::Get()->SetSmooth( !bFlatShade );
+    PSPRenderer::Get()->SetSmoothShade( true );             // Always do this - not sure which bit to use
 
-        PSPRenderer::Get()->SetFogEnable( bFog );
-        PSPRenderer::Get()->SetTextureGen(bTextureGen);
+    PSPRenderer::Get()->SetFogEnable( bFog );
+    PSPRenderer::Get()->SetTextureGen(bTextureGen);
 
-        PSPRenderer::Get()->SetLighting( bLighting );
-        PSPRenderer::Get()->ZBufferEnable( bZBuffer );
+    PSPRenderer::Get()->SetLighting( bLighting );
+    PSPRenderer::Get()->ZBufferEnable( bZBuffer );
 
-        //DLParser_InitGeometryMode();
+    //DLParser_InitGeometryMode();
 }
 
 //*****************************************************************************

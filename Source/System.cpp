@@ -129,12 +129,6 @@ SysEntityEntry SysInitTable[] =
 	{"InputManager", CInputManager::Create, CInputManager::Destroy},
 	{"Preference", CPreferences::Create, CPreferences::Destroy},
 	{"Memory", Memory_Init, Memory_Fini},
-#ifdef DAEDALUS_W32
-	{"Main Window", CMainWindow::Create, CMainWindow::Destroy},
-#endif
-#ifdef DAEDALUS_W32
-	{"Enable Debug Console", EnableConsole, DisableConsole},
-#endif
 	{"Controller", CController::Create, CController::Destroy},
 	{"RomBuffer", RomBuffer::Create, RomBuffer::Destroy},
 };
@@ -145,9 +139,6 @@ RomEntityEntry RomInitTable[] =
 	{"Settings", ROM_LoadFile, ROM_UnloadFile},
 	{"InputManager", CInputManager::Init, CInputManager::Fini},
 	{"Memory", Memory_Reset, Memory_Cleanup},
-#ifdef DAEDALUS_W32
-	{"Main Window", CMainWindow::StartEmu, CMainWindow::StopEmu},
-#endif
 	{"Audio", InitAudioPlugin, DisposeAudioPlugin },
 	{"Graphics", InitGraphicsPlugin, DisposeGraphicsPlugin},
 	{"FramerateLimiter", FramerateLimiter_Reset, NULL},

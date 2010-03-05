@@ -26,32 +26,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 //***************************************************************************** 
-// Used by
+//
 //***************************************************************************** 
-// NOT CHECKED 
-/* 
-#define G_ZBUFFER               0x00000001 
-#define G_TEXTURE_ENABLE        0x00000002      // Microcode use only  
-#define G_SHADE                 0x00000004      // enable Gouraud interp 
-#define G_SHADING_SMOOTH        0x00000200      // flat or smooth shaded 
-#define G_CULL_FRONT            0x00001000 
-#define G_CULL_BACK             0x00002000 
-#define G_CULL_BOTH             0x00003000      // To make code cleaner 
-#define G_FOG                   0x00010000 
-#define G_LIGHTING              0x00020000 
-#define G_TEXTURE_GEN           0x00040000 
-#define G_TEXTURE_GEN_LINEAR    0x00080000*/ 
- 
-#define G_ZELDA_ZBUFFER         G_ZBUFFER               // Guess 
-#define G_ZELDA_CULL_BACK       /*G_CULL_FRONT */ 0x00000200 
-#define G_ZELDA_CULL_FRONT      /*G_CULL_BACK  */ 0x00000400 
-#define G_ZELDA_FOG             G_FOG 
-#define G_ZELDA_LIGHTING        G_LIGHTING 
-#define G_ZELDA_TEXTURE_GEN     G_TEXTURE_GEN 
-#define G_ZELDA_SHADING_FLAT    G_TEXTURE_GEN_LINEAR 
-//#define G_ZELDA_SHADE         0x00080000 
-#define G_CLIPPING              0x00800000
 
+#define G_ZELDA_ZBUFFER				G_ZBUFFER	// Guess 
+#define G_ZELDA_CULL_BACK			0x00000200  /*G_CULL_FRONT */ 
+#define G_ZELDA_CULL_FRONT			0x00000400  /*G_CULL_BACK  */
+#define G_ZELDA_FOG					G_FOG 
+#define G_ZELDA_LIGHTING			G_LIGHTING 
+#define G_ZELDA_TEXTURE_GEN			G_TEXTURE_GEN 
+#define G_ZELDA_TEXTURE_GEN_LINEAR	G_TEXTURE_GEN_LINEAR 
+#define G_ZELDA_SHADING_SMOOTH		0x00200000
+
+//***************************************************************************** 
+//
+//***************************************************************************** 
 
 void DLParser_GBI1_CullDL( MicroCodeCommand command );
 void DLParser_GBI2_CullDL( MicroCodeCommand command );
@@ -94,13 +83,16 @@ void DLParser_GBI2_Tri1( MicroCodeCommand command );
 void DLParser_GBI0_Tri2( MicroCodeCommand command );
 void DLParser_GBI2_Tri2( MicroCodeCommand command );
 
+//
 // For some reason these have to be declared here.
 // Local Functions
 //static void DLParser_InitGeometryMode();
+//
 
 //*****************************************************************************
 /* Mariokart etc*/
 //*****************************************************************************
+
 template < int VertexStride >
 void DLParser_GBI1_Tri2_T( MicroCodeCommand command )
 {
@@ -142,8 +134,6 @@ void DLParser_GBI1_Tri2_T( MicroCodeCommand command )
                 PSPRenderer::Get()->FlushTris();
         }
 }
-
-
 
 //*****************************************************************************
 //

@@ -52,10 +52,15 @@ template<> bool CSingleton< CVideoMemoryManager >::Create()
 //*****************************************************************************
 IVideoMemoryManager::IVideoMemoryManager()
 :	mVideoMemoryHeap( CMemoryHeap::Create( MAKE_UNCACHED_PTR( sceGeEdramGetAddr() ), sceGeEdramGetSize() ) )
-,	mRamMemoryHeap( CMemoryHeap::Create( 1 * 1024 * 1024 ) )
+//,	mRamMemoryHeap( CMemoryHeap::Create( 1 * 1024 * 1024 ) )
 {
 	printf( "vram base: %p\n", sceGeEdramGetAddr() );
 	printf( "vram size: %d KB\n", sceGeEdramGetSize() / 1024 );
+	  	 
+	if (PSP_IS_SLIM) 	 
+		 mRamMemoryHeap = CMemoryHeap::Create( 4 * 1024 * 1024 ); 	 
+	else 	 
+		 mRamMemoryHeap = CMemoryHeap::Create( 1 * 1024 * 1024 );
 }
 
 //*****************************************************************************

@@ -264,7 +264,7 @@ private:
 	v2					mTileTopLeft[ NUM_N64_TEXTURES ];
 	v2					mTileScale[ NUM_N64_TEXTURES ];
 
-	static const u32 MATRIX_STACK_SIZE = 100; // XXXX Experimental.
+	static const u32 MATRIX_STACK_SIZE = 20; // XXXX Do not go over 60.
 
 	const Matrix4x4 &	GetWorldProject() const;
 

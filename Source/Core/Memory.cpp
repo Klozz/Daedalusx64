@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ROM.h"
 #include "ROMBuffer.h"
 #include "Save.h"
-#include "Compatibility.h"
 
 #include "Math/MathUtil.h"
 
@@ -38,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Debug/DebugLog.h"
 #include "Debug/DBGConsole.h"
 
+#include "OSHLE/ultra_gbi.h"
 #include "OSHLE/ultra_R4300.h"
 
 #include "Plugins/AudioPlugin.h"
@@ -232,7 +232,7 @@ MemMapEntry MemMapEntries[] =
 	{ 0xC000, 0xDFFF, ReadMapped,		WriteMapped,	WriteValueMapped,		0,			0 },			// Mapped Memory
 	{ 0xE000, 0xFFFF, ReadMapped,		WriteMapped,	WriteValueMapped,		0,			0 },			// Mapped Memory
 
-	{ ~0,  ~0, NULL, NULL, 0,  0 }
+	{ ~0,  ~0, NULL, NULL, 0,  0, 0 }																		// ?? Can we safely remove this?
 };
 
 //*****************************************************************************
@@ -374,43 +374,38 @@ void Memory_Cleanup()
  //*****************************************************************************
 static void Memory_Tlb_Hack()
 {
-	if (gTLBHackEnabled) //Enabled for GoldenEye via roms.ini
+	if(RomBuffer::IsRomLoaded() && RomBuffer::IsRomAddressFixed())
 	{
-		if(RomBuffer::IsRomLoaded() && RomBuffer::IsRomAddressFixed())
-           {
-                   u32 tlbOffset = 0;
-                   switch(g_ROM.rh.CountryID)
-                   {
-                   case 0x45:
-                           tlbOffset = 0x34b30;
-                           break;
-                   case 0x4A:
-                           tlbOffset = 0x34b70;
-						   break;
-                   case 0x50:
-                           tlbOffset = 0x329f0;
-						   break;
-                   default:
-                           // we can not handle
-                           return;
-                   }
+		   u32 tlbOffset = 0;
+		   switch(g_ROM.rh.CountryID)
+		   {
+		   case 0x45:
+				   tlbOffset = 0x34b30;
+				   break;
+		   case 0x4A:
+				   tlbOffset = 0x34b70;
+				   break;
+		   case 0x50:
+				   tlbOffset = 0x329f0;
+				   break;
+		   default:
+				   // we can not handle
+				   return;
+		   }
 
-                   u32 start_addr = 0x7F000000 >> 18;
-                   u32 end_addr   = 0x7FFFFFFF >> 18;
-                   const void *    p_rom_address( RomBuffer::GetFixedRomBaseAddress() );
+		   u32 start_addr = 0x7F000000 >> 18;
+		   u32 end_addr   = 0x7FFFFFFF >> 18;
+		   const void *    p_rom_address( RomBuffer::GetFixedRomBaseAddress() );
 
-                   void *pointerLookupTableEntry = (void*)(reinterpret_cast< u32 >( p_rom_address) + tlbOffset - (start_addr << 18));
+		   void *pointerLookupTableEntry = (void*)(reinterpret_cast< u32 >( p_rom_address) + tlbOffset - (start_addr << 18));
 
-                   for (u32 i = start_addr; i <= end_addr; i++)
-                   {
-                           g_ReadAddressPointerLookupTable[i] = pointerLookupTableEntry;
-                   }
-           }
+		   for (u32 i = start_addr; i <= end_addr; i++)
+		   {
+				g_ReadAddressPointerLookupTable[i] = pointerLookupTableEntry;
+		   }
+	}
 
-           g_ReadAddressPointerLookupTable[0x70000000 >> 18] = (void*)(reinterpret_cast< u32 >( g_pMemoryBuffers[MEM_RD_RAM]) - 0x70000000);
-       }
-
-       return;
+	g_ReadAddressPointerLookupTable[0x70000000 >> 18] = (void*)(reinterpret_cast< u32 >( g_pMemoryBuffers[MEM_RD_RAM]) - 0x70000000);
 }
 
 //*****************************************************************************
@@ -630,62 +625,15 @@ void Memory_InitTables()
 	}
 
 	// Hack the TLB Map per game
-	Memory_Tlb_Hack();
+	if (gTLBHackEnabled) 
+	{
+		Memory_Tlb_Hack(); //Enabled for GoldenEye via roms.ini
+	}
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-
-/* RDP commands: */
-#define	G_NOOP				0xc0	/*   0 */
-#define	G_SETCIMG			0xff	/*  -1 */
-#define	G_SETZIMG			0xfe	/*  -2 */
-#define	G_SETTIMG			0xfd	/*  -3 */
-#define	G_SETCOMBINE		0xfc	/*  -4 */
-#define	G_SETENVCOLOR		0xfb	/*  -5 */
-#define	G_SETPRIMCOLOR		0xfa	/*  -6 */
-#define	G_SETBLENDCOLOR		0xf9	/*  -7 */
-#define	G_SETFOGCOLOR		0xf8	/*  -8 */
-#define	G_SETFILLCOLOR		0xf7	/*  -9 */
-#define	G_FILLRECT			0xf6	/* -10 */
-#define	G_SETTILE			0xf5	/* -11 */
-#define	G_LOADTILE			0xf4	/* -12 */
-#define	G_LOADBLOCK			0xf3	/* -13 */
-#define	G_SETTILESIZE		0xf2	/* -14 */
-#define	G_LOADTLUT			0xf0	/* -16 */
-#define	G_RDPSETOTHERMODE	0xef	/* -17 */
-#define	G_SETPRIMDEPTH		0xee	/* -18 */
-#define	G_SETSCISSOR		0xed	/* -19 */
-#define	G_SETCONVERT		0xec	/* -20 */
-#define	G_SETKEYR			0xeb	/* -21 */
-#define	G_SETKEYGB			0xea	/* -22 */
-#define	G_RDPFULLSYNC		0xe9	/* -23 */
-#define	G_RDPTILESYNC		0xe8	/* -24 */
-#define	G_RDPPIPESYNC		0xe7	/* -25 */
-#define	G_RDPLOADSYNC		0xe6	/* -26 */
-#define G_TEXRECTFLIP		0xe5	/* -27 */
-#define G_TEXRECT			0xe4	/* -28 */
-
-/*
- * The following commands are the "generated" RDP commands; the user
- * never sees them, the RSP microcode generates them.
- *
- * The layout of the bits is magical, to save work in the ucode.
- * These id's are -56, -52, -54, -50, -55, -51, -53, -49, ...
- *                                 edge, shade, texture, zbuff bits:  estz
- */
-#define G_TRI_FILL		0xc8 /* fill triangle:            11001000 */
-#define G_TRI_SHADE		0xcc /* shade triangle:           11001100 */
-#define G_TRI_TXTR		0xca /* texture triangle:         11001010 */
-#define G_TRI_SHADE_TXTR	0xce /* shade, texture triangle:  11001110 */
-#define G_TRI_FILL_ZBUFF	0xc9 /* fill, zbuff triangle:     11001001 */
-#define G_TRI_SHADE_ZBUFF	0xcd /* shade, zbuff triangle:    11001101 */
-#define G_TRI_TXTR_ZBUFF	0xcb /* texture, zbuff triangle:  11001011 */
-#define G_TRI_SHADE_TXTR_ZBUFF	0xcf /* shade, txtr, zbuff trngl: 11001111 */
-
-#undef DISPLAY_RDP_COMMANDS
-
 
 void MemoryDoDP()
 {
@@ -711,43 +659,43 @@ void MemoryDoDP()
 		const char * desc = "Unknow";
 		switch ( command._u8[7] )
 		{
-			case	0x00:						desc = "G_SPNOOP"; break;
-			case	G_NOOP:						desc = "G_NOOP"; break;
-			case	G_SETCIMG:					desc = "G_SETCIMG"; break;
-			case	G_SETZIMG:					desc = "G_SETZIMG"; break;
-			case	G_SETTIMG:					desc = "G_SETTIMG"; break;
-			case	G_SETCOMBINE:				desc = "G_SETCOMBINE"; break;
-			case	G_SETENVCOLOR:				desc = "G_SETENVCOLOR"; break;
-			case	G_SETPRIMCOLOR:				desc = "G_SETPRIMCOLOR"; break;
-			case	G_SETBLENDCOLOR:			desc = "G_SETBLENDCOLOR"; break;
-			case	G_SETFOGCOLOR:				desc = "G_SETFOGCOLOR"; break;
-			case	G_SETFILLCOLOR:				desc = "G_SETFILLCOLOR"; break;
-			case	G_FILLRECT:					desc = "G_FILLRECT"; break;
-			case	G_SETTILE:					desc = "G_SETTILE"; break;
-			case	G_LOADTILE:					desc = "G_LOADTILE"; break;
-			case	G_LOADBLOCK:				desc = "G_LOADBLOCK"; break;
-			case	G_SETTILESIZE:				desc = "G_SETTILESIZE"; break;
-			case	G_LOADTLUT:					desc = "G_LOADTLUT"; break;
-			case	G_RDPSETOTHERMODE:			desc = "G_RDPSETOTHERMODE"; break;
-			case	G_SETPRIMDEPTH:				desc = "G_SETPRIMDEPTH"; break;
-			case	G_SETSCISSOR:				desc = "G_SETSCISSOR"; break;
-			case	G_SETCONVERT:				desc = "G_SETCONVERT"; break;
-			case	G_SETKEYR:					desc = "G_SETKEYR"; break;
-			case	G_SETKEYGB:					desc = "G_SETKEYGB"; break;
-			case	G_RDPFULLSYNC:				desc = "G_RDPFULLSYNC"; break;
-			case	G_RDPTILESYNC:				desc = "G_RDPTILESYNC"; break;
-			case	G_RDPPIPESYNC:				desc = "G_RDPPIPESYNC"; break;
-			case	G_RDPLOADSYNC:				desc = "G_RDPLOADSYNC"; break;
-			case	G_TEXRECTFLIP:				desc = "G_TEXRECTFLIP"; break;
-			case	G_TEXRECT:					desc = "G_TEXRECT"; break;
-			case	G_TRI_FILL:					desc = "G_TRI_FILL"; break;
-			case	G_TRI_SHADE:				desc = "G_TRI_SHADE"; break;
-			case	G_TRI_TXTR:					desc = "G_TRI_TXTR"; break;
-			case	G_TRI_SHADE_TXTR:			desc = "G_TRI_SHADE_TXTR"; break;
-			case	G_TRI_FILL_ZBUFF:			desc = "G_TRI_FILL_ZBUFF"; break;
-			case	G_TRI_SHADE_ZBUFF:			desc = "G_TRI_SHADE_ZBUFF"; break;
-			case	G_TRI_TXTR_ZBUFF:			desc = "G_TRI_TXTR_ZBUFF"; break;
-			case	G_TRI_SHADE_TXTR_ZBUFF:		desc = "G_TRI_SHADE_TXTR_ZBUFF"; break;
+			case	0x00:							desc = "G_RDP_SPNOOP"; break;
+			case	G_RDP_NOOP:						desc = "G_RDP_NOOP"; break;
+			case	G_RDP_SETCIMG:					desc = "G_RDP_SETCIMG"; break;
+			case	G_RDP_SETZIMG:					desc = "G_RDP_SETZIMG"; break;
+			case	G_RDP_SETTIMG:					desc = "G_RDP_SETTIMG"; break;
+			case	G_RDP_SETCOMBINE:				desc = "G_RDP_SETCOMBINE"; break;
+			case	G_RDP_SETENVCOLOR:				desc = "G_RDP_SETENVCOLOR"; break;
+			case	G_RDP_SETPRIMCOLOR:				desc = "G_RDP_SETPRIMCOLOR"; break;
+			case	G_RDP_SETBLENDCOLOR:			desc = "G_RDP_SETBLENDCOLOR"; break;
+			case	G_RDP_SETFOGCOLOR:				desc = "G_RDP_SETFOGCOLOR"; break;
+			case	G_RDP_SETFILLCOLOR:				desc = "G_RDP_SETFILLCOLOR"; break;
+			case	G_RDP_FILLRECT:					desc = "G_RDP_FILLRECT"; break;
+			case	G_RDP_SETTILE:					desc = "G_RDP_SETTILE"; break;
+			case	G_RDP_LOADTILE:					desc = "G_RDP_LOADTILE"; break;
+			case	G_RDP_LOADBLOCK:				desc = "G_RDP_LOADBLOCK"; break;
+			case	G_RDP_SETTILESIZE:				desc = "G_RDP_SETTILESIZE"; break;
+			case	G_RDP_LOADTLUT:					desc = "G_RDP_LOADTLUT"; break;
+			case	G_RDP_RDPSETOTHERMODE:			desc = "G_RDP_RDPSETOTHERMODE"; break;
+			case	G_RDP_SETPRIMDEPTH:				desc = "G_RDP_SETPRIMDEPTH"; break;
+			case	G_RDP_SETSCISSOR:				desc = "G_RDP_SETSCISSOR"; break;
+			case	G_RDP_SETCONVERT:				desc = "G_RDP_SETCONVERT"; break;
+			case	G_RDP_SETKEYR:					desc = "G_RDP_SETKEYR"; break;
+			case	G_RDP_SETKEYGB:					desc = "G_RDP_SETKEYGB"; break;
+			case	G_RDP_RDPFULLSYNC:				desc = "G_RDP_RDPFULLSYNC"; break;
+			case	G_RDP_RDPTILESYNC:				desc = "G_RDP_RDPTILESYNC"; break;
+			case	G_RDP_RDPPIPESYNC:				desc = "G_RDP_RDPPIPESYNC"; break;
+			case	G_RDP_RDPLOADSYNC:				desc = "G_RDP_RDPLOADSYNC"; break;
+			case	G_RDP_TEXRECTFLIP:				desc = "G_RDP_TEXRECTFLIP"; break;
+			case	G_RDP_TEXRECT:					desc = "G_RDP_TEXRECT"; break;
+			case	G_RDP_TRI_FILL:					desc = "G_RDP_TRI_FILL"; break;
+			case	G_RDP_TRI_SHADE:				desc = "G_RDP_TRI_SHADE"; break;
+			case	G_RDP_TRI_TXTR:					desc = "G_RDP_TRI_TXTR"; break;
+			case	G_RDP_TRI_SHADE_TXTR:			desc = "G_RDP_TRI_SHADE_TXTR"; break;
+			case	G_RDP_TRI_FILL_ZBUFF:			desc = "G_RDP_TRI_FILL_ZBUFF"; break;
+			case	G_RDP_TRI_SHADE_ZBUFF:			desc = "G_RDP_TRI_SHADE_ZBUFF"; break;
+			case	G_RDP_TRI_TXTR_ZBUFF:			desc = "G_RDP_TRI_TXTR_ZBUFF"; break;
+			case	G_RDP_TRI_SHADE_TXTR_ZBUFF:		desc = "G_TRI_SHADE_TXTR_ZBUFF"; break;
 			default:							
 				;
 		}
@@ -755,7 +703,7 @@ void MemoryDoDP()
 		DBGConsole_Msg(0, "DP: S: %08x C: %08x E: %08x Cmd:%08x%08x %s", dpc_start, dpc_current, dpc_end, command._u32_1, command._u32_0, desc );
 #endif
 
-		if ( command._u8[7] == G_RDPFULLSYNC )
+		if ( command._u8[7] == G_RDP_RDPFULLSYNC )
 		{
 			DBGConsole_Msg( 0, "FullSync: Executing DP interrupt" );
 

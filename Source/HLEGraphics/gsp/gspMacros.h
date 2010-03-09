@@ -42,56 +42,52 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 //***************************************************************************** 
 
-void DLParser_GBI1_CullDL( MicroCodeCommand command );
-void DLParser_GBI2_CullDL( MicroCodeCommand command );
-void DLParser_GBI1_DL( MicroCodeCommand command );
-void DLParser_GBI2_DL( MicroCodeCommand command );
-void DLParser_GBI1_EndDL( MicroCodeCommand command );
-void DLParser_GBI2_EndDL( MicroCodeCommand command );
-
-void DLParser_GBI1_BranchZ( MicroCodeCommand command );
-
+void DLParser_GBI1_CullDL	( MicroCodeCommand command );
+void DLParser_GBI2_CullDL	( MicroCodeCommand command );
+void DLParser_GBI1_DL		( MicroCodeCommand command );
+void DLParser_GBI2_DL		( MicroCodeCommand command );
+void DLParser_GBI1_EndDL	( MicroCodeCommand command );
+void DLParser_GBI2_EndDL	( MicroCodeCommand command );
+void DLParser_GBI1_BranchZ	( MicroCodeCommand command );
 void DLParser_GBI1_LoadUCode( MicroCodeCommand command );
 
-void DLParser_GBI1_SetGeometryMode( MicroCodeCommand command );
+void DLParser_GBI1_SetGeometryMode	( MicroCodeCommand command );
 void DLParser_GBI1_ClearGeometryMode( MicroCodeCommand command );
-void DLParser_GBI2_GeometryMode	( MicroCodeCommand command );
+void DLParser_GBI2_GeometryMode		( MicroCodeCommand command );
+void DLParser_GBI1_SetOtherModeL	( MicroCodeCommand command );
+void DLParser_GBI1_SetOtherModeH	( MicroCodeCommand command );
+void DLParser_GBI2_SetOtherModeL	( MicroCodeCommand command );
+void DLParser_GBI2_SetOtherModeH	( MicroCodeCommand command );
 
-void DLParser_GBI1_SetOtherModeL( MicroCodeCommand command );
-void DLParser_GBI1_SetOtherModeH( MicroCodeCommand command );
-void DLParser_GBI2_SetOtherModeL( MicroCodeCommand command );
-void DLParser_GBI2_SetOtherModeH( MicroCodeCommand command );
+void DLParser_GBI1_Texture	( MicroCodeCommand command );
+void DLParser_GBI2_Texture	( MicroCodeCommand command );
 
-void DLParser_GBI1_Texture( MicroCodeCommand command );
-void DLParser_GBI2_Texture( MicroCodeCommand command );
-
-void DLParser_GBI0_Vtx( MicroCodeCommand command );
-void DLParser_GBI1_Vtx( MicroCodeCommand command );
-void DLParser_GBI2_Vtx( MicroCodeCommand command );
+void DLParser_GBI0_Vtx		( MicroCodeCommand command );
+void DLParser_GBI1_Vtx		( MicroCodeCommand command );
+void DLParser_GBI2_Vtx		( MicroCodeCommand command );
 void DLParser_GBI1_ModifyVtx( MicroCodeCommand command );
 
-void DLParser_GBI1_Mtx( MicroCodeCommand command );
-void DLParser_GBI2_Mtx( MicroCodeCommand command );
+void DLParser_GBI1_Mtx		( MicroCodeCommand command );
+void DLParser_GBI2_Mtx		( MicroCodeCommand command );
+void DLParser_GBI1_PopMtx	( MicroCodeCommand command );
+void DLParser_GBI2_PopMtx	( MicroCodeCommand command );
 
-void DLParser_GBI1_PopMtx( MicroCodeCommand command );
-void DLParser_GBI2_PopMtx( MicroCodeCommand command );
+void DLParser_GBI2_Quad		( MicroCodeCommand command );
+void DLParser_GBI2_Line3D	( MicroCodeCommand command );
+void DLParser_GBI2_Tri1		( MicroCodeCommand command );
+void DLParser_GBI0_Tri2		( MicroCodeCommand command );
+void DLParser_GBI2_Tri2		( MicroCodeCommand command );
 
-void DLParser_GBI2_Quad( MicroCodeCommand command );
-void DLParser_GBI2_Line3D( MicroCodeCommand command );
 
-void DLParser_GBI2_Tri1( MicroCodeCommand command );
-void DLParser_GBI0_Tri2( MicroCodeCommand command );
-void DLParser_GBI2_Tri2( MicroCodeCommand command );
+//*****************************************************************************
+/* Mariokart etc*/
+//*****************************************************************************
 
 //
 // For some reason these have to be declared here.
 // Local Functions
 //static void DLParser_InitGeometryMode();
 //
-
-//*****************************************************************************
-/* Mariokart etc*/
-//*****************************************************************************
 
 template < int VertexStride >
 void DLParser_GBI1_Tri2_T( MicroCodeCommand command )

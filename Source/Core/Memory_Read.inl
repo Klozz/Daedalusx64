@@ -379,7 +379,7 @@ static void *Read_8450_845F( u32 address )
 			break;
 
 		case AI_STATUS_REG:
-			Memory_AI_SetRegister(AI_STATUS_REG, 0);
+			//Memory_AI_SetRegister(AI_STATUS_REG, 0);	// Not needed, and could cause possible issues with some games.
 			break;
 
 		case AI_DACRATE_REG:

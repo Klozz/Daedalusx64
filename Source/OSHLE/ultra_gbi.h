@@ -190,6 +190,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // G_SETOTHERMODE_H gSetTextureLUT 
 #define G_TT_NONE			(0 << G_MDSFT_TEXTLUT)
+#define G_IT_UNKNOWN		(1 << G_MDSFT_TEXTLUT)
 #define G_TT_RGBA16			(2 << G_MDSFT_TEXTLUT)
 #define G_TT_IA16			(3 << G_MDSFT_TEXTLUT)
 
@@ -498,6 +499,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define G_GBI2_MTX_PUSH			0x00
 #define G_GBI2_MTX_NOPUSH		0x01
 
+/*
+ * The following commands are the "generated" RDP commands; the user
+ * never sees them, the RSP microcode generates them.
+ *
+ * The layout of the bits is magical, to save work in the ucode.
+ * These id's are -56, -52, -54, -50, -55, -51, -53, -49, ...
+ *                                 edge, shade, texture, zbuff bits:  estz
+ */
+
+#define G_RDP_TRI_FILL				0xc8 /* fill triangle:            11001000 */
+#define G_RDP_TRI_SHADE				0xcc /* shade triangle:           11001100 */
+#define G_RDP_TRI_TXTR				0xca /* texture triangle:         11001010 */
+#define G_RDP_TRI_SHADE_TXTR		0xce /* shade, texture triangle:  11001110 */
+#define G_RDP_TRI_FILL_ZBUFF		0xc9 /* fill, zbuff triangle:     11001001 */
+#define G_RDP_TRI_SHADE_ZBUFF		0xcd /* shade, zbuff triangle:    11001101 */
+#define G_RDP_TRI_TXTR_ZBUFF		0xcb /* texture, zbuff triangle:  11001011 */
+#define G_RDP_TRI_SHADE_TXTR_ZBUFF	0xcf /* shade, txtr, zbuff trngl: 11001111 */
 
 
 #endif // __ULTRA_GBI_H__

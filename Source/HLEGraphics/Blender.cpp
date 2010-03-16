@@ -151,6 +151,31 @@ const char * sc_szBlA2[4]  = { "1-A", "AMem", "1",      "?" };
 #define BLEND_NOOP5				0xcc480000		// Fog * 0 + Mem * 1
 #define BLEND_UNK				0x33120000
 
+//*****************************************************************************
+//
+//*****************************************************************************
+void DebugBlender()	
+{
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+
+	u32 blendmode_1 = u32( gRDPOtherMode.blender & 0xcccc );
+	u32 blendmode_2 = u32( gRDPOtherMode.blender & 0x3333 );
+
+	u32 m1A_1 = (gRDPOtherMode.blender>>14) & 0x3;
+	u32 m1B_1 = (gRDPOtherMode.blender>>10) & 0x3;
+	u32 m2A_1 = (gRDPOtherMode.blender>>6) & 0x3;
+	u32 m2B_1 = (gRDPOtherMode.blender>>2) & 0x3;
+
+	u32 m1A_2 = (gRDPOtherMode.blender>>12) & 0x3;
+	u32 m1B_2 = (gRDPOtherMode.blender>>8) & 0x3;
+	u32 m2A_2 = (gRDPOtherMode.blender>>4) & 0x3;
+	u32 m2B_2 = (gRDPOtherMode.blender   ) & 0x3;
+
+	DAEDALUS_ERROR( "Unknown Blender:%04x - :%s * %s + %s * %s || %04x - :%s * %s + %s * %s", blendmode_1,
+			sc_szBlClr[m1A_1], sc_szBlA1[m1B_1], sc_szBlClr[m2A_1], sc_szBlA2[m2B_1], blendmode_2,
+			sc_szBlClr[m1A_2], sc_szBlA1[m1B_2], sc_szBlClr[m2A_2], sc_szBlA2[m2B_2]);
+#endif
+}
 
 //*****************************************************************************
 //
@@ -158,12 +183,10 @@ const char * sc_szBlA2[4]  = { "1-A", "AMem", "1",      "?" };
 
 void InitBlenderMode()					// Set Alpha Blender mode
 {
-
-
 	u32 blendmode = u32( gRDPOtherMode._u64 & 0xffff0000 );
 	u32 cycletype = gRDPOtherMode.cycle_type;
 
-	int		blend_op = GU_ADD;
+	int		blend_op  = GU_ADD;
 	int		blend_src = GU_SRC_ALPHA;
 	int		blend_dst = GU_ONE_MINUS_SRC_ALPHA;
 	bool	enable_blend( false );
@@ -182,82 +205,36 @@ void InitBlenderMode()					// Set Alpha Blender mode
 		case MAKE_BLEND_MODE( BLEND_OPA1, BLEND_NOOP2 ):
 		case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_OPA2 ):
 		case MAKE_BLEND_MODE( BLEND_MEM1, BLEND_MEM2 ):
-			// Used on SSV - TV window
-		case MAKE_BLEND_MODE( BLEND_NOOP4, BLEND_NOOP2 ):
-		// Blender:
-			// Used on the F-Zero - Tracks Correction
-		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_PASS3 ):
-			// c800 - First:  Fog * AShade + In * 1-A 
-			// 3200 - Second:  Fog * AShade + In * 1-A
-		// Blender:
-			// Used on Hey You Pikachu ! - Body and Face Correction, Automobili..
-		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_PASS2 ):
-			// c800 - First:  Fog * AShade + In * 1-A 
-			// 0302 - Second:  In * 0 + In * 1
-		// Blender: 
-			// Used on the F-Zero - Cars Correction
-		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_NOOP1 ):
-			// c800 - First:  Fog * AShade + In * 1-A 
-			// 0000 - Second:  In * AIn + In * 1-A
-		// Blender:
-			// Used on ISC64 - Ground and field correction
-		case MAKE_BLEND_MODE( BLEND_FOG_3, BLEND_PASS2 ):
-			// c000 - First:Fog * AIn + In * 1-A
-			// 0302 - Second:In * 0 + In * 1
-		//Blender:
-			// Used on 1080 - Sky
-		case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_NOOP1 ):
-			// 0c08 - First:In * 0 + In * 1
-			// 0000 - Second:In * AIn + In * 1-A 
+		case MAKE_BLEND_MODE( BLEND_NOOP4, BLEND_NOOP2 ):		// cc08 || 0000 - SSV - TV window
+		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_PASS3 ): // c800 || 3200 - F-Zero - Tracks
+		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_PASS2 ): // c800 || 0302 - Hey You Pikachu - Body and Face
+		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_NOOP1 ): // c800 || 0000 - F-Zero - Cars
+		case MAKE_BLEND_MODE( BLEND_FOG_3, BLEND_PASS2 ):		// c000 || 0302 - ISS64 - Ground
+		case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_NOOP1 ):		// 0c08 || 0000 - 1080 - Sky
 			enable_blend = false;
 			break;
+		case MAKE_BLEND_MODE( BLEND_NOOP1, BLEND_XLU2 ):		// 0000 || 0010 - Hey You Pikachu - Shade
 		case MAKE_BLEND_MODE( BLEND_NOOP1, BLEND_NOOP2 ):
 		case MAKE_BLEND_MODE( BLEND_XLU1, BLEND_XLU2 ):
 		case MAKE_BLEND_MODE( BLEND_XLU1, BLEND_NOOP2 ):
 		case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_XLU2 ):
 		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_XLU2 ):
-		// Blender:
-			// Used on Hey You Pikachu ! - Shade Correction
-		case MAKE_BLEND_MODE( BLEND_NOOP1, BLEND_XLU2 ):
-			// 0000 - First:  In * AIn + In * 1-A 
-			// 0010 - Second:  In * AIn + Mem * 1-A
 			blend_op = GU_ADD; blend_src = GU_SRC_ALPHA; blend_dst = GU_ONE_MINUS_SRC_ALPHA;
 			enable_blend = true;
 			break;
-			// XXXX
-		case MAKE_BLEND_MODE( BLEND_XLU1, BLEND_ADD2 ):
-			// Transparency
-			blend_op = GU_ADD; blend_src = GU_SRC_COLOR; blend_dst = GU_DST_COLOR;
+		case MAKE_BLEND_MODE( BLEND_XLU1, BLEND_ADD2 ):			
+			blend_op = GU_ADD; blend_src = GU_SRC_COLOR; blend_dst = GU_DST_COLOR;	// Transparency
 			enable_blend = true;
 			break;
 		default:
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST	// Might need to make my own tag?
-
-			u32 blendmode_1 = u32( gRDPOtherMode.blender & 0xcccc );
-			u32 blendmode_2 = u32( gRDPOtherMode.blender & 0x3333 );
-
-			u32 m1A_1 = (gRDPOtherMode.blender>>14) & 0x3;
-			u32 m1B_1 = (gRDPOtherMode.blender>>10) & 0x3;
-			u32 m2A_1 = (gRDPOtherMode.blender>>6) & 0x3;
-			u32 m2B_1 = (gRDPOtherMode.blender>>2) & 0x3;
-
-			u32 m1A_2 = (gRDPOtherMode.blender>>12) & 0x3;
-			u32 m1B_2 = (gRDPOtherMode.blender>>8) & 0x3;
-			u32 m2A_2 = (gRDPOtherMode.blender>>4) & 0x3;
-			u32 m2B_2 = (gRDPOtherMode.blender   ) & 0x3;
-
-			DAEDALUS_ERROR( "Unknown Blender:%04x - :%s * %s + %s * %s || %04x - :%s * %s + %s * %s", blendmode_1,
-					sc_szBlClr[m1A_1], sc_szBlA1[m1B_1], sc_szBlClr[m2A_1], sc_szBlA2[m2B_1], blendmode_2,
-					sc_szBlClr[m1A_2], sc_szBlA1[m1B_2], sc_szBlClr[m2A_2], sc_szBlA2[m2B_2]);
-
-
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+			DebugBlender();
 #endif
 			DL_PF( "		 Blend: SRCALPHA/INVSRCALPHA (default: 0x%04x)", gRDPOtherMode.blender );
 			blend_op = GU_ADD; blend_src = GU_SRC_ALPHA; blend_dst = GU_ONE_MINUS_SRC_ALPHA;
 			enable_blend = true;
 			break;
-		}
-			
+		}	
 	}
 
 	if( enable_blend )

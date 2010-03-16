@@ -631,10 +631,10 @@ void Memory_InitTables()
 	}
 }
 
+#undef DISPLAY_RDP_COMMANDS
 //*****************************************************************************
 //
 //*****************************************************************************
-
 void MemoryDoDP()
 {
 	u32 dpc_start	= Memory_DPC_GetRegister( DPC_START_REG );

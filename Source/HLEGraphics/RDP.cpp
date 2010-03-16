@@ -222,7 +222,7 @@ void	RDP_LoadTLut( RDP_TileSize load_tlut )
 	}
 }
 
-
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -246,11 +246,9 @@ void	RDP_LoadTLut( RDP_TileSize load_tlut )
 #define	G_BL_1			2
 */
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 static const char * sc_szBlClr[4] = { "In",  "Mem",  "Bl",     "Fog" };
 static const char * sc_szBlA1[4]  = { "AIn", "AFog", "AShade", "0" };
 static const char * sc_szBlA2[4]  = { "1-A", "AMem", "1",      "?" };
-#endif
 /*
 #define	GBL_c1(m1a, m1b, m2a, m2b)	\
 	(m1a) << 30 | (m1b) << 26 | (m2a) << 22 | (m2b) << 18
@@ -614,7 +612,6 @@ static const char * sc_szBlA2[4]  = { "1-A", "AMem", "1",      "?" };
 #define	G_RM_PASS		GBL_c1(G_BL_CLR_IN, G_BL_0, G_BL_CLR_IN, G_BL_1)
 
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 const char *	GetBlenderModeDescription( u32 mode )
 {
 	switch ( mode & ~3 )
@@ -731,7 +728,9 @@ const char *	GetBlenderModeDescription( u32 mode )
 }
 #endif
 
-
+//*****************************************************************************
+//
+//*****************************************************************************
 void	RDP_SetOtherMode( u32 cmd_hi, u32 cmd_lo )
 {
 	gRDPOtherMode._u64 = u64( cmd_hi ) << 32 | u64( cmd_lo );

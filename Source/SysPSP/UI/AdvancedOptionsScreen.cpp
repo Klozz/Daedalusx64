@@ -124,12 +124,13 @@ IAdvancedOptionsScreen::IAdvancedOptionsScreen( CUIContext * p_context, const Ro
 	mElements.Add( new CBoolSetting( &mRomPreferences.ForceDepthBuffer, "Clear Depth Buffer", "Whether Clear Depth Buffer is enabled for this rom", "Enabled", "Disabled" ) );
 #endif
 	mElements.Add( new CBoolSetting( &mRomPreferences.CleanSceneEnabled, "Clean Scene", "Force to clear screen before drawing any primitives", "Enabled", "Disabled" ) );
-	mElements.Add( new CBoolSetting( &mRomPreferences.FlushTrisHack, "Use Flushtris to write Zbuffer", "This is a hack, only for a few games, Pilot Wings 64 need this", "Yes", "No" ) );
+	mElements.Add( new CBoolSetting( &mRomPreferences.IncreaseVI_Event, "Increase VI Event", "This in fact can cause a speed up or slow down on certain games, This cures the flicker on Paper Mario", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.DynarecLoopOptimisation, "Dynamic Loop Optimisation", "Whether the dynarec loop optimisation is enabled for this rom", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.TLBHackEnabled, "GoldenEye TLB Hack", "Whether the TLB Hack for GoldenEye is enabled", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.DoubleDisplayEnabled, "Double Display Lists", "Whether or not Double Display Lists are enabled", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.ViewPortHackEnabled, "View Port Hack", "This is a hack, only for a few games, Super Bowling 64 need this", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.FlatShadeDisabled, "Disable Flat Shade", "Whether Flat Shade is Disabled", "Yes", "No" ) );
+	mElements.Add( new CBoolSetting( &mRomPreferences.FlushTrisHack, "Use Flushtris to write Zbuffer", "This is a hack, only for a few games, Pilot Wings 64 need this", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.SimulateDoubleDisabled, "Disable Simulate Double", "Whether Simulate Double is Disabled", "Yes", "No" ) );
 	//	mElements.Add( new CUISpacer( 16 ) );
 

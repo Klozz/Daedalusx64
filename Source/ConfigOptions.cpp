@@ -42,6 +42,7 @@ bool	gFlatShadeDisabled			= false;	// Hack to fix the shading issues on Tigger's
 bool	gCleanSceneEnabled			= false;	// Clean our Scenes, it gets rid of many glitches
 bool	gForceDepthBuffer			= true;		// Used for BranchZ, do not set it to false. Will be used to hook WIP options as well :)
 bool	gFlushTrisHack				= false;	// Hack for Pilot Wings to get rid of black tris under your plane
+bool	gIncreaseVI_Event			= false;	// Cures flicker on Paper Mario
 u32		gControllerIndex			= 0;		// Which controller config to set
 
 DaedalusConfig g_DaedalusConfig =

@@ -604,7 +604,7 @@ void DLParser_GBI2_GeometryMode( MicroCodeCommand command )
 			if ((~and_bits) & G_ZELDA_TEXTURE_GEN_LINEAR)			DL_PF("  Enabling Texture Gen Linear");
 
             if (or_bits & G_ZELDA_ZBUFFER)							DL_PF("  Enabling ZBuffer");
-            if (or_bits & G_ZELDA_SHADING_FLAT)						DL_PF("  Enabling Flat Shading");
+            if (or_bits & G_ZELDA_SHADING_SMOOTH)					DL_PF("  Enabling Flat Shading");
             if (or_bits & G_ZELDA_CULL_FRONT)						DL_PF("  Enabling Front Culling");
             if (or_bits & G_ZELDA_CULL_BACK)						DL_PF("  Enabling Back Culling");
             if (or_bits & G_ZELDA_FOG)								DL_PF("  Enabling Fog");

@@ -73,6 +73,7 @@ struct RomSettings
 	bool				CleanSceneEnabled;
 	bool				ForceDepthBuffer;
 	bool				FlushTrisHack;
+	bool				IncreaseVI_Event;
 
 	u32					RescanCount;
 	

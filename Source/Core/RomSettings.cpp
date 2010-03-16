@@ -324,6 +324,10 @@ bool IRomSettingsDB::OpenSettingsFile( const char * filename )
 		{
 			settings.FlushTrisHack = p_property->GetBooleanValue( false );
 		}
+		if( p_section->FindProperty( "IncreaseVI_Event", &p_property ) )
+		{
+			settings.IncreaseVI_Event = p_property->GetBooleanValue( false );
+		}
 
 		SetSettings( id, settings );
 	}
@@ -448,6 +452,7 @@ void IRomSettingsDB::OutputSectionDetails( const RomID & id, const RomSettings &
 	if( settings.CleanSceneEnabled )			fprintf(fh, "CleanSceneEnabled=yes\n");
 	if( settings.ForceDepthBuffer )				fprintf(fh, "ForceDepthBuffer=no\n");
 	if( settings.FlushTrisHack )				fprintf(fh, "FlushTrisHack=yes\n");
+	if( settings.IncreaseVI_Event )				fprintf(fh, "IncreaseVI_Event=yes\n");
 
 	if ( settings.ExpansionPakUsage != PAK_STATUS_UNKNOWN )	fprintf(fh, "ExpansionPakUsage=%s\n", ROM_GetExpansionPakUsageName( settings.ExpansionPakUsage ) );
 	if ( settings.SaveType != SAVE_TYPE_UNKNOWN )			fprintf(fh, "SaveType=%s\n", ROM_GetSaveTypeName( settings.SaveType ) );
@@ -510,6 +515,7 @@ RomSettings::RomSettings()
 ,	CleanSceneEnabled( false )
 ,	ForceDepthBuffer( true )
 ,	FlushTrisHack( false )
+,	IncreaseVI_Event( false )
 ,	RescanCount(0)
 {
 }
@@ -544,5 +550,6 @@ void	RomSettings::Reset()
 	CleanSceneEnabled = false;
 	ForceDepthBuffer = true;
 	FlushTrisHack = false;
+	IncreaseVI_Event = false;
 	RescanCount = 0;
 }

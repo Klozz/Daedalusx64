@@ -57,6 +57,7 @@ extern bool	gSpeedSyncEnabled;
 extern bool gTLBHackEnabled;
 extern bool gDoubleDisplayEnabled;
 extern bool gSimulateDoubleDisabled;
+extern bool	gIncreaseVI_Event;
 //ToDo: Needs moving to Graphics plugin config
 extern bool gViewPortHackEnabled;
 extern bool gFlatShadeDisabled;

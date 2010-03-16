@@ -1082,7 +1082,7 @@ void BlendMode_0x0040fe8155fef97cLL (BLEND_MODE_ARGS)
   #I
 */ 
 
-//Internation superstar soccer 64 - Ground
+//ISS 64 - Ground
 //case 0x0012680322fd7eb8LL:
 //aRGB0: (Texel0       - Texel1      ) * Shade        + Texel1
 //aA0  : (1            - 0           ) * Shade        + 0
@@ -1097,6 +1097,21 @@ void BlendMode_0x0012680322fd7eb8LL (BLEND_MODE_ARGS)
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);	
 }
 
+//ISS 2000 - Ground
+//case 0x0011fe052ffd73f8LL:
+//aRGB0: (Texel0       - Texel1      ) * Primitive    + Texel1
+//aA0  : (0            - 0           ) * 0            + Texel0
+//aRGB1: (Combined     - 0           ) * Env          + 0
+//aA1  : (0            - 0           ) * 0            + Combined
+void BlendMode_0x0011fe052ffd73f8LL (BLEND_MODE_ARGS)
+{
+	// XXXX - needs t1, but overall blend looks perfect :)
+	details.InstallTexture = true;
+	// RGB = Blend( T1, T0, Prim )
+	// A   = 1
+	details.ColourAdjuster.SetAOpaque();
+	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
+}
 /*
   #K
 */ 
@@ -1302,6 +1317,33 @@ void BlendMode_0x0011fe2344fe7339LL (BLEND_MODE_ARGS)
 /*
 //#P
 */
+
+//PGA - Ground	
+//case 0x00272c0415fc93feLL:
+//aRGB0: (Texel1       - Texel0      ) * PrimLODFrac  + Texel0
+//aA0  : (Texel1       - Texel0      ) * 1            + Texel0
+//aRGB1: (Combined     - Env         ) * Shade        + 0
+//aA1  : (0            - 0           ) * 0            + 1
+void BlendMode_0x00272c0415fc93feLL (BLEND_MODE_ARGS)
+{
+	details.InstallTexture = true;
+	details.ColourAdjuster.SetAOpaque();
+	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
+}
+
+//PGA - Water
+//case 0x001114a3f0fff638LL:
+//aRGB0: (Texel0       - 0           ) * Texel1       + 0
+//aA0  : (Texel0       - 0           ) * Texel1       + Primitive
+//aRGB1: (Env          - Combined    ) * Primitive    + Combined
+//aA1  : (0      
+void BlendMode_0x001114a3f0fff638LL (BLEND_MODE_ARGS)
+{
+	details.InstallTexture = true;
+	// XXXX needs t1 in alpha anyways
+	//details.ColourAdjuster.SetRGB ( details.PrimColour );
+	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
+}
 
 //Pilot Wing - Beaches and Beetle Adventure Racing - Ground
 //case 0x0015fe042ffd79fcLL:
@@ -4409,6 +4451,9 @@ OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 #define BLEND_MODE( x )		case (x):	return BlendMode_##x;
 			
 		//BLENDS#
+		BLEND_MODE (0x0011fe052ffd73f8LL);
+		BLEND_MODE (0x00272c0415fc93feLL);
+		BLEND_MODE (0x001114a3f0fff638LL);
 		BLEND_MODE (0x00272c80350cf37fLL);
 		BLEND_MODE (0x0012fec8f2fdfe3bLL);
 		BLEND_MODE (0x00272c603514937fLL);

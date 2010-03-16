@@ -246,7 +246,10 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		{
 			preferences.FlushTrisHack = property->GetBooleanValue( false );
 		}
-
+		if( section->FindProperty( "IncreaseVI_Event", &property ) )
+		{
+			preferences.IncreaseVI_Event = property->GetBooleanValue( false );
+		}
 		if( section->FindProperty( "CheckTextureHashFrequency", &property ) )
 		{
 			preferences.CheckTextureHashFrequency = ROM_GetTextureHashFrequencyFromFrames( atoi( property->GetValue() ) );
@@ -305,6 +308,7 @@ void IPreferences::OutputSectionDetails( const RomID & id, const SRomPreferences
 	fprintf(fh, "CleanSceneEnabled=%d\n",preferences.CleanSceneEnabled);
 	fprintf(fh, "ForceDepthBuffer=%d\n",preferences.ForceDepthBuffer);
 	fprintf(fh, "FlushTrisHack=%d\n",preferences.FlushTrisHack);
+	fprintf(fh, "IncreaseVI_Event=%d\n",preferences.IncreaseVI_Event);
 	fprintf(fh, "CheckTextureHashFrequency=%d\n", ROM_GetTexureHashFrequencyAsFrames( preferences.CheckTextureHashFrequency ) );
 	fprintf(fh, "Frameskip=%d\n", ROM_GetFrameskipValueAsInt( preferences.Frameskip ) );
 	fprintf(fh, "AudioEnabled=%d\n", preferences.AudioEnabled);
@@ -435,6 +439,7 @@ SRomPreferences::SRomPreferences()
 	,	CleanSceneEnabled( false )
 	,	ForceDepthBuffer( true )
 	,	FlushTrisHack( false )
+	,	IncreaseVI_Event( false )
 	,	CheckTextureHashFrequency( THF_DISABLED )
 	,	Frameskip( FV_DISABLED )
 	,	AudioEnabled( APM_DISABLED )
@@ -461,6 +466,7 @@ void SRomPreferences::Reset()
 	CleanSceneEnabled = false;
 	ForceDepthBuffer = true;
 	FlushTrisHack = false;
+	IncreaseVI_Event = false;
 	CheckTextureHashFrequency = THF_DISABLED;
 	Frameskip = FV_DISABLED;
 	AudioEnabled = APM_DISABLED;
@@ -487,6 +493,7 @@ void	SRomPreferences::Apply() const
 	gCleanSceneEnabled = g_ROM.settings.CleanSceneEnabled || CleanSceneEnabled;
 	gForceDepthBuffer = g_ROM.settings.ForceDepthBuffer || ForceDepthBuffer;
 	gFlushTrisHack = g_ROM.settings.FlushTrisHack || FlushTrisHack;
+	gIncreaseVI_Event = g_ROM.settings.IncreaseVI_Event || IncreaseVI_Event;
 	gCheckTextureHashFrequency = ROM_GetTexureHashFrequencyAsFrames( CheckTextureHashFrequency );
 	gFrameskipValue = Frameskip;
 

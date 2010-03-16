@@ -689,9 +689,21 @@ void CPU_HANDLE_COUNT_INTERRUPT()
 			}
 			else
 			{
-				VI_INTR_CYCLES = (vertical_sync_reg+1) * 1500;
-			}
+				//if(gIncreaseVI_Event)
+				if(gIncreaseVI_Event)
+				{	//
+					// This stops the flicker on Paper Mario..
+					// This is a bit hackish.. should be alot better to do this routine/hack on our GFX plugin..
+					// This routine brakes several games ex : Doom64 and Earthworm Jim
+					//
+					VI_INTR_CYCLES = (vertical_sync_reg+1) * 1500*2;	// Over 2 seems excessive
+				}
+				else
+				{
+					VI_INTR_CYCLES = (vertical_sync_reg+1) * 1500;
+				}
 
+			}
 			// Add another Interrupt at the next time:
 			CPU_AddEvent(VI_INTR_CYCLES, CPU_EVENT_VBL);
 

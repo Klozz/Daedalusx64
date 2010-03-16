@@ -126,6 +126,7 @@ struct SRomPreferences
 	bool						CleanSceneEnabled;
 	bool						ForceDepthBuffer;
 	bool						FlushTrisHack;
+	bool						IncreaseVI_Event;
 
 	ETextureHashFrequency		CheckTextureHashFrequency;
 	EFrameskipValue				Frameskip;

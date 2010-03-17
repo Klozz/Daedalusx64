@@ -111,11 +111,19 @@ u32 TextureInfo::GenerateHashValue() const
 	//DAEDALUS_ASSERT( (GetLoadAddress() + Height * Pitch) < 4*1024*1024, "Address of texture is out of bounds" );
 
 	const u8 * p_bytes( g_pu8RamBase + GetLoadAddress() );
-	for (u32 y = 0; y < Height; y+=3)		// Do every nth line?
+	u32 step;
+	if (Height > 4)
+	{
+		step = (Height/2)-1;
+	}else{
+		step = 1;
+	}
+
+	for (u32 y = 0; y < Height; y+=step)		// Hash 3 Lines per texture
 	{
 		// Byte fiddling won't work, but this probably doesn't matter
 		hash_value = murmur2_neutral_hash( p_bytes, bytes_per_line, hash_value );
-		p_bytes += Pitch;
+		p_bytes += (Pitch * step);
 	}
 
 	if (GetFormat() == G_IM_FMT_CI)

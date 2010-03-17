@@ -252,7 +252,7 @@ void ENVMIXER3o( AudioHLECommand command )
 	int MainL;
 	int AuxR;
 	int AuxL;
-	int i1,o1,a1,a2,a3;
+	int i1,o1,a1,a2=0,a3=0;
 	u16 AuxIncRate=1;
 	short zero[8];
 	memset(zero,0,16);

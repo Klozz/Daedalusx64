@@ -69,7 +69,6 @@ static void							CPU_CreateAndAddFragment();
 #ifdef DAEDALUS_DEBUG_DYNAREC
 void								CPU_DumpFragmentCache();
 #endif
-void								CPU_ResetFragmentCache();
 
 #endif // DAEDALUS_ENABLE_DYNAREC
 

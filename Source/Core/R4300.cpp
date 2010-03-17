@@ -76,10 +76,7 @@ static ERoundingMode	gRoundingMode( RM_ROUND );
 #define _isnan isnan
 #endif
 
-// If the hardware doesn't support doubles in hardware - use 32 bits floats and accept the loss in precision
-typedef f32 d64;
-
-
+typedef f64 d64;
 
 // Conveniently, the x87 status bits correspond to the MIPS fp status bits (shifted by 2!)
 // _EM_INEXACT		0x01		FPCSR_FI		0x04

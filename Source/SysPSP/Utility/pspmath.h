@@ -126,7 +126,6 @@ float vfpu_sqrtf(float x);
 float vfpu_round(float x);
 float vfpu_fmaxf(float x, float y);
 float vfpu_fminf(float x, float y);
-float vfpu_logf(float x);
 
 /**
   * Calculate sine

@@ -28,4 +28,4 @@ void Dynamo_Reset();
 void Dynarec_ClearedCPUStuffToDo();
 void Dynarec_SetCPUStuffToDo();
 
-void			CPU_ResetFragmentCache();
+void CPU_ResetFragmentCache();

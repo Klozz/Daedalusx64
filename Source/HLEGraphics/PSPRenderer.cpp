@@ -154,7 +154,9 @@ void			DaedalusVtx4::Interpolate( const DaedalusVtx4 & lhs, const DaedalusVtx4 &
 	ClipFlags = 0;
 }
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST //DEBUG_DISPLAYLIST needed for PrintMux
 extern void		PrintMux( FILE * fh, u64 mux );
+#endif
 
 //*****************************************************************************
 // Creator function for singleton
@@ -736,12 +738,6 @@ void PSPRenderer::RenderUsingRenderSettings( const CBlendStates * states, Daedal
 //*****************************************************************************
 //
 //*****************************************************************************
-
-void InitBlenderMode();
-
-//*****************************************************************************
-//
-//*****************************************************************************
 void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num_vertices, ERenderMode mode, bool disable_zbuffer )
 {
 	DAEDALUS_PROFILE( "PSPRenderer::RenderUsingCurrentBlendMode" );
@@ -803,10 +799,6 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 			sceGuTexFilter(GU_LINEAR,GU_LINEAR);
 			break;
 	}
-
-	// Initiate Blender
-	//
-	InitBlenderMode();
 
 	//
 	// I can't think why the hand in mario's menu screen is rendered with an opaque rendermode,
@@ -931,7 +923,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	{
 		bool	inexact( blend_entry.States->IsInexact() );
 
-#ifndef DAEDALUS_PUBLIC_RELEASE
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST //DEBUG_DISPLAYLIST needed for PrintMux
 		if( inexact )
 		{
 			if(mUnhandledCombinderStates.find( gRDPMux._u64 ) == mUnhandledCombinderStates.end())

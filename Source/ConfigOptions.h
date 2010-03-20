@@ -62,7 +62,7 @@ extern bool	gIncreaseVI_Event;
 extern bool gViewPortHackEnabled;
 extern bool gFlatShadeDisabled;
 extern bool	gCleanSceneEnabled;
-extern bool gForceDepthBuffer;
+extern bool gNeedHackforZelda;
 extern bool	gFlushTrisHack;
 // Needs moving to Graphics plugin config
 extern u32	gCheckTextureHashFrequency;

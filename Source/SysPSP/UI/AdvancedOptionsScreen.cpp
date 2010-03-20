@@ -120,9 +120,6 @@ IAdvancedOptionsScreen::IAdvancedOptionsScreen( CUIContext * p_context, const Ro
  		mRomName = settings.GameName;
 	}
 
-#ifndef DAEDALUS_PUBLIC_RELEASE
-	mElements.Add( new CBoolSetting( &mRomPreferences.ForceDepthBuffer, "Clear Depth Buffer", "Whether Clear Depth Buffer is enabled for this rom", "Enabled", "Disabled" ) );
-#endif
 	mElements.Add( new CBoolSetting( &mRomPreferences.CleanSceneEnabled, "Clean Scene", "Force to clear screen before drawing any primitives", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.IncreaseVI_Event, "Increase VI Event", "This in fact can cause a speed up or slow down on certain games, This cures the flicker on Paper Mario", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.DynarecLoopOptimisation, "Dynamic Loop Optimisation", "Whether the dynarec loop optimisation is enabled for this rom", "Enabled", "Disabled" ) );
@@ -133,6 +130,9 @@ IAdvancedOptionsScreen::IAdvancedOptionsScreen( CUIContext * p_context, const Ro
 	mElements.Add( new CBoolSetting( &mRomPreferences.FlushTrisHack, "Use Flushtris to write Zbuffer", "This is a hack, only for a few games, Pilot Wings 64 need this", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.SimulateDoubleDisabled, "Disable Simulate Double", "Whether Simulate Double is Disabled", "Yes", "No" ) );
 	//	mElements.Add( new CUISpacer( 16 ) );
+#ifndef DAEDALUS_PUBLIC_RELEASE	// Below option is irrelevant to end user, we force this option on roms.ini
+	mElements.Add( new CBoolSetting( &mRomPreferences.NeedHackforZelda, "Need Hacks for Zelda", "Hacks and such to ensure proper emulation of Zelda OOT and MM",  "Yes", "No" ) );
+#endif
 
 	mElements.Add( new CUICommandImpl( new CMemberFunctor< IAdvancedOptionsScreen >( this, &IAdvancedOptionsScreen::OnConfirm ), "Confirm Settings", "Confirm changes to settings and return." ) );
 	mElements.Add( new CUICommandImpl( new CMemberFunctor< IAdvancedOptionsScreen >( this, &IAdvancedOptionsScreen::OnCancel ), "Cancel", "Cancel changes to settings and return." ) );

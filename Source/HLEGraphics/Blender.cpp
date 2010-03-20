@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "stdafx.h"
 
+#include "Blender.h"
 #include "RDP.h"
 #include "DebugDisplayList.h"
 #include "OSHLE/ultra_gbi.h"
@@ -64,9 +65,8 @@ case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_PASS3 ):
 
 
 */
-
-
 /*
+
 // P or M
 #define	G_BL_CLR_IN	0
 #define	G_BL_CLR_MEM	1
@@ -99,15 +99,88 @@ case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_PASS3 ):
 #define	G_RM_FOG_PRIM_A			GBL_c1(G_BL_CLR_FOG, G_BL_A_FOG, G_BL_CLR_IN, G_BL_1MA)
 #define	G_RM_PASS				GBL_c1(G_BL_CLR_IN, G_BL_0, G_BL_CLR_IN, G_BL_1)
 #define	RM_AA_ZB_OPA_SURF(clk)	GBL_c##clk(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_MEM, G_BL_A_MEM)
+
 */
 
+//======> Below information was borrowed from RICE Video plugin
+
+	//1. Z_COMPARE        -- Enable / Disable Zbuffer compare, SetRenderState( D3DRS_ZENABLE )
+	//	1   -   Enable ZBuffer
+	//	0   -   Disable ZBuffer
+
+	//2. Z_UPDATE        -- Enable / Disable Zbuffer update, SetRenderState( D3DRS_ZWRITEENABLE )
+	//	1   -   Enable ZBuffer writeable
+	//	0   -   Zbuffer not writeable
+
+	//3. AA_EN and IM_RD        -- Anti-Alias
+	//	AA_EN           -   Enable anti-aliase
+	//	AA_EN | IM_RD   -   Reduced anti-aliase
+	//	IM_RD           -   ??
+	//	-               -   Disable anti-aliase
+
+	//4.  ZMode       
+	//	#define	ZMODE_OPA	0           -- Usually used with Z_COMPARE and Z_UPDATE
+	//											   or used without neither Z_COMPARE or Z_UPDATE
+	//											   if used with Z_COMPARE and Z_UPDATE, then this is
+	//											   the regular ZBuffer mode, with compare and update
+	//	#define	ZMODE_INTER	0x400
+	//	#define	ZMODE_XLU	0x800       -- Usually used with Z_COMPARE, but not with Z_UPDATE
+	//											   Do only compare, no zbuffer update.
+	//											   Not output if the z value is the same
+	//	#define	ZMODE_DEC	0xc00       -- Usually used with Z_COMPARE, but not with Z_UPDATE
+	//											   Do only compare, no update, but because this is
+	//											   decal mode, so image should be updated even
+	//											   the z value is the same as compared.
+
+	//	Alpha Blender Modes	
+
+	/*
+6. FORCE_BL     - Alpha blending at blender stage
+    1   -   Enable alpha blending at blender
+    0   -   Disable alpha blending at blender
+
+    Alpha blending at blender is usually used to render XLU surface
+    if enabled, then use the blending setting of C1 and C2
+
+7. ALPHA_CVG_SEL    - Output full alpha from the color combiner, usually not used together
+                      with FORCE_BL. If it is used together with FORCE_BL, then ignore this
+
+8. CVG_X_ALPHA      - Before output the color from color combiner, mod it with alpha
+
+9. TEX_EDGE         - Ignore this
+
+10.CLR_ON_CVG       - Used with XLU surfaces, ignore it
+
+11.CVG_DST
+#define	CVG_DST_CLAMP	0           -   Usually used with OPA surface
+#define	CVG_DST_WRAP	0x100       -   Usually used with XLU surface or OPA line
+#define	CVG_DST_FULL	0x200       -   ?
+#define	CVG_DST_SAVE	0x300       -   ?
+
+
+Possible Blending Inputs:
+
+    In  -   Input from color combiner
+    Mem -   Input from current frame buffer
+    Fog -   Fog generator
+    BL  -   Blender
+
+Possible Blending Factors:
+    A-IN    -   Alpha from color combiner
+    A-MEM   -   Alpha from current frame buffer
+    (1-A)   -   
+    A-FOG   -   Alpha of fog color
+    A-SHADE -   Alpha of shade
+    1   -   1
+    0   -   0
+*/
+
+// <===== End of information borrowed from RICE Video plugin.
+
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*****************************************************************************
 //
 //*****************************************************************************
-
-// Todo : Refactored futher this, add notes and instruction to add new blendings.
-
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 const char * sc_szBlClr[4] = { "In",  "Mem",  "Bl",     "Fog" };
 const char * sc_szBlA1[4]  = { "AIn", "AFog", "AShade", "0" };
 const char * sc_szBlA2[4]  = { "1-A", "AMem", "1",      "?" };
@@ -151,13 +224,12 @@ const char * sc_szBlA2[4]  = { "1-A", "AMem", "1",      "?" };
 #define BLEND_NOOP5				0xcc480000		// Fog * 0 + Mem * 1
 #define BLEND_UNK				0x33120000
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*****************************************************************************
 //
 //*****************************************************************************
-void DebugBlender()	
+void CBlender::DebugBlender()	
 {
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-
 	u32 blendmode_1 = u32( gRDPOtherMode.blender & 0xcccc );
 	u32 blendmode_2 = u32( gRDPOtherMode.blender & 0x3333 );
 
@@ -174,14 +246,13 @@ void DebugBlender()
 	DAEDALUS_ERROR( "Unknown Blender:%04x - :%s * %s + %s * %s || %04x - :%s * %s + %s * %s", blendmode_1,
 			sc_szBlClr[m1A_1], sc_szBlA1[m1B_1], sc_szBlClr[m2A_1], sc_szBlA2[m2B_1], blendmode_2,
 			sc_szBlClr[m1A_2], sc_szBlA1[m1B_2], sc_szBlClr[m2A_2], sc_szBlA2[m2B_2]);
-#endif
-}
 
+}
+#endif
 //*****************************************************************************
 //
 //*****************************************************************************
-
-void InitBlenderMode()					// Set Alpha Blender mode
+void CBlender::InitBlenderMode()					// Set Alpha Blender mode
 {
 	u32 blendmode = u32( gRDPOtherMode._u64 & 0xffff0000 );
 	u32 cycletype = gRDPOtherMode.cycle_type;

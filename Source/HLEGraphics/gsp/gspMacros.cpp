@@ -448,12 +448,12 @@ void DLParser_GBI1_BranchZ( MicroCodeCommand command )
 {
 		u32 vtx = (command.cmd0 & 0xFFF) >> 1;
 
-		float vtxdepth = PSPRenderer::Get()->GetTransformedVtxPos(vtx).z/PSPRenderer::Get()->GetTransformedVtxPos(vtx).w;
+		f32 vtxdepth = PSPRenderer::Get()->GetTransformedVtxPos(vtx).z/PSPRenderer::Get()->GetTransformedVtxPos(vtx).w;
 
 		//if( vtxdepth <= (command.cmd1) )
-		if( vtxdepth <= (s32)(command.cmd1) || gForceDepthBuffer )		// gForceDepthBuffer is always true, do not remove it ! Otherwise causes issues : See Death M in OOT.
-        {
-                u32 pc = gDisplayListStack.back().addr;             // This points to the next instruction
+		if( vtxdepth <= (s32)(command.cmd1) || gNeedHackforZelda )		// For some reasons we sometimes fail the branch depth on OOT and MM....so we force the gNeedHackforZelda true.
+        {																// See OOT : Death Mountain and MM : Outside of Clock Town.
+                u32 pc = gDisplayListStack.back().addr;					// This points to the next instruction
                 u32 dl = *(u32 *)(g_pu8RamBase + pc-12);
                 u32 address = RDPSegAddr(dl);
 

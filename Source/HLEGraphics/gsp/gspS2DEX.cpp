@@ -240,7 +240,10 @@ void DLParser_S2DEX_ObjMoveMem( MicroCodeCommand command )
 //
 //*****************************************************************************
 void DLParser_S2DEX_Bg1cyc( MicroCodeCommand command )
-{	
+{
+	if( gNeedHackforZelda )
+		return;
+
 	uObjScaleBg *objBg = (uObjScaleBg *)(g_pu8RamBase + RDPSegAddr(command.cmd1));
 
 	u16 imageX = objBg->imageX >> 5;

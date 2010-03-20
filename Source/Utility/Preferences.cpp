@@ -238,9 +238,9 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		{
 			preferences.CleanSceneEnabled = property->GetBooleanValue( false );
 		}
-		if( section->FindProperty( "ForceDepthBuffer", &property ) )
+		if( section->FindProperty( "NeedHackforZelda", &property ) )
 		{
-			preferences.ForceDepthBuffer = property->GetBooleanValue( true );
+			preferences.NeedHackforZelda = property->GetBooleanValue( false );
 		}
 		if( section->FindProperty( "FlushTrisHack", &property ) )
 		{
@@ -306,7 +306,7 @@ void IPreferences::OutputSectionDetails( const RomID & id, const SRomPreferences
 	fprintf(fh, "ViewPortHackEnabled=%d\n",preferences.ViewPortHackEnabled);
 	fprintf(fh, "FlatShadeDisabled=%d\n",preferences.FlatShadeDisabled);
 	fprintf(fh, "CleanSceneEnabled=%d\n",preferences.CleanSceneEnabled);
-	fprintf(fh, "ForceDepthBuffer=%d\n",preferences.ForceDepthBuffer);
+	fprintf(fh, "NeedHackforZelda=%d\n",preferences.NeedHackforZelda);
 	fprintf(fh, "FlushTrisHack=%d\n",preferences.FlushTrisHack);
 	fprintf(fh, "IncreaseVI_Event=%d\n",preferences.IncreaseVI_Event);
 	fprintf(fh, "CheckTextureHashFrequency=%d\n", ROM_GetTexureHashFrequencyAsFrames( preferences.CheckTextureHashFrequency ) );
@@ -437,7 +437,7 @@ SRomPreferences::SRomPreferences()
 	,	ViewPortHackEnabled( false )
 	,	FlatShadeDisabled( false )
 	,	CleanSceneEnabled( false )
-	,	ForceDepthBuffer( true )
+	,	NeedHackforZelda( false )
 	,	FlushTrisHack( false )
 	,	IncreaseVI_Event( false )
 	,	CheckTextureHashFrequency( THF_DISABLED )
@@ -464,7 +464,7 @@ void SRomPreferences::Reset()
 	ViewPortHackEnabled = false;
 	FlatShadeDisabled = false;
 	CleanSceneEnabled = false;
-	ForceDepthBuffer = true;
+	NeedHackforZelda = false;
 	FlushTrisHack = false;
 	IncreaseVI_Event = false;
 	CheckTextureHashFrequency = THF_DISABLED;
@@ -479,7 +479,6 @@ void SRomPreferences::Reset()
 //*****************************************************************************
 void	SRomPreferences::Apply() const
 {
-
 	gOSHooksEnabled		= PatchesEnabled;
 	gSpeedSyncEnabled	= SpeedSyncEnabled;
 	gDynarecEnabled		= g_ROM.settings.DynarecSupported && DynarecEnabled;
@@ -491,7 +490,7 @@ void	SRomPreferences::Apply() const
 	gViewPortHackEnabled = g_ROM.settings.ViewPortHackEnabled || ViewPortHackEnabled;
 	gFlatShadeDisabled = g_ROM.settings.FlatShadeDisabled || FlatShadeDisabled;
 	gCleanSceneEnabled = g_ROM.settings.CleanSceneEnabled || CleanSceneEnabled;
-	gForceDepthBuffer = g_ROM.settings.ForceDepthBuffer || ForceDepthBuffer;
+	gNeedHackforZelda = g_ROM.settings.NeedHackforZelda || NeedHackforZelda;
 	gFlushTrisHack = g_ROM.settings.FlushTrisHack || FlushTrisHack;
 	gIncreaseVI_Event = g_ROM.settings.IncreaseVI_Event || IncreaseVI_Event;
 	gCheckTextureHashFrequency = ROM_GetTexureHashFrequencyAsFrames( CheckTextureHashFrequency );
@@ -500,9 +499,8 @@ void	SRomPreferences::Apply() const
 	gAudioPluginEnabled = AudioEnabled;
 //	gAdaptFrequency = AudioAdaptFrequency;
 
-	gControllerIndex = ControllerIndex; //Used during ROM initialization 
-	CInputManager::Get()->SetConfiguration( ControllerIndex ); //Used after initialization
-
+	gControllerIndex = ControllerIndex;							//Used during ROM initialization 
+	CInputManager::Get()->SetConfiguration( ControllerIndex );  //Used after initialization
 }
 
 

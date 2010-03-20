@@ -71,7 +71,7 @@ struct RomSettings
 	bool				ViewPortHackEnabled;
 	bool				FlatShadeDisabled;
 	bool				CleanSceneEnabled;
-	bool				ForceDepthBuffer;
+	bool				NeedHackforZelda;
 	bool				FlushTrisHack;
 	bool				IncreaseVI_Event;
 

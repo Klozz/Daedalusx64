@@ -316,9 +316,9 @@ bool IRomSettingsDB::OpenSettingsFile( const char * filename )
 		{
 			settings.CleanSceneEnabled = p_property->GetBooleanValue( false );
 		}
-		if( p_section->FindProperty( "ForceDepthBuffer", &p_property ) )
+		if( p_section->FindProperty( "NeedHackforZelda", &p_property ) )
 		{
-			settings.ForceDepthBuffer = p_property->GetBooleanValue( true );
+			settings.NeedHackforZelda = p_property->GetBooleanValue( true );
 		}
 		if( p_section->FindProperty( "FlushTrisHack", &p_property ) )
 		{
@@ -450,7 +450,7 @@ void IRomSettingsDB::OutputSectionDetails( const RomID & id, const RomSettings &
 	if( settings.ViewPortHackEnabled )			fprintf(fh, "ViewPortHackEnabled=yes\n");
 	if( settings.FlatShadeDisabled )			fprintf(fh, "FlatShadeDisabled=yes\n");
 	if( settings.CleanSceneEnabled )			fprintf(fh, "CleanSceneEnabled=yes\n");
-	if( settings.ForceDepthBuffer )				fprintf(fh, "ForceDepthBuffer=no\n");
+	if( settings.NeedHackforZelda )				fprintf(fh, "NeedHackforZelda=yes\n");
 	if( settings.FlushTrisHack )				fprintf(fh, "FlushTrisHack=yes\n");
 	if( settings.IncreaseVI_Event )				fprintf(fh, "IncreaseVI_Event=yes\n");
 
@@ -513,7 +513,7 @@ RomSettings::RomSettings()
 ,	ViewPortHackEnabled( false )
 ,	FlatShadeDisabled( false )
 ,	CleanSceneEnabled( false )
-,	ForceDepthBuffer( true )
+,	NeedHackforZelda( false )
 ,	FlushTrisHack( false )
 ,	IncreaseVI_Event( false )
 ,	RescanCount(0)
@@ -548,7 +548,7 @@ void	RomSettings::Reset()
 	ViewPortHackEnabled = false;
 	FlatShadeDisabled = false;
 	CleanSceneEnabled = false;
-	ForceDepthBuffer = true;
+	NeedHackforZelda = false;
 	FlushTrisHack = false;
 	IncreaseVI_Event = false;
 	RescanCount = 0;

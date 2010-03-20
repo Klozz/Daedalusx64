@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "stdafx.h"
 
 #include "PSPRenderer.h"
+#include "Blender.h"
 #include "Texture.h"
 #include "TextureCache.h"
 #include "RDP.h"
@@ -777,7 +778,9 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	gLastRDPOtherMode._u64 = gRDPOtherMode._u64;
 
 	sceGuShadeModel( mSmooth ? GU_SMOOTH : GU_FLAT );
-
+	//
+	// Initiate Filter
+	//
 	//This sets our filtering either through gRDPOtherMode by default or we force it
 	switch( gGlobalPreferences.ForceTextureFilter )
 	{
@@ -799,7 +802,11 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 			sceGuTexFilter(GU_LINEAR,GU_LINEAR);
 			break;
 	}
-
+	//
+	// Initiate Blender
+	//
+	CBlender::Get()->InitBlenderMode();
+	//
 	//
 	// I can't think why the hand in mario's menu screen is rendered with an opaque rendermode,
 	// and no alpha threshold. We set the alpha reference to 1 to ensure that the transparent pixels
@@ -1331,11 +1338,7 @@ bool PSPRenderer::FlushTris()
 {
 	DAEDALUS_PROFILE( "FlushTris" );
 
-	if ( m_dwNumIndices == 0 )
-	{
-		mVtxClipFlagsUnion = 0;
-		return true;
-	}
+	if (m_dwNumIndices == 0)	return true;
 
 	u32				num_vertices;
 	DaedalusVtx *	p_vertices;

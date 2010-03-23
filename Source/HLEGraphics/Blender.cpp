@@ -101,62 +101,7 @@ case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_PASS3 ):
 #define	RM_AA_ZB_OPA_SURF(clk)	GBL_c##clk(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_MEM, G_BL_A_MEM)
 
 */
-
-//======> Below information was borrowed from RICE Video plugin
-
-	//1. Z_COMPARE        -- Enable / Disable Zbuffer compare, SetRenderState( D3DRS_ZENABLE )
-	//	1   -   Enable ZBuffer
-	//	0   -   Disable ZBuffer
-
-	//2. Z_UPDATE        -- Enable / Disable Zbuffer update, SetRenderState( D3DRS_ZWRITEENABLE )
-	//	1   -   Enable ZBuffer writeable
-	//	0   -   Zbuffer not writeable
-
-	//3. AA_EN and IM_RD        -- Anti-Alias
-	//	AA_EN           -   Enable anti-aliase
-	//	AA_EN | IM_RD   -   Reduced anti-aliase
-	//	IM_RD           -   ??
-	//	-               -   Disable anti-aliase
-
-	//4.  ZMode       
-	//	#define	ZMODE_OPA	0           -- Usually used with Z_COMPARE and Z_UPDATE
-	//											   or used without neither Z_COMPARE or Z_UPDATE
-	//											   if used with Z_COMPARE and Z_UPDATE, then this is
-	//											   the regular ZBuffer mode, with compare and update
-	//	#define	ZMODE_INTER	0x400
-	//	#define	ZMODE_XLU	0x800       -- Usually used with Z_COMPARE, but not with Z_UPDATE
-	//											   Do only compare, no zbuffer update.
-	//											   Not output if the z value is the same
-	//	#define	ZMODE_DEC	0xc00       -- Usually used with Z_COMPARE, but not with Z_UPDATE
-	//											   Do only compare, no update, but because this is
-	//											   decal mode, so image should be updated even
-	//											   the z value is the same as compared.
-
-	//	Alpha Blender Modes	
-
-	/*
-6. FORCE_BL     - Alpha blending at blender stage
-    1   -   Enable alpha blending at blender
-    0   -   Disable alpha blending at blender
-
-    Alpha blending at blender is usually used to render XLU surface
-    if enabled, then use the blending setting of C1 and C2
-
-7. ALPHA_CVG_SEL    - Output full alpha from the color combiner, usually not used together
-                      with FORCE_BL. If it is used together with FORCE_BL, then ignore this
-
-8. CVG_X_ALPHA      - Before output the color from color combiner, mod it with alpha
-
-9. TEX_EDGE         - Ignore this
-
-10.CLR_ON_CVG       - Used with XLU surfaces, ignore it
-
-11.CVG_DST
-#define	CVG_DST_CLAMP	0           -   Usually used with OPA surface
-#define	CVG_DST_WRAP	0x100       -   Usually used with XLU surface or OPA line
-#define	CVG_DST_FULL	0x200       -   ?
-#define	CVG_DST_SAVE	0x300       -   ?
-
+/*
 
 Possible Blending Inputs:
 
@@ -173,9 +118,8 @@ Possible Blending Factors:
     A-SHADE -   Alpha of shade
     1   -   1
     0   -   0
-*/
 
-// <===== End of information borrowed from RICE Video plugin.
+*/
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*****************************************************************************
@@ -282,6 +226,8 @@ void CBlender::InitBlenderMode()					// Set Alpha Blender mode
 		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_NOOP1 ): // c800 || 0000 - F-Zero - Cars
 		case MAKE_BLEND_MODE( BLEND_FOG_3, BLEND_PASS2 ):		// c000 || 0302 - ISS64 - Ground
 		case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_NOOP1 ):		// 0c08 || 0000 - 1080 - Sky
+		case MAKE_BLEND_MODE( BLEND_FOG_APRIM1, BLEND_PASS2 ):	// c400 || 0302 - Donald Duck - Sky
+		case MAKE_BLEND_MODE( BLEND_FOG_APRIM1, BLEND_OPA2 ):	// c400 || 0011 - Donald Duck and GoldenEye - Items and Truck spots.
 			enable_blend = false;
 			break;
 		case MAKE_BLEND_MODE( BLEND_NOOP1, BLEND_XLU2 ):		// 0000 || 0010 - Hey You Pikachu - Shade

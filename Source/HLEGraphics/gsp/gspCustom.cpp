@@ -537,70 +537,50 @@ void DLParser_TexRect_Last_Legion( MicroCodeCommand command )
 }
 
 //*****************************************************************************
-//*GoldenEye 007 - Sky Fix
+//
 //*****************************************************************************
 void DLParser_RDPHalf_1_0xb4_GoldenEye( MicroCodeCommand command )
 {
-	if( (command.cmd1>>24) == 0xce )
-		{
-		//
-		// Fetch the next two instructions
-		//
-		MicroCodeCommand command2;
-		MicroCodeCommand command3;
+	// Check for invalid address
+	if ( (command.cmd1)>>24 != 0xce )	
+		return;
 
+	u32 tile = 0;
+	u32 pc = gDisplayListStack.back().addr;		// This points to the next instruction
+	u32 * Cmd = (u32 *)(g_pu8RamBase + pc);
 
-	//for debugging
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-		u32 address = gDisplayListStack.back().addr;		// This points to the next instruction
-		u32 dw1 = *(u32 *)(g_ps8RamBase + address+8*0+4);
-		u32 dw2 = *(u32 *)(g_ps8RamBase + address+8*1+4);
-		u32 dw3 = *(u32 *)(g_ps8RamBase + address+8*2+4);
-		u32 dw4 = *(u32 *)(g_ps8RamBase + address+8*3+4);
-		u32 dw5 = *(u32 *)(g_ps8RamBase + address+8*4+4);
-		u32 dw6 = *(u32 *)(g_ps8RamBase + address+8*5+4);
-		u32 dw7 = *(u32 *)(g_ps8RamBase + address+8*6+4);
-		u32 dw8 = *(u32 *)(g_ps8RamBase + address+8*7+4);
-		u32 dw9 = *(u32 *)(g_ps8RamBase + address+8*8+4);
-#endif
+	// Indices
+	u32 a1 = *Cmd+8*0+4;
+	u32 a3 = *Cmd+8*2+4;
 
+	// Unused for now
+	//u32 a2 = *Cmd+8*1+4;
+	//u32 a4 = *Cmd+8*3+4;
+	//u32 a5 = *Cmd+8*4+4;
+	//u32 a6 = *Cmd+8*5+4;
+	//u32 a7 = *Cmd+8*6+4;
+	//u32 a8 = *Cmd+8*7+4;
+	//u32 a9 = *Cmd+8*8+4;
 
-		if( !DLParser_FetchNextCommand( &command2 ) ||
-			!DLParser_FetchNextCommand( &command3 ) )
-			return;
+	// Coordinates, textures, and color
+	f32 x0 = (s32)(a3>>16)/32768.0f;	// Loads our texture coordinates
+	f32 y0 = int(a1&0xFFFF)/4;			// Loads color etc
+	f32 x1 = 320*4;						// Loads Both screen coordinates and texture coordinates.
+	f32 y1 = int(a1>>16)/4;				// Loads texture, color etc
 
-		RDP_TexRect tex_rect;
-		tex_rect.cmd0 = command.cmd0;
-		tex_rect.cmd1 = command.cmd1;
-		tex_rect.cmd2 = command2.cmd1;
-		tex_rect.cmd3 = command3.cmd1;
+	// The only thing I can't figure out, is why GE doesn't fill the entire screen?
+	// As a result our sky fills all the gaps :(
+	// TIP : f32 x1 can be modified to render the sky differently.
+	// Need to check on real hardware to tweak our sky correctly if needed.
 
-		v2 d( tex_rect.dsdx / 1024.0f, tex_rect.dtdy / 1024.0f );
-		v2 xy0( tex_rect.x0 / 4.0f, tex_rect.y0 / 4.0f );
-		v2 xy1( tex_rect.x1 / 4.0f, tex_rect.y1 / 4.0f );
-		v2 uv0( tex_rect.s / 32.0f, tex_rect.t / 32.0f );
-		v2 uv1;
+	// Loads texrect
+	v2 xy0( x0 / 4.0f, x0 / 4.0f );
+	v2 xy1( x1 / 4.0f, x1 / 4.0f );
+	v2 uv0( y0 / 32.0f, y0 / 32.0f );
+	v2 uv1( y1 / 32.0f, y1 / 32.0f );
 
-		if ((gOtherModeH & G_CYC_COPY) == G_CYC_COPY)
-		{
-			d.x /= 4.0f;	// In copy mode 4 pixels are copied at once.
-		}
+	PSPRenderer::Get()->TexRect( tile, xy0, xy1, uv0, uv1 );
 
-		uv1.x = uv0.x + d.x * ( xy1.x - xy0.x );
-		uv1.y = uv0.y + d.y * ( xy1.y - xy0.y );
-
-		DL_PF("Golden Eye Sky Debug ");
-		DL_PF("    Tile:%d Screen(%f,%f) -> (%f,%f)",				   tex_rect.tile_idx, xy0.x, xy0.y, xy1.x, xy1.y);
-		DL_PF("           Tex:(%#5f,%#5f) -> (%#5f,%#5f) (DSDX:%#5f DTDY:%#5f)",          uv0.x, uv0.y, uv1.x, uv1.y, d.x, d.y);
-		DL_PF(" Word 1: %u, Word 2: %u, Word 3: %u, Word 4: %u, Word 5: %u, Word 6: %u, Word 7: %u, Word 8: %u, Word 9: %u", dw1, dw2, dw3, dw4, dw5, dw6, dw7, dw8, dw9);
-		DL_PF(" ");
-
-		PSPRenderer::Get()->TexRect( tex_rect.tile_idx, xy0, xy1, uv0, uv1 );
-	}
-
-	 //Skips the next few uneeded RDP_Half commands since we use them here or they are unneeded
 	gDisplayListStack.back().addr += 312;
-
-	gRDPHalf1 = u32(command._u64 & 0xffffffff);
 
 }

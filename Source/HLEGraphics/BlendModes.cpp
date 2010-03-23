@@ -1060,24 +1060,20 @@ void BlendMode_0x00327e6411fcf87cLL (BLEND_MODE_ARGS)
 */
 
 //GoldenEye 007 - Sky
-//XXX Sometimes the sky is not render due the micrcode not finished yet.
 //case 0x0040fe8155fef97cLL:
 //aRGB0: (Shade        - Env         ) * Texel0       + Env
 //aA0  : (0            - 0           ) * 0            + Shade
 //aRGB1: (Shade        - Env         ) * Texel0       + Env
 //aA1  : (0            - 0           ) * 0            + Shade
-/*
 void BlendMode_0x0040fe8155fef97cLL (BLEND_MODE_ARGS)
 {
 	//XXX Placeholder
 	details.InstallTexture = true;
 	details.ColourAdjuster.SetRGB( details.EnvColour );
-
-	//XXX Color has to be constant
-	sceGuTexEnvColor( details.EnvColour.GetColour() );
+	//XXX Color has to be constant aka blend.
 	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
 }
-*/
+
 /*
   #I
 */ 
@@ -1198,7 +1194,20 @@ void BlendMode_0x00127624ffef93c9LL (BLEND_MODE_ARGS)
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
 }
-
+// Monster Truck - Text
+//case 0x003135ff5f0ada3fLL:
+//aRGB0: (Primitive    - Env         ) * Texel1       + Env
+//aA0  : (Primitive    - Env         ) * Texel1       + Env
+//aRGB1: (0            - 0           ) * 0            + Combined
+//aA1  : (Combined     - 0           ) * Texel1       + 0
+void BlendMode_0x003135ff5f0ada3fLL (BLEND_MODE_ARGS)
+{
+	details.InstallTexture = true;
+	// XXXX needs t1 in alpha..*sigh*
+	details.ColourAdjuster.SetRGB ( details.PrimColour );
+	sceGuTexEnvColor( details.EnvColour.GetColour() );
+	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
+}
 // M64 eyes decal.
 //case 0x00147e2844fe7b3dLL:
 //aRGB0: (Texel0       - Shade       ) * Texel0_Alp   + Shade       
@@ -1546,18 +1555,7 @@ void BlendMode_0x0010e5e0230b1d52LL (BLEND_MODE_ARGS)
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
-//Paper Mario -  Glow in characters night <== Fix Me
-//case 0x00117e80f5fff438LL:
-//aRGB0: (Texel0       - 0           ) * Texel1       + 0           
-//aA0  : (0            - 0           ) * 0            + Texel1      
-//aRGB1: (Shade        - Env         ) * Combined     + Combined    
-//aA1  : (0            - 0           ) * 0            + Combined       
-/*
-void BlendMode_0x00117e80f5fff438LL (BLEND_MODE_ARGS)
-{
-	details.InstallTexture = true;
-}
-*/
+
 //Paper Mario - Hit enemies Effect
 //case 0x0030abff5ffe9238LL:
 //aRGB0: (Primitive    - Env         ) * Texel0       + Env         
@@ -4475,7 +4473,7 @@ OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 		BLEND_MODE (0x0040fe8155fef379LL);
 		BLEND_MODE (0x0040fe8155fefd7eLL);
 		BLEND_MODE (0x0030fe045ffefdf8LL);
-		//BLEND_MODE (0x0040fe8155fef97cLL);
+		BLEND_MODE (0x0040fe8155fef97cLL);
 		BLEND_MODE (0x00ffe7ffffcf9fcfLL);
 		BLEND_MODE (0x00117ffffffefc38LL);
 		BLEND_MODE (0x00177e2efffefd7eLL);
@@ -4490,7 +4488,7 @@ OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 		BLEND_MODE (0x00262a6016fc9378LL);
 		BLEND_MODE (0x00322bff5f0e923fLL);
 		BLEND_MODE (0x0030abff5ffe9238LL);
-	//	BLEND_MODE (0x00117e80f5fff438LL);
+		BLEND_MODE (0x003135ff5f0ada3fLL);
 		BLEND_MODE (0x0010e5e0230b1d52LL);
 		BLEND_MODE (0x00117e60f5fff578LL);
 		BLEND_MODE (0x0026a0031ffc9378LL);

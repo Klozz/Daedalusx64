@@ -817,7 +817,8 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	{
 		if ( gRDPOtherMode.cvg_x_alpha )	// I think this implies that alpha is coming from
 		{
-			sceGuAlphaFunc(GU_GREATER, 0, 0xff);
+			// Going over 0x70 brakes OOT, but going lesser than that makes lines on games visible...ex: Paper Mario.
+			sceGuAlphaFunc(GU_GREATER, 0x70, 0xff);	// This seems to be best balanced..
 			sceGuEnable(GU_ALPHA_TEST);
 		}
 		else

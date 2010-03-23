@@ -527,11 +527,6 @@ static void DLParser_SetuCode( GBIVersion gbi_version, UCodeVersion ucode_versio
 		{
 		case GBI_0:
 		case GBI_0_GE:
-			gVertexStride = 10;
-			DLParser_GBI1_Tri1_Instruction = DLParser_GBI1_Tri1_T< 10 >;
-			DLParser_GBI1_Tri2_Instruction = DLParser_GBI1_Tri2_T< 10 >;
-			DLParser_GBI1_Line3D_Instruction = DLParser_GBI1_Line3D_T< 10 >;
-			break;
 		case GBI_0_DKR:	
 			gVertexStride = 10;
 			DLParser_GBI1_Tri1_Instruction = DLParser_GBI1_Tri1_T< 10 >;
@@ -545,7 +540,6 @@ static void DLParser_SetuCode( GBIVersion gbi_version, UCodeVersion ucode_versio
 			DLParser_GBI1_Tri2_Instruction = DLParser_GBI1_Tri2_T< 5 >;
 			DLParser_GBI1_Line3D_Instruction = DLParser_GBI1_Line3D_T< 5 >;
 			break;
-
 			// Default case is GBI_1
 		case GBI_1:
 		default:
@@ -659,7 +653,7 @@ static void DLParser_SetuCode( GBIVersion gbi_version, UCodeVersion ucode_versio
 		{
 			gInstructionLookup[G_GBI1_VTX] = DLParser_GBI0_Vtx;			gInstructionName[G_GBI1_VTX]		= "G_GBI0_VTX";
 			gInstructionLookup[G_GBI1_TRI2] = DLParser_GBI0_Tri2;		gInstructionName[G_GBI1_TRI2]		= "G_GBI0_TRI2";
-//			gInstructionLookup[G_GBI1_RDPHALF_1] = DLParser_RDPHalf_1_0xb4_GoldenEye;	gInstructionName[G_GBI1_RDPHALF_1]		= "G_RDPHalf_1_0xb4_GoldenEye";
+			gInstructionLookup[G_GBI1_RDPHALF_1] = DLParser_RDPHalf_1_0xb4_GoldenEye;	gInstructionName[G_GBI1_RDPHALF_1]		= "G_RDPHalf_1_0xb4_GoldenEye";
 		}
 		else if ( gbi_version == GBI_0_SE )
 		{
@@ -1542,7 +1536,6 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 	}
 
 }
-
 
 //*****************************************************************************
 //

@@ -62,7 +62,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../SysPSP/Utility/pspmath.h"
 
-float DECAL_Z_OFFSET = +3.14f;		// Found through trial an error for the PSP
+f32 DECAL_Z_OFFSET = +3.14f;		// Found through trial an error for the PSP
+f32 sRatio = 0.75f;					// NTSC is 0.75f and PAL is 9/11.0f ToDo : Determine when to use either one
 
 #include "PushStructPack1.h"
 
@@ -344,38 +345,57 @@ void	PSPRenderer::Reset()
 	m_dwNumTrisRendered = 0;
 	m_dwNumTrisClipped = 0;
 #endif
+	u32 width = Memory_VI_GetRegister( VI_WIDTH_REG );
 
-	u32 dwScaleX = Memory_VI_GetRegister( VI_X_SCALE_REG ) & 0xFFF;
-	u32 dwScaleY = Memory_VI_GetRegister( VI_Y_SCALE_REG ) & 0xFFF;
+	u32 ScaleX = Memory_VI_GetRegister( VI_X_SCALE_REG ) & 0xFFF;
+	u32 ScaleY = Memory_VI_GetRegister( VI_Y_SCALE_REG ) & 0xFFF;
 
-	float fScaleX = (float)dwScaleX / (1<<10);
-	float fScaleY = (float)dwScaleY / (1<<10);
+	f32 fScaleX = (f32)ScaleX / (1<<10);
+	f32 fScaleY = (f32)ScaleY / (1<<10);
 
 	//DBGConsole_Msg(DEBUG_VI, "VI_X_SCALE_REG set to 0x%08x (%f)", dwValue, 1/fScale);
 	//DBGConsole_Msg(DEBUG_VI, "VI_Y_SCALE_REG set to 0x%08x (%f)", dwValue, 1/fScale);
 
-	u32 dwHStartReg = Memory_VI_GetRegister( VI_H_START_REG );
-	u32 dwVStartReg = Memory_VI_GetRegister( VI_V_START_REG );
+	u32 HStartReg = Memory_VI_GetRegister( VI_H_START_REG );
+	u32 VStartReg = Memory_VI_GetRegister( VI_V_START_REG );
 
-	u32	hstart = dwHStartReg >> 16;
-	u32	hend = dwHStartReg & 0xffff;
+	u32	hstart = HStartReg >> 16;
+	u32	hend = HStartReg & 0xffff;
 	//DBGConsole_Msg( 0, "h start/end %x %x", hstart, hend );		// 128 725 - 597
 
-	u32	vstart = dwVStartReg >> 16;
-	u32	vend = dwVStartReg & 0xffff;
+	u32	vstart = VStartReg >> 16;
+	u32	vend = VStartReg & 0xffff;
 	//DBGConsole_Msg( 0, "v start/end %x %x", vstart, vend );		// 56 501 - 445
 
 	sViWidth  = (u32)( (hend-hstart)    * fScaleX);
-	sViHeight = (u32)(((vend-vstart)/2) * fScaleY);				//
+	sViHeight = (u32)(((vend-vstart)/2) * fScaleY);
 
-	if ( sViWidth == 0 )
+	if( ScaleY == 0 )
 	{
-		sViWidth = 320;
+		sViHeight = sViWidth*sRatio;
 	}
-	if ( sViHeight == 0 )
+	else
 	{
-		sViHeight = 240;
+		//This sets the correct height in various games
+		//ex : Megaman 64
+		if( width > 0x300 )
+		{
+			sViHeight *= 2;
+		}
 	}
+
+	if( sViHeight<100 || sViWidth<100 )
+	{
+		//Sometimes HStartReg and VStartReg are zero
+		//This fixes gaps is some games ex: CyberTiger
+		//
+		sViWidth = (f32)width;
+		sViHeight = sViWidth*sRatio;
+	}
+
+	//If zero: Set to defaults
+	if ( sViWidth == 0 ) sViWidth = 320;
+	if ( sViHeight == 0 ) sViHeight = 240;
 }
 
 //*****************************************************************************
@@ -1797,145 +1817,6 @@ void PSPRenderer::SetNewVertexInfoVFPU(u32 address, u32 v0, u32 n)
 }
 
 //*****************************************************************************
-//
-//*****************************************************************************
-/*
-//
-// Ununsed... we might remove this, or keep it for check-in
-//
-void PSPRenderer::SetNewVertexInfoCPU(u32 dwAddress, u32 dwV0, u32 dwNum)
-{
-	//DBGConsole_Msg(0, "In SetNewVertexInfo");
-	FiddledVtx * pVtxBase = (FiddledVtx*)(g_pu8RamBase + dwAddress);
-
-	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );
-	const Matrix4x4 & matWorldProject( GetWorldProject() );
-
-	// Transform and Project + Lighting
-	// or
-	// Transform and Project with Colour
-
-	u32 i;
-	for (i = dwV0; i < dwV0 + dwNum; i++)
-	{
-		const FiddledVtx & vert = pVtxBase[i - dwV0];
-
-		v4		w( f32( vert.x ), f32( vert.y ), f32( vert.z ), 1.0f );
-
-		mVtxProjected[i].ProjectedPos = matWorldProject.Transform( w );
-		mVtxProjected[i].TransformedPos = matWorld.Transform( w );
-
-		DL_PF( "p%d: (%f,%f,%f) -> (%f,%f,%f,%f)", i, w.x, w.y, w.z, mVtxProjected[i].ProjectedPos.x, mVtxProjected[i].ProjectedPos.y, mVtxProjected[i].ProjectedPos.z, mVtxProjected[i].ProjectedPos.w );
-
-		if (mTnLModeFlags & TNL_LIGHT)
-		{
-			v3	model_normal(f32( vert.norm_x ), f32( vert.norm_y ), f32( vert.norm_z ) );
-
-			v3 vecTransformedNormal;		// Used only when TNL_LIGHT set
-			vecTransformedNormal = matWorld.TransformNormal( model_normal );
-			vecTransformedNormal.Normalise();
-
-			mVtxProjected[i].Colour = LightVert(vecTransformedNormal);
-		}
-		else
-		{
-			mVtxProjected[i].Colour = v4( vert.rgba_r / 255.0f, vert.rgba_g / 255.0f, vert.rgba_b / 255.0f, vert.rgba_a / 255.0f );
-		}
-	}
-
-	//
-	//	Template processing function to hoist conditional checks out of loop
-	//
-	switch( mTnLModeFlags & (TNL_TEXTURE|TNL_TEXGEN|TNL_FOG|TNL_LIGHT) )
-	{
-		// TNL_TEXGEN is ignored when TNL_LIGHT is disabled
-	case                                              0: ProcessVerts< false, 0 >( dwV0, dwNum, pVtxBase, matWorld );	break;
-	case                                    TNL_TEXTURE: ProcessVerts< false, 1 >( dwV0, dwNum, pVtxBase, matWorld );	break;
-	case                       TNL_TEXGEN              : ProcessVerts< false, 0 >( dwV0, dwNum, pVtxBase, matWorld );	break;
-	case                       TNL_TEXGEN | TNL_TEXTURE: ProcessVerts< false, 1 >( dwV0, dwNum, pVtxBase, matWorld );	break;
-	case             TNL_FOG                           : ProcessVerts< true,  0 >( dwV0, dwNum, pVtxBase, matWorld );	break;
-	case             TNL_FOG |              TNL_TEXTURE: ProcessVerts< true,  1 >( dwV0, dwNum, pVtxBase, matWorld );	break;
-	case             TNL_FOG | TNL_TEXGEN              : ProcessVerts< true,  0 >( dwV0, dwNum, pVtxBase, matWorld );	break;
-	case             TNL_FOG | TNL_TEXGEN | TNL_TEXTURE: ProcessVerts< true,  1 >( dwV0, dwNum, pVtxBase, matWorld );	break;
-
-		// TNL_TEXGEN is ignored when TNL_TEXTURE is disabled
-	case TNL_LIGHT                                     : ProcessVerts< false, 0 >( dwV0, dwNum, pVtxBase, matWorld );	break;
-	case TNL_LIGHT |                        TNL_TEXTURE: ProcessVerts< false, 1 >( dwV0, dwNum, pVtxBase, matWorld );	break;
-	case TNL_LIGHT |           TNL_TEXGEN              : ProcessVerts< false, 0 >( dwV0, dwNum, pVtxBase, matWorld );	break;
-	case TNL_LIGHT |           TNL_TEXGEN | TNL_TEXTURE: ProcessVerts< false, 2 >( dwV0, dwNum, pVtxBase, matWorld );	break;
-	case TNL_LIGHT | TNL_FOG                           : ProcessVerts< true,  0 >( dwV0, dwNum, pVtxBase, matWorld );	break;
-	case TNL_LIGHT | TNL_FOG |              TNL_TEXTURE: ProcessVerts< true,  1 >( dwV0, dwNum, pVtxBase, matWorld );	break;
-	case TNL_LIGHT | TNL_FOG | TNL_TEXGEN              : ProcessVerts< true,  0 >( dwV0, dwNum, pVtxBase, matWorld );	break;
-	case TNL_LIGHT | TNL_FOG | TNL_TEXGEN | TNL_TEXTURE: ProcessVerts< true,  2 >( dwV0, dwNum, pVtxBase, matWorld );	break;
-
-	default:
-		NODEFAULT;
-		break;
-	}
-}
-*/
-//*****************************************************************************
-//
-//*****************************************************************************
-void PSPRenderer::ModifyVertexInfo(u32 where, u32 vert, u32 val)
-{
-	switch ( where )
-	{
-		case G_MWO_POINT_RGBA:
-			{
-				DL_PF("      Setting RGBA to 0x%08x", val);
-				SetVtxColor( vert, c32( val ) );
-			}
-			break;
-
-		case G_MWO_POINT_ST:
-			{
-				s16 tu = s16(val>>16);
-				s16 tv = s16(val & 0xFFFF);
-				DL_PF( "      Setting tu/tv to %f, %f", tu/32.0f, tv/32.0f );
-				SetVtxTextureCoord( vert, tu, tv );
-			}
-			break;
-
-		case G_MWO_POINT_XYSCREEN:
-			{
-				
-				u16 nX = (u16)(val>>16);
-				s16 x = *((s16*)&nX);
-				x /= 4;
-
-				u16 nY = u16(val&0xFFFF);
-				s16 y = *((s16*)&nY);
-				y /= 4;
-
-				DL_PF("		Modify vert %d: x=%d, y=%d", vert, x, y);
-
-				// Let's do viewport compare.
-				x -= sViWidth/2;
-				y = sViHeight/2-y;
-				//
-
-				if((Memory_VI_GetRegister( VI_X_SCALE_REG )&0xF) != 0 )
-				{
-					// Tarzan... I don't know why is so different...
-					SetVtxXY( vert, x , y  );
-				}
-				else
-				{	
-					// Megaman and other games
-					SetVtxXY( vert, x*2 , y*2  );
-				}
-			}
-			break;
-
-		case G_MWO_POINT_ZSCREEN:
-			{
-				DL_PF( "      Setting ZScreen to 0x%08x", val );
-			}
-			break;
-	}
-}
-//*****************************************************************************
 // Assumes dwAddress has already been checked!
 // Don't inline - it's too big with the transform macros
 // DKR seems to use longer vert info
@@ -2057,12 +1938,148 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 dwAddress, u32 dwV0, u32 dwNum)
 //*****************************************************************************
 //
 //*****************************************************************************
+/*
+//
+// Ununsed... we might remove this, or keep it for check-in
+//
+void PSPRenderer::SetNewVertexInfoCPU(u32 dwAddress, u32 dwV0, u32 dwNum)
+{
+	//DBGConsole_Msg(0, "In SetNewVertexInfo");
+	FiddledVtx * pVtxBase = (FiddledVtx*)(g_pu8RamBase + dwAddress);
+
+	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );
+	const Matrix4x4 & matWorldProject( GetWorldProject() );
+
+	// Transform and Project + Lighting
+	// or
+	// Transform and Project with Colour
+
+	u32 i;
+	for (i = dwV0; i < dwV0 + dwNum; i++)
+	{
+		const FiddledVtx & vert = pVtxBase[i - dwV0];
+
+		v4		w( f32( vert.x ), f32( vert.y ), f32( vert.z ), 1.0f );
+
+		mVtxProjected[i].ProjectedPos = matWorldProject.Transform( w );
+		mVtxProjected[i].TransformedPos = matWorld.Transform( w );
+
+		DL_PF( "p%d: (%f,%f,%f) -> (%f,%f,%f,%f)", i, w.x, w.y, w.z, mVtxProjected[i].ProjectedPos.x, mVtxProjected[i].ProjectedPos.y, mVtxProjected[i].ProjectedPos.z, mVtxProjected[i].ProjectedPos.w );
+
+		if (mTnLModeFlags & TNL_LIGHT)
+		{
+			v3	model_normal(f32( vert.norm_x ), f32( vert.norm_y ), f32( vert.norm_z ) );
+
+			v3 vecTransformedNormal;		// Used only when TNL_LIGHT set
+			vecTransformedNormal = matWorld.TransformNormal( model_normal );
+			vecTransformedNormal.Normalise();
+
+			mVtxProjected[i].Colour = LightVert(vecTransformedNormal);
+		}
+		else
+		{
+			mVtxProjected[i].Colour = v4( vert.rgba_r / 255.0f, vert.rgba_g / 255.0f, vert.rgba_b / 255.0f, vert.rgba_a / 255.0f );
+		}
+	}
+
+	//
+	//	Template processing function to hoist conditional checks out of loop
+	//
+	switch( mTnLModeFlags & (TNL_TEXTURE|TNL_TEXGEN|TNL_FOG|TNL_LIGHT) )
+	{
+		// TNL_TEXGEN is ignored when TNL_LIGHT is disabled
+	case                                              0: ProcessVerts< false, 0 >( dwV0, dwNum, pVtxBase, matWorld );	break;
+	case                                    TNL_TEXTURE: ProcessVerts< false, 1 >( dwV0, dwNum, pVtxBase, matWorld );	break;
+	case                       TNL_TEXGEN              : ProcessVerts< false, 0 >( dwV0, dwNum, pVtxBase, matWorld );	break;
+	case                       TNL_TEXGEN | TNL_TEXTURE: ProcessVerts< false, 1 >( dwV0, dwNum, pVtxBase, matWorld );	break;
+	case             TNL_FOG                           : ProcessVerts< true,  0 >( dwV0, dwNum, pVtxBase, matWorld );	break;
+	case             TNL_FOG |              TNL_TEXTURE: ProcessVerts< true,  1 >( dwV0, dwNum, pVtxBase, matWorld );	break;
+	case             TNL_FOG | TNL_TEXGEN              : ProcessVerts< true,  0 >( dwV0, dwNum, pVtxBase, matWorld );	break;
+	case             TNL_FOG | TNL_TEXGEN | TNL_TEXTURE: ProcessVerts< true,  1 >( dwV0, dwNum, pVtxBase, matWorld );	break;
+
+		// TNL_TEXGEN is ignored when TNL_TEXTURE is disabled
+	case TNL_LIGHT                                     : ProcessVerts< false, 0 >( dwV0, dwNum, pVtxBase, matWorld );	break;
+	case TNL_LIGHT |                        TNL_TEXTURE: ProcessVerts< false, 1 >( dwV0, dwNum, pVtxBase, matWorld );	break;
+	case TNL_LIGHT |           TNL_TEXGEN              : ProcessVerts< false, 0 >( dwV0, dwNum, pVtxBase, matWorld );	break;
+	case TNL_LIGHT |           TNL_TEXGEN | TNL_TEXTURE: ProcessVerts< false, 2 >( dwV0, dwNum, pVtxBase, matWorld );	break;
+	case TNL_LIGHT | TNL_FOG                           : ProcessVerts< true,  0 >( dwV0, dwNum, pVtxBase, matWorld );	break;
+	case TNL_LIGHT | TNL_FOG |              TNL_TEXTURE: ProcessVerts< true,  1 >( dwV0, dwNum, pVtxBase, matWorld );	break;
+	case TNL_LIGHT | TNL_FOG | TNL_TEXGEN              : ProcessVerts< true,  0 >( dwV0, dwNum, pVtxBase, matWorld );	break;
+	case TNL_LIGHT | TNL_FOG | TNL_TEXGEN | TNL_TEXTURE: ProcessVerts< true,  2 >( dwV0, dwNum, pVtxBase, matWorld );	break;
+
+	default:
+		NODEFAULT;
+		break;
+	}
+}
+*/
+//*****************************************************************************
+//
+//*****************************************************************************
+void PSPRenderer::ModifyVertexInfo(u32 where, u32 vert, u32 val)
+{
+	switch ( where )
+	{
+		case G_MWO_POINT_RGBA:
+			{
+				DL_PF("      Setting RGBA to 0x%08x", val);
+				SetVtxColor( vert, c32( val ) );
+			}
+			break;
+
+		case G_MWO_POINT_ST:
+			{
+				s16 tu = s16(val>>16);
+				s16 tv = s16(val & 0xFFFF);
+				DL_PF( "      Setting tu/tv to %f, %f", tu/32.0f, tv/32.0f );
+				SetVtxTextureCoord( vert, tu, tv );
+			}
+			break;
+
+		case G_MWO_POINT_XYSCREEN:
+			{
+				
+				u16 nX = (u16)(val>>16);
+				s16 x = *((s16*)&nX);
+				x /= 4;
+
+				u16 nY = u16(val&0xFFFF);
+				s16 y = *((s16*)&nY);
+				y /= 4;
+
+				DL_PF("		Modify vert %d: x=%d, y=%d", vert, x, y);
+
+				u32 current_scale = Memory_VI_GetRegister(VI_X_SCALE_REG);
+				if((current_scale&0xF) != 0 )
+				{
+					// Tarzan... I don't know why is so different...
+					SetVtxXY( vert, x/sViWidth , y/sViHeight );
+				}
+				else
+				{	
+					// Megaman and other games
+					SetVtxXY( vert, x*2/sViWidth , y*2/sViHeight );
+				}
+			}
+			break;
+
+		case G_MWO_POINT_ZSCREEN:
+			{
+				DL_PF( "      Setting ZScreen to 0x%08x", val );
+			}
+			break;
+	}
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
 void PSPRenderer::SetVtxColor( u32 vert, c32 color )
 {
-	if ( vert < MAX_VERTS )
-	{
-		mVtxProjected[vert].Colour = color.GetColourV4();
-	}
+	//if ( vert < MAX_VERTS )
+	//{
+	mVtxProjected[vert].Colour = color.GetColourV4();
+	//}
 }
 
 //*****************************************************************************
@@ -2070,11 +2087,11 @@ void PSPRenderer::SetVtxColor( u32 vert, c32 color )
 //*****************************************************************************
 void PSPRenderer::SetVtxTextureCoord( u32 vert, short tu, short tv )
 {
-	if ( vert < MAX_VERTS )
-	{
-		mVtxProjected[vert].Texture.x = (float)tu / 32.0f;
-		mVtxProjected[vert].Texture.y = (float)tv / 32.0f;
-	}
+	//if ( vert < MAX_VERTS )
+	//{
+	mVtxProjected[vert].Texture.x = (f32)tu / 32.0f;
+	mVtxProjected[vert].Texture.y = (f32)tv / 32.0f;
+	//}
 }
 
 //*****************************************************************************
@@ -2082,24 +2099,24 @@ void PSPRenderer::SetVtxTextureCoord( u32 vert, short tu, short tv )
 //*****************************************************************************
 void PSPRenderer::SetVtxXY( u32 vert, float x, float y )
 {
-	if ( vert < MAX_VERTS )
-	{
-		// XXX Needs reprojection?
-		// printf( "SetVtxXY\n" );
-		mVtxProjected[vert].TransformedPos.x = x;
-		mVtxProjected[vert].TransformedPos.y = y;
-	}
+	//if ( vert < MAX_VERTS )
+	//{
+	// XXX Needs reprojection?
+	// printf( "SetVtxXY\n" );
+	mVtxProjected[vert].TransformedPos.x = x;
+	mVtxProjected[vert].TransformedPos.y = y;
+	//}
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-void PSPRenderer::SetLightCol(u32 dwLight, u32 colour)
+void PSPRenderer::SetLightCol(u32 light, u32 colour)
 {
-	mLights[dwLight].Colour.x = (float)((colour >> 24)&0xFF) / 255.0f;
-	mLights[dwLight].Colour.y = (float)((colour >> 16)&0xFF) / 255.0f;
-	mLights[dwLight].Colour.z = (float)((colour >>  8)&0xFF) / 255.0f;
-	mLights[dwLight].Colour.w = 1.0f;	// Ignore light alpha
+	mLights[light].Colour.x = (f32)((colour >> 24)&0xFF) / 255.0f;
+	mLights[light].Colour.y = (f32)((colour >> 16)&0xFF) / 255.0f;
+	mLights[light].Colour.z = (f32)((colour >>  8)&0xFF) / 255.0f;
+	mLights[light].Colour.w = 1.0f;	// Ignore light alpha
 }
 
 //*****************************************************************************

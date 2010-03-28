@@ -88,7 +88,7 @@ public:
 	void				ZBufferEnable(bool bZBuffer)			{ m_bZBuffer = bZBuffer; }
 
 	inline void			SetNumLights(u32 dwNumLights)			{ m_dwNumLights = dwNumLights; }
-	void				SetLightCol(u32 dwLight, u32 colour);
+	void				SetLightCol(u32 light, u32 colour);
 	void				SetLightDirection(u32 l, float x, float y, float z);
 	inline void			SetAmbientLight( const v4 & colour )	{ mTnLParams.Ambient = colour; }
 
@@ -103,7 +103,7 @@ public:
 
 	// Texture stuff
 	void				SetTextureScale(float fScaleX, float fScaleY)	{ mTnLParams.TextureScaleX = fScaleX; mTnLParams.TextureScaleY = fScaleY; }
-	void                            Draw2DTexture(float, float, float, float, float, float, float, float);
+	void                Draw2DTexture(float, float, float, float, float, float, float, float);
 
 	// Viewport stuff
 	void				SetPSPViewport( s32 x, s32 y, u32 w, u32 h );

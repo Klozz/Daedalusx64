@@ -28,26 +28,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Graphics/GraphicsContext.h"
 #include "SysPSP/Graphics/VideoMemoryManager.h"
-#include "Graphics/ColourValue.h"
 
+#include "Utility/LowBattery.h"
 #include "Utility/Profiler.h"
 #include "Utility/FramerateLimiter.h"
 #include "Utility/Preferences.h"
 #include "Utility/Timing.h"
 
-#include <pspdisplay.h>
 #include <pspdebug.h>
-#include <pspgu.h>
-#include <psppower.h>
-
-
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 #include "HLEGraphics/DisplayListDebugger.h"
 #endif
 
 #include "Core/Memory.h"
-#include "OSHLE/ultra_rcp.h"
 
 //#define DAEDALUS_FRAMERATE_ANALYSIS
 
@@ -208,30 +202,6 @@ void CGraphicsPluginPsp::ProcessDList()
 #endif
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//  TODO: Need to move this function out of our graphics plugin...			 //
-///////////////////////////////////////////////////////////////////////////////
-void low_battery()
-{
-	//if( !gGlobalPreferences.BatteryWarning || scePowerIsBatteryCharging() ) return;	// Need to double check...
-	if( scePowerIsBatteryCharging() ) return;
-	int bat = scePowerGetBatteryLifePercent();
-	if (bat > 9) return;
-
-	u32 counter = 0;
-
-	counter++;
-	if ((counter % 120) < 80)
-	{
-		const u32 red =  0x000000ff;	//  Red..
-		const u32 white = 0xffffffff;	//  White..
-
-		pspDebugScreenSetXY(51, 0);		// Allign to the left, becareful not touch the edges
-		pspDebugScreenSetBackColor( red );
-		pspDebugScreenSetTextColor( white );
-		pspDebugScreenPrintf( " Battery Low: %d ", bat);	// it's defined as a single character...
-	}
-}
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -257,7 +227,7 @@ void CGraphicsPluginPsp::UpdateScreen()
 			}
 			if( gGlobalPreferences.BatteryWarning )
 			{
-				low_battery();
+				low_battery_warning();
 			}
 			if(gTakeScreenshot)
 			{

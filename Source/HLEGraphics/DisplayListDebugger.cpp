@@ -42,8 +42,6 @@
 #include "Utility/Timing.h"
 #include "Utility/IO.h"
 
-#include "Math/MathUtil.h"
-
 #include <set>
 #include <vector>
 #include <algorithm>

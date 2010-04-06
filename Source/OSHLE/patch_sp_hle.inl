@@ -18,19 +18,19 @@ inline u32 SpGetStatus()
 u32 Patch___osSpRawStartDma()
 {
 TEST_DISABLE_SP_FUNCS
-	u32 dwRWFlag = gGPR[REG_a0]._u32_0;
-	u32 dwSPAddr = gGPR[REG_a1]._u32_0;
-	u32 dwVAddr  = gGPR[REG_a2]._u32_0;
-	u32 dwLen    = gGPR[REG_a3]._u32_0;
+	u32 RWflag = gGPR[REG_a0]._u32_0;
+	u32 SPAddr = gGPR[REG_a1]._u32_0;
+	u32 VAddr  = gGPR[REG_a2]._u32_0;
+	u32 len    = gGPR[REG_a3]._u32_0;
 
-	u32 dwPAddr = ConvertToPhysics(dwVAddr);
+	u32 PAddr = ConvertToPhysics(VAddr);
 
 	/*
 	DBGConsole_Msg(0, "osSpRawStartDma(%d, 0x%08x, 0x%08x (0x%08x), %d)", 
-		dwRWFlag,
-		dwSPAddr,
-		dwVAddr, dwPAddr,
-		dwLen);
+		RWflag,
+		SPAddr,
+		VAddr, PAddr,
+		len);
 		*/
 
 	if (IsSpDeviceBusy())
@@ -39,22 +39,22 @@ TEST_DISABLE_SP_FUNCS
 	}
 	else
 	{
-		if (dwPAddr == 0)
+		if (PAddr == 0)
 		{
 			//FIXME
 			DBGConsole_Msg(0, "Address Translation necessary!");
 		}
 
-		Memory_SP_SetRegister( SP_MEM_ADDR_REG, dwSPAddr);
-		Memory_SP_SetRegister( SP_DRAM_ADDR_REG, dwPAddr);
+		Memory_SP_SetRegister( SP_MEM_ADDR_REG, SPAddr);
+		Memory_SP_SetRegister( SP_DRAM_ADDR_REG, PAddr);
 		
-		if (dwRWFlag == OS_READ)  
+		if (RWflag == OS_READ)  
 		{
-			Write32Bits( SP_WR_LEN_REG | 0xA0000000, dwLen - 1 );
+			Write32Bits( SP_WR_LEN_REG | 0xA0000000, len - 1 );
 		}
 		else
 		{
-			Write32Bits( SP_RD_LEN_REG | 0xA0000000, dwLen - 1 );
+			Write32Bits( SP_RD_LEN_REG | 0xA0000000, len - 1 );
 		}
 
 		gGPR[REG_v0]._u64 = 0;
@@ -93,29 +93,27 @@ TEST_DISABLE_SP_FUNCS
 u32 Patch___osSpGetStatus_Mario()
 {
 TEST_DISABLE_SP_FUNCS
-	u32 dwStatus = SpGetStatus();
+	u32 status = SpGetStatus();
 
-	gGPR[REG_v0]._s64 = (s64)(s32)dwStatus;
+	gGPR[REG_v0]._s64 = (s64)(s32)status;
 	return PATCH_RET_JR_RA;
 }
 u32 Patch___osSpGetStatus_Rugrats()
 {
 TEST_DISABLE_SP_FUNCS
-	u32 dwStatus = SpGetStatus();
+	u32 status = SpGetStatus();
 
-	gGPR[REG_v0]._s64 = (s64)(s32)dwStatus;
+	gGPR[REG_v0]._s64 = (s64)(s32)status;
 	return PATCH_RET_JR_RA;
 }
-
-
 
 u32 Patch___osSpSetStatus_Mario()
 {
 TEST_DISABLE_SP_FUNCS
-	u32 dwStatus = gGPR[REG_a0]._u32_0;
+	u32 status = gGPR[REG_a0]._u32_0;
 
-	//Memory_SP_SetRegister(SP_STATUS_REG, dwStatus);
-	Write32Bits(0xa4040010, dwStatus);
+	//Memory_SP_SetRegister(SP_STATUS_REG, status);
+	Write32Bits(0xa4040010, status);
 	return PATCH_RET_JR_RA;
 }
 
@@ -123,26 +121,26 @@ TEST_DISABLE_SP_FUNCS
 u32 Patch___osSpSetStatus_Rugrats()
 {
 TEST_DISABLE_SP_FUNCS
-	u32 dwStatus = gGPR[REG_a0]._u32_0;
+	u32 status = gGPR[REG_a0]._u32_0;
 
-	//Memory_SP_SetRegister(SP_STATUS_REG, dwStatus);
-	Write32Bits(0xa4040010, dwStatus);
+	//Memory_SP_SetRegister(SP_STATUS_REG, status);
+	Write32Bits(0xa4040010, status);
 	return PATCH_RET_JR_RA;
 }
 
 u32 Patch___osSpSetPc()
 {
 TEST_DISABLE_SP_FUNCS
-	u32 dwPC = gGPR[REG_a0]._u32_0;
+	u32 pc = gGPR[REG_a0]._u32_0;
 
-	//DBGConsole_Msg(0, "__osSpSetPc(0x%08x)", dwPC);
+	//DBGConsole_Msg(0, "__osSpSetPc(0x%08x)", pc);
 	
-	u32 dwStatus = SpGetStatus();
+	u32 status = SpGetStatus();
 
-	if (dwStatus & SP_STATUS_HALT)
+	if (status & SP_STATUS_HALT)
 	{
 		// Halted, we can safely set the pc:
-		gRSPState.CurrentPC = dwPC;
+		gRSPState.CurrentPC = pc;
 
 		gGPR[REG_v0]._s64 = (s64)(s32)0;
 	}
@@ -154,18 +152,15 @@ TEST_DISABLE_SP_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
-
 // Translate task...
 
 u32 Patch_osSpTaskLoad()
 {
 TEST_DISABLE_SP_FUNCS
-	u32 dwTask = gGPR[REG_a0]._u32_0;
+	u32 task = gGPR[REG_a0]._u32_0;
+	u32 status = SpGetStatus();
 
-
-	u32 dwStatus = SpGetStatus();
-
-	if ((dwStatus & SP_STATUS_HALT) == 0 ||
+	if ((status & SP_STATUS_HALT) == 0 ||
 		IsSpDeviceBusy())
 	{
 		DBGConsole_Msg(0, "Sp Device is not HALTED, or is busy");
@@ -173,7 +168,7 @@ TEST_DISABLE_SP_FUNCS
 		return PATCH_RET_NOT_PROCESSED;
 	}
 	
-	OSTask * pSrcTask = (OSTask *)ReadAddress(dwTask);
+	OSTask * pSrcTask = (OSTask *)ReadAddress(task);
 	OSTask * pDstTask = (OSTask *)ReadAddress(VAR_ADDRESS(osSpTaskLoadTempTask));
 
 	// Translate virtual addresses to physical...
@@ -245,9 +240,6 @@ TEST_DISABLE_SP_FUNCS
 	return PATCH_RET_JR_RA;
 	
 }
-
-
-
 
 u32 Patch_osSpTaskStartGo()
 {

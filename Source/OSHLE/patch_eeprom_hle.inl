@@ -7,25 +7,25 @@ TEST_DISABLE_EEPROM_FUNCS
 	// a0 is the message queue to block on, and is ignored
 
 	//u32 dwMQ         = gGPR[REG_a0]._u32_0;
-	u32 dwContStatus = gGPR[REG_a1]._u32_0;
+	u32 ContStatus = gGPR[REG_a1]._u32_0;
 
-	//DBGConsole_Msg(0, "osEepStatus(0x%08x, 0x%08x), ra = 0x%08x", dwMQ, dwContStatus, (u32)g_qwGPR[REG_ra]);
+	//DBGConsole_Msg(0, "osEepStatus(0x%08x, 0x%08x), ra = 0x%08x", dwMQ, ContStatus, (u32)g_qwGPR[REG_ra]);
 
-	// Set up dwContStatus values
+	// Set up ContStatus values
 	if ( g_ROM.settings.SaveType == SAVE_TYPE_EEP4K || g_ROM.settings.SaveType == SAVE_TYPE_EEP16K )
 	{
 		u16 type = (g_ROM.settings.SaveType == SAVE_TYPE_EEP4K) ? CONT_EEPROM : CONT_EEP16K;
-		Write16Bits(dwContStatus + 0, type );			// type
-		Write8Bits(dwContStatus + 2, 0);				// status
-		Write8Bits(dwContStatus + 3, 0);				// errno
+		Write16Bits(ContStatus + 0, type );			// type
+		Write8Bits(ContStatus + 2, 0);				// status
+		Write8Bits(ContStatus + 3, 0);				// errno
 
 		gGPR[REG_v0]._u64 = 0;
 	}
 	else
 	{
-		Write16Bits(dwContStatus + 0, 0);				// type
-		Write8Bits(dwContStatus + 2, 0);						// status
-		Write8Bits(dwContStatus + 3, CONT_NO_RESPONSE_ERROR);	// errno
+		Write16Bits(ContStatus + 0, 0);				// type
+		Write8Bits(ContStatus + 2, 0);						// status
+		Write8Bits(ContStatus + 3, CONT_NO_RESPONSE_ERROR);	// errno
 		gGPR[REG_v0]._u64 = CONT_NO_RESPONSE_ERROR;
 
 	}

@@ -37,9 +37,9 @@ TEST_DISABLE_SI_FUNCS
 u32 Patch___osSiGetAccess()
 {
 TEST_DISABLE_SI_FUNCS
-	u32 dwCreated = Read32Bits(VAR_ADDRESS(osSiAccessQueueCreated));
+	u32 created = Read32Bits(VAR_ADDRESS(osSiAccessQueueCreated));
 
-	if (dwCreated == 0)
+	if (created == 0)
 	{
 		Patch___osSiCreateAccessQueue();	// Ignore return
 	}
@@ -146,18 +146,18 @@ u32 Patch___osSiRawWriteIo_Zelda()
 
 u32 Patch___osSiRawStartDma_Mario()
 {
-	u32 dwRWFlag = gGPR[REG_a0]._u32_0;
-	u32 dwSIAddr = gGPR[REG_a1]._u32_0;
+	u32 RWflag = gGPR[REG_a0]._u32_0;
+	u32 SIAddr = gGPR[REG_a1]._u32_0;
 
-	u32 dwPAddr = ConvertToPhysics(dwSIAddr);
+	u32 PAddr = ConvertToPhysics(SIAddr);
 	if (IsSiDeviceBusy())
 	{
 		gGPR[REG_v0]._s64 = (s64)(s32)~0;
 	}
 	else
 	{
-		Memory_SI_SetRegister( SI_DRAM_ADDR_REG, dwPAddr);
-		if (dwRWFlag == OS_READ)  
+		Memory_SI_SetRegister( SI_DRAM_ADDR_REG, PAddr);
+		if (RWflag == OS_READ)  
 		{
 			Write32Bits(SI_PIF_ADDR_RD64B_REG | 0xA0000000, 0);
 		}

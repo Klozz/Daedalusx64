@@ -1,8 +1,6 @@
 #define TEST_DISABLE_VI_FUNCS //return PATCH_RET_NOT_PROCESSED;
 
 
-
-
 u32 Patch_osViSetMode()
 {
 TEST_DISABLE_VI_FUNCS
@@ -21,7 +19,6 @@ TEST_DISABLE_VI_FUNCS
 	//Force pause
 	return PATCH_RET_NOT_PROCESSED;
 }
-
 
 u32 Patch_osViBlack()
 {
@@ -44,14 +41,14 @@ TEST_DISABLE_VI_FUNCS
 
 	//DBGConsole_Msg(0, "osViSwapBuffer(0x%08x)", (u32)gGPR[REG_a0]);
 
-	u32 dwPointer = Read32Bits(VAR_ADDRESS(osViSetModeGubbins));
-	u16 wControl;
+	u32 pointer = Read32Bits(VAR_ADDRESS(osViSetModeGubbins));
+	u16 control;
 
-	Write32Bits(dwPointer + 0x4, gGPR[REG_a0]._u32_0);
+	Write32Bits(pointer + 0x4, gGPR[REG_a0]._u32_0);
 
-	wControl = Read16Bits(dwPointer + 0x0);
-	wControl |= 0x0010;
-	Write16Bits(dwPointer + 0x0, wControl);
+	control = Read16Bits(pointer + 0x0);
+	control |= 0x0010;
+	Write16Bits(pointer + 0x0, control);
 
 	return PATCH_RET_JR_RA;
 }

@@ -1272,7 +1272,7 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 
 		s32		adjust_amount( (TEXT_AREA_HEIGHT/2) - current_selection_y );
 
-		float d( 1.0f - powf(0.993f, elapsed_time * 1000.0f) );
+		f32 d( 1.0f - vfpu_powf(0.993f, elapsed_time * 1000.0f) );
 
 		u32		total_height( mRomsList.size() * line_height );
 		s32		min_offset( TEXT_AREA_HEIGHT - total_height );

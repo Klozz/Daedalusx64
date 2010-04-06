@@ -1,8 +1,7 @@
 #ifndef VECTOR4_H__
 #define VECTOR4_H__
 
-#include "Math/Math.h"
-#include "../SysPSP/Utility/pspmath.h"
+#include "Math/Math.h"	// VFPU Math
 
 ALIGNED_TYPE(class, v4, 16)
 {

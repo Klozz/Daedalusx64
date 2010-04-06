@@ -12,7 +12,7 @@
 #include "Debug/DBGConsole.h"
 
 #include "Math/MathUtil.h"
-#include "../Utility/pspmath.h"
+#include "Math/Math.h"	// VFPU Math
 
 #include <pspctrl.h>
 #include <psptypes.h>

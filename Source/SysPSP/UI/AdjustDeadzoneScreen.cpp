@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "UIContext.h"
 #include "UIScreen.h"
 
+#include "Math/Math.h"	// VFPU Math
 #include "Math/MathUtil.h"
 #include "Math/Vector2.h"
 
@@ -223,7 +224,7 @@ void	IAdjustDeadzoneScreen::DrawCircle( s32 x, s32 y, s32 r, c32 colour )
 
 	for( u32 i = 0; i < NUM_POINTS; ++i )
 	{
-		f32		angle( 2 * Constants::PI * f32( i+1 ) / f32( NUM_POINTS ) );
+		f32		angle( 2 * PI * f32( i+1 ) / f32( NUM_POINTS ) );
 		s32		x1 = s32( sinf( angle ) * radius ) + x;
 		s32		y1 = s32( cosf( angle ) * radius ) + y;
 		

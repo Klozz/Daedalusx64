@@ -29,20 +29,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "OSHLE/patch.h"				// For g_PatchSymbols
 #include "OSHLE/ultra_R4300.h"
 
+#include "Math/Math.h"	// VFPU Math
+
 #include "ROM.h"
 #include "Core/Registers.h"			// For REG_?? defines
 #include "Debug/DBGConsole.h"
 #include "ConfigOptions.h"
-
-#include "../../SysPSP/Utility/pspmath.h"
 
 #include <pspfpu.h>
 
 #include <float.h>
 
 #define		R4300_CALL_MAKE_OP( var )	OpCode	var;	var._u32 = op_code_bits
-
-#include "../SysPSP/Utility/pspmath.h"
 
 #ifdef _DEBUG
 inline void CHECK_R0() {}

@@ -653,7 +653,7 @@ static void DLParser_SetuCode( GBIVersion gbi_version, UCodeVersion ucode_versio
 		{
 			gInstructionLookup[G_GBI1_VTX] = DLParser_GBI0_Vtx;			gInstructionName[G_GBI1_VTX]		= "G_GBI0_VTX";
 			gInstructionLookup[G_GBI1_TRI2] = DLParser_GBI0_Tri2;		gInstructionName[G_GBI1_TRI2]		= "G_GBI0_TRI2";
-			gInstructionLookup[G_GBI1_RDPHALF_1] = DLParser_RDPHalf_1_0xb4_GoldenEye;	gInstructionName[G_GBI1_RDPHALF_1]		= "G_RDPHalf_1_0xb4_GoldenEye";
+			gInstructionLookup[G_GBI1_RDPHALF_1] = DLParser_RDPHalf1_GoldenEye;	gInstructionName[G_GBI1_RDPHALF_1]		= "G_RDPHalf1_GoldenEye";
 		}
 		else if ( gbi_version == GBI_0_SE )
 		{

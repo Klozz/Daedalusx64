@@ -1,8 +1,7 @@
 #ifndef VECTOR2_H__
 #define VECTOR2_H__
 
-#include "Math/Math.h"
-#include "../SysPSP/Utility/pspmath.h"
+#include "Math/Math.h"	// VFPU Math
 
 class v2
 {

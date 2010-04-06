@@ -5,18 +5,18 @@
 u32 Patch___ull_mul()
 {
 TEST_DISABLE_MATH_FUNCS
-	u32 dwHiA = gGPR[REG_a0]._u32_0;
-	u32 dwLoA = gGPR[REG_a1]._u32_0;
-	u32 dwHiB = gGPR[REG_a2]._u32_0;
-	u32 dwLoB = gGPR[REG_a3]._u32_0;
+	u32 HiA = gGPR[REG_a0]._u32_0;
+	u32 LoA = gGPR[REG_a1]._u32_0;
+	u32 HiB = gGPR[REG_a2]._u32_0;
+	u32 LoB = gGPR[REG_a3]._u32_0;
 
-	u64 qwA = ((u64)dwHiA << 32) | (u64)dwLoA;
-	u64 qwB = ((u64)dwHiB << 32) | (u64)dwLoB;
+	u64 A = ((u64)HiA << 32) | (u64)LoA;
+	u64 B = ((u64)HiB << 32) | (u64)LoB;
 
-	u64 qwR = qwA * qwB;
+	u64 R = A * B;
 
-	gGPR[REG_v0]._s64 = (s64)qwR >> 32;
-	gGPR[REG_v1]._s64 = (s64)(s32)(qwR & 0xFFFFFFFF);
+	gGPR[REG_v0]._s64 = (s64)R >> 32;
+	gGPR[REG_v1]._s64 = (s64)(s32)(R & 0xFFFFFFFF);
 
 	return PATCH_RET_JR_RA;
 }
@@ -158,7 +158,7 @@ u32 Patch_sqrtf()
 {
 TEST_DISABLE_MATH_FUNCS
 	f32 f = ToFloat(gCPUState.FPU[12]);
-	ToFloat(gCPUState.FPU[00]) = sqrtf(f);
+	ToFloat(gCPUState.FPU[00]) = vfpu_sqrtf(f);
 	return PATCH_RET_JR_RA;
 }
 

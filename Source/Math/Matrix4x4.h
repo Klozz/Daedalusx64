@@ -40,7 +40,7 @@ ALIGNED_TYPE(class, Matrix4x4, 16)
 		v3 Transform( const v3 & vec ) const;
 		v4 Transform( const v4 & vec ) const;
 
-		void	print() const;
+	//	void	print() const;
 
 	public:
 		union

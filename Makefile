@@ -111,8 +111,7 @@ DAED_PSP_SRCS =	Source/SysPSP/Graphics/DrawText.cpp \
 				Source/SysPSP/MediaEnginePRX/MediaEngine.S \
 				Source/SysPSP/MediaEnginePRX/me.c \
 				Source/SysPSP/DveMgr/pspDveManager.S \
-				Source/SysPSP/Utility/exception.cpp \
-				Source/SysPSP/Utility/vfpu.c
+				Source/SysPSP/Utility/exception.cpp
 
 DAED_HLEGFX_SRCS =	Source/SysPSP/Plugins/GraphicsPluginPSP.cpp \
 					Source/Plugins/GraphicsPlugin.cpp \

@@ -24,7 +24,7 @@ void DLParser_GBI0_Vtx_ShadowOfEmpire( MicroCodeCommand command );
 void DLParser_RSP_Last_Legion_0x80( MicroCodeCommand command );
 void DLParser_RSP_Last_Legion_0x00( MicroCodeCommand command );
 void DLParser_TexRect_Last_Legion( MicroCodeCommand command );
-void DLParser_RDPHalf_1_0xb4_GoldenEye( MicroCodeCommand command );
+void DLParser_RDPHalf1_GoldenEye( MicroCodeCommand command );
 void DLParser_DLInMem( MicroCodeCommand command );
 void DLParser_MtxDKR( MicroCodeCommand command );
 void DLParser_MoveWord_DKR( MicroCodeCommand command );

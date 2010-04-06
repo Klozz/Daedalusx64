@@ -510,7 +510,6 @@ void DLParser_TexRect_Last_Legion( MicroCodeCommand command )
 
 	DL_PF("0x%08x: %08x %08x", pc, *(u32 *)(g_ps8RamBase + pc+0), *(u32 *)(g_ps8RamBase + pc+4));
 
-
 	RDP_TexRect tex_rect;
 	tex_rect.cmd0 = command.cmd0;
 	tex_rect.cmd1 = command.cmd1;
@@ -536,16 +535,17 @@ void DLParser_TexRect_Last_Legion( MicroCodeCommand command )
 	PSPRenderer::Get()->TexRect( tex_rect.tile_idx, xy0, xy1, uv0, uv1 );
 }
 
+#undef __GE_NOTHING
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_RDPHalf_1_0xb4_GoldenEye( MicroCodeCommand command )
+void DLParser_RDPHalf1_GoldenEye( MicroCodeCommand command )
 {
 	// Check for invalid address
 	if ( (command.cmd1)>>24 != 0xce )	
 		return;
 
-	u32 tile = 0;
+	u32 tile;
 	u32 pc = gDisplayListStack.back().addr;		// This points to the next instruction
 	u32 * Cmd = (u32 *)(g_pu8RamBase + pc);
 
@@ -554,22 +554,21 @@ void DLParser_RDPHalf_1_0xb4_GoldenEye( MicroCodeCommand command )
 	u32 a3 = *Cmd+8*2+4;
 
 	// Unused for now
-	//u32 a2 = *Cmd+8*1+4;
-	//u32 a4 = *Cmd+8*3+4;
-	//u32 a5 = *Cmd+8*4+4;
-	//u32 a6 = *Cmd+8*5+4;
-	//u32 a7 = *Cmd+8*6+4;
-	//u32 a8 = *Cmd+8*7+4;
-	//u32 a9 = *Cmd+8*8+4;
-
+#ifdef __GE_NOTHING
+	u32 a2 = *Cmd+8*1+4;
+	u32 a4 = *Cmd+8*3+4;
+	u32 a5 = *Cmd+8*4+4;
+	u32 a6 = *Cmd+8*5+4;
+	u32 a7 = *Cmd+8*6+4;
+	u32 a8 = *Cmd+8*7+4;
+	u32 a9 = *Cmd+8*8+4;
+#endif
 	// Coordinates, textures, and color
 	f32 x0 = (s32)(a3>>16)/32768.0f;	// Loads our texture coordinates
 	f32 y0 = int(a1&0xFFFF)/4;			// Loads color etc
 	f32 x1 = 320*4;						// Loads Both screen coordinates and texture coordinates.
 	f32 y1 = int(a1>>16)/4;				// Loads texture, color etc
 
-	// The only thing I can't figure out, is why GE doesn't fill the entire screen?
-	// As a result our sky fills all the gaps :(
 	// TIP : f32 x1 can be modified to render the sky differently.
 	// Need to check on real hardware to tweak our sky correctly if needed.
 
@@ -579,8 +578,9 @@ void DLParser_RDPHalf_1_0xb4_GoldenEye( MicroCodeCommand command )
 	v2 uv0( y0 / 32.0f, y0 / 32.0f );
 	v2 uv1( y1 / 32.0f, y1 / 32.0f );
 
+	//DL_PF(" Word 1: %u, Word 2: %u, Word 3: %u, Word 4: %u, Word 5: %u, Word 6: %u, Word 7: %u, Word 8: %u, Word 9: %u", a1, a2, a3, a4, a5, a6, a7, a8, a9);
+	//DL_PF("    Tile:%d Screen(%f,%f) -> (%f,%f)",				   tile, xy0, xy1, uv0, uv1);
 	PSPRenderer::Get()->TexRect( tile, xy0, xy1, uv0, uv1 );
 
 	gDisplayListStack.back().addr += 312;
-
 }

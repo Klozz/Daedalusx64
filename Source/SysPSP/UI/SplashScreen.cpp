@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Graphics/ColourValue.h"
 #include "Graphics/NativeTexture.h"
 
-#include "Math/MathUtil.h"
+#include "Math/Math.h"	// VFPU Math
 
 #include "SysPSP/Utility/PathsPSP.h"
 
@@ -120,7 +120,7 @@ void	ISplashScreen::Update( float elapsed_time, const v2 & stick, u32 old_button
 //*************************************************************************************
 void	ISplashScreen::Render()
 {
-	float	alpha( 255.0f * sinf( mElapsedTime * Constants::PI / MAX_TIME ) );
+	f32	alpha( 255.0f * vfpu_sinf( mElapsedTime * PI / MAX_TIME ) );
 	u8		a;
 	if( alpha >= 255.0f ) a = 255;
 	else if (alpha < 0.f) a = 0;

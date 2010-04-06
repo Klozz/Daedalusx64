@@ -2,30 +2,16 @@
 #include "Math/Vector3.h"
 #include "Math/Vector4.h"
 #include "Math/Matrix4x4.h"
+#include "Math/Math.h"	// VFPU Math
+#include "Math/MathUtil.h" // Swap
 
 #include <malloc.h>
-
 #include <pspvfpu.h>
 
 // http://forums.ps2dev.org/viewtopic.php?t=5557
 // http://bradburn.net/mr.mr/vfpu.html
 
-//ToDo: Move to Math.h
-//Zack
-#include "../SysPSP/Utility/pspmath.h"
-
-float mysqrt(float val)
-{
-        float ret;
-
-        __asm__ volatile (
-                "mtv %1, S000\n"
-                "vsqrt.s S001, S000\n"
-                "mfv %0, S001\n"
-        : "=r"(ret) : "r"(val) );
-
-        return ret;
-}
+//ToDo: Move to Math.h?
 
 void vsincosf(float angle, v4* result)
 {
@@ -205,15 +191,6 @@ v3 Matrix4x4::Transform( const v3 & vec ) const
 	return v3(trans.x, trans.y, trans.z);
 }
 
-
-
-template< typename Type > void Swap( Type & a, Type & b )
-{
-	Type temp( a );
-	a = b;
-	b = temp;
-}
-
 Matrix4x4		Matrix4x4::Transpose() const
 {
 	return Matrix4x4( m11, m21, m31, m41,
@@ -303,7 +280,7 @@ Matrix4x4	Matrix4x4::Inverse() const
 					  augmented[ 2 ][ 4 ], augmented[ 2 ][ 5 ], augmented[ 2 ][ 6 ], augmented[ 2 ][ 7 ],
 					  augmented[ 3 ][ 4 ], augmented[ 3 ][ 5 ], augmented[ 3 ][ 6 ], augmented[ 3 ][ 7 ] );
 }
-
+/*
 void myMulMatrixCPU(Matrix4x4 * m_out, const Matrix4x4 *mat_a, const Matrix4x4 *mat_b)
 {
 	for ( u32 i = 0; i < 4; ++i )
@@ -318,7 +295,7 @@ void myMulMatrixCPU(Matrix4x4 * m_out, const Matrix4x4 *mat_a, const Matrix4x4 *
 	}
 
 }
-
+*/
 //#include "Utility/Timing.h"
 
 Matrix4x4 Matrix4x4::operator*( const Matrix4x4 & rhs ) const
@@ -393,7 +370,7 @@ Matrix4x4 Matrix4x4::operator*( const Matrix4x4 & rhs ) const
 //	return r;
 //}
 
-
+/*
 void	Matrix4x4::print() const
 {
 	printf( 
@@ -406,7 +383,7 @@ void	Matrix4x4::print() const
 	m[2][0], m[2][1], m[2][2], m[2][3],
 	m[3][0], m[3][1], m[3][2], m[3][3]);
 }
-
+*/
 
 const Matrix4x4	gMatrixIdentity( 1.0f, 0.0f, 0.0f, 0.0f,
 								 0.0f, 1.0f, 0.0f, 0.0f,

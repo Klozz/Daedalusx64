@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Graphics/ColourValue.h"
 
-#include "Math/MathUtil.h"
+#include "Math/Math.h"	// VFPU Math
 
 //*************************************************************************************
 //
@@ -50,10 +50,10 @@ void	CColourPulser::Update( u32 elapsed_ms )
 {
 	mTimeCounter = (mTimeCounter + elapsed_ms) % mCyclePeriod;
 
-	float	cycle_fraction( float(mTimeCounter) / float(mCyclePeriod) );
+	f32	cycle_fraction( f32(mTimeCounter) / f32(mCyclePeriod) );
 
-	float	sin_val( cosf( cycle_fraction * 2.0f * Constants::PI ) );		// In range -1..+1
-	float	factor( ( sin_val + 1.0f ) / 2.0f );							// In range 0..1
+	f32	sin_val( vfpu_cosf( cycle_fraction * 2.0f * PI ) );				// In range -1..+1
+	f32	factor( ( sin_val + 1.0f ) / 2.0f );							// In range 0..1
 
 	mCurrentColour = mDimColour.Interpolate( mBrightColour, factor );
 }

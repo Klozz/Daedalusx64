@@ -47,6 +47,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../OSHLE/ultra_gbi.h"
 
+#include "Math/Math.h"	// VFPU Math
+
 #include "Utility/Profiler.h"
 #include "Utility/Preferences.h"
 #include "Utility/IO.h"
@@ -59,8 +61,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspdisplay.h>
 
 #include <vector>
-
-#include "../SysPSP/Utility/pspmath.h"
 
 f32 DECAL_Z_OFFSET = +3.14f;		// Found through trial an error for the PSP
 f32 sRatio = 0.75f;					// NTSC is 0.75f and PAL is 9/11.0f ToDo : Determine when to use either one

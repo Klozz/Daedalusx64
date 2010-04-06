@@ -21,10 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef MATHUTIL_H_
 #define MATHUTIL_H_
 
-namespace Constants
-{
-const float				PI = 3.141592653589793f;
-}
+#include "Math/Math.h"	// VFPU Math
+
 
 template< typename T > const T & Max( const T & a, const T & b )
 {

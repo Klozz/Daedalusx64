@@ -425,7 +425,7 @@ TEST_DISABLE_GU_FUNCS
 	//DBGConsole_Msg(0, "guNormalize(0x%08x %f, 0x%08x %f, 0x%08x %f)",
 	//	sX, fX, sY, fY, sZ, fZ);
 
-	f32 fLenRecip = 1.0f / vfpu_sqrtf((fX * fX) + (fY * fY) + (fZ * fZ));
+	f32 fLenRecip = 1.0f / sqrtf((fX * fX) + (fY * fY) + (fZ * fZ));
 
 	fX *= fLenRecip;
 	fY *= fLenRecip;

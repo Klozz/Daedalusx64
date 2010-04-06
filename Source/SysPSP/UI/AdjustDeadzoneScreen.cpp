@@ -205,8 +205,8 @@ void	IAdjustDeadzoneScreen::Update( float elapsed_time, const v2 & stick, u32 ol
 	s32		stick_x( pad.Lx - 128 );
 	s32		stick_y( pad.Ly - 128 );
 
-	mPspStick.x = float(stick_x) / 128.0f;
-	mPspStick.y = float(stick_y) / 128.0f;
+	mPspStick.x = f32(stick_x) / 128.0f;
+	mPspStick.y = f32(stick_y) / 128.0f;
 
 	mN64Stick = ApplyDeadzone( mPspStick, mStickMinDeadzone, mStickMaxDeadzone );
 }
@@ -219,14 +219,14 @@ void	IAdjustDeadzoneScreen::DrawCircle( s32 x, s32 y, s32 r, c32 colour )
 	const u32 NUM_POINTS = 32;
 
 	f32		radius( r );
-	s32		x0 = s32( sinf( 0 ) * radius ) + x;
-	s32		y0 = s32( cosf( 0 ) * radius ) + y;
+	s32		x0 = s32( vfpu_sinf( 0 ) * radius ) + x;
+	s32		y0 = s32( vfpu_cosf( 0 ) * radius ) + y;
 
 	for( u32 i = 0; i < NUM_POINTS; ++i )
 	{
 		f32		angle( 2 * PI * f32( i+1 ) / f32( NUM_POINTS ) );
-		s32		x1 = s32( sinf( angle ) * radius ) + x;
-		s32		y1 = s32( cosf( angle ) * radius ) + y;
+		s32		x1 = s32( vfpu_sinf( angle ) * radius ) + x;
+		s32		y1 = s32( vfpu_cosf( angle ) * radius ) + y;
 		
 		mpContext->DrawLine( x0, y0, x1, y1, colour );
 		x0 = x1;

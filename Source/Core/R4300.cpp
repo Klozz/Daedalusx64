@@ -2534,7 +2534,7 @@ static void R4300_CALL_TYPE R4300_Cop1_S_SQRT( R4300_CALL_SIGNATURE )
 
 	SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Single( op_code.fd, vfpu_sqrtf(fX) );
+	StoreFPR_Single( op_code.fd, sqrtf(fX) );
 }
 
 
@@ -2924,7 +2924,7 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_SQRT( R430
 
 	SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Double< FullLength >( op_code.fd, vfpu_sqrtf(fX) );
+	StoreFPR_Double< FullLength >( op_code.fd, sqrtf(fX) );
 }
 
 

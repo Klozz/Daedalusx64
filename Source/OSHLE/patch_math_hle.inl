@@ -150,19 +150,13 @@ TEST_DISABLE_MATH_FUNCS
 	} 
 } 
 
-
-
-
-
 u32 Patch_sqrtf()
 {
 TEST_DISABLE_MATH_FUNCS
 	f32 f = ToFloat(gCPUState.FPU[12]);
-	ToFloat(gCPUState.FPU[00]) = vfpu_sqrtf(f);
+	ToFloat(gCPUState.FPU[00]) = sqrtf(f);	// Do not use vfpu, Check math.h !
 	return PATCH_RET_JR_RA;
 }
-
-
 
 u32 Patch_sinf()
 {
@@ -171,7 +165,7 @@ TEST_DISABLE_MATH_FUNCS
 	// FP00 is output
 	f32 f = ToFloat(gCPUState.FPU[12]);
 
-	f32 r = sinf(f);
+	f32 r = vfpu_sinf(f);
 
 	//DBGConsole_Msg(0, "sinf(%f) = %f (ra 0x%08x)", f, r, (u32)gGPR[REG_ra]);
 
@@ -183,8 +177,8 @@ TEST_DISABLE_MATH_FUNCS
 		DBGConsole_Msg(0, "%d sin/cos calls intercepted", g_dwNumCosSin);
 	}*/
 	return PATCH_RET_JR_RA;
-
 }
+
 u32 Patch_cosf()
 {
 TEST_DISABLE_MATH_FUNCS
@@ -192,7 +186,7 @@ TEST_DISABLE_MATH_FUNCS
 	// FP00 is output
 	f32 f = ToFloat(gCPUState.FPU[12]);
 
-	f32 r = cosf(f);
+	f32 r = vfpu_cosf(f);
 
 	//DBGConsole_Msg(0, "cosf(%f) = %f (ra 0x%08x)", f, r, (u32)gGPR[REG_ra]);
 

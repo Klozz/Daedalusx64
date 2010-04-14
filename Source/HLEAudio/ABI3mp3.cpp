@@ -264,11 +264,12 @@ void CMP3Decode::InnerLoop()
 	RSP_Vect[0].DW[1] = 0xB504A57E00016A09;
 	RSP_Vect[0].DW[0] = 0x0002D4130005A827;
 	*/
+#ifndef DAEDALUS_SILENT
 	if ((t1 | t2 | t3 | t5 | t6) & 0x1)
 	{
 		DAEDALUS_ERROR( "Unaligned?" );
 	}
-
+#endif
 	// 0x13A8
 	v[1] = 0;
 	v[11] = ((v[16] - v[17]) * 0xB504) >> 0x10;

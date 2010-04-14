@@ -237,10 +237,12 @@ void ENVMIXER3o( AudioHLECommand command )
 	u32 addy = (command.cmd1 & 0xFFFFFF);// + gAudioHLEState.Segments[(command.cmd1>>24)&0xf];
 	//static FILE *dfile = fopen ("d:\\envmix.txt", "wt");
 // ********* Make sure these conditions are met... ***********
+#ifndef DAEDALUS_SILENT
 	if ((gAudioHLEState.InBuffer | gAudioHLEState.OutBuffer | gAudioHLEState.AuxA | gAudioHLEState.AuxC | gAudioHLEState.AuxE | gAudioHLEState.Count) & 0x3)
 	{
 		DAEDALUS_ERROR( "Unaligned EnvMixer... please report this to Azimer with the following information: RomTitle, Place in the rom it occurred, and any save state just before the error" );
 	}
+#endif
 // ------------------------------------------------------------
  	short *inp=(short *)(gAudioHLEState.Buffer+0x4F0);
 	short *out=(short *)(gAudioHLEState.Buffer+0x9D0);

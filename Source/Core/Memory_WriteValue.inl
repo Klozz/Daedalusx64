@@ -37,13 +37,14 @@ static void WriteValueInvalid( u32 address, u32 value )
 static void WriteValueNoise( u32 address, u32 value )
 {
 	//CPUHalt();
+#ifndef DAEDALUS_SILENT
 	static bool bWarned( false );
 	if (!bWarned)
 	{
 		DBGConsole_Msg(0, "Writing noise (0x%08x) - sizing memory?", address);
 		bWarned = true;
 	}
-
+#endif
 	//return g_pMemoryBuffers[MEM_UNUSED];
 	// Do nothing
 }
@@ -80,14 +81,11 @@ static void WriteValue_RAM_8Mb_A000_A07F( u32 address, u32 value )
 // 0x03F0 0000 to 0x03FF FFFF  RDRAM registers
 //*****************************************************************************
 static void WriteValue_83F0_83F0( u32 address, u32 value )
-{
-	
+{	
 	if (MEMORY_BOUNDS_CHECKING((address&0x1FFFFFFF) < 0x04000000))
 	{
 		DPF( DEBUG_MEMORY_RDRAM_REG, "Writing to MEM_RD_REG: 0x%08x", address );
-	//DBGConsole_Msg(0, "Writing to MEM_RD_REG: 0x%08x, 0x%08x", address,value);
-
-
+		//DBGConsole_Msg(0, "Writing to MEM_RD_REG: 0x%08x, 0x%08x", address,value);
 		*(u32 *)((u8 *)g_pMemoryBuffers[MEM_RD_REG0] + (address & 0xFF)) = value;
 	}
 	else
@@ -105,9 +103,7 @@ static void WriteValue_8400_8400( u32 address, u32 value )
 	if (MEMORY_BOUNDS_CHECKING((address&0x1FFFFFFF) <= SP_IMEM_END))
 	{
 		DPF( DEBUG_MEMORY_SP_IMEM, "Writing to SP_MEM: 0x%08x", address );
-
 		//DBGConsole_Msg(0, "Writing to SP IMEM/DMEM: 0x%08x, 0x%08x", address,value);
-
 		*(u32 *)((u8 *)g_pMemoryBuffers[MEM_SP_MEM] + (address & 0x1FFF)) = value;
 	}
 	else
@@ -121,13 +117,11 @@ static void WriteValue_8400_8400( u32 address, u32 value )
 //*****************************************************************************
 static void WriteValue_8404_8404( u32 address, u32 value )
 {
-	u32 offset;
-
 	if (MEMORY_BOUNDS_CHECKING((address&0x1FFFFFFF) <= SP_LAST_REG))
 	{
 		DPF( DEBUG_MEMORY_SP_REG, "Writing to SP_REG: 0x%08x/0x%08x", address, value );
 
-		offset = address & 0xFF;
+		u32 offset = address & 0xFF;
 
 		switch (SP_BASE_REG + offset)
 		{
@@ -156,7 +150,6 @@ static void WriteValue_8404_8404( u32 address, u32 value )
 			// Prevent writing to read-only mem
 			break;
 		}
-		
 	}
 	else
 	{
@@ -196,13 +189,11 @@ static void WriteValue_8408_8408( u32 address, u32 value )
 //*****************************************************************************
 static void WriteValue_8410_841F( u32 address, u32 value )
 {
-	u32 offset;
-	
 	if (MEMORY_BOUNDS_CHECKING((address&0x1FFFFFFF) <= DPC_LAST_REG))
 	{
 		DPF( DEBUG_MEMORY_DP, "Writing to DP_COMMAND_REG: 0x%08x", address );
 
-		offset = address & 0xFF;
+		u32 offset = address & 0xFF;
 
 		switch (DPC_BASE_REG + offset)
 		{
@@ -237,7 +228,6 @@ static void WriteValue_8410_841F( u32 address, u32 value )
 		case DPC_TMEM_REG: //- Read Only
 			DBGConsole_Msg( 0, "Wrote to read only DPC reg" );
 			break;
-
 		}
 	}
 	else
@@ -264,13 +254,11 @@ static void WriteValue_8420_842F( u32 address, u32 value )
 //*****************************************************************************
 static void WriteValue_8430_843F( u32 address, u32 value )
 {
-	u32 offset;
-	
 	if (MEMORY_BOUNDS_CHECKING((address&0x1FFFFFFF) <= MI_LAST_REG))
 	{
 		DPF( DEBUG_MEMORY_MI, "Writing to MI Registers: 0x%08x", address );
 
-		offset = address & 0xFF;
+		u32 offset = address & 0xFF;
 
 		switch (MI_BASE_REG + offset)
 		{
@@ -311,13 +299,12 @@ static void WriteValue_8440_844F( u32 address, u32 value )
 //*****************************************************************************
 static void WriteValue_8450_845F( u32 address, u32 value )
 {
-	u32 offset;
- 	
+
 	if (MEMORY_BOUNDS_CHECKING((address&0x1FFFFFFF) <= AI_LAST_REG))
 	{
 		DPF( DEBUG_MEMORY_AI, "Writing to AI Registers: 0x%08x", address );
 
-		offset = address & 0xFF;
+		u32 offset = address & 0xFF;
 
 		switch (AI_BASE_REG + offset)
 		{
@@ -369,11 +356,10 @@ static void WriteValue_8450_845F( u32 address, u32 value )
 //*****************************************************************************
 static void WriteValue_8460_846F( u32 address, u32 value )
 {
-	u32 offset;
 
 	if (MEMORY_BOUNDS_CHECKING((address&0x1FFFFFFF) <= PI_LAST_REG))
 	{
-		offset = address & 0xFF;
+		u32 offset = address & 0xFF;
 
 		switch (PI_BASE_REG + offset)
 		{
@@ -411,13 +397,12 @@ static void WriteValue_8460_846F( u32 address, u32 value )
 //*****************************************************************************
 static void WriteValue_8470_847F( u32 address, u32 value )
 {
-	u32 offset;
 
 	if (MEMORY_BOUNDS_CHECKING((address&0x1FFFFFFF) <= RI_LAST_REG))
 	{
 		DPF( DEBUG_MEMORY_RI, "Writing to MEM_RI_REG: 0x%08x", address );
 
-		offset = address & 0xFF;
+		u32 offset = address & 0xFF;
 
 		*(u32 *)((u8 *)g_pMemoryBuffers[MEM_RI_REG] + offset) = value;
 	}
@@ -434,13 +419,12 @@ static void WriteValue_8470_847F( u32 address, u32 value )
 //*****************************************************************************
 static void WriteValue_8480_848F( u32 address, u32 value )
 {
-	u32 offset;
 
 	if (MEMORY_BOUNDS_CHECKING((address&0x1FFFFFFF) <= SI_LAST_REG))
 	{
 		DPF( DEBUG_MEMORY_SI, "Writing to MEM_SI_REG: 0x%08x", address );
 
-		offset = address & 0xFF;
+		u32 offset = address & 0xFF;
 
 		switch (SI_BASE_REG + offset)
 		{

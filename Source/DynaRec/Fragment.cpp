@@ -625,6 +625,7 @@ void CFragment::Assemble( CCodeBufferManager * p_manager,
 				DBGConsole_Msg( 0, "Found skip to event speedhack at: %08x (0x%08x)", ti.Address, op_code._u32 );
 				p_generator->ExecuteNativeFunction( CCodeLabel( reinterpret_cast< const void * >( CPU_SkipToNextEvent ) ) );
 			}
+#ifndef DAEDALUS_SILENT
 			if (p_branch->SpeedHack == SHACK_COPYREG)
 			{
 				DBGConsole_Msg( 0, "Found a copyreg speedhack at: %08x (0x%08x)", ti.Address, op_code._u32 );
@@ -633,7 +634,7 @@ void CFragment::Assemble( CCodeBufferManager * p_manager,
 			{
 				DBGConsole_Msg( 0, "Found a unknow speedhack at: %08x (0x%08x)", ti.Address, op_code._u32 );
 			}
-
+#endif
 		}
 
 		CJumpLocation	branch_jump( NULL );

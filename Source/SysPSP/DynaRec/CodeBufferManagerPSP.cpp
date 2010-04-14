@@ -76,11 +76,12 @@ struct SCodeBuffer
 		// This is a bit of a hack. We assume that no single entry will generate more than
 		// 32k of storage. If there appear to be problems with this assumption, this
 		// value can be enlarged
+#ifndef DAEDALUS_SILENT
 		if (mBufferPtr + 32768 > mBufferSize)
 		{
 			DAEDALUS_ERROR( "Out of memory for dynamic recompiler" );
 		}
-
+#endif
 		return mpBuffer + mBufferPtr;
 	}
 

@@ -24,12 +24,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 static void * ReadInvalid( u32 address )
 {
 	DPF( DEBUG_MEMORY, "Illegal Memory Access - Tried to Read From 0x%08x (PC: 0x%08x)", address, gCPUState.CurrentPC );
+#ifndef DAEDALUS_SILENT
 	if (g_DaedalusConfig.WarnMemoryErrors)
 	{
 		CPU_Halt("Illegal Memory Access");
 		DBGConsole_Msg(0, "Illegal Memory Access - Tried to Read From 0x%08x (PC: 0x%08x)", address, gCPUState.CurrentPC);
 	}
-
+#endif
 	return g_pMemoryBuffers[MEM_UNUSED];
 
 }
@@ -41,13 +42,14 @@ static void * Read_Noise( u32 address )
 {
 	//CPUHalt();
 	//DBGConsole_Msg(0, "Reading noise (0x%08x)", address);
-
+#ifndef DAEDALUS_SILENT
 	static bool bWarned = false;
 	if (!bWarned)
 	{
 		DBGConsole_Msg(0, "Reading noise (0x%08x) - sizing memory?", address);
 		bWarned = true;
 	}
+#endif
 	*(u32*)((u8 *)g_pMemoryBuffers[MEM_UNUSED] + 0) = rand();
 	*(u32*)((u8 *)g_pMemoryBuffers[MEM_UNUSED] + 4) = rand();
 
@@ -325,7 +327,6 @@ static void *Read_8430_843F( u32 address )
 	}
 }
 
-
 //*****************************************************************************
 // 0x0440 0000 to 0x044F FFFF Video Interface (VI) Registers
 //*****************************************************************************
@@ -355,17 +356,17 @@ static void *Read_8440_844F( u32 address )
 	}
 }
 
+#undef DISPLAY_AI_READS
 //*****************************************************************************
 // 0x0450 0000 to 0x045F FFFF Audio Interface (AI) Registers
 //*****************************************************************************
 //static u32 g_dwAIBufferFullness = 0;
 static void *Read_8450_845F( u32 address )
 {
-	u32 offset;
- 	
 	if (MEMORY_BOUNDS_CHECKING((address&0x1FFFFFFF) <= AI_LAST_REG))
 	{
-		offset = address & 0xFF;
+#ifndef DISPLAY_AI_READS
+		u32 offset = address & 0xFF;
 
 		switch (AI_BASE_REG + offset)
 		{
@@ -388,6 +389,7 @@ static void *Read_8450_845F( u32 address )
 			break;
 
 		}
+#endif
 		DPF( DEBUG_MEMORY_AI, "Reading from AI Registers: 0x%08x", address );
 		return (u8 *)g_pMemoryBuffers[MEM_AI_REG] + offset;
 	}
@@ -437,11 +439,10 @@ static void *Read_8470_847F( u32 address )
 //*****************************************************************************
 static void *Read_8480_848F( u32 address )
 {
-	u32 offset;
- 	
 	if (MEMORY_BOUNDS_CHECKING((address&0x1FFFFFFF) <= SI_LAST_REG))
 	{
-		offset = address & 0xFF;
+#ifndef DAEDALUS_SILENT
+		u32 offset = address & 0xFF;
 
 		if (SI_BASE_REG + offset == SI_STATUS_REG)
 		{
@@ -454,8 +455,7 @@ static void *Read_8480_848F( u32 address )
 				DBGConsole_Msg(0, "SI_STATUS in inconsistant state! %08x" );
 			}
 		}
-
-
+#endif
 		DPF( DEBUG_MEMORY_SI, "Reading from MEM_SI_REG: 0x%08x", address );
 		return (u8 *)g_pMemoryBuffers[MEM_SI_REG] + (address & 0xFF);
 	}
@@ -548,11 +548,13 @@ static void * ReadROM( u32 address )
 		//DBGConsole_Msg(0, "[GRead from Cart (addr2)] 0x%08x", address);
 		offset = physical_addr - PI_DOM1_ADDR2;
 		p_mem = RomBuffer::GetAddressRaw( offset );
+#ifndef DAEDALUS_SILENT
 		if( p_mem == NULL )
 		{
 			DBGConsole_Msg(0, "[GRead from Cart (addr2) out of range! (0x%08x)] 0x%08x",
 			address, RomBuffer::GetRomSize());
 		}
+#endif
 	}
 	else if (physical_addr >= PI_DOM1_ADDR3 && physical_addr < 0x7FFFFFFF)
 	{

@@ -9,7 +9,6 @@ PspDebugRegBlock *exception_regs;
 
 void _pspDebugExceptionHandler(void);
 int sceKernelRegisterDefaultExceptionHandler(void *func);
-int sceKernelRegisterDefaultExceptionHandler371(void *func);
 
 int module_start(SceSize args, void *argp)
 {

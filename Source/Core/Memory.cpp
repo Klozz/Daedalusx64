@@ -1162,6 +1162,7 @@ void MemoryUpdatePI( u32 address, u32 value )
 	}
 	else
 	{
+#ifndef DAEDALUS_SILENT
 		switch (pi_address)
 		{
 		case PI_BSD_DOM1_LAT_REG:
@@ -1189,7 +1190,7 @@ void MemoryUpdatePI( u32 address, u32 value )
 			DPF( DEBUG_MEMORY_PI, "PI_BSD_DOM2_RLS_REG written to (dome device R/W release duration) - 0x%08x", value );
 			break;
 		}
-
+#endif
 		*(u32 *)((u8 *)g_pMemoryBuffers[MEM_PI_REG] + offset) = value;
 	}
 }

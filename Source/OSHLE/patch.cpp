@@ -304,6 +304,7 @@ void Patch_DumpOsThreadInfo()
 		if (dwPri == 0xFFFFFFFF)
 			break;
 
+#ifndef DAEDALUS_SILENT
 		if (dwThread == dwCurrentThread)
 		{
 			DBGConsole_Msg(0, "->0x%08x, % 4d, 0x%08x, 0x%04x, 0x%04x, 0x%08x, 0x%08x",
@@ -314,6 +315,7 @@ void Patch_DumpOsThreadInfo()
 			DBGConsole_Msg(0, "  0x%08x, % 4d, 0x%08x, 0x%04x, 0x%04x, 0x%08x, 0x%08x",
 				dwThread, dwPri, dwQueue, wState, wFlags, dwID, dwFP);
 		}
+#endif
 		dwThread = Read32Bits(dwThread + offsetof(OSThread, tlnext));
 
 		if (dwThread == dwFirstThread)
@@ -365,7 +367,7 @@ void Patch_DumpOsQueueInfo()
 			continue;
 		}
 
-
+#ifndef DAEDALUS_SILENT
 		if (dwFullQ == VAR_ADDRESS(osNullMsgQueue))
 			sprintf(szFullQueue, "       -");
 		else
@@ -385,7 +387,7 @@ void Patch_DumpOsQueueInfo()
 		{
 			sprintf(szType, "<- Pi Access");
 		}
-
+#endif
 
 		// Try and find in the event mesg array
 		if (strlen(szType) == 0 && VAR_FOUND(osEventMesgArray))
@@ -557,9 +559,7 @@ void Patch_RecurseAndFind()
 		}
 	}
 	DBGConsole_Msg(0, "%d/%d variables identified", nFound, nPatchVariables);
-
 }
-
 
 // Attempt to locate this symbol.
 bool Patch_LocateFunction(PatchSymbol * ps)
@@ -742,10 +742,12 @@ bool Patch_VerifyLocation_CheckSignature(PatchSymbol * ps,
 
 			// If pcr->dwOffset == ~0, then there are no more in the array
 			// This is okay, as the comparison with m above will never match
+#ifndef DAEDALUS_SILENT
 			if (pcr->dwOffset < dwLastOffset)
 			{
 				DBGConsole_Msg(0, "%s: CrossReference offsets out of order", ps->szName);
 			}
+#endif
 			dwLastOffset = pcr->dwOffset;
 
 		}
@@ -828,7 +830,6 @@ fail_find:
 	}
 
 	return false;
-
 }
 
 static void Patch_FlushCache()
@@ -944,10 +945,12 @@ static bool Patch_GetCache()
 
 static u32 RET_NOT_PROCESSED(PatchSymbol* ps)
 {
+#ifndef DAEDALUS_SILENT
 	if (ps == NULL)
 	{
 		DAEDALUS_ERROR("Not Supported.");
 	}
+#endif
 	gCPUState.CurrentPC = PHYS_TO_K0(ps->dwLocation);
 	//DBGConsole_Msg(0, "%s RET_NOT_PROCESSED PC=0x%08x RA=0x%08x", ps->szName, gCPUState.TargetPC, gGPR[REG_ra]._u32_0);
 

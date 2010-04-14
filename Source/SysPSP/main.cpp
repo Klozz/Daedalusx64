@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "stdafx.h"
 
-#include <pspkernel.h>
 #include <pspdebug.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -127,6 +126,63 @@ void loaderInit()
 #endif
 
 //*************************************************************************************
+//Used to check for compatible FW, we don't allow anything lower than 4.01
+//*************************************************************************************
+static void DaedalusFWCheck()
+{
+	SceCtrlData pad;
+
+	u32 ver = sceKernelDevkitVersion();
+
+	//if(ver < 0x05050010)
+	if(ver < 0x04000110)
+	{
+		pspDebugScreenInit();
+		pspDebugScreenSetTextColor(0xffffff);
+		pspDebugScreenSetBackColor(0x000000);
+		pspDebugScreenSetXY(0, 0);
+		pspDebugScreenClear();
+		pspDebugScreenPrintf( "\n" );
+		pspDebugScreenPrintf("XXXXXXX       XXXXXXX        66666666         444444444\n" );  
+		pspDebugScreenPrintf("X:::::X       X:::::X       6::::::6         4::::::::4\n" );  
+		pspDebugScreenPrintf("X:::::X       X:::::X      6::::::6         4:::::::::4\n" );  
+		pspDebugScreenPrintf("X::::::X     X::::::X     6::::::6         4::::44::::4\n" );  
+		pspDebugScreenPrintf("XXX:::::X   X:::::XXX    6::::::6         4::::4 4::::4\n" );  
+		pspDebugScreenPrintf("   X:::::X X:::::X      6::::::6         4::::4  4::::4\n" );  
+		pspDebugScreenPrintf("    X:::::X:::::X      6::::::6         4::::4   4::::4\n" );  
+		pspDebugScreenPrintf("     X:::::::::X      6::::::::66666   4::::444444::::444\n" );
+		pspDebugScreenPrintf("     X:::::::::X     6::::::::::::::66 4::::::::::::::::4\n" );
+		pspDebugScreenPrintf( "   X:::::X:::::X    6::::::66666:::::64444444444:::::444\n" );
+		pspDebugScreenPrintf("   X:::::X X:::::X   6:::::6     6:::::6         4::::4\n" );  
+		pspDebugScreenPrintf("XXX:::::X   X:::::XXX6:::::6     6:::::6         4::::4\n" );  
+		pspDebugScreenPrintf("X::::::X     X::::::X6::::::66666::::::6         4::::4\n" );  
+		pspDebugScreenPrintf("X:::::X       X:::::X 66:::::::::::::66        44::::::44\n" );
+		pspDebugScreenPrintf("X:::::X       X:::::X   66:::::::::66          4::::::::4\n" );
+		pspDebugScreenPrintf("XXXXXXX       XXXXXXX     666666666            4444444444\n" );
+		pspDebugScreenPrintf( "\n" );
+		pspDebugScreenPrintf( "\n" );
+		pspDebugScreenPrintf( "--------------------------------------------------------------------\n" );
+		pspDebugScreenPrintf( "\n" );
+		pspDebugScreenPrintf( "	Unsuported Firmware Detected : %d\n", ver );
+		pspDebugScreenPrintf( "\n" );
+		pspDebugScreenPrintf( "	Daedalus requires atleast 4.01 M33 Custom Firmware\n" );
+		pspDebugScreenPrintf( "\n" );
+		pspDebugScreenPrintf( "--------------------------------------------------------------------\n" );
+		sceKernelDelayThread(1000000);
+		pspDebugScreenPrintf( "\n" );
+		pspDebugScreenPrintf( "\n" );
+		pspDebugScreenPrintf( "\n" );
+		pspDebugScreenPrintf("\nPress O to Exit");
+		for (;;){
+			sceCtrlReadBufferPositive(&pad, 1);
+			if (pad.Buttons & PSP_CTRL_CIRCLE){
+				break;
+			}
+		}    
+		sceKernelExitGame();
+	}
+}
+//*************************************************************************************
 //Set up the Exit Callback (Used to allow the Home Button to work)
 //*************************************************************************************
 static int ExitCallback( int arg1, int arg2, void * common )
@@ -172,6 +228,8 @@ extern void InitialiseJobManager();
 //*************************************************************************************
 static bool	Initialize()
 {
+	DaedalusFWCheck();
+
 	printf( "Cpu was: %dMHz, Bus: %dMHz\n", scePowerGetCpuClockFrequency(), scePowerGetBusClockFrequency() );
 	if (scePowerSetClockFrequency(333, 333, 166) != 0)
 	{

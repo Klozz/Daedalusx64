@@ -545,6 +545,7 @@ static void R4300_CALL_TYPE R4300_SetCop1Enable( bool enable )
 //*****************************************************************************
 void R4300_CALL_TYPE R4300_SetSR( u32 new_value )
 {
+#ifndef DAEDALUS_SILENT
 	if ((gCPUState.CPUControl[C0_SR]._u32_0 & SR_FR) != (new_value & SR_FR))
 	{
 		if (new_value & SR_FR)
@@ -552,7 +553,7 @@ void R4300_CALL_TYPE R4300_SetSR( u32 new_value )
 		else
 			DBGConsole_Msg(0, "FP changed to 32bit register mode");
 	}
-
+#endif
 	/*if (((u32)gCPUState.CPUControl[C0_SR] & SR_UX) != (new_value & SR_UX))
 	{
 		if (new_value & SR_UX)
@@ -977,10 +978,6 @@ static void R4300_CALL_TYPE R4300_BGTZL( R4300_CALL_SIGNATURE ) 		// Branch on G
 	}
 }
 
-
-
-
-
 static void R4300_CALL_TYPE R4300_LB( R4300_CALL_SIGNATURE ) 			// Load Byte
 {
 	R4300_CALL_MAKE_OP( op_code );
@@ -1129,8 +1126,6 @@ static void R4300_CALL_TYPE R4300_LW( R4300_CALL_SIGNATURE ) 			// Load Word
 	CHECK_R0();
 }
 
-
-
 static void R4300_CALL_TYPE R4300_LWU( R4300_CALL_SIGNATURE ) 			// Load Word Unsigned
 {
 	R4300_CALL_MAKE_OP( op_code );
@@ -1166,8 +1161,6 @@ static void R4300_CALL_TYPE R4300_SB( R4300_CALL_SIGNATURE ) 			// Store Byte
 	Write8Bits(address, (u8)(gGPR[op_code.rt]._u32_0 & 0xff));
 }
 
-
-
 static void R4300_CALL_TYPE R4300_SWL( R4300_CALL_SIGNATURE ) 			// Store Word Left
 {
 	R4300_CALL_MAKE_OP( op_code );
@@ -1187,7 +1180,6 @@ static void R4300_CALL_TYPE R4300_SWL( R4300_CALL_SIGNATURE ) 			// Store Word L
 	}
 	Write32Bits(address & ~0x3, dwNew);
 }
-
 
 static void R4300_CALL_TYPE R4300_SWR( R4300_CALL_SIGNATURE ) 			// Store Word Right
 {
@@ -1209,7 +1201,6 @@ static void R4300_CALL_TYPE R4300_SWR( R4300_CALL_SIGNATURE ) 			// Store Word R
 	Write32Bits(address & ~0x3, dwNew);
 
 }
-
 
 static void R4300_CALL_TYPE R4300_SDL( R4300_CALL_SIGNATURE )//CYRUS64
 {
@@ -1992,7 +1983,6 @@ static void R4300_CALL_TYPE R4300_Cop0_MTC0( R4300_CALL_SIGNATURE )
 		case C0_BADVADDR:
 		case C0_PRID:
 		case C0_CACHE_ERR:			// Furthermore, this reg must return 0 on reads.
-
 			// All these registers are read only - make sure that software doesn't write to them
 			DBGConsole_Msg(0, "MTC0. Software attempted to write to read only reg %s: 0x%08x", Cop0RegNames[ op_code.fs ], (u32)new_value);
 			break;
@@ -2002,11 +1992,12 @@ static void R4300_CALL_TYPE R4300_Cop0_MTC0( R4300_CALL_SIGNATURE )
 			// On writes, set all others to 0. Is this correct?
 			//  Other bits are CE (copro error) BD (branch delay), the other
 			// Interrupt pendings and EscCode.
+#ifndef DAEDALUS_SILENT
 			if ( (new_value&~(CAUSE_SW1|CAUSE_SW2)) != (gCPUState.CPUControl[C0_CAUSE]._u64&~(CAUSE_SW1|CAUSE_SW2))  )
 			{
 				DBGConsole_Msg( 0, "[MWas previously clobbering CAUSE REGISTER" );
 			}
-
+#endif
 			DPF( DEBUG_REGS, "CAUSE set to 0x%08x (was: 0x%08x)", (u32)new_value, gGPR[ op_code.rt ]._u32_0 );
 			gCPUState.CPUControl[C0_CAUSE]._u64 &=             ~(CAUSE_SW1|CAUSE_SW2);
 			gCPUState.CPUControl[C0_CAUSE]._u64 |= (new_value & (CAUSE_SW1|CAUSE_SW2));
@@ -2016,7 +2007,6 @@ static void R4300_CALL_TYPE R4300_Cop0_MTC0( R4300_CALL_SIGNATURE )
 			//  set, and if there are any pending interrupts. If there are, then we set the
 			//  CHECK_POSTPONED_INTERRUPTS flag to make sure we check for interrupts that have
 			//  occurred since we disabled interrupts
-
 			R4300_SetSR((u32)new_value);
 			break;
 
@@ -2026,10 +2016,8 @@ static void R4300_CALL_TYPE R4300_Cop0_MTC0( R4300_CALL_SIGNATURE )
 				// When this register is set, we need to check whether the next timed interrupt will
 				//  be due to vertical blank or COMPARE
 				gCPUState.CPUControl[C0_COUNT]._u64 = new_value;
-
 				DBGConsole_Msg(0, "Count set - setting int");
 				// XXXX Do we need to update any existing events?
-
 				break;
 			}
 		case C0_COMPARE:
@@ -2314,9 +2302,6 @@ static void R4300_CALL_TYPE R4300_Cop1_CTC1( R4300_CALL_SIGNATURE ) 		// move Co
 
 	// Now generate lots of exceptions :-)
 }
-
-
-
 
 static void R4300_CALL_TYPE R4300_BC1_BC1F( R4300_CALL_SIGNATURE )		// Branch on FPU False
 {
@@ -2731,7 +2716,9 @@ static void R4300_CALL_TYPE R4300_Cop1_C_S_Generic( R4300_CALL_SIGNATURE )
 	bool cond0 = (op_code._u32   ) & 0x1;
 	bool cond1 = (op_code._u32>>1) & 0x1;
 	bool cond2 = (op_code._u32>>2) & 0x1;
+#ifndef DAEDALUS_SILENT
 	bool cond3 = (op_code._u32>>3) & 0x1;
+#endif
 
 	f32 fX = LoadFPR_Single( op_code.fs );
 	f32 fY = LoadFPR_Single( op_code.ft );
@@ -2744,11 +2731,13 @@ static void R4300_CALL_TYPE R4300_Cop1_C_S_Generic( R4300_CALL_SIGNATURE )
 		unordered = true;
 
 		// exception
+#ifndef DAEDALUS_SILENT
 		if (cond3)
 		{
 			// Exception
 			DBGConsole_Msg( 0, "[MShould throw fp nan exception?" );
 		}
+#endif
 	}
 	else
 	{
@@ -3070,7 +3059,9 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_C_D_Generic(
 	bool cond0 = (op_code._u32   ) & 0x1;
 	bool cond1 = (op_code._u32>>1) & 0x1;
 	bool cond2 = (op_code._u32>>2) & 0x1;
+#ifndef DAEDALUS_SILENT
 	bool cond3 = (op_code._u32>>3) & 0x1;
+#endif
 
 	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
 	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
@@ -3083,11 +3074,13 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_C_D_Generic(
 		unordered = true;
 
 		// exception
+#ifndef DAEDALUS_SILENT
 		if (cond3)
 		{
 			// Exception
 			DBGConsole_Msg( 0, "[MShould throw fp nan exception?" );
 		}
+#endif
 	}
 	else
 	{

@@ -36,7 +36,6 @@ static void WriteValueInvalid( u32 address, u32 value )
 //*****************************************************************************
 static void WriteValueNoise( u32 address, u32 value )
 {
-
 	//CPUHalt();
 	static bool bWarned( false );
 	if (!bWarned)
@@ -47,7 +46,6 @@ static void WriteValueNoise( u32 address, u32 value )
 
 	//return g_pMemoryBuffers[MEM_UNUSED];
 	// Do nothing
-
 }
 
 //*****************************************************************************
@@ -135,6 +133,7 @@ static void WriteValue_8404_8404( u32 address, u32 value )
 		{
 		case SP_MEM_ADDR_REG:
 		case SP_DRAM_ADDR_REG:
+		case SP_SEMAPHORE_REG: //TODO - Make this do something?
 			*(u32 *)((u8 *)g_pMemoryBuffers[MEM_SP_REG] + offset) = value;
 			break;
 
@@ -152,15 +151,9 @@ static void WriteValue_8404_8404( u32 address, u32 value )
 			MemoryUpdateSPStatus( value );
 			break;
 
-
 		case SP_DMA_FULL_REG:
 		case SP_DMA_BUSY_REG:
 			// Prevent writing to read-only mem
-			break;
-
-		case SP_SEMAPHORE_REG:
-			//TODO - Make this do something?
-			*(u32 *)((u8 *)g_pMemoryBuffers[MEM_SP_REG] + offset) = value;
 			break;
 		}
 		
@@ -282,20 +275,13 @@ static void WriteValue_8430_843F( u32 address, u32 value )
 		switch (MI_BASE_REG + offset)
 		{
 		case MI_INIT_MODE_REG:
+		case MI_INTR_MASK_REG:
 			MemoryUpdateMI(address, value);
 			break;
 
 		case MI_VERSION_REG:
-			// Read Only
-			break;
-
-
 		case MI_INTR_REG:
 			// Read Only
-			break;
-
-		case MI_INTR_MASK_REG:
-			MemoryUpdateMI(address, value);
 			break;
 		}
 	}
@@ -335,8 +321,9 @@ static void WriteValue_8450_845F( u32 address, u32 value )
 
 		switch (AI_BASE_REG + offset)
 		{
-		case AI_DRAM_ADDR_REG:
-			// 64bit aligned
+		case AI_DRAM_ADDR_REG: // 64bit aligned
+		case AI_CONTROL_REG:
+		case AI_BITRATE_REG:
 			*(u32 *)((u8 *)g_pMemoryBuffers[MEM_AI_REG] + offset) = value;
 			break;
 
@@ -348,13 +335,13 @@ static void WriteValue_8450_845F( u32 address, u32 value )
 				g_pAiPlugin->LenChanged();
 			//MemoryDoAI();
 			break;
-
+		/*
 		case AI_CONTROL_REG:
 			// DMA enable/Disable
 			//if (g_dwAIBufferFullness == 2)
 			*(u32 *)((u8 *)g_pMemoryBuffers[MEM_AI_REG] + offset) = value;
 			//MemoryDoAI();
-			break;
+			break;*/
 
 		case AI_STATUS_REG:
 			Memory_MI_ClrRegisterBits(MI_INTR_REG, MI_INTR_AI);
@@ -367,10 +354,6 @@ static void WriteValue_8450_845F( u32 address, u32 value )
 			// TODO: Fix type??
 			if (g_pAiPlugin != NULL)
 				g_pAiPlugin->DacrateChanged( CAudioPlugin::ST_NTSC );
-			break;
-
-		case AI_BITRATE_REG:
-			*(u32 *)((u8 *)g_pMemoryBuffers[MEM_AI_REG] + offset) = value;
 			break;
 		}
 	}
@@ -394,11 +377,7 @@ static void WriteValue_8460_846F( u32 address, u32 value )
 
 		switch (PI_BASE_REG + offset)
 		{
-
 		case PI_DRAM_ADDR_REG:
-			*(u32 *)((u8 *)g_pMemoryBuffers[MEM_PI_REG] + offset) = value;
-			break;
-
 		case PI_CART_ADDR_REG:
 			*(u32 *)((u8 *)g_pMemoryBuffers[MEM_PI_REG] + offset) = value;
 			break;
@@ -418,7 +397,6 @@ static void WriteValue_8460_846F( u32 address, u32 value )
 			// Do status reg stuff.
 			MemoryUpdatePI(offset, value);
 			break;
-
 		}
 	}
 	else
@@ -467,20 +445,16 @@ static void WriteValue_8480_848F( u32 address, u32 value )
 		switch (SI_BASE_REG + offset)
 		{
 		case SI_DRAM_ADDR_REG:
-
 			*(u32 *)((u8 *)g_pMemoryBuffers[MEM_SI_REG] + offset) = value;
 			break;
 			
-
 		case SI_PIF_ADDR_RD64B_REG:
-
 			// Trigger DRAM -> PIF DMA
 			*(u32 *)((u8 *)g_pMemoryBuffers[MEM_SI_REG] + offset) = value;
 			DMA_SI_CopyToDRAM();
 			break;
 
 			// Reserved Registers here!
-
 		case SI_PIF_ADDR_WR64B_REG:
 			// Trigger DRAM -> PIF DMA
 			*(u32 *)((u8 *)g_pMemoryBuffers[MEM_SI_REG] + offset) = value;
@@ -533,11 +507,8 @@ static void WriteValue_9FC0_9FCF( u32 address, u32 value )
 			break;			
 		case 0x7C0 + 0x3c:
 			DBGConsole_Msg(0, "[YWriting Control Byte]: [[0x%08x[] <- 0x%08x", address, value);
-
 			*(u32 *)((u8 *)g_pMemoryBuffers[MEM_PIF_RAM] + offset) = value;
-			
 			MemoryUpdatePIF();
-
 			return;
 		default:
 			DBGConsole_Msg(0, "[WWriting directly to PI ram]: [[0x%08x[] <- 0x%08x", address, value);

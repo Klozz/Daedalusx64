@@ -47,6 +47,7 @@
 #include <algorithm>
 
 #include "Math/Math.h"	// VFPU Math
+#include "Math/MathUtil.h"
 
 #include <pspctrl.h>
 #include <pspgu.h>

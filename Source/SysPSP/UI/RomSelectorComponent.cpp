@@ -1234,7 +1234,9 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 				}
 			}
 		}
-		
+		// ToDo : Add a GUI tooltip, dialog, or option to exit, so users can be aware on how to exit.
+		//
+		if(new_buttons & PSP_CTRL_SELECT) sceKernelExitGame();	
 	}
 	
 	//

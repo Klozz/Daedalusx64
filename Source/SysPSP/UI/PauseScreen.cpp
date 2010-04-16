@@ -41,6 +41,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspgu.h>
 
 #include <string>
+/*
+extern "C" {
+int getbuttons();
+}
+int KernelButtons;*/
 
 namespace
 {
@@ -222,13 +227,20 @@ void	IPauseScreen::Update( float elapsed_time, const v2 & stick, u32 old_buttons
 			mCurrentOption = GetNextValidOption();
 			new_buttons &= ~PSP_CTRL_RTRIGGER;
 		}
-
-		if(new_buttons & PSP_CTRL_SELECT)
+		// ToDo : Use HOME button here..
+		if(new_buttons & PSP_CTRL_CIRCLE)
 		{
 			mIsFinished = true;
-			new_buttons &= ~PSP_CTRL_SELECT;
+			new_buttons &= ~PSP_CTRL_CIRCLE;
 		}
+
 	}
+	//
+	// Okay.. Passing our getbuttons fucntion, here causes a really bad side effect...
+	// Side effect: is that inputs in our PauseMenu go way too fast ! this due the lack of sceKernelDelayThread in the main loop of our kernelbuttons.prx..
+	// We avoid to use sceKernelDelayThread since it comes as a big penalty and slows down the emulator..
+	// So we have to fix it here xD
+	//
 
 	mOptionComponents[ mCurrentOption ]->Update( elapsed_time, stick, old_buttons, new_buttons );
 }

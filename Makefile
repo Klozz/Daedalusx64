@@ -111,6 +111,7 @@ DAED_PSP_SRCS =	Source/SysPSP/Graphics/DrawText.cpp \
 				Source/SysPSP/MediaEnginePRX/MediaEngine.S \
 				Source/SysPSP/MediaEnginePRX/me.c \
 				Source/SysPSP/DveMgr/pspDveManager.S \
+				Source/SysPSP/KernelModePrx/KernelButtons.S \
 				Source/SysPSP/Utility/exception.cpp
 
 DAED_HLEGFX_SRCS =	Source/SysPSP/Plugins/GraphicsPluginPSP.cpp \
@@ -192,7 +193,7 @@ LIBDIR = $(PSPDEV)/SDK/lib ./SDK/lib
 LDFLAGS= "-Wl,-O1"
 LIBS = -lstdc++ -lpsppower -lpspgu -lpspaudiolib -lpspaudio -lpsprtc -lc -lpng -lz -lm -lpspfpu -lpspvfpu -lpspkubridge
 
-EXTRA_TARGETS = EBOOT.PBP $(DEP_FILES) dvemgr.prx exception.prx mediaengine.prx
+EXTRA_TARGETS = EBOOT.PBP $(DEP_FILES) dvemgr.prx exception.prx mediaengine.prx kernelbuttons.prx
 PSP_EBOOT_TITLE = DaedalusX64 Alpha
 PSP_EBOOT_ICON = icon0.png
 PSP_EBOOT_PIC1 = pic1.png
@@ -215,7 +216,7 @@ BUILDS_PSP_DIR = $(BUILDS_DIR)/PSP
 psplink: $(PSP_EBOOT) $(TARGET).elf
 	prxtool -y $(TARGET).elf > $(BUILDS_PSP_DIR)/$(TARGET).sym
 	
-install: $(PSP_EBOOT) $(TARGET).prx dvemgr.prx exception.prx mediaengine.prx $(TARGET).elf
+install: $(PSP_EBOOT) $(TARGET).prx dvemgr.prx exception.prx mediaengine.prx kernelbuttons.prx $(TARGET).elf
 	svn export --force Data $(BUILDS_DIR)
 	cp $(PSP_EBOOT) "$(BUILDS_PSP_DIR)"
 	cp $(TARGET).elf "$(BUILDS_PSP_DIR)"
@@ -235,11 +236,15 @@ mediaengine.prx:
 	
 exception.prx:
 	make -C Source/SysPSP/ExceptionHandler/prx all
+	
+kernelbuttons.prx:
+	make -C Source/SysPSP/KernelModePrx all
 
 allclean:
 	make -C Source/SysPSP/ExceptionHandler/prx clean
 	make -C Source/SysPSP/MediaEnginePRX clean
 	make -C Source/SysPSP/DveMgr clean
+	make -C Source/SysPSP/KernelModePrx clean
 	make clean
 
 CC       = psp-gcc

@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspsdk.h>
 #include <pspdisplay.h>
 #include <kubridge.h>
+#include <pspsysmem.h>
 
 #include "System.h"
 #include "Debug/DBGConsole.h"
@@ -63,10 +64,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ConfigOptions.h"
 
 //#define DAEDALUS_KERNEL_MODE
+//#define DAEDALUS_CALLBACKS
 
 char						gDaedalusExePath[MAX_PATH+1] = DAEDALUS_PSP_PATH( "" );
 
-extern "C" { void _DisableFPUExceptions(); }
+
+extern "C" { 
+void _DisableFPUExceptions(); }
+
+/* Kernel Exception Handler functions */
 extern void initExceptionHandler();
 
 /* Video Manager functions */
@@ -79,8 +85,16 @@ extern int HAVE_DVE;
 extern int PSP_TV_CABLE;
 extern int PSP_TV_LACED;
 
-bool PSP_IS_SLIM = false;
+/* Kernel Buttons functions */
+extern "C" {
+int getbuttons();
+}
 
+int KernelButtons;
+int Get_Kernel_Buttons;
+
+
+bool PSP_IS_SLIM = false;
 //*************************************************************************************
 //Set up our initial eviroment settings for the PSP
 //*************************************************************************************
@@ -182,6 +196,7 @@ static void DaedalusFWCheck()
 		sceKernelExitGame();
 	}
 }
+#ifdef DAEDALUS_CALLBACKS
 //*************************************************************************************
 //Set up the Exit Callback (Used to allow the Home Button to work)
 //*************************************************************************************
@@ -220,9 +235,9 @@ static int SetupCallbacks()
 	}
 	return thid;
 }
+#endif
 
 extern void InitialiseJobManager();
-
 //*************************************************************************************
 //
 //*************************************************************************************
@@ -249,8 +264,21 @@ static bool	Initialize()
 
 	_DisableFPUExceptions();
 
+	// We have to kill our Callbacks to hook succesfully "home" button...
+#ifdef DAEDALUS_CALLBACKS
 	//Set up callback for our thread
 	SetupCallbacks();
+#endif
+	// Set up our Kernel Buttons : Home, Vol- +, etc
+	Get_Kernel_Buttons = pspSdkLoadStartModule("kernelbuttons.prx", PSP_MEMORY_PARTITION_KERNEL);
+	if (Get_Kernel_Buttons >= 0)
+	{
+		printf( "Successfully loaded kernelbuttons.prx: %08X\n", Get_Kernel_Buttons );
+	}
+	else
+	{
+		printf( "Couldn't load kernelbuttons.prx: %08X\n", Get_Kernel_Buttons );
+	}
 
 	//Set up the DveMgr (TV Display) and Detect PSP Slim
 	if ( kuKernelGetModel() == PSP_MODEL_SLIM_AND_LITE )
@@ -306,10 +334,6 @@ bool	gShowProfilerResults = false;
 //*************************************************************************************
 static void	DisplayProfilerResults()
 {
-    SceCtrlData pad;
-
-	static u32 oldButtons = 0;
-
 	if(gShowProfilerResults)
 	{
 		bool menu_button_pressed( false );
@@ -332,21 +356,17 @@ static void	DisplayProfilerResults()
 
 			pspDebugScreenPrintf( "\n" );
 
-			sceCtrlPeekBufferPositive(&pad, 1);
-			if(oldButtons != pad.Buttons)
-			{
-				if(pad.Buttons & PSP_CTRL_SELECT)
-				{
-					menu_button_pressed = true;
-				}
-			}
+			// Init our kernel buttons, ex HOME button
+			KernelButtons = getbuttons();
 
-			oldButtons = pad.Buttons;
+			if(kernelButtons && PSP_CTRL_HOME)
+			{
+				menu_button_pressed = true;
+			}
 		}
 	}
 
 	CGraphicsContext::Get()->SetDebugScreenTarget( CGraphicsContext::TS_BACKBUFFER );
-
 }
 #endif
 
@@ -456,19 +476,14 @@ void HandleEndOfFrame()
 	//
 	//	Enter the debug menu as soon as select is newly pressed
 	//
-    SceCtrlData pad;
 
-	static u32 oldButtons = 0;
+	// Init our kernel buttons, ex HOME button
+	KernelButtons = getbuttons();
 
-	sceCtrlPeekBufferPositive(&pad, 1);
-	if(oldButtons != pad.Buttons)
+	if(KernelButtons & PSP_CTRL_HOME)
 	{
-		if(pad.Buttons & PSP_CTRL_SELECT)
-		{
-			activate_pause_menu = true;
-		}
+		activate_pause_menu = true;
 	}
-	oldButtons = pad.Buttons;
 
 	if(activate_pause_menu)
 	{

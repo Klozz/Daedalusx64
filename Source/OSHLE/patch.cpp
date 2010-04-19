@@ -345,8 +345,10 @@ void Patch_DumpOsQueueInfo()
 	//DBGConsole_Msg(0, "01234567, 01234567, 01234567, xxxx, xxxx, xxxx, 01234567",
 	for (i = 0; i <	g_MessageQueues.size(); i++)
 	{
+#ifndef DAEDALUS_SILENT
 		char szFullQueue[30];
 		char szEmptyQueue[30];
+#endif
 		char szType[60] = "";
 
 		dwQueue = g_MessageQueues[i];

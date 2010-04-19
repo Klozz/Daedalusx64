@@ -37,7 +37,7 @@ bool OS_Reset();
 u32 OS_HLE___osProbeTLB(u32 vaddr);
 
 #ifdef DAED_OS_MESSAGE_QUEUES
-void OS_HLE_osCreateMesgQueue(u32 dwQueue, u32 dwMsgBuffer, u32 dwMsgCount);
+void OS_HLE_osCreateMesgQueue(u32 queue, u32 msgBuffer, u32 msgCount);
 #endif
 
 #endif //__DAEDALUSOS_H__

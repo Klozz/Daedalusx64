@@ -39,12 +39,13 @@ TEST_DISABLE_SP_FUNCS
 	}
 	else
 	{
+#ifndef DAEDALUS_SILENT
 		if (PAddr == 0)
 		{
 			//FIXME
 			DBGConsole_Msg(0, "Address Translation necessary!");
 		}
-
+#endif
 		Memory_SP_SetRegister( SP_MEM_ADDR_REG, SPAddr);
 		Memory_SP_SetRegister( SP_DRAM_ADDR_REG, PAddr);
 		

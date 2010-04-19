@@ -1,9 +1,10 @@
 TARGET = kernelbuttons
 OBJS = main.o
 
-
 INCDIR =
 CFLAGS = -O2 -G0 -Wall
+
+
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 ASFLAGS = $(CFLAGS)
 
@@ -19,3 +20,11 @@ LIBS=$(STDLIBS)$(YOURLIBS)
 
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build.mak
+
+EXTRA_TARGETS = kernelbuttons.S
+
+kernelbuttons.S : $(PRX_EXPORTS)
+	psp-build-exports --build-stubs $(PRX_EXPORTS)
+
+all: $(FINAL_TARGET) kernelbuttons.S
+	cp $(FINAL_TARGET) "../../.."

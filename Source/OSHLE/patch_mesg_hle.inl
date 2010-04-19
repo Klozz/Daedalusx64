@@ -252,12 +252,12 @@ TEST_DISABLE_MESG_FUNCS
 	}
 	else
 	{
-		u32 dwSlot = (first + ValidCount) % MsgCount;
+		u32 slot = (first + ValidCount) % MsgCount;
 		
 		u32 MsgBase = Read32Bits(queue + 0x14);
 
 		// Offset to first valid message
-		MsgBase += dwSlot * 4;
+		MsgBase += slot * 4;
 
 		Write32Bits(MsgBase, msg);
 

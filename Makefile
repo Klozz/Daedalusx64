@@ -111,7 +111,7 @@ DAED_PSP_SRCS =	Source/SysPSP/Graphics/DrawText.cpp \
 				Source/SysPSP/MediaEnginePRX/MediaEngine.S \
 				Source/SysPSP/MediaEnginePRX/me.c \
 				Source/SysPSP/DveMgr/pspDveManager.S \
-				Source/SysPSP/KernelModePrx/KernelButtons.S \
+				Source/SysPSP/KernelButtonsPrx/KernelButtons.S \
 				Source/SysPSP/Utility/exception.cpp
 
 DAED_HLEGFX_SRCS =	Source/SysPSP/Plugins/GraphicsPluginPSP.cpp \
@@ -238,13 +238,13 @@ exception.prx:
 	make -C Source/SysPSP/ExceptionHandler/prx all
 	
 kernelbuttons.prx:
-	make -C Source/SysPSP/KernelModePrx all
+	make -C Source/SysPSP/KernelButtonsPrx all
 
 allclean:
 	make -C Source/SysPSP/ExceptionHandler/prx clean
 	make -C Source/SysPSP/MediaEnginePRX clean
 	make -C Source/SysPSP/DveMgr clean
-	make -C Source/SysPSP/KernelModePrx clean
+	make -C Source/SysPSP/KernelButtonsPrx clean
 	make clean
 
 CC       = psp-gcc

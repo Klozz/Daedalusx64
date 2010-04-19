@@ -41,85 +41,85 @@ bool OS_Reset()
 }
 
 #ifdef DAED_OS_MESSAGE_QUEUES
-void OS_HLE_osCreateMesgQueue(u32 dwQueue, u32 dwMsgBuffer, u32 dwMsgCount)
+void OS_HLE_osCreateMesgQueue(u32 queue, u32 msgBuffer, u32 msgCount)
 {
-	COSMesgQueue q(dwQueue);
+	COSMesgQueue q(queue);
 
 	q.SetEmptyQueue(VAR_ADDRESS(osNullMsgQueue));
 	q.SetFullQueue(VAR_ADDRESS(osNullMsgQueue));
 	q.SetValidCount(0);
 	q.SetFirst(0);
-	q.SetMsgCount(dwMsgCount);
-	q.SetMesgArray(dwMsgBuffer);
+	q.SetMsgCount(msgCount);
+	q.SetMesgArray(msgBuffer);
 
 	//DBGConsole_Msg(0, "osCreateMsgQueue(0x%08x, 0x%08x, %d)",
-	//	dwQueue, dwMsgBuffer, dwMsgCount);
+	//	queue, msgBuffer, msgCount);
 
 	for ( u32 i = 0; i < g_MessageQueues.size(); i++)
 	{
-		if (g_MessageQueues[i] == dwQueue)
+		if (g_MessageQueues[i] == queue)
 			return;		// Already in list
 
 	}
-	g_MessageQueues.push_back(dwQueue);
+	g_MessageQueues.push_back(queue);
 }
 #endif
 
 // ENTRYHI left untouched after call
 u32 OS_HLE___osProbeTLB(u32 vaddr)
 {
-	u32 dwPAddr = ~0;	// Return -1 on failure
+	u32 PAddr = ~0;	// Return -1 on failure
 
-	u32 dwPID = gCPUState.CPUControl[C0_ENTRYHI]._u32_0 & TLBHI_PIDMASK;
-	u32 dwVPN2 = vaddr & TLBHI_VPN2MASK;
-	u32 dwPageMask;
-	u32 dwEntryLo;
+	u32 pid = gCPUState.CPUControl[C0_ENTRYHI]._u32_0 & TLBHI_PIDMASK;
+	u32 vpn2 = vaddr & TLBHI_VPN2MASK;
+	u32 pageMask;
+	u32 entryLo;
 	int i;
 
 	// Code from TLBP and TLBR
 
     for(i = 0; i < 32; i++)
 	{
-		if( ((g_TLBs[i].hi & TLBHI_VPN2MASK) == dwVPN2) &&
+		if( ((g_TLBs[i].hi & TLBHI_VPN2MASK) == vpn2) &&
 			(
 				(g_TLBs[i].g) ||
-				((g_TLBs[i].hi & TLBHI_PIDMASK) == dwPID)
+				((g_TLBs[i].hi & TLBHI_PIDMASK) == pid)
 			) )
 		{
 			// We've found the page, do TLBR
-			dwPageMask = g_TLBs[i].mask;
+			pageMask = g_TLBs[i].mask;
 
-			dwPageMask += 0x2000;
-			dwPageMask >>= 1;
+			pageMask += 0x2000;
+			pageMask >>= 1;
 
-			if ((vaddr & dwPageMask) == 0)
+			if ((vaddr & pageMask) == 0)
 			{
 				// Even Page (EntryLo0)
-				dwEntryLo = g_TLBs[i].pfne | g_TLBs[i].g;
+				entryLo = g_TLBs[i].pfne | g_TLBs[i].g;
 			}
 			else
 			{
 				// Odd Page (EntryLo1)
-				dwEntryLo = g_TLBs[i].pfno | g_TLBs[i].g;
+				entryLo = g_TLBs[i].pfno | g_TLBs[i].g;
 			}
 
-			dwPageMask--;
+			pageMask--;
 
 			// If valid is not set, then the page is invalid
-			if ((dwEntryLo & TLBLO_V) != 0)
+			if ((entryLo & TLBLO_V) != 0)
 			{
-				dwEntryLo &= TLBLO_PFNMASK;
-				dwEntryLo <<= TLBLO_PFNSHIFT;
+				entryLo &= TLBLO_PFNMASK;
+				entryLo <<= TLBLO_PFNSHIFT;
 
-				dwPAddr = dwEntryLo + (dwPageMask & vaddr);
+				PAddr = entryLo + (pageMask & vaddr);
 			}
 
 			break;
 		}
 	}
 
-	//DBGConsole_Msg(0, "Probe: 0x%08x -> 0x%08x", vaddr, dwPAddr);
-	return dwPAddr;
+	//DBGConsole_Msg(0, "Probe: 0x%08x -> 0x%08x", vaddr, PAddr);
+	return PAddr;
 
 }
 #endif

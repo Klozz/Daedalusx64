@@ -113,7 +113,7 @@ void	CAudioPluginPsp::StopEmulation()
 //*****************************************************************************
 void	CAudioPluginPsp::DacrateChanged( ESystemType system_type )
 {
-#ifndef DAEDALUS_PUBLIC_RELEASE
+#ifndef DAEDALUS_SILENT
 	printf( "DacrateChanged( %d )\n", system_type );
 #endif
 	if (mLastDACRate != Memory_AI_GetRegister(AI_DACRATE_REG))

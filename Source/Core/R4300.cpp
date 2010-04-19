@@ -42,21 +42,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define		R4300_CALL_MAKE_OP( var )	OpCode	var;	var._u32 = op_code_bits
 
+/*
 #ifdef _DEBUG
 inline void CHECK_R0() {}
-/*inline void CHECK_R0()
+inline void CHECK_R0()
 {
 	if (gGPR[0]._u64 != 0)
 	{
 		DBGConsole_Msg(0, "Warning: Attempted write to r0!");
 		gGPR[0]._u64 = 0;			// Ensure r0 is always zero (easier than trapping writes?)
 	}
-}*/
+}
 
 #else
 inline void CHECK_R0() {}
 #endif
-
+*/
 //
 //	Abstract away the different rounding modes between targets
 //
@@ -74,45 +75,10 @@ static ERoundingMode	gRoundingMode( RM_ROUND );
 #define _isnan isnan
 #endif
 
+// ToDo : Fix Simulate Doubles
 typedef f64 d64;
 
-// Conveniently, the x87 status bits correspond to the MIPS fp status bits (shifted by 2!)
-// _EM_INEXACT		0x01		FPCSR_FI		0x04
-// _EM_UNDERFLOW	0x02		FPCSR_FU		0x08
-// _EM_OVERFLOW		0x04		FPCSR_FO		0x10
-// _EM_ZERODIVIDE	0x08		FPCSR_FZ		0x20
-// _EM_INVALID		0x10		FPCSR_FV		0x40
-//#define X86_EM_MASK		(_EM_INEXACT|_EM_UNDERFLOW|_EM_OVERFLOW|_EM_ZERODIVIDE|_EM_INVALID)
 
-/*
-	_clearfp();
-
-	f32	fR = op( fX, fY );
-
-	// On S_CVT_W etc
-	if ( _fpclass( fX ) & (_FPCLASS_NINF|_FPCLASS_PINF ) )
-	{
-		gCPUState.FPUControl[ 31 ]._u32_0 |= FPCSR_CE;
-
-		R4300_Exception_FP();
-		return;
-	}
-
-	u32		flags( (_statusfp() & (X86_EM_MASK)) );
-	if ( flags )
-	{
-		if ( gCPUState.FPUControl[ 31 ]._u32_0 & ( flags << 7 ) )	// Compare with enable bits
-		{
-			gCPUState.FPUControl[ 31 ]._u32_0 |= flags << 12;		// Set cause bits
-			R4300_Exception_FP();
-			return;
-		}
-		else
-		{
-			gCPUState.FPUControl[ 31 ]._u32_0 |= flags << 2;		// Set flags
-		}
-	}
-*/
 inline void SpeedHack( u32 pc, OpCode op )
 {
 	OpCode	next_op;
@@ -554,34 +520,36 @@ void R4300_CALL_TYPE R4300_SetSR( u32 new_value )
 			DBGConsole_Msg(0, "FP changed to 32bit register mode");
 	}
 #endif
-	/*if (((u32)gCPUState.CPUControl[C0_SR] & SR_UX) != (new_value & SR_UX))
+
+	// Check exception
+	if((new_value & SR_EXL) == 0 && ((gCPUState.CPUControl[C0_SR]._u32_0 & SR_EXL) == 1))
 	{
-		if (new_value & SR_UX)
-			DBGConsole_Msg(0, "CPU changed to 64bit register mode");
-		else
-			DBGConsole_Msg(0, "CPU changed to 32bit register mode");
-	}*/
-
-	bool interrupts_enabled_before = (gCPUState.CPUControl[C0_SR]._u32_0 & SR_IE) != 0;
-
-	gCPUState.CPUControl[C0_SR]._s64 = (s64)(s32)new_value;
-
-	bool interrupts_enabled_after = (gCPUState.CPUControl[C0_SR]._u32_0 & SR_IE) != 0;
-
-	R4300_SetCop1Enable( (gCPUState.CPUControl[C0_SR]._u64 & SR_CU1) != 0 );
-
-	if ( !interrupts_enabled_before && interrupts_enabled_after )
-	{
-		if (gCPUState.CPUControl[C0_SR]._u32_0 & gCPUState.CPUControl[C0_CAUSE]._u32_0 & CAUSE_IPMASK)
+		//CPU will check interrupts at the next cycle
+		if((gCPUState.CPUControl[C0_SR]._u32_0 & gCPUState.CPUControl[C0_CAUSE]._u32_0 & 0x0000FF00)) // or CAUSE_IPMASK
 		{
-			//DBGConsole_Msg( 0, "[MShould be servicing pending interrupts here: %02x %02x?",
-			//	(gCPUState.CPUControl[C0_SR]._u32_0 & gCPUState.CPUControl[C0_CAUSE]._u32_0 & CAUSE_IPMASK) >> 8,
-			//	Memory_MI_GetRegister(MI_INTR_MASK_REG) & Memory_MI_GetRegister(MI_INTR_REG)
-			//	);
 			gCPUState.AddJob( CPU_CHECK_INTERRUPTS );
 		}
 	}
 
+	// Check IE
+	if(((new_value & SR_IE) == 1) && ((gCPUState.CPUControl[C0_SR]._u32_0 & SR_IE) == 0)) //If enable interrupt
+	{
+		//CPU will check interrupts at the next cycle
+		if((gCPUState.CPUControl[C0_SR]._u32_0 & gCPUState.CPUControl[C0_CAUSE]._u32_0 & 0x0000FF00)) // or CAUSE_IPMASK
+		{
+			gCPUState.AddJob( CPU_CHECK_INTERRUPTS );
+		}
+	}
+
+	// Really important ~ otherwise most games won't work..
+	gCPUState.CPUControl[C0_SR]._u32_0 = (u32) new_value;
+
+	/*
+	Really important note :
+	This new impl fixes several games ex : Extreme-G XG2 and Tom and Jerry.
+	Also fixes Wayne Gretzky's 3D Hockey '98 to be zoomed in too far (really nasty glitch)
+	Still needs a bit of work, but so far we are on the right path now.
+	*/
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -786,7 +754,6 @@ static void R4300_CALL_TYPE R4300_DADDI( R4300_CALL_SIGNATURE ) 			// Doubleword
 
 	//rt = rs + immediate
 	gGPR[op_code.rt]._s64 = gGPR[op_code.rs]._s64 + (s32)(s16)op_code.immediate;
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_DADDIU( R4300_CALL_SIGNATURE ) 			// Doubleword ADD Immediate Unsigned
@@ -797,9 +764,7 @@ static void R4300_CALL_TYPE R4300_DADDIU( R4300_CALL_SIGNATURE ) 			// Doublewor
 
 	//rt = rs + immediate
 	gGPR[op_code.rt]._s64 = gGPR[op_code.rs]._s64 + (s32)(s16)op_code.immediate;
-	CHECK_R0();
 }
-
 
 static void R4300_CALL_TYPE R4300_ADDI( R4300_CALL_SIGNATURE )
 {
@@ -809,8 +774,6 @@ static void R4300_CALL_TYPE R4300_ADDI( R4300_CALL_SIGNATURE )
 
 	//rt = rs + immediate
 	gGPR[op_code.rt]._s64 = (s64)(s32)(gGPR[op_code.rs]._s32_0 + (s32)(s16)op_code.immediate);
-
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_ADDIU( R4300_CALL_SIGNATURE ) 		// Add Immediate Unsigned
@@ -819,8 +782,6 @@ static void R4300_CALL_TYPE R4300_ADDIU( R4300_CALL_SIGNATURE ) 		// Add Immedia
 
 	//rt = rs + immediate
 	gGPR[op_code.rt]._s64 = (s64)(s32)(gGPR[op_code.rs]._s32_0 + (s32)(s16)op_code.immediate);
-	CHECK_R0();
-
 }
 
 static void R4300_CALL_TYPE R4300_SLTI( R4300_CALL_SIGNATURE ) 			// Set on Less Than Immediate
@@ -831,7 +792,6 @@ static void R4300_CALL_TYPE R4300_SLTI( R4300_CALL_SIGNATURE ) 			// Set on Less
 	if (gGPR[op_code.rs]._s64 < (s64)(s32)(s16)op_code.immediate)
 	{
 		gGPR[op_code.rt]._u64 = 1;
-		CHECK_R0();
 	}
 	else
 	{
@@ -847,7 +807,6 @@ static void R4300_CALL_TYPE R4300_SLTIU( R4300_CALL_SIGNATURE ) 		// Set on Less
 	if (gGPR[op_code.rs]._u64 < (u64)(s64)(s32)(s16)op_code.immediate)
 	{
 		gGPR[op_code.rt]._u64 = 1;
-		CHECK_R0();
 	}
 	else
 	{
@@ -862,7 +821,6 @@ static void R4300_CALL_TYPE R4300_ANDI( R4300_CALL_SIGNATURE ) 				// AND Immedi
 
 	//rt = rs & immediate
 	gGPR[op_code.rt]._u64 = gGPR[op_code.rs]._u64 & (u64)(u16)op_code.immediate;
-	CHECK_R0();
 }
 
 
@@ -872,7 +830,6 @@ static void R4300_CALL_TYPE R4300_ORI( R4300_CALL_SIGNATURE ) 				// OR Immediat
 
 	//rt = rs | immediate
 	gGPR[op_code.rt]._u64 = gGPR[op_code.rs]._u64 | (u64)(u16)op_code.immediate;
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_XORI( R4300_CALL_SIGNATURE ) 				// XOR Immediate
@@ -881,7 +838,6 @@ static void R4300_CALL_TYPE R4300_XORI( R4300_CALL_SIGNATURE ) 				// XOR Immedi
 
 	//rt = rs ^ immediate
 	gGPR[op_code.rt]._u64 = gGPR[op_code.rs]._u64 ^ (u64)(u16)op_code.immediate;
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_LUI( R4300_CALL_SIGNATURE ) 				// Load Upper Immediate
@@ -889,7 +845,6 @@ static void R4300_CALL_TYPE R4300_LUI( R4300_CALL_SIGNATURE ) 				// Load Upper 
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[op_code.rt]._s64 = (s64)(s32)((s32)(s16)op_code.immediate<<16);
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_BEQL( R4300_CALL_SIGNATURE ) 			// Branch on Equal Likely
@@ -985,7 +940,6 @@ static void R4300_CALL_TYPE R4300_LB( R4300_CALL_SIGNATURE ) 			// Load Byte
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 
 	gGPR[op_code.rt]._s64 = (s64)(s8)Read8Bits(address);
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_LBU( R4300_CALL_SIGNATURE ) 			// Load Byte Unsigned -- Zero extend byte...
@@ -995,9 +949,7 @@ static void R4300_CALL_TYPE R4300_LBU( R4300_CALL_SIGNATURE ) 			// Load Byte Un
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate);
 
 	gGPR[op_code.rt]._s64 = (s64)(u8)Read8Bits(address);
-	CHECK_R0();
 }
-
 
 static void R4300_CALL_TYPE R4300_LH( R4300_CALL_SIGNATURE ) 		// Load Halfword
 {
@@ -1005,7 +957,6 @@ static void R4300_CALL_TYPE R4300_LH( R4300_CALL_SIGNATURE ) 		// Load Halfword
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	gGPR[op_code.rt]._s64 = (s64)(s16)Read16Bits(address);
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_LHU( R4300_CALL_SIGNATURE )			// Load Halfword Unsigned -- Zero extend word
@@ -1015,7 +966,6 @@ static void R4300_CALL_TYPE R4300_LHU( R4300_CALL_SIGNATURE )			// Load Halfword
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 
 	gGPR[op_code.rt]._u64 = (u64)(u16)Read16Bits(address);
-	CHECK_R0();
 }
 
 
@@ -1037,7 +987,6 @@ static void R4300_CALL_TYPE R4300_LWL( R4300_CALL_SIGNATURE ) 			// Load Word Le
     }
 
 	gGPR[op_code.rt]._s64 = (s64)(s32)nReg;
-	CHECK_R0();
 }
 
 // Starcraft - not tested!
@@ -1063,7 +1012,6 @@ static void R4300_CALL_TYPE R4300_LDL( R4300_CALL_SIGNATURE )
    }
 
 	gGPR[op_code.rt]._u64 = nReg;
-	CHECK_R0();
 }
 
 
@@ -1086,7 +1034,6 @@ static void R4300_CALL_TYPE R4300_LWR( R4300_CALL_SIGNATURE ) 			// Load Word Ri
     }
 
 	gGPR[op_code.rt]._s64 = (s64)(s32)nReg;
-	CHECK_R0();
 }
 
 // Starcraft - not tested!
@@ -1112,7 +1059,6 @@ static void R4300_CALL_TYPE R4300_LDR( R4300_CALL_SIGNATURE )
     }
 
 	gGPR[op_code.rt]._u64 = nReg;
-	CHECK_R0();
 }
 
 
@@ -1122,8 +1068,6 @@ static void R4300_CALL_TYPE R4300_LW( R4300_CALL_SIGNATURE ) 			// Load Word
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	gGPR[op_code.rt]._s64 = (s64)(s32)Read32Bits(address);
-
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_LWU( R4300_CALL_SIGNATURE ) 			// Load Word Unsigned
@@ -1132,8 +1076,6 @@ static void R4300_CALL_TYPE R4300_LWU( R4300_CALL_SIGNATURE ) 			// Load Word Un
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	gGPR[op_code.rt]._u64 = (u64)(u32)Read32Bits(address);
-
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_SW( R4300_CALL_SIGNATURE ) 			// Store Word
@@ -1309,7 +1251,6 @@ static void R4300_CALL_TYPE R4300_LD( R4300_CALL_SIGNATURE ) 				// Load Doublew
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	gGPR[op_code.rt]._u64 = Read64Bits(address);
-	CHECK_R0();
 }
 
 
@@ -1360,7 +1301,6 @@ static void R4300_CALL_TYPE R4300_Special_SLL( R4300_CALL_SIGNATURE ) 		// Shift
 	if ( op_code._u32 == 0 ) return;
 
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( (gGPR[ op_code.rt ]._u32_0 << op_code.sa) & 0xFFFFFFFF );
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_SRL( R4300_CALL_SIGNATURE ) 		// Shift word Right Logical
@@ -1368,7 +1308,6 @@ static void R4300_CALL_TYPE R4300_Special_SRL( R4300_CALL_SIGNATURE ) 		// Shift
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rt ]._u32_0 >> op_code.sa );
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_SRA( R4300_CALL_SIGNATURE ) 		// Shift word Right Arithmetic
@@ -1376,7 +1315,6 @@ static void R4300_CALL_TYPE R4300_Special_SRA( R4300_CALL_SIGNATURE ) 		// Shift
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rt ]._s32_0 >> op_code.sa );
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_SLLV( R4300_CALL_SIGNATURE ) 		// Shift word Left Logical Variable
@@ -1384,7 +1322,6 @@ static void R4300_CALL_TYPE R4300_Special_SLLV( R4300_CALL_SIGNATURE ) 		// Shif
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( (gGPR[ op_code.rt ]._u32_0 << ( gGPR[ op_code.rs ]._u32_0 & 0x1F ) ) & 0xFFFFFFFF );
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_SRLV( R4300_CALL_SIGNATURE ) 		// Shift word Right Logical Variable
@@ -1392,7 +1329,6 @@ static void R4300_CALL_TYPE R4300_Special_SRLV( R4300_CALL_SIGNATURE ) 		// Shif
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rt ]._u32_0 >> ( gGPR[ op_code.rs ]._u32_0 & 0x1F ) );
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_SRAV( R4300_CALL_SIGNATURE ) 		// Shift word Right Arithmetic Variable
@@ -1400,7 +1336,6 @@ static void R4300_CALL_TYPE R4300_Special_SRAV( R4300_CALL_SIGNATURE ) 		// Shif
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rt ]._s32_0 >> ( gGPR[ op_code.rs ]._u32_0 & 0x1F ) );
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_JR( R4300_CALL_SIGNATURE ) 			// Jump Register
@@ -1420,7 +1355,6 @@ static void R4300_CALL_TYPE R4300_Special_JALR( R4300_CALL_SIGNATURE ) 		// Jump
 	// Jump And Link
 	u32	new_pc( gGPR[ op_code.rs ]._u32_0 );
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)(gCPUState.CurrentPC + 8);		// Store return address
-	CHECK_R0();
 
 	CPU_TakeBranch( new_pc, CPU_BRANCH_INDIRECT );
 }
@@ -1453,7 +1387,6 @@ static void R4300_CALL_TYPE R4300_Special_MFHI( R4300_CALL_SIGNATURE ) 			// Mov
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rd ]._u64 = gCPUState.MultHi._u64;
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_MTHI( R4300_CALL_SIGNATURE ) 			// Move To MultHI
@@ -1468,7 +1401,6 @@ static void R4300_CALL_TYPE R4300_Special_MFLO( R4300_CALL_SIGNATURE ) 			// Mov
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rd ]._u64 = gCPUState.MultLo._u64;
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_MTLO( R4300_CALL_SIGNATURE ) 			// Move To MultLO
@@ -1485,7 +1417,6 @@ static void R4300_CALL_TYPE R4300_Special_DSLLV( R4300_CALL_SIGNATURE )
 
 	// Reserved Instruction exception
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 << ( gGPR[ op_code.rs ]._u32_0 & 0x3F );
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_DSRLV( R4300_CALL_SIGNATURE )
@@ -1494,7 +1425,6 @@ static void R4300_CALL_TYPE R4300_Special_DSRLV( R4300_CALL_SIGNATURE )
 
 	// Reserved Instruction exception
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 >> ( gGPR[ op_code.rs ]._u32_0 & 0x3F );
-	CHECK_R0();
 }
 
 // Aeroguage uses!
@@ -1504,8 +1434,6 @@ static void R4300_CALL_TYPE R4300_Special_DSRAV( R4300_CALL_SIGNATURE )
 
 	// Reserved Instruction exception
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._s64 >> ( gGPR[ op_code.rs ]._u32_0 & 0x3F );
-	CHECK_R0();
-
 }
 // END MODIFIED BY Lkb - 8/jun/2001
 
@@ -1611,7 +1539,6 @@ static void R4300_CALL_TYPE R4300_Special_ADD( R4300_CALL_SIGNATURE ) 			// ADD 
 
 	// Can generate overflow exception
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rs ]._s32_0 + gGPR[ op_code.rt ]._s32_0 );
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_ADDU( R4300_CALL_SIGNATURE ) 			// ADD Unsigned - doesn't throw exception
@@ -1619,7 +1546,6 @@ static void R4300_CALL_TYPE R4300_Special_ADDU( R4300_CALL_SIGNATURE ) 			// ADD
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rs ]._s32_0 + gGPR[ op_code.rt ]._s32_0 );
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_SUB( R4300_CALL_SIGNATURE ) 			// SUB Signed - may throw exception
@@ -1628,7 +1554,6 @@ static void R4300_CALL_TYPE R4300_Special_SUB( R4300_CALL_SIGNATURE ) 			// SUB 
 
 	// Can generate overflow exception
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rs ]._s32_0 - gGPR[ op_code.rt ]._s32_0 );
-	CHECK_R0();
 }
 
 
@@ -1637,16 +1562,13 @@ static void R4300_CALL_TYPE R4300_Special_SUBU( R4300_CALL_SIGNATURE ) 			// SUB
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rs ]._s32_0 - gGPR[ op_code.rt ]._s32_0 );
-	CHECK_R0();
 }
-
 
 static void R4300_CALL_TYPE R4300_Special_AND( R4300_CALL_SIGNATURE ) 				// logical AND
 {
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 & gGPR[ op_code.rt ]._u64;
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_OR( R4300_CALL_SIGNATURE ) 				// logical OR
@@ -1654,7 +1576,6 @@ static void R4300_CALL_TYPE R4300_Special_OR( R4300_CALL_SIGNATURE ) 				// logi
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 | gGPR[ op_code.rt ]._u64;
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_XOR( R4300_CALL_SIGNATURE ) 				// logical XOR
@@ -1663,7 +1584,6 @@ static void R4300_CALL_TYPE R4300_Special_XOR( R4300_CALL_SIGNATURE ) 				// log
 
 
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 ^ gGPR[ op_code.rt ]._u64;
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_NOR( R4300_CALL_SIGNATURE ) 				// logical Not OR
@@ -1671,7 +1591,6 @@ static void R4300_CALL_TYPE R4300_Special_NOR( R4300_CALL_SIGNATURE ) 				// log
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rd ]._u64 = ~( gGPR[ op_code.rs ]._u64 | gGPR[ op_code.rt ]._u64 );
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_SLT( R4300_CALL_SIGNATURE ) 				// Set on Less Than
@@ -1682,7 +1601,6 @@ static void R4300_CALL_TYPE R4300_Special_SLT( R4300_CALL_SIGNATURE ) 				// Set
 	if ( gGPR[ op_code.rs ]._s64 < gGPR[ op_code.rt ]._s64 )
 	{
 		gGPR[ op_code.rd ]._u64 = 1;
-		CHECK_R0();
 	}
 	else
 	{
@@ -1698,7 +1616,6 @@ static void R4300_CALL_TYPE R4300_Special_SLTU( R4300_CALL_SIGNATURE ) 				// Se
 	if ( gGPR[ op_code.rs ]._u64 < gGPR[ op_code.rt ]._u64 )
 	{
 		gGPR[ op_code.rd ]._u64 = 1;
-		CHECK_R0();
 	}
 	else
 	{
@@ -1713,7 +1630,6 @@ static void R4300_CALL_TYPE R4300_Special_DADD( R4300_CALL_SIGNATURE )//CYRUS64
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 + gGPR[ op_code.rs ]._u64;
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_DADDU( R4300_CALL_SIGNATURE )//CYRUS64
@@ -1721,17 +1637,13 @@ static void R4300_CALL_TYPE R4300_Special_DADDU( R4300_CALL_SIGNATURE )//CYRUS64
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 + gGPR[ op_code.rs ]._u64;
-	CHECK_R0();
 }
-
-
 
 static void R4300_CALL_TYPE R4300_Special_DSUB( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 - gGPR[ op_code.rs ]._u64;
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_DSUBU( R4300_CALL_SIGNATURE )
@@ -1739,7 +1651,6 @@ static void R4300_CALL_TYPE R4300_Special_DSUBU( R4300_CALL_SIGNATURE )
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 - gGPR[ op_code.rs ]._u64;
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_DSLL( R4300_CALL_SIGNATURE )
@@ -1748,7 +1659,6 @@ static void R4300_CALL_TYPE R4300_Special_DSLL( R4300_CALL_SIGNATURE )
 
 	// Reserved Instruction exception
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 << op_code.sa;
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_DSRL( R4300_CALL_SIGNATURE )
@@ -1757,7 +1667,6 @@ static void R4300_CALL_TYPE R4300_Special_DSRL( R4300_CALL_SIGNATURE )
 
 	// Reserved Instruction exception
     gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 >> op_code.sa;
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_DSRA( R4300_CALL_SIGNATURE )
@@ -1766,7 +1675,6 @@ static void R4300_CALL_TYPE R4300_Special_DSRA( R4300_CALL_SIGNATURE )
 
 	// Reserved Instruction exception
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._s64 >> op_code.sa;
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_DSLL32( R4300_CALL_SIGNATURE ) 			// Double Shift Left Logical 32
@@ -1775,7 +1683,6 @@ static void R4300_CALL_TYPE R4300_Special_DSLL32( R4300_CALL_SIGNATURE ) 			// D
 
 	// Reserved Instruction exception
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 << ( 32 + op_code.sa );
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_DSRL32( R4300_CALL_SIGNATURE ) 			// Double Shift Right Logical 32
@@ -1784,7 +1691,6 @@ static void R4300_CALL_TYPE R4300_Special_DSRL32( R4300_CALL_SIGNATURE ) 			// D
 
 	// Reserved Instruction exception
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 >> ( 32 + op_code.sa );
-	CHECK_R0();
 }
 
 static void R4300_CALL_TYPE R4300_Special_DSRA32( R4300_CALL_SIGNATURE ) 			// Double Shift Right Arithmetic 32
@@ -1793,7 +1699,6 @@ static void R4300_CALL_TYPE R4300_Special_DSRA32( R4300_CALL_SIGNATURE ) 			// D
 
 	// Reserved Instruction exception
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._s64 >> ( 32 + op_code.sa );
-	CHECK_R0();
 }
 
 
@@ -1805,9 +1710,6 @@ static void R4300_CALL_TYPE R4300_Special_DSRA32( R4300_CALL_SIGNATURE ) 			// D
 /////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
 
 static void R4300_CALL_TYPE R4300_RegImm_Unk( R4300_CALL_SIGNATURE ) {  WARN_NOEXIST("R4300_RegImm_Unk"); }
 
@@ -1954,8 +1856,6 @@ static void R4300_CALL_TYPE R4300_Cop0_MFC0( R4300_CALL_SIGNATURE )
 	{
 		gGPR[ op_code.rt ]._s64 = (s64)gCPUState.CPUControl[ op_code.fs ]._s32_0;
 	}
-
-	CHECK_R0();
 }
 
 // Move Word To CopReg
@@ -1968,6 +1868,11 @@ static void R4300_CALL_TYPE R4300_Cop0_MTC0( R4300_CALL_SIGNATURE )
 
 	switch ( op_code.fs )
 	{
+		case C0_INX:
+			gCPUState.CPUControl[C0_INX]._u64 = new_value & 0x8000003F;
+			DBGConsole_Msg(0, "Setting Index register to 0x%08x", (u32)new_value);
+			break;
+
 		case C0_CONTEXT:
 			DBGConsole_Msg(0, "Setting context register to 0x%08x", (u32)new_value);
 			gCPUState.CPUControl[ op_code.fs ]._u64 = new_value;
@@ -1979,7 +1884,7 @@ static void R4300_CALL_TYPE R4300_Cop0_MTC0( R4300_CALL_SIGNATURE )
 			DBGConsole_Msg(0, "Setting Wired register to 0x%08x", (u32)new_value);
 			gCPUState.CPUControl[ op_code.fs ]._u64 = new_value;
 			break;
-		case C0_RAND:
+		case C0_RAND:	
 		case C0_BADVADDR:
 		case C0_PRID:
 		case C0_CACHE_ERR:			// Furthermore, this reg must return 0 on reads.
@@ -2209,7 +2114,6 @@ static void R4300_CALL_TYPE R4300_Cop1_MFC1( R4300_CALL_SIGNATURE )
 
 	// MFC1 in the manual says this is a sign-extended result
 	gGPR[ op_code.rt ]._s64 = (s64)(s32)LoadFPR_Word( op_code.fs );
-	CHECK_R0();
 
 }
 
@@ -2218,7 +2122,6 @@ static void R4300_CALL_TYPE R4300_Cop1_DMFC1( R4300_CALL_SIGNATURE )
 	R4300_CALL_MAKE_OP( op_code );
 
 	gGPR[ op_code.rt ]._s64 = LoadFPR_Long( op_code.fs );
-	CHECK_R0();
 }
 
 
@@ -2230,8 +2133,6 @@ static void R4300_CALL_TYPE R4300_Cop1_CFC1( R4300_CALL_SIGNATURE ) 		// move Co
 	if ( op_code.fs == 0 || op_code.fs == 31 )
 	{
 		gGPR[ op_code.rt ]._s64 = (s64)gCPUState.FPUControl[ op_code.fs ]._s32_0;
-		CHECK_R0();
-
 		//if ( op_code.fs == 0 )
 		//{
 		//	DBGConsole_Msg( 0, "Reading FCR00 - %08x at %08x", gGPR[ op_code.rt ]._u32_0, gCPUState.CurrentPC  );

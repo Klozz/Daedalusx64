@@ -105,9 +105,7 @@ area assignment does not change. After Tx/RxData assignment, this flag is reset 
 #pragma warning(default : 4002) 
 #endif
 
-//#define DEBUG_PIF_RAM
-
-#ifdef DEBUG_PIF_RAM
+#ifdef DAEDALUS_DEBUG_PIF
 	#define DPF_PIF( ... )		{ if ( mDebugFile ) { fprintf( mDebugFile, __VA_ARGS__ ); fprintf( mDebugFile, "\n" ); } }
 #else
 	#define DPF_PIF( ... )
@@ -157,7 +155,7 @@ class	IController : public CController
 		void			Write16Bits( u32 index, u16 value );
 		void			Write16Bits_Swapped( u32 index, u16 value );
 
-	#ifdef DEBUG_PIF_RAM
+	#ifdef DAEDALUS_DEBUG_PIF
 		void			DumpInput() const;
 	#endif
 
@@ -184,7 +182,7 @@ class	IController : public CController
 
 		u8 *			mpPifRam;
 
-#ifdef DEBUG_PIF_RAM
+#ifdef DAEDALUS_DEBUG_PIF
 		u8				mpInput[ 64 ];
 #endif
 
@@ -225,7 +223,7 @@ class	IController : public CController
 		SChannelFormat	mChannelFormat[ NUM_CHANNELS ];
 		u8				rumble[32];
 
-	#ifdef DEBUG_PIF_RAM
+	#ifdef DAEDALUS_DEBUG_PIF
 		FILE *			mDebugFile;
 	#endif
 
@@ -252,7 +250,7 @@ IController::IController() :
 	mpEepromData( NULL ),
 	mEepromSize( 0 )
 {
-#ifdef DEBUG_PIF_RAM
+#ifdef DAEDALUS_DEBUG_PIF
 	mDebugFile = fopen( "controller.txt", "w" );
 #endif
 	for ( u32 i = 0; i < NUM_CONTROLLERS; i++ )
@@ -274,7 +272,7 @@ IController::IController() :
 //*****************************************************************************
 IController::~IController()
 {
-#ifdef DEBUG_PIF_RAM
+#ifdef DAEDALUS_DEBUG_PIF
 	if( mDebugFile != NULL )
 	{
 		fclose( mDebugFile );
@@ -341,7 +339,7 @@ void IController::OnRomClose()
 //*****************************************************************************
 void IController::FormatChannels()
 {
-#ifdef DEBUG_PIF_RAM
+#ifdef DAEDALUS_DEBUG_PIF
 	DPF_PIF("");
 	DPF_PIF("");
 	DPF_PIF("*********************************************");
@@ -439,7 +437,7 @@ void IController::FormatChannels()
 		channel++;
 	}
 
-#ifdef DEBUG_PIF_RAM
+#ifdef DAEDALUS_DEBUG_PIF
 
 	DPF_PIF("Results:");
 
@@ -473,7 +471,7 @@ void IController::FormatChannels()
 //*****************************************************************************
 void IController::Process()
 {
-#ifdef DEBUG_PIF_RAM
+#ifdef DAEDALUS_DEBUG_PIF
 	memcpy(mpInput, mpPifRam, 64);
 	DPF_PIF("");
 	DPF_PIF("");
@@ -510,7 +508,7 @@ void IController::Process()
 		}
 	}
 
-#ifdef DEBUG_PIF_RAM
+#ifdef DAEDALUS_DEBUG_PIF
 	DPF_PIF("Before | After:");
 
 	for ( u32 x = 0; x < 64; x+=8 )
@@ -528,7 +526,7 @@ void IController::Process()
 #endif
 }
 
-#ifdef DEBUG_PIF_RAM
+#ifdef DAEDALUS_DEBUG_PIF
 //*****************************************************************************
 // Dump the PIF input
 //*****************************************************************************
@@ -716,7 +714,7 @@ bool	IController::ProcessCommand(u32 i, u32 iError, u32 channel, u32 ucWrite, u3
 
 	default:
 		DAEDALUS_ERROR( "Unknown controller command: %02x", command );
-		DPF_PIF( DSPrintf("Unknown controller command: %02x", command) );
+		//DPF_PIF( DSPrintf("Unknown controller command: %02x", command) );
 		break;
 	}
 
@@ -786,19 +784,22 @@ bool	IController::CommandReadEeprom(u32 i, u32 iError, u32 ucWrite, u32 ucRead)
 	i++;
 	ucWrite--;
 
+#ifdef DAEDALUS_DEBUG_PIF
 	if ( ucRead < 8 )
 	{
 		DAEDALUS_ERROR( "Overrun on READ_EEPROM" );
 	}
+#endif
 
 	if ( IsEepromPresent() )
 	{
 		// TODO limit block to mEepromSize / 8
+#ifdef DAEDALUS_DEBUG_PIF
 		if (block*8+ucRead > mEepromSize)
 		{
 			DAEDALUS_ERROR( "Reading outside of EEPROM bounds" );
 		}
-
+#endif
 		u32 j = 0;
 		while (ucRead)
 		{
@@ -828,10 +829,8 @@ bool	IController::CommandWriteEeprom(u32 i, u32 iError, u32 ucWrite, u32 ucRead)
 	u8 block;
 
 	DPF_PIF("Controller: WriteEEPROM");
-
 	DAEDALUS_ASSERT( ucWrite+1 == 10, "Why is tx_data_size not 10 for WRITE_EEP?" );
 	// Forsaken 64
-	
 	DAEDALUS_ASSERT( ucRead == 1, "Why is rx_data_size not 1 for WRITE_EEP?" );
 
 	// 9 bytes of input remaining - 8 bytes data + block
@@ -852,11 +851,12 @@ bool	IController::CommandWriteEeprom(u32 i, u32 iError, u32 ucWrite, u32 ucRead)
 		Save::MarkSaveDirty();
 
 		// TODO limit block to mEepromSize / 8
+#ifdef DAEDALUS_DEBUG_PIF
 		if (block*8+ucWrite > mEepromSize)
 		{
 			DAEDALUS_ERROR( "Writing outside of EEPROM bounds" );
 		}
-
+#endif
 		u32 j = 0;
 		while (ucWrite)
 		{
@@ -901,9 +901,10 @@ bool	IController::CommandReadMemPack( u32 i, u32 iError, u32 channel, u32 ucWrit
 		WriteStatusBits( iError, CONT_OVERRUN_ERROR );
 		return false;
 	}
-
-	DPF_PIF( DSPrintf("ReadMemPack: Channel %d, i is %d", channel, i) );
-
+#ifdef DAEDALUS_DEBUG_PIF
+	//DPF_PIF( DSPrintf("ReadMemPack: Channel %d, i is %d", channel, i) );
+	DAEDALUS_ERROR( "ReadMemPack: Channel %d, i is %d", channel, i );
+#endif
 	// Get address..
 	address_crc = (GetPifByte( i + 0 ) << 8) | GetPifByte( i + 1 );
 
@@ -940,9 +941,10 @@ bool	IController::CommandReadMemPack( u32 i, u32 iError, u32 channel, u32 ucWrit
 	else
 	{
 		pBuf = &mMemPack[channel][address * 32];
-
-		DPF_PIF( DSPrintf("Controller: Reading from block 0x%04x (crc: 0x%02x)", address, dwCRC) );
-		
+#ifdef DAEDALUS_DEBUG_PIF
+		//DPF_PIF( DSPrintf("Controller: Reading from block 0x%04x (crc: 0x%02x)", address, dwCRC) );
+		DAEDALUS_ERROR( "Controller: Reading from block 0x%04x (crc: 0x%02x)", address, dwCRC );
+#endif		
 		for (j = 0; j < 32; j++)
 		{
 			if (i < 64)
@@ -955,16 +957,18 @@ bool	IController::CommandReadMemPack( u32 i, u32 iError, u32 channel, u32 ucWrit
 
 		ucDataCRC = CalculateDataCrc(pBuf);
 	}
-	
-	DPF_PIF( DSPrintf("Controller: data crc is 0x%02x", ucDataCRC) );
-
+#ifdef DAEDALUS_DEBUG_PIF	
+	//DPF_PIF( DSPrintf("Controller: data crc is 0x%02x", ucDataCRC) );
+	DAEDALUS_ERROR( "Controller: data crc is 0x%02x", ucDataCRC );
+#endif
 	// Write the crc value:
 	SetPifByte( i, ucDataCRC );
 	i++;
 	ucRead--;
-	
-	DPF_PIF( DSPrintf("Returning, setting i to %d", i + 1) );
-
+#ifdef DAEDALUS_DEBUG_PIF	
+	//DPF_PIF( DSPrintf("Returning, setting i to %d", i + 1) );
+	DAEDALUS_ERROR( "Returning, setting i to %d", i + 1 );
+#endif
 	// With wetrix, there is still a padding byte?
 	DAEDALUS_ASSERT( ucWrite == 0 && ucRead == 0, "ReadMemPack / Write bytes remaining" );
 	return true;
@@ -993,9 +997,10 @@ bool	IController::CommandWriteMemPack(u32 i, u32 iError, u32 channel, u32 ucWrit
 		WriteStatusBits( iError, CONT_OVERRUN_ERROR );
 		return false;
 	}
-
-	DPF_PIF( DSPrintf("WriteMemPack: Channel %d, i is %d", channel, i) );
-
+#ifdef DAEDALUS_DEBUG_PIF
+	//DPF_PIF( DSPrintf("WriteMemPack: Channel %d, i is %d", channel, i) );
+	DAEDALUS_ERROR("WriteMemPack: Channel %d, i is %d", channel, i );
+#endif
 	// Get address..
 	address_crc = (GetPifByte( i + 0 ) << 8) | GetPifByte( i + 1 );
 
@@ -1035,9 +1040,10 @@ bool	IController::CommandWriteMemPack(u32 i, u32 iError, u32 channel, u32 ucWrit
 	else
 	{
 		pBuf = &mMemPack[channel][address * 32];
-
-		DPF_PIF( DSPrintf("Controller: Writing block 0x%04x (crc: 0x%02x)", address, dwCRC) );
-
+#ifdef DAEDALUS_DEBUG_PIF
+		//DPF_PIF( DSPrintf("Controller: Writing block 0x%04x (crc: 0x%02x)", address, dwCRC) );
+		DAEDALUS_ERROR( "Controller: data crc is 0x%02x", ucDataCRC );
+#endif
 		for (j = 0; j < 32; j++)
 		{
 			if (i < 64)
@@ -1049,9 +1055,10 @@ bool	IController::CommandWriteMemPack(u32 i, u32 iError, u32 channel, u32 ucWrit
 		}
 		ucDataCRC = CalculateDataCrc(pBuf);
 	}
-
-	DPF_PIF( DSPrintf("Controller: data crc is 0x%02x", ucDataCRC) );
-
+#ifdef DAEDALUS_DEBUG_PIF
+	//DPF_PIF( DSPrintf("Controller: data crc is 0x%02x", ucDataCRC) );
+	DAEDALUS_ERROR( "Controller: data crc is 0x%02x", ucDataCRC );
+#endif
 	// Write the crc value:
 	SetPifByte( i, ucDataCRC );
 	i++;

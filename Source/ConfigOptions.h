@@ -64,6 +64,7 @@ extern bool gFlatShadeDisabled;
 extern bool	gCleanSceneEnabled;
 extern bool gNeedHackforZelda;
 extern bool	gFlushTrisHack;
+extern bool gCheckN64FPUsageDisable;
 // Needs moving to Graphics plugin config
 extern u32	gCheckTextureHashFrequency;
 //ToDo: Needs moving to Input plugin config

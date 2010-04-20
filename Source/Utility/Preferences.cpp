@@ -250,6 +250,10 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		{
 			preferences.IncreaseVI_Event = property->GetBooleanValue( false );
 		}
+		if( section->FindProperty( "CheckN64FPUsageDisable", &property ) )
+		{
+			preferences.CheckN64FPUsageDisable = property->GetBooleanValue( false );
+		}
 		if( section->FindProperty( "CheckTextureHashFrequency", &property ) )
 		{
 			preferences.CheckTextureHashFrequency = ROM_GetTextureHashFrequencyFromFrames( atoi( property->GetValue() ) );
@@ -309,6 +313,7 @@ void IPreferences::OutputSectionDetails( const RomID & id, const SRomPreferences
 	fprintf(fh, "NeedHackforZelda=%d\n",preferences.NeedHackforZelda);
 	fprintf(fh, "FlushTrisHack=%d\n",preferences.FlushTrisHack);
 	fprintf(fh, "IncreaseVI_Event=%d\n",preferences.IncreaseVI_Event);
+	fprintf(fh, "CheckN64FPUsageDisable=%d\n",preferences.CheckN64FPUsageDisable);
 	fprintf(fh, "CheckTextureHashFrequency=%d\n", ROM_GetTexureHashFrequencyAsFrames( preferences.CheckTextureHashFrequency ) );
 	fprintf(fh, "Frameskip=%d\n", ROM_GetFrameskipValueAsInt( preferences.Frameskip ) );
 	fprintf(fh, "AudioEnabled=%d\n", preferences.AudioEnabled);
@@ -440,6 +445,7 @@ SRomPreferences::SRomPreferences()
 	,	NeedHackforZelda( false )
 	,	FlushTrisHack( false )
 	,	IncreaseVI_Event( false )
+	,	CheckN64FPUsageDisable( false )
 	,	CheckTextureHashFrequency( THF_DISABLED )
 	,	Frameskip( FV_DISABLED )
 	,	AudioEnabled( APM_DISABLED )
@@ -467,6 +473,7 @@ void SRomPreferences::Reset()
 	NeedHackforZelda = false;
 	FlushTrisHack = false;
 	IncreaseVI_Event = false;
+	CheckN64FPUsageDisable = false;
 	CheckTextureHashFrequency = THF_DISABLED;
 	Frameskip = FV_DISABLED;
 	AudioEnabled = APM_DISABLED;
@@ -493,6 +500,7 @@ void	SRomPreferences::Apply() const
 	gNeedHackforZelda = g_ROM.settings.NeedHackforZelda || NeedHackforZelda;
 	gFlushTrisHack = g_ROM.settings.FlushTrisHack || FlushTrisHack;
 	gIncreaseVI_Event = g_ROM.settings.IncreaseVI_Event || IncreaseVI_Event;
+	gCheckN64FPUsageDisable = g_ROM.settings.CheckN64FPUsageDisable || CheckN64FPUsageDisable;
 	gCheckTextureHashFrequency = ROM_GetTexureHashFrequencyAsFrames( CheckTextureHashFrequency );
 	gFrameskipValue = Frameskip;
 

@@ -75,8 +75,11 @@ static ERoundingMode	gRoundingMode( RM_ROUND );
 #define _isnan isnan
 #endif
 
-// ToDo : Fix Simulate Doubles
-typedef f64 d64;
+// If the hardware doesn't support doubles in hardware - use 32 bits floats and accept the loss in precision
+typedef f32 d64;
+
+// Buck Bumble doesn't like floats, we use this type to for our "hack" to fix it :)
+typedef f64 b64;
 
 
 inline void SpeedHack( u32 pc, OpCode op )
@@ -167,7 +170,7 @@ inline s64 LoadFPR_Long( u32 reg )
 {
 	if (gCPUState.CPUControl[C0_SR]._u32_0 & SR_FR)
 	{
-		if (!gSimulateDoubleDisabled && gCPUState.FPU[reg]._f64_unused == SIMULATESIG)
+		if (gCPUState.FPU[reg]._f64_unused == SIMULATESIG)
 		{
 			REG64 res;
 			res._f64 = (f64)gCPUState.FPU[reg]._f64_sim;
@@ -184,7 +187,7 @@ inline s64 LoadFPR_Long( u32 reg )
 		res._u32_1 = gCPUState.FPU[reg+1]._u32_0;
 		res._u32_0 = gCPUState.FPU[reg+0]._u32_0;
 
-		if (!gSimulateDoubleDisabled && res._f64_unused == SIMULATESIG)
+		if (res._f64_unused == SIMULATESIG)
 		{
 			res._f64 = (f64)res._f64_sim;
 		}
@@ -195,79 +198,75 @@ inline s64 LoadFPR_Long( u32 reg )
 
 template< bool FullLength > __forceinline d64 LoadFPR_Double( u32 reg )
 {
-	if (!gSimulateDoubleDisabled)
+
+	REG64 regs;
+	if( FullLength )
 	{
-		REG64 regs;
-		if( FullLength )
-		{
-			regs._u64 =  gCPUState.FPU[reg]._u64;
-		}
-		else
-		{
-			regs._u32_1 = gCPUState.FPU[reg+1]._u32_0;
-			regs._u32_0 = gCPUState.FPU[reg+0]._u32_0;
-		}
-	
-		if (regs._f64_unused == SIMULATESIG)
-		{
-			// converted
-			return (d64)regs._f64_sim;
-		}
-		else
-		{
-			return (d64)regs._f64;
-		}
+		regs._u64 =  gCPUState.FPU[reg]._u64;
 	}
 	else
 	{
-		if( FullLength )
-		{
-			return d64( gCPUState.FPU[reg]._f64 );
-		}
-		else
-		{
-			REG64 res;
-			res._u32_1 = gCPUState.FPU[reg+1]._u32_0;
-			res._u32_0 = gCPUState.FPU[reg+0]._u32_0;
-			return d64( res._f64 );
-		}
+		regs._u32_1 = gCPUState.FPU[reg+1]._u32_0;
+		regs._u32_0 = gCPUState.FPU[reg+0]._u32_0;
 	}
+
+	if (regs._f64_unused == SIMULATESIG)
+	{
+		// converted
+		return (d64)regs._f64_sim;
+	}
+	else
+	{
+		return (d64)regs._f64;
+	}
+
 }
 
 template< bool FullLength > __forceinline void StoreFPR_Double( u32 reg, d64 value )
 {
-	if (!gSimulateDoubleDisabled)
-	{
-		REG64	r;
-		r._f64_unused = SIMULATESIG;
-		r._f64_sim = f32( value );
 	
-		if( FullLength )
-		{
-			gCPUState.FPU[reg]._u64 = r._u64;
-		}
-		else
-		{
-			// TODO - Don't think these need sign extending...
-			gCPUState.FPU[reg+0]._u32_0 = r._u32_0;
-			gCPUState.FPU[reg+1]._u32_0 = r._u32_1;
-		}
-	}
-		else
+	REG64	r;
+	r._f64_unused = SIMULATESIG;
+	r._f64_sim = f32( value );
+
+	if( FullLength )
 	{
-		if( FullLength )
-		{
-			gCPUState.FPU[reg]._f64 = f64( value );
-		}
-		else
-		{
-			REG64	r;
-			r._f64 = f64( value );
-			// TODO - Don't think these need sign extending...
-			gCPUState.FPU[reg+0]._u32_0 = r._u32_0;
-			gCPUState.FPU[reg+1]._u32_0 = r._u32_1;
-		}
+		gCPUState.FPU[reg]._u64 = r._u64;
 	}
+	else
+	{
+		r._f64 = f32( value );	// This fixes Mario Party's draft mini game, of course we use float for speed.
+
+		gCPUState.FPU[reg+0]._u32_0 = r._u32_0;
+		gCPUState.FPU[reg+1]._u32_0 = r._u32_1;
+	}
+
+}
+
+// This might seen rebundant, but we have to include it otherwise buck bumble will not work with simulate doubles
+// The reasons : won't work with float and needs double type for value << really important !
+// Check R4300_Cop1_D_ADD for reference.
+//
+template< bool FullLength > __forceinline void StoreFPR_Double_2( u32 reg, b64 value )
+{
+	
+	REG64	r;
+	r._f64_unused = SIMULATESIG;
+	r._f64_sim = f32( value );
+
+	if( FullLength )
+	{
+		gCPUState.FPU[reg]._u64 = r._u64;
+	}
+	else
+	{		
+		r._f64 = f64( value );	// double.. float won't work for buck bumble
+
+		// TODO - Don't think these need sign extending...
+		gCPUState.FPU[reg+0]._u32_0 = r._u32_0;
+		gCPUState.FPU[reg+1]._u32_0 = r._u32_1;
+	}
+
 }
 //*****************************************************************************
 //
@@ -512,44 +511,51 @@ static void R4300_CALL_TYPE R4300_SetCop1Enable( bool enable )
 void R4300_CALL_TYPE R4300_SetSR( u32 new_value )
 {
 #ifndef DAEDALUS_SILENT
-	if ((gCPUState.CPUControl[C0_SR]._u32_0 & SR_FR) != (new_value & SR_FR))
+	if((gCPUState.CPUControl[C0_SR]._u32_0 & SR_FR) != (new_value & SR_FR))
 	{
-		if (new_value & SR_FR)
-			DBGConsole_Msg(0, "FP changed to 64bit register mode");
-		else
-			DBGConsole_Msg(0, "FP changed to 32bit register mode");
+		DBGConsole_Msg(0, "[MChanging FP to %s, STATUS=%08X", (new_value & SR_FR) ? "64bit" : "32bit", (new_value & SR_FR));
 	}
+	/*
+	if((gCPUState.CPUControl[C0_SR]._u32_0 & SR_UX) != (new_value & SR_UX))
+	{
+		DBGConsole_Msg(0, "[MChanging CPU to %s, STATUS=%08X", (new_value & SR_UX) ? "64bit" : "32bit", (new_value & SR_UX));
+	}
+	*/
 #endif
 
-	// Check exception
-	if((new_value & SR_EXL) == 0 && ((gCPUState.CPUControl[C0_SR]._u32_0 & SR_EXL) == 1))
-	{
-		//CPU will check interrupts at the next cycle
-		if((gCPUState.CPUControl[C0_SR]._u32_0 & gCPUState.CPUControl[C0_CAUSE]._u32_0 & 0x0000FF00)) // or CAUSE_IPMASK
-		{
-			gCPUState.AddJob( CPU_CHECK_INTERRUPTS );
-		}
-	}
+	bool interrupts_enabled_before =(gCPUState.CPUControl[C0_SR]._u32_0 & SR_IE) != 0;
 
-	// Check IE
-	if(((new_value & SR_IE) == 1) && ((gCPUState.CPUControl[C0_SR]._u32_0 & SR_IE) == 0)) //If enable interrupt
-	{
-		//CPU will check interrupts at the next cycle
-		if((gCPUState.CPUControl[C0_SR]._u32_0 & gCPUState.CPUControl[C0_CAUSE]._u32_0 & 0x0000FF00)) // or CAUSE_IPMASK
-		{
-			gCPUState.AddJob( CPU_CHECK_INTERRUPTS );
-		}
-	}
-
-	// Really important ~ otherwise most games won't work..
 	gCPUState.CPUControl[C0_SR]._u32_0 = (u32) new_value;
 
+	bool interrupts_enabled_after = (gCPUState.CPUControl[C0_SR]._u32_0 & SR_IE) != 0;
+
 	/*
-	Really important note :
-	This new impl fixes several games ex : Extreme-G XG2 and Tom and Jerry.
-	Also fixes Wayne Gretzky's 3D Hockey '98 to be zoomed in too far (really nasty glitch)
-	Still needs a bit of work, but so far we are on the right path now.
+-	Really important note :
+-	Disabling this flag fixes some games ex : Extreme-G XG2 and Tom and Jerry.
+-	Also fixes Wayne Gretzky's 3D Hockey '98 to be zoomed in too far (really nasty glitch)
+-	Still needs a bit of work, but so far we are on the right path now.
 	*/
+
+	if(!gCheckN64FPUsageDisable)	// Check FP usage
+	{
+		R4300_SetCop1Enable( (gCPUState.CPUControl[C0_SR]._u64 & SR_CU1) != 0 );
+	}
+
+	if ( !interrupts_enabled_before && interrupts_enabled_after )
+	{
+		if (gCPUState.CPUControl[C0_SR]._u32_0 & gCPUState.CPUControl[C0_CAUSE]._u32_0 & CAUSE_IPMASK)
+		{
+			gCPUState.AddJob( CPU_CHECK_INTERRUPTS );
+		}
+	}
+
+	/*if(gCheckN64FPUsage)	// Check FP usage
+	{
+		if (new_value & SR_CU1)
+			R4300_SetCop1Enable(true);	//Enabling FP	0014525
+		else
+			R4300_SetCop1Enable(false);	//Disabling FP	3125809
+	}*/
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -1868,10 +1874,10 @@ static void R4300_CALL_TYPE R4300_Cop0_MTC0( R4300_CALL_SIGNATURE )
 
 	switch ( op_code.fs )
 	{
-		case C0_INX:
+		/*case C0_INX:
 			gCPUState.CPUControl[C0_INX]._u64 = new_value & 0x8000003F;
 			DBGConsole_Msg(0, "Setting Index register to 0x%08x", (u32)new_value);
-			break;
+			break;*/
 
 		case C0_CONTEXT:
 			DBGConsole_Msg(0, "Setting context register to 0x%08x", (u32)new_value);
@@ -2042,11 +2048,11 @@ static void R4300_CALL_TYPE R4300_TLB_TLBP( R4300_CALL_SIGNATURE ) 				// TLB Pr
 
 		//CPUHalt();
 	}
-	else
+	/*else
 	{
 		//DBGConsole_Msg(0, "   Matching TLB Entry Found for 0x%08x", dwEntryHi);
 		//CPUHalt();
-	}
+	}*/
 
 }
 
@@ -2142,9 +2148,6 @@ static void R4300_CALL_TYPE R4300_Cop1_CFC1( R4300_CALL_SIGNATURE ) 		// move Co
 		//	DBGConsole_Msg( 0, "Reading FCR32 - %08x at %08x", gGPR[ op_code.rt ]._u32_0, gCPUState.CurrentPC  );
 		//}
 	}
-	else
-	{
-	}
 }
 
 static void R4300_CALL_TYPE R4300_Cop1_CTC1( R4300_CALL_SIGNATURE ) 		// move Control word To Copro 1
@@ -2196,10 +2199,10 @@ static void R4300_CALL_TYPE R4300_Cop1_CTC1( R4300_CALL_SIGNATURE ) 		// move Co
 
 		SET_ROUND_MODE( gRoundingMode );
 	}
-	else
+	/*else
 	{
 
-	}
+	}*/
 
 	// Now generate lots of exceptions :-)
 }
@@ -2457,7 +2460,7 @@ static void R4300_CALL_TYPE R4300_Cop1_S_ABS( R4300_CALL_SIGNATURE )
 
 	SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Single( op_code.fd, vfpu_abs(fX) );
+	StoreFPR_Single( op_code.fd, fabs(fX) );
 }
 
 
@@ -2750,7 +2753,7 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ABS( R4300
 
 	SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Double< FullLength >( op_code.fd, vfpu_abs(fX) );
+	StoreFPR_Double< FullLength >( op_code.fd, fabs(fX) );
 }
 
 template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ADD( R4300_CALL_SIGNATURE )
@@ -2763,7 +2766,18 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ADD( R4300
 
 	SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Double< FullLength >( op_code.fd, fX + fY );
+	if (!gSimulateDoubleDisabled)
+	{
+		StoreFPR_Double< FullLength >( op_code.fd, fX + fY );
+	}
+	else
+	{
+		// Use doubles.. "hack" for Buck Bumble
+		b64 fM = LoadFPR_Double< FullLength >( op_code.fs );
+		b64 fN = LoadFPR_Double< FullLength >( op_code.ft );
+
+		StoreFPR_Double_2< FullLength >( op_code.fd, fM + fN );
+	}
 }
 
 template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_SUB( R4300_CALL_SIGNATURE )

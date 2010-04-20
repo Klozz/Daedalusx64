@@ -328,6 +328,10 @@ bool IRomSettingsDB::OpenSettingsFile( const char * filename )
 		{
 			settings.IncreaseVI_Event = p_property->GetBooleanValue( false );
 		}
+		if( p_section->FindProperty( "CheckN64FPUsageDisable", &p_property ) )
+		{
+			settings.CheckN64FPUsageDisable = p_property->GetBooleanValue( false );
+		}
 
 		SetSettings( id, settings );
 	}
@@ -436,9 +440,9 @@ void IRomSettingsDB::OutputSectionDetails( const RomID & id, const RomSettings &
 	
 	fprintf(fh, "Name=%s\n", settings.GameName.c_str());
 
-	if( !settings.Comment.empty() )		fprintf(fh, "Comment=%s\n", settings.Comment.c_str());
-	if( !settings.Info.empty() )		fprintf(fh, "Info=%s\n", settings.Info.c_str());
-	if( !settings.Preview.empty() )		fprintf(fh, "Preview=%s\n", settings.Preview.c_str());
+	if( !settings.Comment.empty() )				fprintf(fh, "Comment=%s\n", settings.Comment.c_str());
+	if( !settings.Info.empty() )				fprintf(fh, "Info=%s\n", settings.Info.c_str());
+	if( !settings.Preview.empty() )				fprintf(fh, "Preview=%s\n", settings.Preview.c_str());
 	if( !settings.PatchesEnabled )				fprintf(fh, "PatchesEnabled=no\n");
 	if( !settings.SpeedSyncEnabled )			fprintf(fh, "SpeedSyncEnabled=no\n");
 	if( !settings.DynarecSupported )			fprintf(fh, "DynarecSupported=no\n");
@@ -453,6 +457,7 @@ void IRomSettingsDB::OutputSectionDetails( const RomID & id, const RomSettings &
 	if( settings.NeedHackforZelda )				fprintf(fh, "NeedHackforZelda=yes\n");
 	if( settings.FlushTrisHack )				fprintf(fh, "FlushTrisHack=yes\n");
 	if( settings.IncreaseVI_Event )				fprintf(fh, "IncreaseVI_Event=yes\n");
+	if( settings.CheckN64FPUsageDisable )		fprintf(fh, "CheckN64FPUsageDisable=yes\n");
 
 	if ( settings.ExpansionPakUsage != PAK_STATUS_UNKNOWN )	fprintf(fh, "ExpansionPakUsage=%s\n", ROM_GetExpansionPakUsageName( settings.ExpansionPakUsage ) );
 	if ( settings.SaveType != SAVE_TYPE_UNKNOWN )			fprintf(fh, "SaveType=%s\n", ROM_GetSaveTypeName( settings.SaveType ) );
@@ -516,6 +521,7 @@ RomSettings::RomSettings()
 ,	NeedHackforZelda( false )
 ,	FlushTrisHack( false )
 ,	IncreaseVI_Event( false )
+,	CheckN64FPUsageDisable( false )
 ,	RescanCount(0)
 {
 }
@@ -551,5 +557,6 @@ void	RomSettings::Reset()
 	NeedHackforZelda = false;
 	FlushTrisHack = false;
 	IncreaseVI_Event = false;
+	CheckN64FPUsageDisable = false;
 	RescanCount = 0;
 }

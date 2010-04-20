@@ -127,6 +127,7 @@ struct SRomPreferences
 	bool						NeedHackforZelda;
 	bool						FlushTrisHack;
 	bool						IncreaseVI_Event;
+	bool						CheckN64FPUsageDisable;
 
 	ETextureHashFrequency		CheckTextureHashFrequency;
 	EFrameskipValue				Frameskip;

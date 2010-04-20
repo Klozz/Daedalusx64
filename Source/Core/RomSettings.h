@@ -74,6 +74,7 @@ struct RomSettings
 	bool				NeedHackforZelda;
 	bool				FlushTrisHack;
 	bool				IncreaseVI_Event;
+	bool				CheckN64FPUsageDisable;
 
 	u32					RescanCount;
 	

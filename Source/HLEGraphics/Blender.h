@@ -35,8 +35,6 @@ void DebugBlender();
 
 #endif	// __BLENDER_H__
 
-#endif	// __BLENDER_H__
-
 
 
 

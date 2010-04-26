@@ -254,6 +254,10 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		{
 			preferences.CheckN64FPUsageDisable = property->GetBooleanValue( false );
 		}
+		if( section->FindProperty( "MemoryAccessOptimisation", &property ) ) 	 
+		{ 	 
+            preferences.MemoryAccessOptimisation = property->GetBooleanValue( false ); 	 
+		}
 		if( section->FindProperty( "CheckTextureHashFrequency", &property ) )
 		{
 			preferences.CheckTextureHashFrequency = ROM_GetTextureHashFrequencyFromFrames( atoi( property->GetValue() ) );
@@ -314,6 +318,7 @@ void IPreferences::OutputSectionDetails( const RomID & id, const SRomPreferences
 	fprintf(fh, "FlushTrisHack=%d\n",preferences.FlushTrisHack);
 	fprintf(fh, "IncreaseVI_Event=%d\n",preferences.IncreaseVI_Event);
 	fprintf(fh, "CheckN64FPUsageDisable=%d\n",preferences.CheckN64FPUsageDisable);
+	fprintf(fh, "MemoryAccessOptimisation=%d\n",preferences.MemoryAccessOptimisation);
 	fprintf(fh, "CheckTextureHashFrequency=%d\n", ROM_GetTexureHashFrequencyAsFrames( preferences.CheckTextureHashFrequency ) );
 	fprintf(fh, "Frameskip=%d\n", ROM_GetFrameskipValueAsInt( preferences.Frameskip ) );
 	fprintf(fh, "AudioEnabled=%d\n", preferences.AudioEnabled);
@@ -446,6 +451,7 @@ SRomPreferences::SRomPreferences()
 	,	FlushTrisHack( false )
 	,	IncreaseVI_Event( false )
 	,	CheckN64FPUsageDisable( false )
+	,   MemoryAccessOptimisation( false )
 	,	CheckTextureHashFrequency( THF_DISABLED )
 	,	Frameskip( FV_DISABLED )
 	,	AudioEnabled( APM_DISABLED )
@@ -474,6 +480,7 @@ void SRomPreferences::Reset()
 	FlushTrisHack = false;
 	IncreaseVI_Event = false;
 	CheckN64FPUsageDisable = false;
+	MemoryAccessOptimisation = false;
 	CheckTextureHashFrequency = THF_DISABLED;
 	Frameskip = FV_DISABLED;
 	AudioEnabled = APM_DISABLED;
@@ -501,6 +508,7 @@ void	SRomPreferences::Apply() const
 	gFlushTrisHack = g_ROM.settings.FlushTrisHack || FlushTrisHack;
 	gIncreaseVI_Event = g_ROM.settings.IncreaseVI_Event || IncreaseVI_Event;
 	gCheckN64FPUsageDisable = g_ROM.settings.CheckN64FPUsageDisable || CheckN64FPUsageDisable;
+	gMemoryAccessOptimisation = g_ROM.settings.MemoryAccessOptimisation || MemoryAccessOptimisation;
 	gCheckTextureHashFrequency = ROM_GetTexureHashFrequencyAsFrames( CheckTextureHashFrequency );
 	gFrameskipValue = Frameskip;
 

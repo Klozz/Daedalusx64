@@ -128,6 +128,7 @@ struct SRomPreferences
 	bool						FlushTrisHack;
 	bool						IncreaseVI_Event;
 	bool						CheckN64FPUsageDisable;
+	bool                        MemoryAccessOptimisation;
 
 	ETextureHashFrequency		CheckTextureHashFrequency;
 	EFrameskipValue				Frameskip;

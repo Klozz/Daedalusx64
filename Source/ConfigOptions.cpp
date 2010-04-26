@@ -44,6 +44,7 @@ bool	gNeedHackforZelda			= false;	// Hacks and such needed only for Zelda OOT an
 bool	gFlushTrisHack				= false;	// Hack for Pilot Wings to get rid of black tris under your plane
 bool	gIncreaseVI_Event			= false;	// Cures flicker on Paper Mario
 bool	gCheckN64FPUsageDisable		= false;	// This fixes several games, check R4300.cpp > R4300_SetSR : 511
+bool    gMemoryAccessOptimisation	= false;    // Enable the memory access optmisation
 u32		gControllerIndex			= 0;		// Which controller config to set
 
 DaedalusConfig g_DaedalusConfig =

@@ -58,14 +58,14 @@ extern bool gTLBHackEnabled;
 extern bool gDoubleDisplayEnabled;
 extern bool gSimulateDoubleDisabled;
 extern bool	gIncreaseVI_Event;
+extern bool gCheckN64FPUsageDisable;
+extern bool gMemoryAccessOptimisation;
 //ToDo: Needs moving to Graphics plugin config
 extern bool gViewPortHackEnabled;
 extern bool gFlatShadeDisabled;
 extern bool	gCleanSceneEnabled;
 extern bool gNeedHackforZelda;
 extern bool	gFlushTrisHack;
-extern bool gCheckN64FPUsageDisable;
-// Needs moving to Graphics plugin config
 extern u32	gCheckTextureHashFrequency;
 //ToDo: Needs moving to Input plugin config
 extern u32	gControllerIndex;	

@@ -75,6 +75,7 @@ struct RomSettings
 	bool				FlushTrisHack;
 	bool				IncreaseVI_Event;
 	bool				CheckN64FPUsageDisable;
+	bool				MemoryAccessOptimisation;
 
 	u32					RescanCount;
 	

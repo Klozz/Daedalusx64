@@ -17,24 +17,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "Utility/Singleton.h"
-
 #ifndef __BLENDER_H__
 #define __BLENDER_H__
 
-class CBlender : public CSingleton< CBlender >
-{
-public:
-	~CBlender() {}
+//*************************************************************************************
+// 
+//*************************************************************************************
 
-	void	InitBlenderMode();
+void InitBlenderMode();
 
-private:
-	// Debug stuff
+// Debug stuff
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	void	DebugBlender();
+
+void DebugBlender();
+
 #endif
-};
+
+#endif	// __BLENDER_H__
 
 #endif	// __BLENDER_H__
 

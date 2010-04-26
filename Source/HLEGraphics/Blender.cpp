@@ -172,7 +172,7 @@ const char * sc_szBlA2[4]  = { "1-A", "AMem", "1",      "?" };
 //*****************************************************************************
 //
 //*****************************************************************************
-void CBlender::DebugBlender()	
+void DebugBlender()	
 {
 	u32 blendmode_1 = u32( gRDPOtherMode.blender & 0xcccc );
 	u32 blendmode_2 = u32( gRDPOtherMode.blender & 0x3333 );
@@ -196,7 +196,7 @@ void CBlender::DebugBlender()
 //*****************************************************************************
 //
 //*****************************************************************************
-void CBlender::InitBlenderMode()					// Set Alpha Blender mode
+void InitBlenderMode()					// Set Alpha Blender mode
 {
 	u32 blendmode = u32( gRDPOtherMode._u64 & 0xffff0000 );
 	u32 cycletype = gRDPOtherMode.cycle_type;

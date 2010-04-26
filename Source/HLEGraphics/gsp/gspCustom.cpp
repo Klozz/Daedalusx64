@@ -545,7 +545,7 @@ void DLParser_RDPHalf1_GoldenEye( MicroCodeCommand command )
 	if ( (command.cmd1)>>24 != 0xce )	
 		return;
 
-	u32 tile;
+	u32 tile = 0;
 	u32 pc = gDisplayListStack.back().addr;		// This points to the next instruction
 	u32 * Cmd = (u32 *)(g_pu8RamBase + pc);
 

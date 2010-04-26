@@ -825,7 +825,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	//
 	// Initiate Blender
 	//
-	CBlender::Get()->InitBlenderMode();
+	InitBlenderMode();
 	//
 	//
 	// I can't think why the hand in mario's menu screen is rendered with an opaque rendermode,

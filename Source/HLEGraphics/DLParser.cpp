@@ -730,12 +730,13 @@ void DLParser_PushDisplayList( const DList & dl )
 {
 	gDisplayListStack.push_back( dl );
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	if ( gDisplayListStack.size() > 30 )
 	{
 		// Stack is too deep - probably an error
 		DAEDALUS_DL_ERROR( "Stack is over 30 - something is probably wrong\n" );
 	}
-
+#endif
 	DL_PF("    Pushing DisplayList 0x%08x", dl.addr);
 	DL_PF(" ");
 	DL_PF("\\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/");
@@ -1210,6 +1211,7 @@ void DLParser_GBI2_Noop( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_Reserved0( MicroCodeCommand command )
 {	
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	DL_PF( "~*Not Implemented" );
 
 	// Spiderman
@@ -1220,12 +1222,15 @@ void DLParser_GBI1_Reserved0( MicroCodeCommand command )
 		RDP_NOIMPL("RDP: Reserved1 (0x%08x 0x%08x)", command.cmd0, command.cmd1);
 		warned = true;
 	}
+#endif	
+	// Not implemented!
 }
 //*****************************************************************************
 //
 //*****************************************************************************
 void DLParser_GBI1_Reserved1( MicroCodeCommand command )
 {	
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	DL_PF( "~*Not Implemented" );
 
 	// Spiderman
@@ -1236,13 +1241,16 @@ void DLParser_GBI1_Reserved1( MicroCodeCommand command )
 		RDP_NOIMPL("RDP: Reserved1 (0x%08x 0x%08x)", command.cmd0, command.cmd1);
 		warned = true;
 	}
+#endif	
+	// Not implemented!
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
 void DLParser_GBI1_Reserved2( MicroCodeCommand command )
-{	
+{
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	DL_PF( "~*Not Implemented" );
 
 	// Spiderman
@@ -1253,6 +1261,8 @@ void DLParser_GBI1_Reserved2( MicroCodeCommand command )
 		RDP_NOIMPL("RDP: Reserved2 (0x%08x 0x%08x)", command.cmd0, command.cmd1);
 		warned = true;
 	}
+#endif	
+	// Not implemented!
 }
 
 
@@ -1260,7 +1270,8 @@ void DLParser_GBI1_Reserved2( MicroCodeCommand command )
 //
 //*****************************************************************************
 void DLParser_GBI1_Reserved3( MicroCodeCommand command )
-{	
+{
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	DL_PF( "~*Not Implemented" );
 
 	// Spiderman
@@ -1271,6 +1282,8 @@ void DLParser_GBI1_Reserved3( MicroCodeCommand command )
 		RDP_NOIMPL("RDP: Reserved3 (0x%08x 0x%08x)", command.cmd0, command.cmd1);
 		warned = true;
 	}
+#endif	
+	// Not implemented!
 }
 
 //*****************************************************************************

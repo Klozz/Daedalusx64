@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "stdafx.h"
 #include "ConfigOptions.h"
 
+bool	gSpeedSyncEnabled			= false;	// Enable to limit frame rate.
 bool	gGraphicsEnabled			= true;		// Show graphics
 bool	gDynarecEnabled				= true;		// Use dynamic recompilation
 bool	gDynarecStackOptimisation	= true;		// Enable the dynarec stack optmisation

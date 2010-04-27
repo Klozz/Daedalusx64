@@ -222,8 +222,6 @@ static void *Read_8408_8408( u32 address )
 //*****************************************************************************
 //
 //*****************************************************************************
-#undef DISPLAY_DPC_READS
-
 static void *Read_8410_841F( u32 address )
 {
 	// 0x0410 0000 to 0x041F FFFF DP Command Registers
@@ -234,7 +232,6 @@ static void *Read_8410_841F( u32 address )
 
 		u32 offset = address & 0xFF;
 
-#ifdef DISPLAY_DPC_READS
 		u32 value = *(u32*)((u8 *)g_pMemoryBuffers[MEM_DPC_REG] + offset);
 
 		switch (DPC_BASE_REG + offset)
@@ -286,7 +283,6 @@ static void *Read_8410_841F( u32 address )
 				DBGConsole_Msg( 0, "Read from [WUnknown DPC reg]!" );
 				break;
 		}
-#endif
 
 		return (u8 *)g_pMemoryBuffers[MEM_DPC_REG] + offset;
 	}

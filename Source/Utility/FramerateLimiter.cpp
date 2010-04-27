@@ -33,8 +33,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //*****************************************************************************
 //
 //*****************************************************************************
-bool			gSpeedSyncEnabled;
-
 namespace
 {
 u64				gTicksBetweenVbls( 0 );				// How many ticks we want to delay between vertical blanks

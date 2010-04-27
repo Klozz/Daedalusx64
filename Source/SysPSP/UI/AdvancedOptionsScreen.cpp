@@ -128,6 +128,7 @@ IAdvancedOptionsScreen::IAdvancedOptionsScreen( CUIContext * p_context, const Ro
 	mElements.Add( new CBoolSetting( &mRomPreferences.FlatShadeDisabled, "Disable Flat Shade", "Whether Flat Shade is Disabled", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.FlushTrisHack, "Use Flushtris to write Zbuffer", "This is a hack, only for a few games, Pilot Wings 64 need this", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.CheckN64FPUsageDisable, "Disable N64 FP Usage Check", "Disabling it can cause many bad side effects, on the other hand sometimes it can fix or improve some games",  "Yes", "No" ) );
+	mElements.Add( new CBoolSetting( &mRomPreferences.MemoryAccessOptimisation, "Memory Access Optimisation", "Whether memory access optimization is enabled for this rom", "Enabled", "Disabled" ) );
 	//	mElements.Add( new CUISpacer( 16 ) );
 #ifndef DAEDALUS_PUBLIC_RELEASE	// Below option is irrelevant to end user or game especific, we force this option on roms.ini
 		mElements.Add( new CBoolSetting( &mRomPreferences.TLBHackEnabled, "GoldenEye TLB Hack", "Whether the TLB Hack for GoldenEye is enabled", "Enabled", "Disabled" ) );

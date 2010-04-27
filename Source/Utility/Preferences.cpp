@@ -200,7 +200,7 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		}
 		if( section->FindProperty( "SpeedSyncEnabled", &property ) )
 		{
-			preferences.SpeedSyncEnabled = property->GetBooleanValue( true );
+			preferences.SpeedSyncEnabled = property->GetBooleanValue( false );
 		}
 		if( section->FindProperty( "DynarecEnabled", &property ) )
 		{
@@ -437,7 +437,7 @@ void SGlobalPreferences::Apply() const
 //*****************************************************************************
 SRomPreferences::SRomPreferences()
 	:	PatchesEnabled( true )
-	,	SpeedSyncEnabled( true )
+	,	SpeedSyncEnabled( false )
 	,	DynarecEnabled( true )
 	,	DynarecStackOptimisation( true )
 	,	DynarecLoopOptimisation( true )
@@ -466,7 +466,7 @@ SRomPreferences::SRomPreferences()
 void SRomPreferences::Reset()
 {
 	PatchesEnabled = true;
-	SpeedSyncEnabled = true;
+	SpeedSyncEnabled = false;
 	DynarecEnabled = true;
 	DynarecStackOptimisation = true;
 	DynarecLoopOptimisation = true;

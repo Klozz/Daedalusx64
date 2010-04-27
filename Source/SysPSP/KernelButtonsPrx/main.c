@@ -8,13 +8,13 @@ PSP_MODULE_INFO("buttons", 0x1000, 1, 1);
  
 int getbuttons()
 {
-	u32 k1 = pspSdkGetK1();
+	int k1 = pspSdkSetK1(0);
 	 
-	pspSdkSetK1(0);
+	//pspSdkSetK1(0);
 	 
 	SceCtrlData pad;
 	 
-	sceCtrlReadBufferPositive(&pad, 1);
+	sceCtrlPeekBufferPositive(&pad, 1);
 	 
 	pspSdkSetK1(k1);
 

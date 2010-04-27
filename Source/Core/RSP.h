@@ -43,7 +43,9 @@ bool RSP_IsRunningHLE();	// Returns true if the rsp is running with HLE
 void RSP_Reset();
 void RSP_Step();
 
+#if 0
 void RSP_DumpVector(u32 reg);
 void RSP_DumpVectors(u32 reg1, u32 reg2, u32 reg3);
+#endif
 
 #endif

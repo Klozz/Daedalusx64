@@ -136,16 +136,14 @@ extern u32 SCR_HEIGHT;
 static u32 sViWidth = 320;
 static u32 sViHeight = 240;
 
-static const u32 gPlaceholderTextureWidth( 16 );
-static const u32 gPlaceholderTextureHeight( 16 );
 static const float gFillRectDepth( 0.0f );
 static const float gTexRectDepth( 0.0f );
 
 static const float gMaxZValue( 1.0f);
 
-static u32		__attribute__((aligned(16)))	gWhiteTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ];
-static u32		__attribute__((aligned(16)))	gPlaceholderTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ];
-static u32		__attribute__((aligned(16)))	gSelectedTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ];
+ALIGNED_GLOBAL(u32,gWhiteTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ], DATA_ALIGN);
+ALIGNED_GLOBAL(u32,gPlaceholderTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ], DATA_ALIGN);
+ALIGNED_GLOBAL(u32,gSelectedTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ], DATA_ALIGN);
 
 void			DaedalusVtx4::Interpolate( const DaedalusVtx4 & lhs, const DaedalusVtx4 & rhs, float factor )
 {

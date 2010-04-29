@@ -101,7 +101,7 @@ struct SRomPreferences;
 //*****************************************************************************
 struct RomInfo
 {
-	char		*szFileName;
+	char        szFileName[MAX_PATH + 1];
 	RomID		mRomID;					// The RomID (unique to this rom)
 
 	ROMHeader	rh;						// Copy of the ROM header, correctly byteswapped

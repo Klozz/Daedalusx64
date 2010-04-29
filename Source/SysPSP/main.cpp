@@ -47,7 +47,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility/Preferences.h"
 #include "Utility/Timer.h"
 
-#include "Graphics/VideoMemoryManager.h"
 #include "Graphics/GraphicsContext.h"
 
 #include "SysPSP/UI/UIContext.h"
@@ -300,12 +299,6 @@ static bool	Initialize()
 	strcpy( g_DaedalusConfig.szSaveDir, DAEDALUS_PSP_PATH( "SaveGames/" ) );
 
 	if (!System_Init())
-		return false;
-
-	if(!CVideoMemoryManager::Create())
-		return false;
-
-	if(!CGraphicsContext::Create())
 		return false;
 
 	return true;

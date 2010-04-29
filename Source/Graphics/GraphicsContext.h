@@ -57,10 +57,8 @@ public:
 	virtual	void BeginFrame() = 0;
 	virtual void EndFrame() = 0;
 	virtual bool UpdateFrame( bool wait_for_vbl ) = 0;
-	virtual void DoubleDisplayList() = 0;
 
 	virtual bool GetBufferSize(u32 * p_width, u32 * p_height) = 0;
-
 	virtual void SetDebugScreenTarget( ETargetSurface buffer ) = 0;
 
 	virtual void DumpNextScreen() = 0;

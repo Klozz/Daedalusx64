@@ -275,8 +275,8 @@ bool IGraphicsContext::UpdateFrame( bool wait_for_vbl )
 	}
 	if (PSP_TV_LACED)
 	{
-		u32 src = 0x40000000 | LACED_DRAW;
-		u32 dst = 0x40000000 | LACED_DISP;
+		u32 src = (u32)MAKE_UNCACHED_PTR((void*)LACED_DRAW);
+		u32 dst = (u32)MAKE_UNCACHED_PTR((void*)LACED_DISP);
 
 		sceGuStart(GU_DIRECT,ilist);
 		sceGuCopyImage(GU_PSM_8888, 0, 0, 720, 240, 768*2, reinterpret_cast< void * >(src + 768*4), 0, 0, 768, reinterpret_cast< void * >(dst));
@@ -567,7 +567,7 @@ bool IGraphicsContext::Initialise()
 	sceDisplayWaitVblankStart();
 	sceGuDisplay(GU_TRUE);
 
-	sceDisplaySetFrameBuf(reinterpret_cast< void * >(0x40000000 | reinterpret_cast< u32 >(disp_buffer)), BUF_WIDTH, GU_PSM_8888, PSP_DISPLAY_SETBUF_NEXTFRAME);
+	sceDisplaySetFrameBuf(MAKE_UNCACHED_PTR(disp_buffer), BUF_WIDTH, GU_PSM_8888, PSP_DISPLAY_SETBUF_NEXTFRAME);
 
 	mpBuffers[ 0 ] = draw_buffer_rel;
 	mpBuffers[ 1 ] = disp_buffer_rel;
@@ -640,7 +640,8 @@ void IGraphicsContext::SwitchToChosenDisplay()
 	sceDisplayWaitVblankStart();
 	sceGuDisplay(GU_TRUE);
 
-	void * frame_buffer = reinterpret_cast< void * >(0x40000000 | (reinterpret_cast< u32 >(save_disp_rel) + reinterpret_cast< u32 >( sceGeEdramGetAddr() )));
+	void * frame_buffer = reinterpret_cast< void * >((reinterpret_cast< u32 >(save_disp_rel) + reinterpret_cast< u32 >( sceGeEdramGetAddr() )));
+	frame_buffer = MAKE_UNCACHED_PTR(frame_buffer);
 	sceDisplaySetFrameBuf(frame_buffer, BUF_WIDTH, GU_PSM_8888, PSP_DISPLAY_SETBUF_NEXTFRAME);
 
 	mpBuffers[ 0 ] = save_draw_rel;
@@ -689,7 +690,8 @@ void IGraphicsContext::SwitchToLcdDisplay()
 	sceDisplayWaitVblankStart();
 	sceGuDisplay(GU_TRUE);
 
-	void * frame_buffer = reinterpret_cast< void * >(0x40000000 | (reinterpret_cast< u32 >(save_disp_rel) + reinterpret_cast< u32 >( sceGeEdramGetAddr() )));
+	void * frame_buffer = reinterpret_cast< void * >((reinterpret_cast< u32 >(save_disp_rel) + reinterpret_cast< u32 >( sceGeEdramGetAddr() )));
+	frame_buffer = MAKE_UNCACHED_PTR(frame_buffer);
 	sceDisplaySetFrameBuf(frame_buffer, BUF_WIDTH, GU_PSM_8888, PSP_DISPLAY_SETBUF_NEXTFRAME);
 
 	sceGuStart(GU_CALL,list[listNum&1]);

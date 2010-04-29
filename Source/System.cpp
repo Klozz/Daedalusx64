@@ -30,6 +30,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Interface/RomDB.h"
 
+#include "Graphics/VideoMemoryManager.h"
+#include "Graphics/GraphicsContext.h"
+
 #include "Utility/FramerateLimiter.h"
 #include "Utility/Synchroniser.h"
 #include "Utility/Profiler.h"
@@ -131,6 +134,8 @@ SysEntityEntry SysInitTable[] =
 	{"Memory", Memory_Init, Memory_Fini},
 	{"Controller", CController::Create, CController::Destroy},
 	{"RomBuffer", RomBuffer::Create, RomBuffer::Destroy},
+	{"VideoMemory", CVideoMemoryManager::Create, NULL},
+	{"GraphicsContext", CGraphicsContext::Create,   CGraphicsContext::Destroy},
 };
 
 RomEntityEntry RomInitTable[] = 
@@ -180,7 +185,7 @@ bool System_Init()
 
 void System_Open(const char *romname)
 {
-	g_ROM.szFileName = strdup(romname);
+	strcpy(g_ROM.szFileName, romname);
 	for(int i = 0; i < nRomInitEntries; i++)
 	{
 		if (RomInitTable[i].open == NULL)
@@ -201,8 +206,6 @@ void System_Close()
 		DBGConsole_Msg(0, "==>Close %s", RomInitTable[i].name);
 		RomInitTable[i].close();
 	}
-
-	free(g_ROM.szFileName);
 }
 
 void System_Finalize()

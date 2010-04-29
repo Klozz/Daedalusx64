@@ -131,7 +131,7 @@ class IRomSettingsDB : public CRomSettingsDB
 		SettingsMap				mSettings;
 
 		bool					mDirty;				// (STRMNNRMN - Changed since read from disk?)
-		char*					mFilename;
+		char					mFilename[MAX_PATH + 1];
 };
 
 
@@ -158,7 +158,6 @@ template<> bool	CSingleton< CRomSettingsDB >::Create()
 //*****************************************************************************
 IRomSettingsDB::IRomSettingsDB()
 :	mDirty( false )
-,	mFilename( NULL )
 {
 }
 
@@ -171,9 +170,6 @@ IRomSettingsDB::~IRomSettingsDB()
 	{
 		Commit();
 	}
-
-	if (mFilename)
-		free(mFilename);
 }
 
 //*****************************************************************************
@@ -232,7 +228,7 @@ bool IRomSettingsDB::OpenSettingsFile( const char * filename )
 	//
 	// Remember the filename
 	//
-	mFilename = strdup(filename);
+	strcpy(mFilename, filename);
 
 	CIniFile * p_ini_file( CIniFile::Create( filename ) );
 	if( p_ini_file == NULL )

@@ -170,7 +170,6 @@ IUIContext::~IUIContext()
 		CGraphicsContext::Get()->Clear( true, true );
 		CGraphicsContext::Get()->EndFrame();
 		CGraphicsContext::Get()->UpdateFrame( false );
-		CGraphicsContext::Get()->DoubleDisplayList();
 	}
 }
 
@@ -476,6 +475,5 @@ void	IUIContext::BeginRender()
 void	IUIContext::EndRender()
 {
 	CGraphicsContext::Get()->EndFrame();
-	CGraphicsContext::Get()->DoubleDisplayList();
 	CGraphicsContext::Get()->UpdateFrame( true );
 }

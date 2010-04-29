@@ -22,8 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "CPU.h"
 #include "Registers.h"					// For REG_?? defines
-#include "RSP_HLE.h"
-#include "RSP.h"
 #include "Memory.h"
 #include "Interrupt.h"
 #include "ROMBuffer.h"
@@ -136,7 +134,7 @@ template< bool TranslateOp > __forceinline void CPU_EXECUTE_OP()
 // Keep executing instructions until there are other tasks to do (i.e. gCPUState.GetStuffToDo() is set)
 // Process these tasks and loop
 //*****************************************************************************
-template < bool RunRSP > void CPU_Go()
+void CPU_Go()
 {
 	DAEDALUS_PROFILE( __FUNCTION__ );
 
@@ -148,10 +146,6 @@ template < bool RunRSP > void CPU_Go()
 		u32	stuff_to_do( gCPUState.GetStuffToDo() );
 		while(stuff_to_do == 0)
 		{
-			if ( RunRSP )
-			{
-				RSP_Step();						// At this point we know that the RSP is running. RSPStep() asserts that it is not halted
-			}
 			CPU_EXECUTE_OP< false >();
 
 			stuff_to_do = gCPUState.GetStuffToDo();
@@ -165,13 +159,7 @@ template < bool RunRSP > void CPU_Go()
 
 void Inter_SelectCore()
 {
-	bool run_rsp( RSP_IsRunningLLE() );
-
-	if (run_rsp)
-		g_pCPUCore = CPU_Go< true >;
-	else
-		g_pCPUCore = CPU_Go< false >;
-	
+   g_pCPUCore = CPU_Go;	
 }
 
 //*****************************************************************************
@@ -202,11 +190,6 @@ void CPU_Step()
 	CPU_CheckStuffToDo();
 
 	CPU_EXECUTE_OP< true >();
-
-	if ( RSP_IsRunningLLE() )
-	{
-		RSP_Step();
-	}
 
 	CDebugConsole::Get()->UpdateDisplay();
 }

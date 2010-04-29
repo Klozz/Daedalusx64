@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "CPU.h"
 #include "System.h"
 #include "Registers.h"					// For REG_?? defines
-#include "RSP_HLE.h"
 #include "RSP.h"
 #include "Memory.h"
 #include "Interrupt.h"
@@ -689,7 +688,6 @@ void CPU_HANDLE_COUNT_INTERRUPT()
 			}
 			else
 			{
-				//if(gIncreaseVI_Event)
 				if(gIncreaseVI_Event)
 				{	//
 					// This stops the flicker on Paper Mario..

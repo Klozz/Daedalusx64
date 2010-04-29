@@ -872,7 +872,6 @@ void MemoryUpdateSPStatus( u32 flags )
 	else if ( stop_rsp )
 	{
 		DAEDALUS_ASSERT( !RSP_IsRunningHLE(), "Stopping RSP while HLE task still running. Not good!" );
-		CPU_SelectCore();
 	}
 }
 

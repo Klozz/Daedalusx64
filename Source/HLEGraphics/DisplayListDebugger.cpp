@@ -810,7 +810,6 @@ void IDisplayListDebugger::Run()
 		}
 
 		CGraphicsContext::Get()->UpdateFrame( false );
-		CGraphicsContext::Get()->DoubleDisplayList();
 
 		//sceDisplayWaitVblankStart();
 

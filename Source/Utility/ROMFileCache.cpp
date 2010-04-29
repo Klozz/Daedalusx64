@@ -211,8 +211,6 @@ ROMFileCache::CacheIdx	ROMFileCache::GetCacheIndex( u32 address )
 		chunk_info.StartOffset = GetChunkStartAddress( address );
 		chunk_info.LastUseIdx = ++mMRUIdx;
 
-		u32		chunk_map_idx( AddressToChunkMapIndex( address ) );
-
 		DAEDALUS_ASSERT( chunk_map_idx < mChunkMapEntries, "Chunk address is out of range?" );
 		mpChunkMap[ chunk_map_idx ] = selected_idx;
 

@@ -202,10 +202,10 @@ static EProcessResult RSP_HLE_Graphics()
 			if( result == PR_COMPLETED && handler )
 				handler->OnDisplayListComplete();
 		#endif
-		return PR_COMPLETED;
+		result = PR_COMPLETED;
 	}
 
-	if ( gHLEGraphicsEnabled && gGraphicsPlugin != NULL )
+	else if ( gHLEGraphicsEnabled && gGraphicsPlugin != NULL )
 	{
 		DAEDALUS_PROFILE( "HLE: Graphics" );
 
@@ -225,17 +225,16 @@ static EProcessResult RSP_HLE_Graphics()
 		gGraphicsPlugin->ProcessDList();
 	#endif
 		result = PR_COMPLETED;
-	//Check before each return for Batch Test to operate properly
-	#ifdef DAEDALUS_BATCH_TEST_ENABLED
-		CBatchTestEventHandler * handler( BatchTest_GetHandler() );
-		if( result == PR_COMPLETED && handler )
-			handler->OnDisplayListComplete();
-	#endif
-		return PR_COMPLETED;
 	}
-	else
-
-	return PR_NOT_STARTED;
+	else 	 
+		result = PR_NOT_STARTED; 	 
+	  	 
+#ifdef DAEDALUS_BATCH_TEST_ENABLED 	 
+         CBatchTestEventHandler * handler( BatchTest_GetHandler() ); 	 
+         if( result == PR_COMPLETED && handler ) 	 
+                 handler->OnDisplayListComplete(); 	 
+#endif
+		return result;
 }
 
 //*****************************************************************************
@@ -335,13 +334,15 @@ void RSP_HLE_ProcessTask()
 			break;
 	}
 
-	bool	change_core( false );
 	switch( result )
 	{
 	case PR_NOT_STARTED:
-		// Not started. Use LLE; change cores
-		change_core = true;
-		gRSPHLEActive = false;
+		/*while((Memory_SP_GetRegister( SP_STATUS_REG )& SP_STATUS_HALT) == 0)
+		{
+			DAEDALUS_ERROR("PR NOT STARTED");
+			RSP_Step();
+		}*/
+		//gRSPHLEActive = false;
 		break;
 
 	case PR_STARTED:
@@ -353,7 +354,6 @@ void RSP_HLE_ProcessTask()
 			DAEDALUS_ASSERT( !gRSPHLEActive || (status & SP_STATUS_HALT) == 0, "HLE active (%d), but HALT set (%08x - was %08x on entry)", gRSPHLEActive, status, orig_status );
 #endif
 		}
-
 		break;
 
 	case PR_COMPLETED:
@@ -364,10 +364,5 @@ void RSP_HLE_ProcessTask()
 	default:
 		DAEDALUS_ERROR( "Unhandled EProcessResult: %d", result );
 		break;
-	}
-
-	if( change_core )
-	{
-		CPU_SelectCore();
 	}
 }

@@ -153,7 +153,7 @@ void DLParser_GBI1_ModifyVtx( MicroCodeCommand command )
 {
 	const u32 FACTOR = 2; // This might need a bit of changing for other microcodes
 
-	u32 where =  (command.cmd0 >> 16) & 0xFF;
+	u32 w =  (command.cmd0 >> 16) & 0xFF;
 	u32 vert   = ((command.cmd0      ) & 0xFFFF) / FACTOR;
 	u32 value  = command.cmd1;
 
@@ -163,17 +163,17 @@ void DLParser_GBI1_ModifyVtx( MicroCodeCommand command )
 		return;
 	}
 
-	switch ( where )
+	switch ( w )
 	{
 	case G_MWO_POINT_RGBA:
 	case G_MWO_POINT_ST:
 	case G_MWO_POINT_XYSCREEN:
 	case G_MWO_POINT_ZSCREEN:
-		PSPRenderer::Get()->ModifyVertexInfo(where, vert, value);
+		PSPRenderer::Get()->ModifyVertexInfo(w, vert, value);
 		break;
 	default:
-		DBGConsole_Msg( 0, "ModifyVtx - Setting vert data 0x%02x, 0x%08x", where, value );
-		DL_PF( "      Setting unknown value: 0x%02x, 0x%08x", where, value );
+		DBGConsole_Msg( 0, "ModifyVtx - Setting vert data 0x%02x, 0x%08x", w, value );
+		DL_PF( "      Setting unknown value: 0x%02x, 0x%08x", w, value );
 		break;
 	}
 }
@@ -475,7 +475,6 @@ void DLParser_GBI1_BranchZ( MicroCodeCommand command )
 //
 void DLParser_GBI1_LoadUCode( MicroCodeCommand command ) 
 { 
-   // u32 pc = gDisplayListStack.back().addr;
 	u32 code_base = (u32)(command._u64 & 0x1fffffff);
     u32 code_size = 0x1000; 
     u32 data_base = gRDPHalf1 & 0x1fffffff;         // Preceeding RDP_HALF1 sets this up
@@ -718,19 +717,20 @@ void DLParser_GBI2_SetOtherModeH( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_Texture( MicroCodeCommand command )
 {
-        //u32 bowtie = (command.cmd0>>16)&0xFF;         // Don't care about this
-        gTextureLevel = (command.cmd0>>11)&0x07;
-        gTextureTile  = (command.cmd0>>8 )&0x07;
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+    gTextureLevel = (command.cmd0>>11)&0x07;
+    gTextureTile  = (command.cmd0>>8 )&0x07;
+#endif
 
-        bool enable =    ((command.cmd0    )&0xFF) != 0;                        // Seems to use 0x01
-        f32 scale_s = f32((command.cmd1>>16)&0xFFFF) / (65536.0f * 32.0f);
-        f32 scale_t = f32((command.cmd1    )&0xFFFF) / (65536.0f * 32.0f);
+    bool enable =    ((command.cmd0    )&0xFF) != 0;                        // Seems to use 0x01
+    f32 scale_s = f32((command.cmd1>>16)&0xFFFF) / (65536.0f * 32.0f);
+    f32 scale_t = f32((command.cmd1    )&0xFFFF) / (65536.0f * 32.0f);
 
-        DL_PF("    Level: %d Tile: %d %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
-        DL_PF("    ScaleS: %f, ScaleT: %f", scale_s*32.0f, scale_t*32.0f);
+    DL_PF("    Level: %d Tile: %d %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
+    DL_PF("    ScaleS: %f, ScaleT: %f", scale_s*32.0f, scale_t*32.0f);
 
-        PSPRenderer::Get()->SetTextureEnable( enable );
-        PSPRenderer::Get()->SetTextureScale( scale_s, scale_t );
+    PSPRenderer::Get()->SetTextureEnable( enable );
+    PSPRenderer::Get()->SetTextureScale( scale_s, scale_t );
 }
 
 //*****************************************************************************
@@ -738,19 +738,20 @@ void DLParser_GBI1_Texture( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_Texture( MicroCodeCommand command )
 {
-        //u32 bowtie = (command.cmd0>>16)&0xFF;         // Don't care about this
-        gTextureLevel = (command.cmd0>>11)&0x07;
-        gTextureTile  = (command.cmd0>>8 )&0x07;
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+    gTextureLevel = (command.cmd0>>11)&0x07;
+    gTextureTile  = (command.cmd0>>8 )&0x07;
+#endif
 
-        bool enable =    ((command.cmd0    )&0xFF) != 0;                        // Seems to use 0x02
-        f32 scale_s = f32((command.cmd1>>16)&0xFFFF) / (65536.0f * 32.0f);
-        f32 scale_t = f32((command.cmd1    )&0xFFFF) / (65536.0f * 32.0f);
+    bool enable =    ((command.cmd0    )&0xFF) != 0;                        // Seems to use 0x02
+    f32 scale_s = f32((command.cmd1>>16)&0xFFFF) / (65536.0f * 32.0f);
+    f32 scale_t = f32((command.cmd1    )&0xFFFF) / (65536.0f * 32.0f);
 
-        DL_PF("    Level: %d Tile: %d %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
-        DL_PF("    ScaleS: %f, ScaleT: %f", scale_s*32.0f, scale_t*32.0f);
+    DL_PF("    Level: %d Tile: %d %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
+    DL_PF("    ScaleS: %f, ScaleT: %f", scale_s*32.0f, scale_t*32.0f);
 
-        PSPRenderer::Get()->SetTextureEnable( enable );
-        PSPRenderer::Get()->SetTextureScale( scale_s, scale_t );
+    PSPRenderer::Get()->SetTextureEnable( enable );
+    PSPRenderer::Get()->SetTextureScale( scale_s, scale_t );
 }
 
 //*****************************************************************************
@@ -758,48 +759,48 @@ void DLParser_GBI2_Texture( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_Quad( MicroCodeCommand command )
 {
-		// Ok this using the same fucntion as Line3D, which is wrong
-		// This command is supposed to draw the missing heart on Zelda: OOT and MM.
-		// Because of that we are marking Quad cmd as unimplemented, since we are still mising the heart.
+	// Ok this using the same fucntion as Line3D, which is wrong
+	// This command is supposed to draw the missing heart on Zelda: OOT and MM.
+	// Because of that we are marking Quad cmd as unimplemented, since we are still mising the heart.
 
 
-        // While the next command pair is Tri2, add vertices
-        u32 pc = gDisplayListStack.back().addr;
-        u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
+    // While the next command pair is Tri2, add vertices
+    u32 pc = gDisplayListStack.back().addr;
+    u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
 
-        bool tris_added = false;
+    bool tris_added = false;
 
-        while ( command.cmd == G_GBI2_QUAD )
-        {
-                // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
-                u32 v2_idx = ((command.cmd1>>16)&0xFF)/2;
-                u32 v1_idx = ((command.cmd1>>8 )&0xFF)/2;
-                u32 v0_idx = ((command.cmd1    )&0xFF)/2;
+    while ( command.cmd == G_GBI2_QUAD )
+    {
+            // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
+            u32 v2_idx = ((command.cmd1>>16)&0xFF)/2;
+            u32 v1_idx = ((command.cmd1>>8 )&0xFF)/2;
+            u32 v0_idx = ((command.cmd1    )&0xFF)/2;
 
-                u32 v5_idx = ((command.cmd0>>16)&0xFF)/2;
-                u32 v4_idx = ((command.cmd0>>8 )&0xFF)/2;
-                u32 v3_idx = ((command.cmd0    )&0xFF)/2;
+            u32 v5_idx = ((command.cmd0>>16)&0xFF)/2;
+            u32 v4_idx = ((command.cmd0>>8 )&0xFF)/2;
+            u32 v3_idx = ((command.cmd0    )&0xFF)/2;
 
-                tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
-                tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
+            tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+            tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
 
-                command.cmd0 = *pCmdBase++;
-                command.cmd1 = *pCmdBase++;
-                pc += 8;
+            command.cmd0 = *pCmdBase++;
+            command.cmd1 = *pCmdBase++;
+            pc += 8;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-                if ( command.cmd == G_GBI2_QUAD )
-                {
-                        DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.cmd0, command.cmd1, gInstructionName[ command.cmd ]);
-                }
+            if ( command.cmd == G_GBI2_QUAD )
+            {
+                    DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.cmd0, command.cmd1, gInstructionName[ command.cmd ]);
+            }
 #endif
-        }
-        gDisplayListStack.back().addr = pc-8;
+    }
+    gDisplayListStack.back().addr = pc-8;
 
-        if (tris_added)
-        {
-                PSPRenderer::Get()->FlushTris();
-        }
+    if (tris_added)
+    {
+            PSPRenderer::Get()->FlushTris();
+    }
 }
 
 //*****************************************************************************
@@ -807,45 +808,44 @@ void DLParser_GBI2_Quad( MicroCodeCommand command )
 //*****************************************************************************
 // XXX SpiderMan uses this command.
 void DLParser_GBI2_Line3D( MicroCodeCommand command )
-{
-		
-        // While the next command pair is Tri2, add vertices
-        u32 pc = gDisplayListStack.back().addr;
-        u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
+{	
+    // While the next command pair is Tri2, add vertices
+    u32 pc = gDisplayListStack.back().addr;
+    u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
 
-        bool tris_added = false;
+    bool tris_added = false;
 
-        while ( command.cmd == G_GBI2_LINE3D )
-        {
-                // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
-                u32 v2_idx = ((command.cmd1>>16)&0xFF)/2;
-                u32 v1_idx = ((command.cmd1>>8 )&0xFF)/2;
-                u32 v0_idx = ((command.cmd1    )&0xFF)/2;
+    while ( command.cmd == G_GBI2_LINE3D )
+    {
+            // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
+            u32 v2_idx = ((command.cmd1>>16)&0xFF)/2;
+            u32 v1_idx = ((command.cmd1>>8 )&0xFF)/2;
+            u32 v0_idx = ((command.cmd1    )&0xFF)/2;
 
-                u32 v5_idx = ((command.cmd0>>16)&0xFF)/2;
-                u32 v4_idx = ((command.cmd0>>8 )&0xFF)/2;
-                u32 v3_idx = ((command.cmd0    )&0xFF)/2;
+            u32 v5_idx = ((command.cmd0>>16)&0xFF)/2;
+            u32 v4_idx = ((command.cmd0>>8 )&0xFF)/2;
+            u32 v3_idx = ((command.cmd0    )&0xFF)/2;
 
-                tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
-                tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
+            tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+            tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
 
-                command.cmd0 = *pCmdBase++;
-                command.cmd1 = *pCmdBase++;
-                pc += 8;
+            command.cmd0 = *pCmdBase++;
+            command.cmd1 = *pCmdBase++;
+            pc += 8;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-                if ( command.cmd == G_GBI2_LINE3D )
-                {
-                        DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.cmd0, command.cmd1, gInstructionName[ command.cmd ]);
-                }
+            if ( command.cmd == G_GBI2_LINE3D )
+            {
+                    DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.cmd0, command.cmd1, gInstructionName[ command.cmd ]);
+            }
 #endif
-        }
-        gDisplayListStack.back().addr = pc-8;
+    }
+    gDisplayListStack.back().addr = pc-8;
 
-        if (tris_added)
-        {
-                PSPRenderer::Get()->FlushTris();
-        }
+    if (tris_added)
+    {
+            PSPRenderer::Get()->FlushTris();
+    }
 }
 
 //*****************************************************************************
@@ -853,38 +853,38 @@ void DLParser_GBI2_Line3D( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_Tri1( MicroCodeCommand command )
 {
-        // While the next command pair is Tri1, add vertices
-        u32 pc = gDisplayListStack.back().addr;
-        u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
+    // While the next command pair is Tri1, add vertices
+    u32 pc = gDisplayListStack.back().addr;
+    u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
 
-        bool tris_added = false;
+    bool tris_added = false;
 
-        while ( command.cmd == G_GBI2_TRI1 )
-        {
-                //u32 flags = (command.cmd1>>24)&0xFF;
-                u32 v0_idx = ((command.cmd0    )&0xFF)/2;
-                u32 v1_idx = ((command.cmd0>>8 )&0xFF)/2;
-                u32 v2_idx = ((command.cmd0>>16)&0xFF)/2;
+    while ( command.cmd == G_GBI2_TRI1 )
+    {
+            //u32 flags = (command.cmd1>>24)&0xFF;
+            u32 v0_idx = ((command.cmd0    )&0xFF)/2;
+            u32 v1_idx = ((command.cmd0>>8 )&0xFF)/2;
+            u32 v2_idx = ((command.cmd0>>16)&0xFF)/2;
 
-                tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+            tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
 
-                command.cmd0 = *pCmdBase++;
-                command.cmd1 = *pCmdBase++;
-                pc += 8;
+            command.cmd0 = *pCmdBase++;
+            command.cmd1 = *pCmdBase++;
+            pc += 8;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-                if ( command.cmd == G_GBI2_TRI1 )
-                {
-                        DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.cmd0, command.cmd1, gInstructionName[ command.cmd ]);
-                }
+            if ( command.cmd == G_GBI2_TRI1 )
+            {
+                    DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.cmd0, command.cmd1, gInstructionName[ command.cmd ]);
+            }
 #endif			
-        }
-        gDisplayListStack.back().addr = pc-8;
+    }
+    gDisplayListStack.back().addr = pc-8;
 
-        if (tris_added)
-        {
-                PSPRenderer::Get()->FlushTris();
-        }
+    if (tris_added)
+    {
+            PSPRenderer::Get()->FlushTris();
+    }
 }
 
 //*****************************************************************************
@@ -892,62 +892,62 @@ void DLParser_GBI2_Tri1( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI0_Tri2( MicroCodeCommand command )
 {
-        // While the next command pair is Tri2, add vertices
-        u32 pc = gDisplayListStack.back().addr;
-        u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
+    // While the next command pair is Tri2, add vertices
+    u32 pc = gDisplayListStack.back().addr;
+    u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
 
-        bool tris_added = false;
+    bool tris_added = false;
 
-        while (command.cmd == G_GBI1_TRI2)
-        {
-                // Vertex indices are exact
-                u32 idxB = (command.cmd1    ) & 0xF;
-                u32 idxA = (command.cmd1>> 4) & 0xF;
-                u32 idxE = (command.cmd1>> 8) & 0xF;
-                u32 idxD = (command.cmd1>>12) & 0xF;
-                u32 idxH = (command.cmd1>>16) & 0xF;
-                u32 idxG = (command.cmd1>>20) & 0xF;
-                u32 idxK = (command.cmd1>>24) & 0xF;
-                u32 idxJ = (command.cmd1>>28) & 0xF;
+    while (command.cmd == G_GBI1_TRI2)
+    {
+            // Vertex indices are exact
+            u32 idxB = (command.cmd1    ) & 0xF;
+            u32 idxA = (command.cmd1>> 4) & 0xF;
+            u32 idxE = (command.cmd1>> 8) & 0xF;
+            u32 idxD = (command.cmd1>>12) & 0xF;
+            u32 idxH = (command.cmd1>>16) & 0xF;
+            u32 idxG = (command.cmd1>>20) & 0xF;
+            u32 idxK = (command.cmd1>>24) & 0xF;
+            u32 idxJ = (command.cmd1>>28) & 0xF;
 
-                u32 idxC = (command.cmd0    ) & 0xF;
-                u32 idxF = (command.cmd0>> 4) & 0xF;
-                u32 idxI = (command.cmd0>> 8) & 0xF;
-                u32 idxL = (command.cmd0>>12) & 0xF;
+            u32 idxC = (command.cmd0    ) & 0xF;
+            u32 idxF = (command.cmd0>> 4) & 0xF;
+            u32 idxI = (command.cmd0>> 8) & 0xF;
+            u32 idxL = (command.cmd0>>12) & 0xF;
 
-                //u32 flags = (command.cmd0>>16)&0xFF;
+            //u32 flags = (command.cmd0>>16)&0xFF;
 
-                // Don't check the first two tris for degenerates
-                tris_added |= PSPRenderer::Get()->AddTri(idxA, idxC, idxB);
-                tris_added |= PSPRenderer::Get()->AddTri(idxD, idxF, idxE);
-                if (idxG != idxI && idxI != idxH && idxH != idxG)
-                {
-                        tris_added |= PSPRenderer::Get()->AddTri(idxG, idxI, idxH);
-                }
+            // Don't check the first two tris for degenerates
+            tris_added |= PSPRenderer::Get()->AddTri(idxA, idxC, idxB);
+            tris_added |= PSPRenderer::Get()->AddTri(idxD, idxF, idxE);
+            if (idxG != idxI && idxI != idxH && idxH != idxG)
+            {
+                    tris_added |= PSPRenderer::Get()->AddTri(idxG, idxI, idxH);
+            }
 
-                if (idxJ != idxL && idxL != idxK && idxK != idxJ)
-                {
-                        tris_added |= PSPRenderer::Get()->AddTri(idxJ, idxL, idxK);
-                }
+            if (idxJ != idxL && idxL != idxK && idxK != idxJ)
+            {
+                    tris_added |= PSPRenderer::Get()->AddTri(idxJ, idxL, idxK);
+            }
 
-                command.cmd0= *pCmdBase++;
-                command.cmd1= *pCmdBase++;
-                pc += 8;
+            command.cmd0= *pCmdBase++;
+            command.cmd1= *pCmdBase++;
+            pc += 8;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-                if ( command.cmd == G_GBI1_TRI2 )
-                {
-                        DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.cmd0, command.cmd1, gInstructionName[ command.cmd ]);
-                }
+            if ( command.cmd == G_GBI1_TRI2 )
+            {
+                    DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.cmd0, command.cmd1, gInstructionName[ command.cmd ]);
+            }
 #endif
-        }
-        gDisplayListStack.back().addr = pc-8;
+    }
+    gDisplayListStack.back().addr = pc-8;
 
 
-        if (tris_added)
-        {
-                PSPRenderer::Get()->FlushTris();
-        }
+    if (tris_added)
+    {
+            PSPRenderer::Get()->FlushTris();
+    }
 }
 
 //*****************************************************************************
@@ -955,40 +955,40 @@ void DLParser_GBI0_Tri2( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_Tri2( MicroCodeCommand command )
 {
-        u32 pc = gDisplayListStack.back().addr;
-        u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
+    u32 pc = gDisplayListStack.back().addr;
+    u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
 
-        bool tris_added = false;
+    bool tris_added = false;
 
-        while ( command.cmd == G_GBI2_TRI2 )
-        {
-                u32 v2_idx = ((command.cmd1>>16)&0xFF)/2;
-                u32 v1_idx = ((command.cmd1>>8 )&0xFF)/2;
-                u32 v0_idx = ((command.cmd1    )&0xFF)/2;
+    while ( command.cmd == G_GBI2_TRI2 )
+    {
+            u32 v2_idx = ((command.cmd1>>16)&0xFF)/2;
+            u32 v1_idx = ((command.cmd1>>8 )&0xFF)/2;
+            u32 v0_idx = ((command.cmd1    )&0xFF)/2;
 
-                u32 v5_idx = ((command.cmd0>>16)&0xFF)/2;
-                u32 v4_idx = ((command.cmd0>>8 )&0xFF)/2;
-                u32 v3_idx = ((command.cmd0    )&0xFF)/2;
+            u32 v5_idx = ((command.cmd0>>16)&0xFF)/2;
+            u32 v4_idx = ((command.cmd0>>8 )&0xFF)/2;
+            u32 v3_idx = ((command.cmd0    )&0xFF)/2;
 
-                tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
-                tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
+            tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+            tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
 
-                command.cmd0 = *pCmdBase++;
-                command.cmd1 = *pCmdBase++;
-                pc += 8;
+            command.cmd0 = *pCmdBase++;
+            command.cmd1 = *pCmdBase++;
+            pc += 8;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-                if ( command.cmd == G_GBI2_TRI2 )
-                {
-                        DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.cmd0, command.cmd1, gInstructionName[ command.cmd ]);
-                }
+            if ( command.cmd == G_GBI2_TRI2 )
+            {
+                    DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.cmd0, command.cmd1, gInstructionName[ command.cmd ]);
+            }
 #endif
-        }
-        gDisplayListStack.back().addr = pc-8;
+    }
+    gDisplayListStack.back().addr = pc-8;
 
-        if (tris_added)
-        {
-                PSPRenderer::Get()->FlushTris();
-        }
+    if (tris_added)
+    {
+            PSPRenderer::Get()->FlushTris();
+    }
 }
 

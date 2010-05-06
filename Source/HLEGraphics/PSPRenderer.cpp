@@ -42,12 +42,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Debug/Dump.h"
 #include "Debug/DBGConsole.h"
 
-#include "Core/Memory.h"			// We access the memory buffers
+#include "Core/Memory.h"		// We access the memory buffers
 #include "Core/ROM.h"
 
-#include "../OSHLE/ultra_gbi.h"
+#include "OSHLE/ultra_gbi.h"
+#include "OSHLE/ultra_os.h"		// System type
 
-#include "Math/Math.h"	// VFPU Math
+#include "Math/Math.h"			// VFPU Math
 
 #include "Utility/Profiler.h"
 #include "Utility/Preferences.h"
@@ -63,7 +64,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <vector>
 
 f32 DECAL_Z_OFFSET = +3.14f;		// Found through trial an error for the PSP
-f32 sRatio = 0.75f;					// NTSC is 0.75f and PAL is 9/11.0f ToDo : Determine when to use either one
 
 #include "PushStructPack1.h"
 
@@ -331,18 +331,10 @@ bool PSPRenderer::RestoreRenderStates()
 //*****************************************************************************
 //
 //*****************************************************************************
-// Reset for a new frame
-void	PSPRenderer::Reset()
+void PSPRenderer::SetVIScales()
 {
-	ResetMatrices();
+	f32 sRatio = 0.75f;	// NTSC
 
-	m_dwNumIndices = 0;
-	mVtxClipFlagsUnion = 0;
-
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	m_dwNumTrisRendered = 0;
-	m_dwNumTrisClipped = 0;
-#endif
 	u32 width = Memory_VI_GetRegister( VI_WIDTH_REG );
 
 	u32 ScaleX = Memory_VI_GetRegister( VI_X_SCALE_REG ) & 0xFFF;
@@ -368,32 +360,51 @@ void	PSPRenderer::Reset()
 	sViWidth  = (u32)( (hend-hstart)    * fScaleX);
 	sViHeight = (u32)(((vend-vstart)/2) * fScaleY);
 
+	// XXX Need to check PAL games.
+	//if(g_ROM.TvType != OS_TV_NTSC) sRatio = 9/11.0f;
+
 	if( ScaleY == 0 )
 	{
 		sViHeight = sViWidth*sRatio;
 	}
 	else
 	{
-		//This sets the correct height in various games
-		//ex : Megaman 64
-		if( width > 0x300 )
-		{
-			sViHeight *= 2;
-		}
+		if( width > 0x300 )			//This sets the correct height in various games
+			sViHeight *= 2;			//ex : Megaman 64
 	}
 
 	if( sViHeight<100 || sViWidth<100 )
 	{
 		//Sometimes HStartReg and VStartReg are zero
 		//This fixes gaps is some games ex: CyberTiger
-		//
 		sViWidth = (f32)width;
 		sViHeight = sViWidth*sRatio;
 	}
-
+	// With recent fixes, this doesn't seem to be used anymore ~ Salvy
 	//If zero: Set to defaults
+	/*
 	if ( sViWidth == 0 ) sViWidth = 320;
 	if ( sViHeight == 0 ) sViHeight = 240;
+	*/
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+// Reset for a new frame
+
+void	PSPRenderer::Reset()
+{
+	ResetMatrices();
+
+	m_dwNumIndices = 0;
+	mVtxClipFlagsUnion = 0;
+
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+	m_dwNumTrisRendered = 0;
+	m_dwNumTrisClipped = 0;
+#endif
+
 }
 
 //*****************************************************************************
@@ -412,14 +423,13 @@ void PSPRenderer::BeginScene()
 	mRecordedCombinerStates.clear();
 #endif
 
-
-	//
-	//	We do this each frame as it lets us adapt to changes in the viewport dynamically
-	//
 	u32		display_width( 0 );
 	u32		display_height( 0 );
 	u32		frame_width( 480 );
 	u32		frame_height( 272 );
+	//
+	//	We do this each frame as it lets us adapt to changes in the viewport dynamically
+	//
 	if ( gGlobalPreferences.TVEnable && PSP_TV_CABLE > 0)
 	{
 		switch ( gGlobalPreferences.ViewportType )
@@ -474,7 +484,7 @@ void PSPRenderer::BeginScene()
 			break;
  		}
 	}
-	DAEDALUS_DL_ASSERT( display_width != 0 && display_height != 0, "Unhandled viewport type" );
+	DAEDALUS_ASSERT( display_width != 0 && display_height != 0, "Unhandled viewport type" );
 
 	s32		display_x( (frame_width - display_width)/2 );
 	s32		display_y( (frame_height - display_height)/2 );
@@ -570,11 +580,12 @@ void	PSPRenderer::UpdateViewport()
 //*****************************************************************************
 //
 //*****************************************************************************
+/*
 inline f32 round( f32 x )
 {
 	return (f32)(s32)( x + 0.5f );
 }
-
+*/
 v2	PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
 {
 	v2	psp_coords;
@@ -627,7 +638,7 @@ PSPRenderer::SBlendStateEntry	PSPRenderer::LookupBlendState( u64 mux, bool two_c
 	{
 		CCombinerTree				tree( mux, two_cycles );
 		entry.States = tree.GetBlendStates();
-#ifndef DAEDALUS_PUBLIC_RELEASE
+#ifndef DAEDALUS_DEBUG_DISPLAYLIST
 		printf( "Adding %08x%08x - %d cycles", u32(mux>>32), u32(mux), two_cycles ? 2 : 1 );
 		if(entry.States->IsInexact())
 		{
@@ -1116,6 +1127,7 @@ bool PSPRenderer::FillRect( const v2 & xy0, const v2 & xy1, u32 color )
 	if ( (gRDPOtherMode._u64 & 0xffff0000) == 0x5f500000 )
 	{
 		// this blend mode is mem*0 + mem*1, so we don't need to render it... Very odd!
+		DAEDALUS_ERROR("	mem*0 + mem*1 - skipped");
 		return true;
 	}
 
@@ -2014,9 +2026,9 @@ void PSPRenderer::SetNewVertexInfoCPU(u32 dwAddress, u32 dwV0, u32 dwNum)
 //*****************************************************************************
 //
 //*****************************************************************************
-void PSPRenderer::ModifyVertexInfo(u32 where, u32 vert, u32 val)
+void PSPRenderer::ModifyVertexInfo(u32 w, u32 vert, u32 val)
 {
-	switch ( where )
+	switch ( w )
 	{
 		case G_MWO_POINT_RGBA:
 			{

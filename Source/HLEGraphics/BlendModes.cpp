@@ -772,7 +772,7 @@ void BlendMode_0x00671604fffcff78LL (BLEND_MODE_ARGS)
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
 
-// Duke 3D menu text
+// Duke 3D menu text and Mario 64 : Mario's 3D head
 //case 0x0030b26144664924LL:
 //aRGB0: (Primitive    - Shade       ) * Texel0       + Shade       
 //aA0  : (Primitive    - Shade       ) * Texel0       + Shade       
@@ -785,9 +785,11 @@ void BlendMode_0x0030b26144664924LL( BLEND_MODE_ARGS )
 	//Complete fix interferes with Mario head
 	//Combiner needs debugging
 	// Need to modulate the texture*shade for RGBA for Duke
-	details.InstallTexture = true; //This helps transparency on Duke text
-	sceGuTexEnvColor( details.PrimColour.GetColour() );
-	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA); 
+	//
+	// This makes Mario's 3D head shiny as supposed to be.
+	details.InstallTexture = true;
+	details.ColourAdjuster.SetA( details.EnvColour );
+	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
 }
 
 // Duke 3D Gun and other thing.
@@ -2989,6 +2991,27 @@ void BlendMode_0x00ff97ffff2cfa7dLL( BLEND_MODE_ARGS )
 //#Z
 */
 
+//Kokiri Sword Blade - Zelda OOT
+//case 0x00177e6035fcfd7eLL:
+//aRGB0: (Texel0       - Primitive   ) * PrimLODFrac  + Texel0
+//aA0  : (0            - 0           ) * 0            + 1
+//aRGB1: (Primitive    - Env         ) * Combined     + Env
+//aA1  : (0            - 0           ) * 0            + 1
+void BlendMode_0x00177e6035fcfd7eLL (BLEND_MODE_ARGS)
+{
+	details.InstallTexture = true;
+	if( num_cycles == 1 )
+	{
+		details.ColourAdjuster.SetRGB( details.EnvColour );
+		sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGB);
+	}
+	else
+	{
+		details.ColourAdjuster.SetRGBA( details.EnvColour );
+		sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);	
+	}	
+}
+
 // OOT - Light Surrounding Link and Warps
 //case 0x0026a060150c937fLL:
 //aRGB0: (Texel1       - Texel0      ) * LOD_Frac     + Texel0
@@ -4620,7 +4643,7 @@ OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 		BLEND_MODE( 0x00272c60350c937fLL );
 		BLEND_MODE( 0x00272c603510e37fLL );
 		BLEND_MODE( 0x00ffabffff0d92ffLL );
-	//	BLEND_MODE (0x00fffffffffcf279LL );
+		BLEND_MODE (0x00177e6035fcfd7eLL );
 		BLEND_MODE( 0x0030f861fff393c9LL );
 		BLEND_MODE( 0x0030fe045ffefbf8LL );
 		BLEND_MODE( 0x00317fff5ffef438LL );

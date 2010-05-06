@@ -992,6 +992,7 @@ void DLParser_Process()
 	if(!gFrameskipActive)
 	{
 	// ZBuffer/BackBuffer clearing is caught elsewhere, but we could force it here
+		PSPRenderer::Get()->SetVIScales();
 		PSPRenderer::Get()->Reset();
 		PSPRenderer::Get()->BeginScene();
 		DLParser_ProcessDList();
@@ -1528,12 +1529,12 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 	case G_MW_POINTS:	// Used in FIFA 98
 		{
 			u32 vtx = offset/40;
-			u32 where = offset - vtx*40;
+			u32 w	= offset - vtx*40;
 			u32 val = command.cmd1;	// Odd value given
 
 			DL_PF("    G_MW_POINTS");
 
-			PSPRenderer::Get()->ModifyVertexInfo(where, vtx, val);
+			PSPRenderer::Get()->ModifyVertexInfo(w, vtx, val);
 		}
  		break;
 	case G_MW_PERSPNORM:

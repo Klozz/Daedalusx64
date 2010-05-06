@@ -2613,16 +2613,12 @@ static void R4300_CALL_TYPE R4300_Cop1_C_S_Generic( R4300_CALL_SIGNATURE )
 	R4300_CALL_MAKE_OP( op_code );
 
 	// fs < ft?
-	bool less;
-	bool equal;
-	bool unordered;
-	bool cond;
-	bool cond0 = (op_code._u32   ) & 0x1;
-	bool cond1 = (op_code._u32>>1) & 0x1;
-	bool cond2 = (op_code._u32>>2) & 0x1;
-#ifndef DAEDALUS_SILENT
-	bool cond3 = (op_code._u32>>3) & 0x1;
-#endif
+	bool less, equal, unordered, cond, cond0, cond1, cond2, cond3;
+
+	cond0 = (op_code._u32   ) & 0x1;
+	cond1 = (op_code._u32>>1) & 0x1;
+	cond2 = (op_code._u32>>2) & 0x1;
+	cond3 = (op_code._u32>>3) & 0x1;
 
 	f32 fX = LoadFPR_Single( op_code.fs );
 	f32 fY = LoadFPR_Single( op_code.ft );
@@ -2635,13 +2631,12 @@ static void R4300_CALL_TYPE R4300_Cop1_C_S_Generic( R4300_CALL_SIGNATURE )
 		unordered = true;
 
 		// exception
-#ifndef DAEDALUS_SILENT
 		if (cond3)
 		{
 			// Exception
 			DBGConsole_Msg( 0, "[MShould throw fp nan exception?" );
+			//return;
 		}
-#endif
 	}
 	else
 	{
@@ -2661,6 +2656,8 @@ static void R4300_CALL_TYPE R4300_Cop1_C_S_Generic( R4300_CALL_SIGNATURE )
 
 }
 
+// This looks suspicious to me...
+//
 // Same as above, but unordered?
 // cond3 = 1
 // cond2 = 1
@@ -2671,9 +2668,7 @@ static void R4300_CALL_TYPE R4300_Cop1_S_NGE( R4300_CALL_SIGNATURE )
 	R4300_CALL_MAKE_OP( op_code );
 
 	// fs < ft?
-	bool less;
-	bool unordered;
-	bool cond;
+	bool less, unordered, cond;
 
 	f32 fX = LoadFPR_Single( op_code.fs );
 	f32 fY = LoadFPR_Single( op_code.ft );
@@ -2962,21 +2957,19 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_CVT_L( R43
 	StoreFPR_LongT< FullLength >( op_code.fd, d64_to_s64( fX, gRoundingMode ) );
 }
 
+// Same as R4300_Cop1_C_S_Generic but "doubles"
+//
 template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_C_D_Generic( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
 	// fs < ft?
-	bool less;
-	bool equal;
-	bool unordered;
-	bool cond;
-	bool cond0 = (op_code._u32   ) & 0x1;
-	bool cond1 = (op_code._u32>>1) & 0x1;
-	bool cond2 = (op_code._u32>>2) & 0x1;
-#ifndef DAEDALUS_SILENT
-	bool cond3 = (op_code._u32>>3) & 0x1;
-#endif
+	bool less, equal, unordered, cond, cond0, cond1, cond2, cond3;
+
+	cond0 = (op_code._u32   ) & 0x1;
+	cond1 = (op_code._u32>>1) & 0x1;
+	cond2 = (op_code._u32>>2) & 0x1;
+	cond3 = (op_code._u32>>3) & 0x1;
 
 	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
 	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
@@ -2989,13 +2982,12 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_C_D_Generic(
 		unordered = true;
 
 		// exception
-#ifndef DAEDALUS_SILENT
 		if (cond3)
 		{
 			// Exception
 			DBGConsole_Msg( 0, "[MShould throw fp nan exception?" );
+			//return;
 		}
-#endif
 	}
 	else
 	{

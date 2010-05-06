@@ -54,7 +54,8 @@ static void MemoryDoDP();
 
 static void MemoryUpdateSPStatus( u32 flags );
 static void MemoryUpdateDP( u32 address, u32 value );
-static void MemoryUpdateMI( u32 address, u32 value );
+static void MemoryModeRegMI( u32 value );
+static void MemoryUpdateMI( u32 value );
 static void MemoryUpdateVI( u32 address, u32 value );
 static void MemoryUpdatePI( u32 address, u32 value );
 static void MemoryUpdatePIF();
@@ -890,13 +891,15 @@ void MemoryUpdateDP( u32 address, u32 flags )
 	if (flags & DPC_CLR_XBUS_DMEM_DMA)			dpc_status &= ~DPC_STATUS_XBUS_DMEM_DMA;
 	if (flags & DPC_SET_XBUS_DMEM_DMA)			dpc_status |= DPC_STATUS_XBUS_DMEM_DMA;
 	if (flags & DPC_CLR_FREEZE)					dpc_status &= ~DPC_STATUS_FREEZE;
-	//if (flags & DPC_SET_FREEZE)				dpc_status |= DPC_STATUS_FREEZE;	// Thanks Lemmy!
+	//if (flags & DPC_SET_FREEZE)				dpc_status |= DPC_STATUS_FREEZE;	// Thanks Lemmy! <= what's wrong with this? ~ Salvy
 	if (flags & DPC_CLR_FLUSH)					dpc_status &= ~DPC_STATUS_FLUSH;
 	if (flags & DPC_SET_FLUSH)					dpc_status |= DPC_STATUS_FLUSH;
-	if (flags & DPC_CLR_TMEM_CTR)				Memory_DPC_SetRegister(DPC_TMEM_REG, 0);
+
+	// These should be ignored ! - Salvy
+	/*if (flags & DPC_CLR_TMEM_CTR)				Memory_DPC_SetRegister(DPC_TMEM_REG, 0);
 	if (flags & DPC_CLR_PIPE_CTR)				Memory_DPC_SetRegister(DPC_PIPEBUSY_REG, 0);
 	if (flags & DPC_CLR_CMD_CTR)				Memory_DPC_SetRegister(DPC_BUFBUSY_REG, 0);
-	if (flags & DPC_CLR_CLOCK_CTR)				Memory_DPC_SetRegister(DPC_CLOCK_REG, 0);
+	if (flags & DPC_CLR_CLOCK_CTR)				Memory_DPC_SetRegister(DPC_CLOCK_REG, 0);*/
 
 #ifdef DISPLAY_DPC_WRITES
 	if ( flags & DPC_CLR_XBUS_DMEM_DMA )		DBGConsole_Msg( 0, "DPC_CLR_XBUS_DMEM_DMA" );
@@ -912,7 +915,8 @@ void MemoryUpdateDP( u32 address, u32 flags )
 
 	DBGConsole_Msg( 0, "Modified DPC_STATUS_REG - now %08x", dpc_status );
 #endif
-
+	
+	// Do we need this?
 	// Write back the value
 	Memory_DPC_SetRegister(DPC_STATUS_REG, dpc_status);
 
@@ -921,61 +925,58 @@ void MemoryUpdateDP( u32 address, u32 flags )
 //*****************************************************************************
 //
 //*****************************************************************************
-void MemoryUpdateMI( u32 address, u32 value )
+void MemoryUpdateMI( u32 value )
 {
-	u32 offset;
-	u32 mi_mode_reg      = Memory_MI_GetRegister(MI_MODE_REG);
+	//u32 mi_mode_reg      = Memory_MI_GetRegister(MI_MODE_REG);
 	u32 mi_intr_mask_reg = Memory_MI_GetRegister(MI_INTR_MASK_REG);
 	u32 mi_intr_reg		 = Memory_MI_GetRegister(MI_INTR_REG);
 
-	offset = address & 0xFF;
-
 	//bool interrupts_live_before((mi_intr_mask_reg & mi_intr_reg) != 0);
 
-	switch (MI_BASE_REG + offset)
-	{
+	if((value & MI_INTR_MASK_SET_SP)) mi_intr_mask_reg |= MI_INTR_MASK_SP;
+	else if((value & MI_INTR_MASK_CLR_SP)) mi_intr_mask_reg &= ~MI_INTR_MASK_SP;
 
-	case MI_INIT_MODE_REG:
+	if((value & MI_INTR_MASK_SET_SI)) mi_intr_mask_reg |= MI_INTR_MASK_SI;
+	else if((value & MI_INTR_MASK_CLR_SI)) mi_intr_mask_reg &= ~MI_INTR_MASK_SI;
+ 
+	if((value & MI_INTR_MASK_SET_AI)) mi_intr_mask_reg |= MI_INTR_MASK_AI;
+    else if((value & MI_INTR_MASK_CLR_AI)) mi_intr_mask_reg &= ~MI_INTR_MASK_AI;
 
-		if (value & MI_CLR_INIT) {		DPF( DEBUG_MI, "MI: Clearing Mode Init. PC: 0x%08x", gCPUState.CurrentPC );		mi_mode_reg &= ~MI_MODE_INIT;		}
-		if (value & MI_SET_INIT) {		DPF( DEBUG_MI, "MI: Setting Mode Init. PC: 0x%08x", gCPUState.CurrentPC );		mi_mode_reg |= MI_MODE_INIT;		}
-		if (value & MI_CLR_EBUS) {		DPF( DEBUG_MI, "MI: Clearing EBUS test. PC: 0x%08x", gCPUState.CurrentPC );		mi_mode_reg &= ~MI_MODE_EBUS;		}
-		if (value & MI_SET_EBUS) {		DPF( DEBUG_MI, "MI: Setting EBUS test. PC: 0x%08x", gCPUState.CurrentPC );		mi_mode_reg |= MI_MODE_EBUS;		}
-		if (value & MI_CLR_DP_INTR) {	DPF( DEBUG_MI, "MI: Clearing DP Interrupt. PC: 0x%08x", gCPUState.CurrentPC );	mi_intr_reg &= ~MI_INTR_DP;			}
-		if (value & MI_CLR_RDRAM) {		DPF( DEBUG_MI, "MI: Clearing RDRAM reg. PC: 0x%08x", gCPUState.CurrentPC );		mi_mode_reg &= ~MI_MODE_RDRAM;		}
-		if (value & MI_SET_RDRAM) {		DPF( DEBUG_MI, "MI: Setting RDRAM reg mode. PC: 0x%08x", gCPUState.CurrentPC );	mi_mode_reg |= MI_MODE_RDRAM;		}
+	if((value & MI_INTR_MASK_SET_VI)) mi_intr_mask_reg |= MI_INTR_MASK_VI;
+    else if((value & MI_INTR_MASK_CLR_VI)) mi_intr_mask_reg &= ~MI_INTR_MASK_VI;
 
-		break;
-	case MI_INTR_MASK_REG:
+	if((value & MI_INTR_MASK_SET_PI)) mi_intr_mask_reg |= MI_INTR_MASK_PI;
+    else if((value & MI_INTR_MASK_CLR_PI)) mi_intr_mask_reg &= ~MI_INTR_MASK_PI;
 
-		// Do IntrMaskReg writes
-		if (value & MI_INTR_MASK_CLR_SP) {		DPF( DEBUG_MI, "MI: Clearing SP Interrupt. PC: 0x%08x", gCPUState.CurrentPC );	mi_intr_mask_reg &= ~MI_INTR_MASK_SP;	}
-		if (value & MI_INTR_MASK_SET_SP) {		DPF( DEBUG_MI, "MI: Setting SP Interrupt. PC: 0x%08x", gCPUState.CurrentPC );	mi_intr_mask_reg |= MI_INTR_MASK_SP;	}
+	if((value & MI_INTR_MASK_SET_DP)) mi_intr_mask_reg |= MI_INTR_MASK_DP;
+    else if((value & MI_INTR_MASK_CLR_DP)) mi_intr_mask_reg &= ~MI_INTR_MASK_DP;
 
-		if (value & MI_INTR_MASK_CLR_SI) {		DPF( DEBUG_MI, "MI: Clearing SI Interrupt. PC: 0x%08x", gCPUState.CurrentPC );	mi_intr_mask_reg &= ~MI_INTR_MASK_SI;	}
-		if (value & MI_INTR_MASK_SET_SI) {		DPF( DEBUG_MI, "MI: Setting SI Interrupt. PC: 0x%08x", gCPUState.CurrentPC );	mi_intr_mask_reg |= MI_INTR_MASK_SI;	}
-
-		if (value & MI_INTR_MASK_CLR_AI) {		DPF( DEBUG_MI, "MI: Clearing AI Interrupt. PC: 0x%08x", gCPUState.CurrentPC );	mi_intr_mask_reg &= ~MI_INTR_MASK_AI;	}
-		if (value & MI_INTR_MASK_SET_AI) {		DPF( DEBUG_MI, "MI: Setting AI Interrupt. PC: 0x%08x", gCPUState.CurrentPC );	mi_intr_mask_reg |= MI_INTR_MASK_AI;	}
-
-		if (value & MI_INTR_MASK_CLR_VI) {		DPF( DEBUG_MI, "MI: Clearing VI Interrupt. PC: 0x%08x", gCPUState.CurrentPC );	mi_intr_mask_reg &= ~MI_INTR_MASK_VI;	}
-		if (value & MI_INTR_MASK_SET_VI) {		DPF( DEBUG_MI, "MI: Setting VI Interrupt. PC: 0x%08x", gCPUState.CurrentPC );	mi_intr_mask_reg |= MI_INTR_MASK_VI;	}
-
-		if (value & MI_INTR_MASK_CLR_PI) {		DPF( DEBUG_MI, "MI: Clearing PI Interrupt. PC: 0x%08x", gCPUState.CurrentPC );	mi_intr_mask_reg &= ~MI_INTR_MASK_PI;	}
-		if (value & MI_INTR_MASK_SET_PI) {		DPF( DEBUG_MI, "MI: Setting PI Interrupt. PC: 0x%08x", gCPUState.CurrentPC );	mi_intr_mask_reg |= MI_INTR_MASK_PI;	}
-
-		if (value & MI_INTR_MASK_CLR_DP) {		DPF( DEBUG_MI, "MI: Clearing DP Interrupt. PC: 0x%08x", gCPUState.CurrentPC );	mi_intr_mask_reg &= ~MI_INTR_MASK_DP;	}
-		if (value & MI_INTR_MASK_SET_DP) {		DPF( DEBUG_MI, "MI: Setting DP Interrupt. PC: 0x%08x", gCPUState.CurrentPC );	mi_intr_mask_reg |= MI_INTR_MASK_DP;	}
-
-		break;
-	}
-
-	// Write back
-	Memory_MI_SetRegister( MI_MODE_REG, mi_mode_reg );
-	Memory_MI_SetRegister( MI_INTR_REG, mi_intr_reg );
+	// Looks suspicious
+	//Memory_MI_SetRegister( MI_MODE_REG, mi_mode_reg );
+	Memory_MI_SetRegister( MI_INTR_REG, mi_intr_reg );	
 	Memory_MI_SetRegister( MI_INTR_MASK_REG, mi_intr_mask_reg );
 
 	R4300_Interrupt_UpdateCause3();
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void MemoryModeRegMI( u32 value )
+{
+	u32 mi_mode_reg = Memory_MI_GetRegister(MI_MODE_REG);
+
+	if(value & MI_SET_RDRAM) mi_mode_reg |= MI_MODE_RDRAM;
+	else if(value & MI_CLR_RDRAM) mi_mode_reg &= ~MI_MODE_RDRAM;
+
+	if(value & MI_SET_INIT) mi_mode_reg |= MI_MODE_INIT;
+    else if(value & MI_CLR_INIT) mi_mode_reg &= ~MI_MODE_INIT;
+
+	if(value & MI_SET_EBUS) mi_mode_reg |= MI_MODE_EBUS;
+    else if(value & MI_CLR_EBUS) mi_mode_reg &= ~MI_MODE_EBUS;
+
+	if (value & MI_CLR_DP_INTR)	{ Memory_MI_ClrRegisterBits(MI_INTR_REG, MI_INTR_DP); R4300_Interrupt_UpdateCause3(); }
+
 }
 
 //*****************************************************************************
@@ -1100,17 +1101,17 @@ void MemoryUpdateVI( u32 address, u32 value )
 
 	case VI_X_SCALE_REG:
 		DPF( DEBUG_VI, "VI_X_SCALE_REG set to 0x%08x", value );
-		{
+		//{
 			//u32 scale = value & 0xFFF;
 			//float fScale = (float)scale / (1<<10);
 			//DBGConsole_Msg(DEBUG_VI, "VI_X_SCALE_REG set to 0x%08x (%f)", value, 1/fScale);
 			//gViWidth = 640 * fScale;
-		}
+		//}
 		break;
 
 	case VI_Y_SCALE_REG:
 		DPF( DEBUG_VI, "VI_Y_SCALE_REG set to 0x%08x", value );
-		{
+		//{
 			/*u32 scale = value & 0xFFF;
 			float fScale = (float)scale / (1<<10);
 		//	DBGConsole_Msg(DEBUG_VI, "VI_Y_SCALE_REG set to 0x%08x (%f)", value, 1/fScale);
@@ -1127,7 +1128,7 @@ void MemoryUpdateVI( u32 address, u32 value )
 			{
 				gViHeight = 240 * fScale;	// NTSC
 			}*/
-		}
+		//}
 		break;
 	}
 

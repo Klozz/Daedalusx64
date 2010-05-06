@@ -263,10 +263,11 @@ static void WriteValue_8430_843F( u32 address, u32 value )
 		switch (MI_BASE_REG + offset)
 		{
 		case MI_INIT_MODE_REG:
-		case MI_INTR_MASK_REG:
-			MemoryUpdateMI(address, value);
+			MemoryModeRegMI( value );
 			break;
-
+		case MI_INTR_MASK_REG:
+			MemoryUpdateMI( value );
+			break;
 		case MI_VERSION_REG:
 		case MI_INTR_REG:
 			// Read Only

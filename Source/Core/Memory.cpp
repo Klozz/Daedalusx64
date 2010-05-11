@@ -50,15 +50,17 @@ static const u32	MAXIMUM_MEM_SIZE( MEMORY_8_MEG );
 
 #undef min
 
-static void MemoryDoDP();
+#ifdef DAEDALUS_LOG
+static void DisplayVIControlInfo( u32 control_reg );
+#endif
 
 static void MemoryUpdateSPStatus( u32 flags );
-static void MemoryUpdateDP( u32 address, u32 value );
+static void MemoryUpdateDP( u32 value );
 static void MemoryModeRegMI( u32 value );
 static void MemoryUpdateMI( u32 value );
-static void MemoryUpdateVI( u32 address, u32 value );
-static void MemoryUpdatePI( u32 address, u32 value );
+static void MemoryUpdatePI( u32 value );
 static void MemoryUpdatePIF();
+static void MemoryDoDP();
 
 static void Memory_InitTables();
 
@@ -876,12 +878,11 @@ void MemoryUpdateSPStatus( u32 flags )
 	}
 }
 
+#undef DISPLAY_DPC_WRITES
 //*****************************************************************************
 //
 //*****************************************************************************
-#undef DISPLAY_DPC_WRITES
-
-void MemoryUpdateDP( u32 address, u32 flags )
+void MemoryUpdateDP( u32 flags )
 {
 	// Ignore address, as this is only called with DPC_STATUS_REG write
 	// DBGConsole_Msg(0, "DP Status: 0x%08x", flags);
@@ -927,7 +928,6 @@ void MemoryUpdateDP( u32 address, u32 flags )
 //*****************************************************************************
 void MemoryUpdateMI( u32 value )
 {
-	//u32 mi_mode_reg      = Memory_MI_GetRegister(MI_MODE_REG);
 	u32 mi_intr_mask_reg = Memory_MI_GetRegister(MI_INTR_MASK_REG);
 	u32 mi_intr_reg		 = Memory_MI_GetRegister(MI_INTR_REG);
 
@@ -952,7 +952,6 @@ void MemoryUpdateMI( u32 value )
     else if((value & MI_INTR_MASK_CLR_DP)) mi_intr_mask_reg &= ~MI_INTR_MASK_DP;
 
 	// Looks suspicious
-	//Memory_MI_SetRegister( MI_MODE_REG, mi_mode_reg );
 	Memory_MI_SetRegister( MI_INTR_REG, mi_intr_reg );	
 	Memory_MI_SetRegister( MI_INTR_MASK_REG, mi_intr_mask_reg );
 
@@ -975,14 +974,20 @@ void MemoryModeRegMI( u32 value )
 	if(value & MI_SET_EBUS) mi_mode_reg |= MI_MODE_EBUS;
     else if(value & MI_CLR_EBUS) mi_mode_reg &= ~MI_MODE_EBUS;
 
-	if (value & MI_CLR_DP_INTR)	{ Memory_MI_ClrRegisterBits(MI_INTR_REG, MI_INTR_DP); R4300_Interrupt_UpdateCause3(); }
+	if (value & MI_CLR_DP_INTR)
+	{ 
+		//Only MI_CLR_DP_INTR needs to clear our interrupts
+		//
+		Memory_MI_ClrRegisterBits(MI_INTR_REG, MI_INTR_DP); 
+		R4300_Interrupt_UpdateCause3(); 
+	}
 
 }
 
+#ifdef DAEDALUS_LOG
 //*****************************************************************************
 //
 //*****************************************************************************
-#ifdef DAEDALUS_LOG
 static void DisplayVIControlInfo( u32 control_reg )
 {
 	DPF( DEBUG_VI, "VI Control:", (control_reg & VI_CTRL_GAMMA_DITHER_ON) ? "On" : "Off" );
@@ -1002,199 +1007,26 @@ static void DisplayVIControlInfo( u32 control_reg )
 }
 #endif
 
-
 //*****************************************************************************
 //
 //*****************************************************************************
-void MemoryUpdateVI( u32 address, u32 value )
+void MemoryUpdatePI( u32 value )
 {
-	u32 offset;
-
-	offset = address & 0xFF;
-
-	switch (VI_BASE_REG + offset)
+	if (value & PI_STATUS_RESET)
 	{
-	case VI_CONTROL_REG:
-		DPF( DEBUG_VI, "VI_CONTROL_REG set to 0x%08x", value );
-#ifdef DAEDALUS_LOG
-		DisplayVIControlInfo(value);
-#endif
+		// What to do when is busy?
 
-		if ( gGraphicsPlugin != NULL )
-		{
-			gGraphicsPlugin->ViStatusChanged();
-		}
-
-
-		break;
-	case VI_ORIGIN_REG:
-		DPF( DEBUG_VI, "VI_ORIGIN_REG set to 0x%08x (was 0x%08x)", value );
-		if (Memory_VI_GetRegister(VI_ORIGIN_REG) != value)
-		{
-			//DBGConsole_Msg(0, "Origin: 0x%08x (%d x %d)", value, gViWidth, gViHeight);
-			g_dwNumFrames++;
-
-			DPF( DEBUG_FRAME, "********************************************" );
-		}
-		break;
-
-	case VI_WIDTH_REG:
-		DPF( DEBUG_VI, "VI_WIDTH_REG set to %d pixels", value );
-
-		if ( gGraphicsPlugin != NULL )
-		{
-			gGraphicsPlugin->ViWidthChanged();
-		}
-
-
-		break;
-
-	case VI_INTR_REG:
-		DPF( DEBUG_VI, "VI_INTR_REG set to 0x%08x", value );
-		//DBGConsole_Msg(DEBUG_VI, "VI_INTR_REG set to %d", value);
-		break;
-
-	case VI_CURRENT_REG:
-		DPF( DEBUG_VI, "VI_CURRENT_REG set to 0x%08x", value );
-
-		// Any write clears interrupt line...
-		DPF( DEBUG_VI, "VI: Clearing interrupt flag. PC: 0x%08x", gCPUState.CurrentPC );
-
-		Memory_MI_ClrRegisterBits(MI_INTR_REG, MI_INTR_VI);
+		DPF( DEBUG_PI, "PI: Resetting Status. PC: 0x%08x", gCPUState.CurrentPC );
+		// Reset PIC here
+		Memory_PI_SetRegister(PI_STATUS_REG, 0);
+	}
+	if (value & PI_STATUS_CLR_INTR)
+	{
+		DPF( DEBUG_PI, "PI: Clearing interrupt flag. PC: 0x%08x", gCPUState.CurrentPC );
+		Memory_MI_ClrRegisterBits(MI_INTR_REG, MI_INTR_PI);
 		R4300_Interrupt_UpdateCause3();
-		return;
-
-	case VI_BURST_REG:
-		DPF( DEBUG_VI, "VI_BURST_REG set to 0x%08x", value );
-	//	DBGConsole_Msg(DEBUG_VI, "VI_BURST_REG set to 0x%08x", value);
-		break;
-
-	case VI_V_SYNC_REG:
-		DPF( DEBUG_VI, "VI_V_SYNC_REG set to 0x%08x", value );
-	//	DBGConsole_Msg(DEBUG_VI, "VI_V_SYNC_REG set to 0x%08x", value);
-		break;
-
-	case VI_H_SYNC_REG:
-		DPF( DEBUG_VI, "VI_H_SYNC_REG set to 0x%08x", value );
-	//	DBGConsole_Msg(DEBUG_VI, "VI_H_SYNC_REG set to 0x%08x", value);
-		break;
-
-	case VI_LEAP_REG:
-		DPF( DEBUG_VI, "VI_LEAP_REG set to 0x%08x", value );
-	//	DBGConsole_Msg(DEBUG_VI, "VI_LEAP_REG set to 0x%08x", value);
-		break;
-
-	case VI_H_START_REG:
-		DPF( DEBUG_VI, "VI_H_START_REG set to 0x%08x", value );
-		//DBGConsole_Msg(DEBUG_VI, "VI_H_START_REG set to 0x%08x", value);
-		break;
-
-	case VI_V_START_REG:
-		DPF( DEBUG_VI, "VI_V_START_REG set to 0x%08x", value );
-		//DBGConsole_Msg(DEBUG_VI, "VI_V_START_REG set to 0x%08x", value);
-		break;
-
-	case VI_V_BURST_REG:
-		DPF( DEBUG_VI, "VI_V_BURST_REG set to 0x%08x", value );
-		//DBGConsole_Msg(DEBUG_VI, "VI_V_BURST_REG set to 0x%08x", value);
-		break;
-
-	case VI_X_SCALE_REG:
-		DPF( DEBUG_VI, "VI_X_SCALE_REG set to 0x%08x", value );
-		//{
-			//u32 scale = value & 0xFFF;
-			//float fScale = (float)scale / (1<<10);
-			//DBGConsole_Msg(DEBUG_VI, "VI_X_SCALE_REG set to 0x%08x (%f)", value, 1/fScale);
-			//gViWidth = 640 * fScale;
-		//}
-		break;
-
-	case VI_Y_SCALE_REG:
-		DPF( DEBUG_VI, "VI_Y_SCALE_REG set to 0x%08x", value );
-		//{
-			/*u32 scale = value & 0xFFF;
-			float fScale = (float)scale / (1<<10);
-		//	DBGConsole_Msg(DEBUG_VI, "VI_Y_SCALE_REG set to 0x%08x (%f)", value, 1/fScale);
-
-			if (g_ROM.TvType == OS_TV_NTSC)
-			{
-				gViHeight = 240 * fScale;	// NTSC
-			}
-			else if (g_ROM.TvType == OS_TV_PAL)
-			{
-				gViHeight = 288 * fScale;	// PAL
-			}
-			else
-			{
-				gViHeight = 240 * fScale;	// NTSC
-			}*/
-		//}
-		break;
-	}
-
-	Memory_VI_SetRegister(VI_BASE_REG + offset, value);
-}
-
-
-
-//*****************************************************************************
-//
-//*****************************************************************************
-void MemoryUpdatePI( u32 address, u32 value )
-{
-	u32 offset = address & 0xFF;
-	u32 pi_address = (PI_BASE_REG) + offset;
-
-	if (pi_address == PI_STATUS_REG)
-	{
-		if (value & PI_STATUS_RESET)
-		{
-			DPF( DEBUG_PI, "PI: Resetting Status. PC: 0x%08x", gCPUState.CurrentPC );
-			// Reset PIC here
-			Memory_PI_SetRegister(PI_STATUS_REG, 0);
-		}
-		if (value & PI_STATUS_CLR_INTR)
-		{
-			DPF( DEBUG_PI, "PI: Clearing interrupt flag. PC: 0x%08x", gCPUState.CurrentPC );
-			Memory_MI_ClrRegisterBits(MI_INTR_REG, MI_INTR_PI);
-			R4300_Interrupt_UpdateCause3();
-		}
-	}
-	else
-	{
-#ifndef DAEDALUS_SILENT
-		switch (pi_address)
-		{
-		case PI_BSD_DOM1_LAT_REG:
-			DPF( DEBUG_MEMORY_PI, "PI_BSD_DOM1_LAT_REG written to (dom1 device latency) - 0x%08x", value );
-			break;
-		case PI_BSD_DOM1_PWD_REG:
-			DPF( DEBUG_MEMORY_PI, "PI_BSD_DOM1_PWD_REG written to (dom1 device R/W strobe pulse width) - 0x%08x", value );
-			break;
-		case PI_BSD_DOM1_PGS_REG:
-			DPF( DEBUG_MEMORY_PI, "PI_BSD_DOM1_PGS_REG written to (dom1 device page size) - 0x%08x",	value );
-			break;
-		case PI_BSD_DOM1_RLS_REG:
-			DPF( DEBUG_MEMORY_PI, "PI_BSD_DOM1_RLS_REG written to (dom1 device R/W release duration) - 0x%08x",value );
-			break;
-		case PI_BSD_DOM2_LAT_REG:
-			DPF( DEBUG_MEMORY_PI, "PI_BSD_DOM2_LAT_REG written to (dom2 device latency) - 0x%08x", value );
-			break;
-		case PI_BSD_DOM2_PWD_REG:
-			DPF( DEBUG_MEMORY_PI, "PI_BSD_DOM2_PWD_REG written to (dom2 device R/W strobe pulse width) - 0x%08x", value );
-			break;
-		case PI_BSD_DOM2_PGS_REG:
-			DPF( DEBUG_MEMORY_PI, "PI_BSD_DOM2_PGS_REG written to (dom2 device page size) - 0x%08x",	value );
-			break;
-		case PI_BSD_DOM2_RLS_REG:
-			DPF( DEBUG_MEMORY_PI, "PI_BSD_DOM2_RLS_REG written to (dome device R/W release duration) - 0x%08x", value );
-			break;
-		}
-#endif
-		*(u32 *)((u8 *)g_pMemoryBuffers[MEM_PI_REG] + offset) = value;
 	}
 }
-
 
 //*****************************************************************************
 //	The PIF control byte has been written to - process this command

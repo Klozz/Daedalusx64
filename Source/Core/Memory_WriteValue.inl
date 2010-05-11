@@ -201,27 +201,26 @@ static void WriteValue_8410_841F( u32 address, u32 value )
 			// Write value to current reg too
 			Memory_DPC_SetRegister( DPC_START_REG, value );
 			Memory_DPC_SetRegister( DPC_CURRENT_REG, value );
-
-			DBGConsole_Msg( 0, "Wrote to [WDPC_START_REG] 0x%08x", value );
+			//DBGConsole_Msg( 0, "Wrote to [WDPC_START_REG] 0x%08x", value );
 			break;
-
 
 		case DPC_END_REG:
 			Memory_DPC_SetRegister( DPC_END_REG, value );
-
 			//DBGConsole_Msg( 0, "Wrote to [WDPC_END_REG] 0x%08x", value );
-			MemoryDoDP();
-			break;
 
-		case DPC_CURRENT_REG:// - Read Only
-			DBGConsole_Msg( 0, "Wrote to DPC_CURRENT_REG" );
+			// Doesn't really seems to help, just MI_INTR_REG, MI_INTR_DP does something
+			// I'm inclining to remove MemoryDoDP and just use the proper interrupts, since it doesn't seem to help at all.
+			//
+			MemoryDoDP();
+			//Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_DP);
 			break;
 
 		case DPC_STATUS_REG:
 			// Set flags etc
-			MemoryUpdateDP(address, value);
+			MemoryUpdateDP( value );
 			break;
 
+		case DPC_CURRENT_REG:// - Read Only, do we need to handle this?
 		case DPC_CLOCK_REG: //- Read Only
 		case DPC_BUFBUSY_REG: //- Read Only
 		case DPC_PIPEBUSY_REG: //- Read Only
@@ -287,7 +286,42 @@ static void WriteValue_8440_844F( u32 address, u32 value )
 {
 	if (MEMORY_BOUNDS_CHECKING((address&0x1FFFFFFF) <= VI_LAST_REG))
 	{
-		MemoryUpdateVI(address, value);
+		u32 offset = address & 0xFF;
+
+		switch (VI_BASE_REG + offset)
+		{
+		// We only care for these VI regs
+		//
+		case VI_CONTROL_REG:
+			DPF( DEBUG_VI, "VI_CONTROL_REG set to 0x%08x", value );
+#ifdef DAEDALUS_LOG
+			DisplayVIControlInfo(value);
+#endif
+			if ( gGraphicsPlugin != NULL )
+			{
+				gGraphicsPlugin->ViStatusChanged();
+			}
+			break;
+		case VI_WIDTH_REG:
+			DPF( DEBUG_VI, "VI_WIDTH_REG set to %d pixels", value );
+			if ( gGraphicsPlugin != NULL )
+			{
+				gGraphicsPlugin->ViWidthChanged();
+			}
+			break;
+		case VI_CURRENT_REG:
+			DPF( DEBUG_VI, "VI_CURRENT_REG set to 0x%08x", value );
+
+			// Any write clears interrupt line...
+			DPF( DEBUG_VI, "VI: Clearing interrupt flag. PC: 0x%08x", gCPUState.CurrentPC );
+
+			Memory_MI_ClrRegisterBits(MI_INTR_REG, MI_INTR_VI);
+			R4300_Interrupt_UpdateCause3();
+			return;
+			//break;
+		}
+		// If we don't clear this interupt, most games will fail.. :/
+		Memory_VI_SetRegister(VI_BASE_REG + offset, value);
 	}
 	else
 	{
@@ -380,10 +414,13 @@ static void WriteValue_8460_846F( u32 address, u32 value )
 			DMA_PI_CopyToRDRAM();
 			break;
 
-		default:
-			// Do status reg stuff.
-			MemoryUpdatePI(offset, value);
+		case PI_STATUS_REG:
+			MemoryUpdatePI( value );
 			break;
+
+			// I assume if isn't PI_STATUS_REG, we don't need to handle.
+			// Might be a good idea to handle them in debug only to see when writes happen?
+
 		}
 	}
 	else

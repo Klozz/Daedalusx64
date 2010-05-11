@@ -120,7 +120,9 @@ static void DisposeAudioPlugin()
 
 SysEntityEntry SysInitTable[] = 
 {
+#ifndef DAEDALUS_PUBLIC_RELEASE
 	{"DebugConsole", CDebugConsole::Create, CDebugConsole::Destroy},
+#endif
 #ifdef DAEDALUS_LOG
 	{"Logger", Debug_InitLogging,Debug_FinishLogging},
 #endif
@@ -155,6 +157,7 @@ RomEntityEntry RomInitTable[] =
 #ifdef DAEDALUS_ENABLE_SYNCHRONISATION
 	{"CSynchroniser", CSynchroniser::InitialiseSynchroniser, CSynchroniser::Destroy},
 #endif
+
 };
 
 

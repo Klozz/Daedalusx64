@@ -717,10 +717,8 @@ void DLParser_GBI2_SetOtherModeH( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_Texture( MicroCodeCommand command )
 {
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
     gTextureLevel = (command.cmd0>>11)&0x07;
     gTextureTile  = (command.cmd0>>8 )&0x07;
-#endif
 
     bool enable =    ((command.cmd0    )&0xFF) != 0;                        // Seems to use 0x01
     f32 scale_s = f32((command.cmd1>>16)&0xFFFF) / (65536.0f * 32.0f);
@@ -738,10 +736,8 @@ void DLParser_GBI1_Texture( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_Texture( MicroCodeCommand command )
 {
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
     gTextureLevel = (command.cmd0>>11)&0x07;
     gTextureTile  = (command.cmd0>>8 )&0x07;
-#endif
 
     bool enable =    ((command.cmd0    )&0xFF) != 0;                        // Seems to use 0x02
     f32 scale_s = f32((command.cmd1>>16)&0xFFFF) / (65536.0f * 32.0f);

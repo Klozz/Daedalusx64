@@ -64,9 +64,6 @@ extern bool gTakeScreenshot;
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 extern bool gDebugDisplayList;
 #endif
-#ifdef DAEDALUS_KERNEL_MODE
-extern bool	gProfileNextFrame;
-#endif
 
 //*************************************************************************************
 //
@@ -335,17 +332,6 @@ void IPauseOptionsComponent::TakeScreenshot()
 void IPauseOptionsComponent::DebugDisplayList()
 {
 	gDebugDisplayList = true;
-	(*mOnResume)();
-}
-#endif
-
-#ifdef DAEDALUS_KERNEL_MODE
-//*************************************************************************************
-//
-//*************************************************************************************
-void IPauseOptionsComponent::ProfileNextFrame()
-{
-	gProfileNextFrame = true;
 	(*mOnResume)();
 }
 #endif

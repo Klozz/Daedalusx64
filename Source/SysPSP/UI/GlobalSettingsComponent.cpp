@@ -234,9 +234,6 @@ IGlobalSettingsComponent::IGlobalSettingsComponent( CUIContext * p_context )
 
 	if (HAVE_DVE && PSP_TV_CABLE > 0)
 	{
-		//gGlobalPreferences.TVEnable = true;
-		//gGlobalPreferences.TVLaced = PSP_TV_LACED ? true : false;
-		//gGlobalPreferences.TVType = (PSP_TV_CABLE == 1) ? TT_4_3 : TT_WIDESCREEN;
 		mElements.Add( new CBoolSetting( &gGlobalPreferences.TVEnable, "TV Output", "Whether to direct the video to the TV out.", "Yes", "No" ) );
 		mElements.Add( new CBoolSetting( &gGlobalPreferences.TVLaced, "TV Interlaced", "Whether the TV needs interlaced output.", "Yes", "No" ) );
 		mElements.Add( new CTVTypeSetting( "TV Type", "The aspect ratio of the TV." ) );

@@ -45,7 +45,7 @@ namespace
 
 	const char * const		INFO_TEXT[] =
 	{
-		"Copyright (C) 2008-2009 DaedalusX64 Team",
+		"Copyright (C) 2008-2010 DaedalusX64 Team",
 		"Copyright (C) 2001-2009 StrmnNrmn",
 		"Audio HLE code by Azimer",
 		"",

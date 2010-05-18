@@ -12,7 +12,8 @@ DAED_MAIN_SRCS =	Source/SysPSP/main.cpp \
 
 DAED_DEBUG_SRCS =	Source/SysPSP/Debug/DBGConsolePSP.cpp \
 					Source/Debug/DebugLog.cpp \
-					Source/Debug/Dump.cpp
+					Source/Debug/Dump.cpp \
+					
 
 DAED_CORE_SRCS =	Source/System.cpp \
 					Source/Core/CPU.cpp \
@@ -93,7 +94,6 @@ DAED_PSP_SRCS =	Source/SysPSP/Graphics/DrawText.cpp \
 				Source/SysPSP/UI/GlobalSettingsComponent.cpp \
 				Source/SysPSP/UI/RomPreferencesScreen.cpp \
 				Source/SysPSP/UI/AdvancedOptionsScreen.cpp \
-				Source/SysPSP/UI/RomSelectorComponent.cpp \
 				Source/SysPSP/UI/SavestateSelectorComponent.cpp \
 				Source/SysPSP/UI/PauseOptionsComponent.cpp \
 				Source/SysPSP/UI/SelectedRomComponent.cpp \
@@ -155,14 +155,16 @@ DAED_AUDIO_SRCS =   Source/HLEAudio/ABI1.cpp \
 DAED_OSHLE_SRCS = Source/OSHLE/OS.cpp \
 					Source/OSHLE/patch.cpp
 
-ADDITIONAL_DEBUG_SRCS =
+DAED_RELEASE_SRCS = Source/SysPSP/UI/RomSelectorComponent.cpp 
+
+ADDITIONAL_DEBUG_SRCS = Source/SysPSP/UI/RomSelectorComponentdebug.cpp
 ADDITIONAL_SYNC_SRCS  = Source/Utility/Synchroniser.cpp Source/Utility/ZLibWrapper.cpp
 
 CORE_SRCS = $(DAED_MAIN_SRCS) $(DAED_DEBUG_SRCS) $(DAED_CORE_SRCS) $(DAED_INTERFACE_SRCS) $(DAED_INPUT_SRCS) $(DAED_DYNREC_SRCS) $(DAED_UTILITY_SRCS) $(DAED_PSP_SRCS) $(DAED_HLEGFX_SRCS) $(DAED_AUDIO_SRCS) $(DAED_OSHLE_SRCS)
 
 ifdef DEBUG
 CFLAGS			= -g -O3 -G0 -D_DEBUG -MD \
-  -W -Wall -Wcast-qual -Wchar-subscripts -Wno-unused -Wpointer-arith -Wredundant-decls -Wshadow -Wwrite-strings
+  -W -Wcast-qual -Wchar-subscripts -Wpointer-arith -Wredundant-decls -Wshadow -Wwrite-strings
 #-Winline -Wcast-align 
 LDFLAGS = -g
 LIBS= -lsupc++ -lstdc++ -lpsppower -lpspgu -lpspaudiolib -lpspaudio -lpsprtc -lc -lpng -lz -lg -lm -lpspfpu -lpspvfpu -lpspkubridge
@@ -170,11 +172,12 @@ LIBS= -lsupc++ -lstdc++ -lpsppower -lpspgu -lpspaudiolib -lpspaudio -lpsprtc -lc
 SRCS			= $(CORE_SRCS) $(ADDITIONAL_DEBUG_SRCS) $(ADDITIONAL_SYNC_SRCS)
 else
 CFLAGS			= -O3 -G0 -DNDEBUG -Wall -MD
-SRCS			= $(CORE_SRCS)
+SRCS			= $(CORE_SRCS) $(DAED_RELEASE_SRCS)
 endif
 
 ifndef CONFIG
 CONFIG=Release
+SRS = $(CORE_SRCS) $(DAED_RELEASE_SRCS)
 endif
 
 CXXFLAGS = -fno-exceptions -fno-rtti -iquote./Source/SysPSP/Include -iquote./Source/Config/$(CONFIG) -iquote./Source -iquote./Source/SysPSP

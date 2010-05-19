@@ -120,7 +120,7 @@ static void DisposeAudioPlugin()
 
 SysEntityEntry SysInitTable[] = 
 {
-#ifndef DAEDALUS_PUBLIC_RELEASE
+#ifdef DAEDALUS_DEBUG_CONSOLE
 	{"DebugConsole", CDebugConsole::Create, CDebugConsole::Destroy},
 #endif
 #ifdef DAEDALUS_LOG

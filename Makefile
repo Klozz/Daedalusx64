@@ -12,7 +12,7 @@ DAED_MAIN_SRCS =	Source/SysPSP/main.cpp \
 
 DAED_DEBUG_SRCS =	Source/SysPSP/Debug/DBGConsolePSP.cpp \
 					Source/Debug/DebugLog.cpp \
-					Source/Debug/Dump.cpp \
+					Source/Debug/Dump.cpp
 					
 
 DAED_CORE_SRCS =	Source/System.cpp \
@@ -164,7 +164,7 @@ CORE_SRCS = $(DAED_MAIN_SRCS) $(DAED_DEBUG_SRCS) $(DAED_CORE_SRCS) $(DAED_INTERF
 
 ifdef DEBUG
 CFLAGS			= -g -O3 -G0 -D_DEBUG -MD \
-  -W -Wcast-qual -Wchar-subscripts -Wpointer-arith -Wredundant-decls -Wshadow -Wwrite-strings
+  -W -Wcast-qual -Wchar-subscripts -Wno-unused -Wpointer-arith -Wredundant-decls -Wshadow -Wwrite-strings
 #-Winline -Wcast-align 
 LDFLAGS = -g
 LIBS= -lsupc++ -lstdc++ -lpsppower -lpspgu -lpspaudiolib -lpspaudio -lpsprtc -lc -lpng -lz -lg -lm -lpspfpu -lpspvfpu -lpspkubridge

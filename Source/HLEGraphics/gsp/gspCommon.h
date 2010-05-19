@@ -56,7 +56,7 @@ struct DList
 
 extern u32 gSegments[16];
 const  u32 MAX_RAM_ADDRESS = (8*1024*1024);
-extern u32 gVertexStride;
+extern int VertexStride;
 extern u32 gOtherModeL;
 extern u32 gOtherModeH;
 extern u32 gTextureLevel;
@@ -70,7 +70,7 @@ extern const char *gInstructionName[256];
 
 #define RDPSegAddr(seg) 		( (gSegments[((seg)>>24)&0x0F]&0x00ffffff) + ((seg)&0x00FFFFFF) )
 
-#define SetCommand( cmd, func ) 	gInstructionLookup[ cmd ] = func; gInstructionName[ cmd ] = #cmd;
+//#define SetCommand( cmd, func ) 	gInstructionLookup[ cmd ] = func; gInstructionName[ cmd ] = #cmd;
 
 #define RDP_NOIMPL_WARN(op)             DAEDALUS_DL_ERROR( op )
 #define RDP_NOIMPL( op, cmd0, cmd1 )    DAEDALUS_DL_ERROR( "Not Implemented: %s 0x%08x 0x%08x", op, cmd0, cmd1 )

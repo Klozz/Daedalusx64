@@ -33,11 +33,13 @@ void DLParser_GBI1_Sprite2DBase( MicroCodeCommand command )
 
         g_Sprite2DInfo.spritePtr = (SpriteStruct *)(g_ps8RamBase+address);
 
+		// ToDo : Fix me
+
         // Update the ucode table if we call Sprite2DBase, because we will need them
-        if(gInstructionLookup[G_GBI1_SPRITE2D_DRAW] != DLParser_GBI1_Sprite2DDraw){
+        /*if(gInstructionLookup[G_GBI1_SPRITE2D_DRAW] != DLParser_GBI1_Sprite2DDraw){
                 SetCommand(G_GBI1_SPRITE2D_SCALEFLIP, DLParser_GBI1_Sprite2DScaleFlip);
                 SetCommand(G_GBI1_SPRITE2D_DRAW, DLParser_GBI1_Sprite2DDraw);
-        }
+        }*/
 }
 
 //*****************************************************************************
@@ -108,7 +110,11 @@ void DLParser_GBI1_Sprite2DDraw( MicroCodeCommand command )
                 g_Sprite2DInfo.spritePtr = 0;
         }
 
+		//Fix me
+
         // Restore ucode table
+		/*
         SetCommand(G_GBI1_SPRITE2D_SCALEFLIP, DLParser_GBI1_CullDL);
         SetCommand(G_GBI1_SPRITE2D_DRAW, DLParser_GBI1_PopMtx);
+		*/
 }

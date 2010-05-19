@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "TextureCache.h"
 #include "ConvertImage.h"			// Convert555ToRGBA
 #include "Microcode.h"
+#include "Ucode.h"
 
 #include "Utility/Profiler.h"
 #include "Utility/IO.h"
@@ -149,8 +150,25 @@ u32 gRDPHalf1 = 0;
 // This is the multiplier applied to vertex indices. 
 // For GBI0, it is 10.
 // For GBI1/2 it is 2.
-u32 gVertexStride = 10;
+//u32 gVertexStride = 10;
+int VertexStride;
 
+u32 gVertexStride[] =
+{
+	10,		// Super Mario 64, Tetrisphere, Demos
+	2,		// Mario Kart, Star Fox
+	NULL,	// Zelda, and newer games
+	10,		// Diddy Kong Racing
+	2,		// Yoshi's Story, Pokemon Puzzle League
+	NULL,	// Kirby 64
+	5,		// Wave Racer USA
+	10,		// Gemini and Mickey
+	2,		// Last Legion, Toukon, Toukon 2
+	5,		// Shadows of the Empire (SOTE)
+	10,		// Golden Eye
+};
+
+static u32 ucode_ver;
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
 //                      Dumping                         //
@@ -272,85 +290,10 @@ const char *sc_colcombtypes8[8] =
 #define RDPSegAddr(seg) ( (gSegments[((seg)>>24)&0x0F]&0x00ffffff) + ((seg)&0x00FFFFFF) )
 
 //*****************************************************************************
-// GBI1
-//*****************************************************************************
-
-void DLParser_Nothing( MicroCodeCommand command );
-static void DLParser_GBI1_SpNoop( MicroCodeCommand command );
-static void DLParser_GBI1_MoveMem( MicroCodeCommand command );
-
-static void DLParser_GBI1_Reserved0( MicroCodeCommand command );
-static void DLParser_GBI1_Reserved1( MicroCodeCommand command );
-static void DLParser_GBI1_Reserved2( MicroCodeCommand command );
-static void DLParser_GBI1_Reserved3( MicroCodeCommand command );
-
-static void DLParser_GBI1_RDPHalf_Cont( MicroCodeCommand command );
-static void DLParser_GBI1_RDPHalf_2( MicroCodeCommand command );
-static void DLParser_GBI1_RDPHalf_1( MicroCodeCommand command );
-void DLParser_GBI1_MoveWord( MicroCodeCommand command );
-static void DLParser_GBI1_Noop( MicroCodeCommand command );
-
-//*****************************************************************************
-// GBI2
-//*****************************************************************************
-static void DLParser_GBI2_Noop( MicroCodeCommand command );
-static void DLParser_GBI2_DMA_IO( MicroCodeCommand command );
-static void DLParser_GBI2_Special1( MicroCodeCommand command );
-static void DLParser_GBI2_Special2( MicroCodeCommand command );
-static void DLParser_GBI2_Special3( MicroCodeCommand command );
-static void DLParser_GBI2_MoveWord( MicroCodeCommand command );
-static void DLParser_GBI2_MoveMem( MicroCodeCommand command );
-
-// static void DLParser_GBI2_RDPHalf_1( MicroCodeCommand command );
-static void DLParser_GBI2_RDPHalf_2( MicroCodeCommand command );
-
-static void DLParser_GBI2_SpNoop( MicroCodeCommand command );
-
-
-// Include ucode header files
-#include "gsp/gspMacros.h"
-#include "gsp/gspSprite2D.h"
-#include "gsp/gspS2DEX.h"
-#include "gsp/gspCustom.h"
-
-
-//*****************************************************************************
-// RDP Commands
-//*****************************************************************************
-void DLParser_TexRect( MicroCodeCommand command );
-static void DLParser_TexRectFlip( MicroCodeCommand command );
-static void DLParser_RDPLoadSync( MicroCodeCommand command );
-static void DLParser_RDPPipeSync( MicroCodeCommand command );
-static void DLParser_RDPTileSync( MicroCodeCommand command );
-static void DLParser_RDPFullSync( MicroCodeCommand command );
-static void DLParser_SetKeyGB( MicroCodeCommand command );
-static void DLParser_SetKeyR( MicroCodeCommand command );
-static void DLParser_SetConvert( MicroCodeCommand command );
-static void DLParser_SetScissor( MicroCodeCommand command );
-static void DLParser_SetPrimDepth( MicroCodeCommand command );
-static void DLParser_RDPSetOtherMode( MicroCodeCommand command );
-static void DLParser_LoadTLut( MicroCodeCommand command );
-static void DLParser_SetTileSize( MicroCodeCommand command );
-static void DLParser_LoadBlock( MicroCodeCommand command );
-static void DLParser_LoadTile( MicroCodeCommand command );
-static void DLParser_SetTile( MicroCodeCommand command );
-static void DLParser_FillRect( MicroCodeCommand command );
-static void DLParser_SetFillColor( MicroCodeCommand command );
-static void DLParser_SetFogColor( MicroCodeCommand command );
-static void DLParser_SetBlendColor( MicroCodeCommand command );
-static void DLParser_SetPrimColor( MicroCodeCommand command );
-static void DLParser_SetEnvColor( MicroCodeCommand command );
-static void DLParser_SetCombine( MicroCodeCommand command );
-static void DLParser_SetTImg( MicroCodeCommand command );
-static void DLParser_SetZImg( MicroCodeCommand command );
-static void DLParser_SetCImg( MicroCodeCommand command );
-
-
-//*****************************************************************************
 //
 //*****************************************************************************
 const char * gInstructionName[256];
-MicroCodeInstruction gInstructionLookup[256];
+//MicroCodeInstruction gInstructionLookup[256];
 
 //DKR: 00229BA8: 05710080 001E4AF0 CMD G_DMATRI  Triangles 9 at 801E4AF0
 
@@ -458,271 +401,102 @@ static void	DLParser_DumpTaskInfo( const OSTask * pTask )
 #endif
 
 
-static GBIVersion gGBIVersion = GBI_2;
-
 //*****************************************************************************
 //
 //*****************************************************************************
 static void DLParser_SetuCode( GBIVersion gbi_version, UCodeVersion ucode_version )
 {
-	//DBGConsole_Msg(0, "[GReconfiguring RDP to process ucode %d]", ucode);
+	MicroCodeCommand command;
 
-	for ( u32 i = 0; i < 256; i++ )
+	// ToDo : Make this more efficient 
+
+	bool ucode_supported = false;
+
+	if ( ucode_version == S2DEX )
 	{
-		gInstructionLookup[ i ] = DLParser_Nothing;
-		gInstructionName[ i ] = "???";
-	}
-	
-#define SetCommand( cmd, func )					\
-		gInstructionLookup[ cmd ] = func;		\
-		gInstructionName[ cmd ] = #cmd;
-		
-	//SetCommand( 0x08			, DLParser_GBI1_SpNoop );
-	//SetCommand( 0x09			, DLParser_GBI1_SpNoop );
-	//SetCommand( 0x0b			, DLParser_GBI1_SpNoop );
-	//SetCommand( 0x0a			, DLParser_GBI1_SpNoop );
-
-	SetCommand( G_RDP_SETCIMG			, DLParser_SetCImg );
-	SetCommand( G_RDP_SETZIMG			, DLParser_SetZImg );
-	SetCommand( G_RDP_SETTIMG			, DLParser_SetTImg );
-	SetCommand( G_RDP_SETCOMBINE		, DLParser_SetCombine );
-	SetCommand( G_RDP_SETENVCOLOR		, DLParser_SetEnvColor );
-	SetCommand( G_RDP_SETPRIMCOLOR		, DLParser_SetPrimColor );
-	SetCommand( G_RDP_SETBLENDCOLOR		, DLParser_SetBlendColor );
-	SetCommand( G_RDP_SETFOGCOLOR		, DLParser_SetFogColor );
-	SetCommand( G_RDP_SETFILLCOLOR		, DLParser_SetFillColor );
-	SetCommand( G_RDP_FILLRECT			, DLParser_FillRect );
-	SetCommand( G_RDP_SETTILE			, DLParser_SetTile );
-	SetCommand( G_RDP_LOADTILE			, DLParser_LoadTile );
-	SetCommand( G_RDP_LOADBLOCK			, DLParser_LoadBlock );
-	SetCommand( G_RDP_SETTILESIZE		, DLParser_SetTileSize );
-	SetCommand( G_RDP_LOADTLUT			, DLParser_LoadTLut );
-	SetCommand( G_RDP_RDPSETOTHERMODE	, DLParser_RDPSetOtherMode );
-	SetCommand( G_RDP_SETPRIMDEPTH		, DLParser_SetPrimDepth );
-	SetCommand( G_RDP_SETSCISSOR		, DLParser_SetScissor );
-	SetCommand( G_RDP_SETCONVERT		, DLParser_SetConvert );
-	SetCommand( G_RDP_SETKEYR			, DLParser_SetKeyR );
-	SetCommand( G_RDP_SETKEYGB			, DLParser_SetKeyGB );
-	SetCommand( G_RDP_RDPFULLSYNC		, DLParser_RDPFullSync );
-	SetCommand( G_RDP_RDPTILESYNC		, DLParser_RDPTileSync );
-	SetCommand( G_RDP_RDPPIPESYNC		, DLParser_RDPPipeSync );
-	SetCommand( G_RDP_RDPLOADSYNC		, DLParser_RDPLoadSync );
-	SetCommand( G_RDP_TEXRECTFLIP		, DLParser_TexRectFlip );
-	SetCommand( G_RDP_TEXRECT			, DLParser_TexRect );
-
-	if ( gbi_version == GBI_0 ||
-		 gbi_version == GBI_0_WR ||
-		 gbi_version == GBI_0_GE ||
-		 gbi_version == GBI_0_DKR ||
-		 gbi_version == GBI_0_JFG ||
-		 gbi_version == GBI_0_LL ||
-		 gbi_version == GBI_0_SE ||
-		 gbi_version == GBI_1 )
-	{
-
-		MicroCodeInstruction	DLParser_GBI1_Tri1_Instruction;
-		MicroCodeInstruction	DLParser_GBI1_Tri2_Instruction;
-		MicroCodeInstruction	DLParser_GBI1_Line3D_Instruction;
 		switch( gbi_version )
 		{
-		case GBI_0:
-		case GBI_0_GE:
-		case GBI_0_DKR:	
-			gVertexStride = 10;
-			DLParser_GBI1_Tri1_Instruction = DLParser_GBI1_Tri1_T< 10 >;
-			DLParser_GBI1_Tri2_Instruction = DLParser_GBI1_Tri2_T< 10 >;
-			DLParser_GBI1_Line3D_Instruction = DLParser_GBI1_Line3D_T< 10 >;
-			break;
-		case GBI_0_WR:
-		case GBI_0_SE:
-			gVertexStride = 5;	
-			DLParser_GBI1_Tri1_Instruction = DLParser_GBI1_Tri1_T< 5 >;
-			DLParser_GBI1_Tri2_Instruction = DLParser_GBI1_Tri2_T< 5 >;
-			DLParser_GBI1_Line3D_Instruction = DLParser_GBI1_Line3D_T< 5 >;
-			break;
-			// Default case is GBI_1
 		case GBI_1:
+			ucode_ver = 4;
+			ucode_supported = true;
+			break;
+		case GBI_2:
+			ucode_ver = 5;
+			ucode_supported = true;
+			break;
 		default:
-			gVertexStride = 2;	
-			DLParser_GBI1_Tri1_Instruction = DLParser_GBI1_Tri1_T< 2 >;
-			DLParser_GBI1_Tri2_Instruction = DLParser_GBI1_Tri2_T< 2 >;
-			DLParser_GBI1_Line3D_Instruction = DLParser_GBI1_Line3D_T< 2 >;
+			DBGConsole_Msg(0, "Trying to set a non GBI1/2 S2DEX ucode??"); // This definitvely can't happen..
 			break;
 		}
-
-		// DMA commands
-		SetCommand( G_GBI1_SPNOOP        , DLParser_GBI1_SpNoop );
-		SetCommand( G_GBI1_MTX	         , DLParser_GBI1_Mtx );
-		SetCommand( G_GBI1_RESERVED0     , DLParser_GBI1_Reserved0 );
-		SetCommand( G_GBI1_MOVEMEM	     , DLParser_GBI1_MoveMem );
-		SetCommand( G_GBI1_VTX	         , DLParser_GBI1_Vtx );
-		SetCommand( G_GBI1_RESERVED1	 , DLParser_GBI1_Reserved1 );
-		SetCommand( G_GBI1_DL			 , DLParser_GBI1_DL );
-		SetCommand( G_GBI1_RESERVED2	 , DLParser_GBI1_Reserved2 );
-		SetCommand( G_GBI1_RESERVED3	 , DLParser_GBI1_Reserved3 );
-		SetCommand( G_GBI1_SPRITE2D_BASE , DLParser_GBI1_Sprite2DBase );
-
-		// IMMEDIATE commands
-		SetCommand( G_GBI1_NOOP          , DLParser_GBI1_Noop );
-		
-		SetCommand( G_GBI1_TRI1					, DLParser_GBI1_Tri1_Instruction );
-		SetCommand( G_GBI1_CULLDL				, DLParser_GBI1_CullDL );
-		SetCommand( G_GBI1_POPMTX				, DLParser_GBI1_PopMtx );
-		SetCommand( G_GBI1_MOVEWORD				, DLParser_GBI1_MoveWord );
-		SetCommand( G_GBI1_TEXTURE				, DLParser_GBI1_Texture );
-		SetCommand( G_GBI1_SETOTHERMODE_H		, DLParser_GBI1_SetOtherModeH );
-		SetCommand( G_GBI1_SETOTHERMODE_L		, DLParser_GBI1_SetOtherModeL );
-		SetCommand( G_GBI1_ENDDL				, DLParser_GBI1_EndDL );
-		SetCommand( G_GBI1_SETGEOMETRYMODE		, DLParser_GBI1_SetGeometryMode );
-		SetCommand( G_GBI1_CLEARGEOMETRYMODE	, DLParser_GBI1_ClearGeometryMode );
-		SetCommand( G_GBI1_LINE3D				, DLParser_GBI1_Line3D_Instruction );
-		SetCommand( G_GBI1_RDPHALF_1			, DLParser_GBI1_RDPHalf_1 );
-		SetCommand( G_GBI1_RDPHALF_2			, DLParser_GBI1_RDPHalf_2 );
-
-		if ( ucode_version == F3DEX ||
-			 ucode_version == F3DLP ||
-			 ucode_version == F3DLX )
-		{
-			SetCommand( G_GBI1_MODIFYVTX			, DLParser_GBI1_ModifyVtx );
-			SetCommand( G_GBI1_TRI2					, DLParser_GBI1_Tri2_Instruction );
-			SetCommand( G_GBI1_BRANCH_Z				, DLParser_GBI1_BranchZ );
-		}
-		else
-		{
-			SetCommand( G_GBI1_RDPHALF_CONT			, DLParser_GBI1_RDPHalf_Cont );
-		}
-
-		if ( ucode_version == F3DEX ||
-			 ucode_version == F3DLP ||
-			 ucode_version == F3DLX || // Airboarder 64 needs Load_Ucode.
-			 ucode_version == S2DEX )
-		{
-			SetCommand( G_GBI1_LOAD_UCODE			, DLParser_GBI1_LoadUCode );
-		}
-		if ( ucode_version == S2DEX )
-		{
-			SetCommand( G_GBI1_OBJ_RECTANGLE_R		, DLParser_S2DEX_ObjRectangleR );
-			SetCommand( G_GBI1_OBJ_MOVEMEM			, DLParser_S2DEX_ObjMoveMem );
-			SetCommand( G_GBI1_RDPHALF_0			, DLParser_S2DEX_RDPHalf_0 );
-			SetCommand( G_GBI1_OBJ_RECTANGLE	 	, DLParser_S2DEX_ObjRectangle );
-			SetCommand( G_GBI1_OBJ_SPRITE			, DLParser_S2DEX_ObjSprite );
-			SetCommand( G_GBI1_SELECT_DL			, DLParser_S2DEX_SelectDl );
-			SetCommand( G_GBI1_OBJ_LOADTXTR			, DLParser_S2DEX_ObjLoadTxtr );
-			SetCommand( G_GBI1_OBJ_LDTX_SPRITE		, DLParser_S2DEX_ObjLdtxSprite );
-			SetCommand( G_GBI1_OBJ_LDTX_RECT		, DLParser_S2DEX_ObjLdtxRect );
-			SetCommand( G_GBI1_OBJ_LDTX_RECT_R		, DLParser_S2DEX_ObjLdtxRectR );
-			SetCommand( G_GBI1_BG_1CYC				, DLParser_S2DEX_Bg1cyc );
-			SetCommand( G_GBI1_BG_COPY				, DLParser_S2DEX_BgCopy ); 
-			SetCommand( G_GBI1_OBJ_RENDERMODE		, DLParser_S2DEX_ObjRendermode ); 
-		}
-		
-		if ( gbi_version == GBI_0 )
-		{
-			gInstructionLookup[G_GBI1_VTX] = DLParser_GBI0_Vtx;			gInstructionName[G_GBI1_VTX]		= "G_GBI0_VTX";
-			gInstructionLookup[G_GBI1_TRI2] = DLParser_GBI0_Tri2;		gInstructionName[G_GBI1_TRI2]		= "G_GBI0_TRI2";
-		}
-		else if ( gbi_version == GBI_0_WR )
-		{
-			gInstructionLookup[G_GBI1_VTX] = DLParser_GBI0_Vtx_WRUS;	gInstructionName[G_GBI1_VTX]		= "G_GBI0_VTX_WRUS";
-		} 
-		else if (gbi_version == GBI_0_DKR || gbi_version == GBI_0_JFG)
-		{
-			// DKR
-			SetCommand( G_DMATRI					, DLParser_DmaTri );
-			SetCommand( G_DLINMEM					, DLParser_DLInMem );
-
-			gInstructionLookup[G_GBI1_MOVEWORD] = DLParser_MoveWord_DKR;		gInstructionName[G_GBI1_MOVEWORD]		= "G_MoveWord_DKR";
-			gInstructionLookup[G_GBI1_MTX] = DLParser_MtxDKR;					gInstructionName[G_GBI1_MTX]			= "G_MtxDKR";
-			gInstructionLookup[G_GBI1_TRI2] = DLParser_GBI0_Tri2;				gInstructionName[G_GBI1_TRI2]			= "G_GBI0_TRI2";
-
-			//if (gbi_version equals a certain number, OR gbi_version is non-zero) 
-			//{....we need if (gbi_version equalt this number OR gbi_version eqauls that number)
-			//therefor, we need to repeat the gbi_verion ==
-			if( gbi_version == GBI_0_JFG )	
-			{
-				gInstructionLookup[G_GBI1_VTX] = DLParser_GBI0_Vtx_Gemini;		gInstructionName[G_GBI1_VTX]			= "G_GBI0_Vtx_Gemini";
-			}
-			else
-			{
-				gInstructionLookup[G_GBI1_VTX] = DLParser_GBI0_Vtx_DKR;			gInstructionName[G_GBI1_VTX]			= "G_GBI0_VTX_DKR";
-
-			}
-
-		}
-		else if ( gbi_version == GBI_0_GE )
-		{
-			gInstructionLookup[G_GBI1_VTX] = DLParser_GBI0_Vtx;			gInstructionName[G_GBI1_VTX]		= "G_GBI0_VTX";
-			gInstructionLookup[G_GBI1_TRI2] = DLParser_GBI0_Tri2;		gInstructionName[G_GBI1_TRI2]		= "G_GBI0_TRI2";
-			gInstructionLookup[G_GBI1_RDPHALF_1] = DLParser_RDPHalf1_GoldenEye;	gInstructionName[G_GBI1_RDPHALF_1]		= "G_RDPHalf1_GoldenEye";
-		}
-		else if ( gbi_version == GBI_0_SE )
-		{
-                       gInstructionLookup[G_GBI1_VTX] = DLParser_GBI0_Vtx_ShadowOfEmpire;                      gInstructionName[G_GBI1_VTX]            = "G_GBI0_Vtx_ShadowOfEmpire";
-					   //gInstructionLookup[G_GBI1_TRI1] = DLParser_GBI0_Tri1_ShadowOfEmpire;                      gInstructionName[G_GBI1_TRI1]            = "G_GBI0_Tri1_ShadowOfEmpire";
-					   //gInstructionLookup[G_GBI1_LINE3D] = DLParser_GBI0_Quad_ShadowOfEmpire;                      gInstructionName[G_GBI1_LINE3D]            = "G_GBI0_Quad_ShadowOfEmpire";
-                }
-                else if ( gbi_version == GBI_0_LL )
-                {
-                        SetCommand(0x80							, DLParser_RSP_Last_Legion_0x80);
-                        SetCommand(0x00							, DLParser_RSP_Last_Legion_0x00);
-
-                        gInstructionLookup[G_RDP_TEXRECT] =  DLParser_TexRect_Last_Legion;                            gInstructionName[G_RDP_TEXRECT]         = "G_TexRect_Last_Legion";
-                }
-
 	}
 	else
 	{
-		SetCommand( G_GBI2_RDPHALF_2		, DLParser_GBI2_RDPHalf_2 );
-		SetCommand( G_GBI2_SETOTHERMODE_H	, DLParser_GBI2_SetOtherModeH );
-		SetCommand( G_GBI2_SETOTHERMODE_L	, DLParser_GBI2_SetOtherModeL );
-		SetCommand( G_GBI2_RDPHALF_1		, DLParser_GBI1_RDPHalf_1 );
-		SetCommand( G_GBI2_SPNOOP			, DLParser_GBI2_SpNoop );
-		SetCommand( G_GBI2_ENDDL			, DLParser_GBI2_EndDL );
-		SetCommand( G_GBI2_DL				, DLParser_GBI2_DL );
-		SetCommand( G_GBI2_LOAD_UCODE		, DLParser_GBI1_LoadUCode );
-		SetCommand( G_GBI2_MOVEMEM			, DLParser_GBI2_MoveMem );
-		SetCommand( G_GBI2_MOVEWORD			, DLParser_GBI2_MoveWord );
-		SetCommand( G_GBI2_MTX				, DLParser_GBI2_Mtx );
-		SetCommand( G_GBI2_GEOMETRYMODE		, DLParser_GBI2_GeometryMode );
-		SetCommand( G_GBI2_POPMTX			, DLParser_GBI2_PopMtx );
-		SetCommand( G_GBI2_TEXTURE			, DLParser_GBI2_Texture );
-		SetCommand( G_GBI2_DMA_IO			, DLParser_GBI2_DMA_IO );
-		SetCommand( G_GBI2_SPECIAL_1		, DLParser_GBI2_Special1 );
-		SetCommand( G_GBI2_SPECIAL_2		, DLParser_GBI2_Special2 );
-		SetCommand( G_GBI2_SPECIAL_3		, DLParser_GBI2_Special3 );
-
-		SetCommand( G_GBI2_NOOP				, DLParser_GBI2_Noop );
-		SetCommand( G_GBI2_VTX				, DLParser_GBI2_Vtx );
-		SetCommand( G_GBI2_MODIFYVTX		, DLParser_GBI1_ModifyVtx ); // Share the same function.
-		SetCommand( G_GBI2_CULLDL			, DLParser_GBI2_CullDL );
-		SetCommand( G_GBI2_BRANCH_Z			, DLParser_GBI1_BranchZ );
-		SetCommand( G_GBI2_TRI1				, DLParser_GBI2_Tri1 );
-		SetCommand( G_GBI2_TRI2				, DLParser_GBI2_Tri2 );
-		SetCommand( G_GBI2_QUAD				, DLParser_GBI2_Quad );
-		SetCommand( G_GBI2_LINE3D			, DLParser_GBI2_Line3D );
-
-		if( ucode_version == S2DEX )
+		switch( gbi_version )
 		{
-			SetCommand( G_GBI2_OBJ_RECTANGLE_R		, DLParser_S2DEX_ObjRectangleR );
-			SetCommand( G_GBI2_OBJ_MOVEMEM			, DLParser_S2DEX_ObjMoveMem );
-			SetCommand( G_GBI2_RDPHALF_0			, DLParser_S2DEX_RDPHalf_0 );
-			SetCommand( G_GBI2_OBJ_RECTANGLE	 	, DLParser_S2DEX_ObjRectangle );
-			SetCommand( G_GBI2_OBJ_SPRITE			, DLParser_S2DEX_ObjSprite );
-			SetCommand( G_GBI2_SELECT_DL			, DLParser_S2DEX_SelectDl );
-			SetCommand( G_GBI2_OBJ_LOADTXTR			, DLParser_S2DEX_ObjLoadTxtr );
-			SetCommand( G_GBI2_OBJ_LDTX_SPRITE		, DLParser_S2DEX_ObjLdtxSprite );
-			SetCommand( G_GBI2_OBJ_LDTX_RECT		, DLParser_S2DEX_ObjLdtxRect );
-			SetCommand( G_GBI2_OBJ_LDTX_RECT_R		, DLParser_S2DEX_ObjLdtxRectR );
-			SetCommand( G_GBI2_BG_1CYC				, DLParser_S2DEX_Bg1cyc );
-			SetCommand( G_GBI2_BG_COPY				, DLParser_S2DEX_BgCopy ); 
-			SetCommand( G_GBI2_OBJ_RENDERMODE		, DLParser_S2DEX_ObjRendermode ); 
+		case GBI_0:
+			ucode_ver = 0;
+			ucode_supported = true;
+			break;
+		case GBI_1:
+			ucode_ver = 1;
+			ucode_supported = true;
+			break;
+		case GBI_2:
+			ucode_ver = 2;
+			ucode_supported = true;
+			break;
+		case GBI_0_WR:
+			ucode_ver = 6;
+			ucode_supported = true;
+			break;
+		case GBI_0_DKR:
+			ucode_ver = 3;
+			ucode_supported = true;
+			break;
+		case GBI_0_JFG:
+			ucode_ver = 7;
+			ucode_supported = true;
+			break;
+		case GBI_0_LL:	// doesn't work yet
+			ucode_ver = 9;
+			ucode_supported = true;
+			break;
+		case GBI_0_SE:	// doesn't work yet
+			ucode_ver = 8;
+			ucode_supported = true;
+			break;
+		case GBI_0_GE:	// doesn't work yet
+			ucode_ver = 10;
+			ucode_supported = true;
+			break;
+		/*default:
+			// Can this even happen happen? our auto ucode detector sets any unknown ucode as GBI0.
+			DBGConsole_Msg(0, "[RUcode wasn't set by ucode auto detector!!!] "); 
+			ucode_supported = false;
+			break;*/
 		}
-
 	}
 
-	gGBIVersion = gbi_version;
-}
+	if(!ucode_supported)
+	{
+		// Do this to return user to romselector when trying to load an unsupported ucode.
+		// Alot nicer than allowing their psp to crash :)
+		//
+		CPU_Halt("Exception in Set uCode");
+		DBGConsole_Msg(0, "[MException within loading unknown/unsupported ucode] at [R0x%08x 0x%08x]", command.cmd0, command.cmd1);
+	}
 
+	//DBGConsole_Msg(0, "Switching ucode table to %d", ucode_ver);
+	//
+	// Set up correct vertex stride
+	VertexStride = gVertexStride[ucode_ver];
+	//
+	//Set up selected ucode table
+	//
+	gInstructionLookup[ucode_ver][command.cmd0>>24](command);
+
+}
+	
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -895,8 +669,9 @@ static void	DLParser_ProcessDList()
 	while (DLParser_FetchNextCommand( &command ))
 	{
 		PROFILE_DL_CMD( command.cmd );
-
-		gInstructionLookup[ command.cmd ]( command );
+		
+		// Mm what do to here? This feels akward, should we set up our ucode tables here??
+		gInstructionLookup[ ucode_ver ][ command.cmd ]( command );
 
 		// Check limit
 		if (!gDisplayListStack.empty())
@@ -2500,3 +2275,47 @@ void DLParser_SetInstructionCountLimit( u32 limit )
 	gInstructionCountLimit = limit;
 }
 #endif
+
+void DLParser_GBI2_DL_Count( MicroCodeCommand command )
+{
+	DAEDALUS_ERROR("DL_COUNT");
+
+	// This cmd is likely to execute number of ucode at the given address
+	u32 address  = RDPSegAddr(command.cmd1);
+	{
+		DList dl;
+		dl.addr = address;
+		dl.limit = ((command.cmd0)&0xFFFF);
+		gDisplayListStack.push_back(dl);
+	}
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void DLParser_GBI2_0x8( MicroCodeCommand command )
+{
+	if( ((command.cmd0)&0x00FFFFFF) == 0x2F && ((command.cmd1)&0xFF000000) == 0x80000000 )
+	{
+		// V-Rally 64
+		DLParser_S2DEX_ObjLdtxRectR(command);
+	}
+	else
+	{
+		DLParser_Nothing(command);
+	}
+}
+
+//*****************************************************************************
+//RSP TRI commands..
+//In HLE emulation you NEVER see this commands !
+//*****************************************************************************
+
+void DLParser_TriFill( MicroCodeCommand command ){ /*DL_PF("RSP Tri: (Ignored)");*/ }
+void DLParser_TriFillZ( MicroCodeCommand command ){ /*DL_PF("RSP Tri: (Ignored)");*/ }
+void DLParser_TriTxtr( MicroCodeCommand command ){ /*DL_PF("RSP Tri: (Ignored)");*/ }
+void DLParser_TriTxtrZ( MicroCodeCommand command ){ /*DL_PF("RSP Tri: (Ignored)");*/ }
+void DLParser_TriShade( MicroCodeCommand command ){ /*DL_PF("RSP Tri: (Ignored)");*/ }
+void DLParser_TriShadeZ( MicroCodeCommand command ){ /*DL_PF("RSP Tri: (Ignored)");*/ }
+void DLParser_TriShadeTxtr( MicroCodeCommand command ){ /*DL_PF("RSP Tri: (Ignored)");*/ }
+void DLParser_TriShadeTxtrZ( MicroCodeCommand command ){ /*DL_PF("RSP Tri: (Ignored)");*/ }

@@ -390,12 +390,10 @@ void IGraphicsContext::SaveScreenshot( const char* filename, s32 x, s32 y, u32 w
 //*****************************************************************************
 void IGraphicsContext::DumpScreenShot()
 {
-	char szFilePath[MAX_PATH];
-	char szDumpDir[MAX_PATH];
+	char szFilePath[MAX_PATH+1];
+	char szDumpDir[MAX_PATH+1];
 
 	IO::Path::Combine(szDumpDir, g_ROM.settings.GameName.c_str(), gScreenDumpRootPath);
-
-	IO::Path::Combine( szFilePath, "ms0:/PICTURES/", szDumpDir );
 
 	Dump_GetDumpDirectory(szFilePath, szDumpDir);
 

@@ -709,9 +709,9 @@ void DLParser_Process()
 	{
 #ifdef DAEDALUS_DEBUG_CONSOLE
 		CDebugConsole::Get()->EnableConsole( false );
-
-		CGraphicsContext::Get()->ClearAllSurfaces();
 #endif
+		CGraphicsContext::Get()->ClearAllSurfaces();
+
 		gFirstCall = false;
 	}
 
@@ -944,22 +944,14 @@ void DLParser_GBI1_SpNoop( MicroCodeCommand command )
 //
 //*****************************************************************************
 
-void DLParser_GBI2_SpNoop( MicroCodeCommand command )
-{
-	// Noop
-}
-
-void DLParser_GBI2_RDPHalf_2( MicroCodeCommand command )
-{
-
-}
-
 void DLParser_GBI2_DMA_IO( MicroCodeCommand command )
 {
 	DL_PF( "~*Not Implemented (G_DMA_IO in GBI 2)" );
 	DL_UNIMPLEMENTED_ERROR( "G_DMA_IO" );
 }
-
+//
+// Redundant, remove me !
+/*
 void DLParser_GBI2_Special1( MicroCodeCommand command )
 {
 	DL_PF( "~*Not Implemented (G_SPECIAL_1 in GBI 2)" );
@@ -977,12 +969,7 @@ void DLParser_GBI2_Special3( MicroCodeCommand command )
 	DL_PF( "~*Not Implemented (G_SPECIAL_3 in GBI 2)" );
 	DL_UNIMPLEMENTED_ERROR( "G_DMA_SPECIAL_3" );
 }
-
-
-void DLParser_GBI2_Noop( MicroCodeCommand command )
-{
-}
-
+*/
 //*****************************************************************************
 //
 //*****************************************************************************

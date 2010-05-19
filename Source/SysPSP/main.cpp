@@ -187,7 +187,7 @@ static void DaedalusFWCheck()
 		pspDebugScreenPrintf( "\n" );
 		pspDebugScreenPrintf("\nPress O to Exit");
 		for (;;){
-			sceCtrlReadBufferPositive(&pad, 1);
+			sceCtrlPeekBufferPositive(&pad, 1);
 			if (pad.Buttons & PSP_CTRL_CIRCLE){
 				break;
 			}

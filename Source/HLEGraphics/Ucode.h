@@ -43,16 +43,16 @@ static void DLParser_GBI1_Noop( MicroCodeCommand command );
 //*****************************************************************************
 // GBI2
 //*****************************************************************************
-static void DLParser_GBI2_Noop( MicroCodeCommand command );
 static void DLParser_GBI2_DMA_IO( MicroCodeCommand command );
+/*
 static void DLParser_GBI2_Special1( MicroCodeCommand command );
 static void DLParser_GBI2_Special2( MicroCodeCommand command );
 static void DLParser_GBI2_Special3( MicroCodeCommand command );
+*/
 static void DLParser_GBI2_MoveWord( MicroCodeCommand command );
 static void DLParser_GBI2_MoveMem( MicroCodeCommand command );
 
 static void DLParser_GBI2_RDPHalf_2( MicroCodeCommand command );
-static void DLParser_GBI2_SpNoop( MicroCodeCommand command );
 
 
 
@@ -270,7 +270,7 @@ static MicroCodeInstruction gInstructionLookup[11][256] =
 		// Ucode:F3DEX_GBI_2
 		// Zelda and new games
 	{
-		DLParser_GBI2_Noop,	  DLParser_GBI2_Vtx,		 DLParser_GBI1_ModifyVtx, DLParser_GBI2_CullDL,
+		DLParser_GBI1_Noop,	  DLParser_GBI2_Vtx,		 DLParser_GBI1_ModifyVtx, DLParser_GBI2_CullDL,
 		DLParser_GBI1_BranchZ,	DLParser_GBI2_Tri1,	 DLParser_GBI2_Tri2,		 DLParser_GBI2_Quad,
 		DLParser_GBI2_0x8,	  DLParser_S2DEX_Bg1cyc, DLParser_S2DEX_BgCopy,  DLParser_S2DEX_ObjRendermode,
 		DLParser_Nothing,  DLParser_Nothing,	 DLParser_Nothing,	 DLParser_Nothing,
@@ -342,7 +342,7 @@ static MicroCodeInstruction gInstructionLookup[11][256] =
 		DLParser_GBI2_PopMtx,  DLParser_GBI2_GeometryMode,          DLParser_GBI2_Mtx,		 DLParser_GBI2_MoveWord,
 		DLParser_GBI2_MoveMem, DLParser_GBI1_LoadUCode,	 DLParser_GBI2_DL,        DLParser_GBI2_EndDL,
 	//e0
-		DLParser_GBI2_SpNoop, DLParser_GBI1_RDPHalf_1,   DLParser_GBI2_SetOtherModeL, DLParser_GBI2_SetOtherModeH,
+		DLParser_GBI1_SpNoop, DLParser_GBI1_RDPHalf_1,   DLParser_GBI2_SetOtherModeL, DLParser_GBI2_SetOtherModeH,
 		DLParser_TexRect,	  DLParser_TexRectFlip, DLParser_RDPLoadSync,  DLParser_RDPPipeSync,
 		DLParser_RDPTileSync, DLParser_RDPFullSync, DLParser_SetKeyGB,	   DLParser_SetKeyR,
 		DLParser_SetConvert,  DLParser_SetScissor,  DLParser_SetPrimDepth, DLParser_RDPSetOtherMode,
@@ -599,7 +599,7 @@ static MicroCodeInstruction gInstructionLookup[11][256] =
 		DLParser_GBI2_PopMtx,  DLParser_GBI2_GeometryMode,          DLParser_GBI2_Mtx,		 DLParser_GBI2_MoveWord,
 		DLParser_GBI2_MoveMem, DLParser_GBI1_LoadUCode,	 DLParser_GBI2_DL,        DLParser_GBI2_EndDL,
 		//e0
-		DLParser_GBI2_SpNoop, DLParser_GBI1_RDPHalf_1,   DLParser_GBI2_SetOtherModeL, DLParser_GBI2_SetOtherModeH,
+		DLParser_GBI1_SpNoop, DLParser_GBI1_RDPHalf_1,   DLParser_GBI2_SetOtherModeL, DLParser_GBI2_SetOtherModeH,
 		DLParser_TexRect,	  DLParser_TexRectFlip, DLParser_RDPLoadSync,  DLParser_RDPPipeSync,
 		DLParser_RDPTileSync, DLParser_RDPFullSync, DLParser_SetKeyGB,	   DLParser_SetKeyR,
 		DLParser_SetConvert,  DLParser_SetScissor,  DLParser_SetPrimDepth, DLParser_RDPSetOtherMode,
@@ -1034,7 +1034,7 @@ static MicroCodeInstruction gInstructionLookup[11][256] =
         // games: Zelda 64
        /* {
 		// 00-3f
-		DLParser_GBI2_SpNoop,                                 DLParser_GBI2_Vtx,                             DLParser_GBI1_ModifyVtx,                  DLParser_GBI2_CullDL,
+		DLParser_GBI1_SpNoop,                                 DLParser_GBI2_Vtx,                             DLParser_GBI1_ModifyVtx,                  DLParser_GBI2_CullDL,
 		DLParser_GBI1_BranchZ,                   DLParser_GBI2_Tri1,                               DLParser_GBI2_Quad,                           DLParser_GBI2_Quad,
 		DLParser_GBI2_Line3D,                             DLParser_S2DEX_Bg1cyc,                    DLParser_S2DEX_BgCopy,                    DLParser_S2DEX_ObjRendermode,
 		DLParser_Nothing,                                  DLParser_Nothing,                                  DLParser_Nothing,                                  DLParser_Nothing,
@@ -1088,7 +1088,7 @@ static MicroCodeInstruction gInstructionLookup[11][256] =
 		DLParser_Nothing,                                  DLParser_Nothing,                                  DLParser_Nothing,                                  DLParser_Nothing,
 
 		// c0-ff: RDP commands mixed with uc2 commands
-		DLParser_GBI2_Noop,               DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,    
+		DLParser_GBI1_Noop,               DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,    
 		DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,    
 		DLParser_TriFill,	 DLParser_TriFillZ,	  DLParser_TriTxtr,	    DLParser_TriTxtrZ,
 		DLParser_TriShade,	 DLParser_TriShadeZ,	  DLParser_TriShadeTxtr, DLParser_TriShadeTxtrZ,
@@ -1096,7 +1096,7 @@ static MicroCodeInstruction gInstructionLookup[11][256] =
 		DLParser_GBI2_Special2,           uc2_dlist_cnt,          DLParser_GBI2_DMA_IO,             DLParser_GBI2_Texture,
 		DLParser_GBI2_PopMtx,         DLParser_GBI2_GeometryMode,          DLParser_GBI2_Mtx,             DLParser_GBI2_MoveWord,
 		DLParser_GBI2_MoveMem,            DLParser_GBI1_LoadUCode,         DLParser_GBI2_DL,        DLParser_GBI2_EndDL,
-		DLParser_GBI2_SpNoop,                 DLParser_GBI1_RDPHalf_1,          DLParser_GBI2_SetOtherModeL, DLParser_GBI2_SetOtherModeH,
+		DLParser_GBI1_SpNoop,                 DLParser_GBI1_RDPHalf_1,          DLParser_GBI2_SetOtherModeL, DLParser_GBI2_SetOtherModeH,
 		DLParser_TexRect,	  DLParser_TexRectFlip, DLParser_RDPLoadSync,  DLParser_RDPPipeSync,
 		DLParser_RDPTileSync, DLParser_RDPFullSync, DLParser_SetKeyGB,	   DLParser_SetKeyR,
 		DLParser_SetConvert,  DLParser_SetScissor,  DLParser_SetPrimDepth, DLParser_RDPSetOtherMode,

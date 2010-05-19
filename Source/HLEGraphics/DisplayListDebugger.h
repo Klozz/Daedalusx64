@@ -25,6 +25,8 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+
 class CDisplayListDebugger
 {
 	public:
@@ -34,5 +36,6 @@ class CDisplayListDebugger
 
 		virtual void					Run() = 0;
 };
+#endif	// DAEDALUS_DEBUG_DISPLAYLIST
 
 #endif // __DAEDALUS_DISPLAYLISTDEBUGGER_H__

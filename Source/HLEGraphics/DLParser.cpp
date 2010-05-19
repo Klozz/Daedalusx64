@@ -707,10 +707,11 @@ void DLParser_Process()
 	// to remove any stuff lingering on the screen.
 	if(gFirstCall)
 	{
+#ifdef DAEDALUS_DEBUG_CONSOLE
 		CDebugConsole::Get()->EnableConsole( false );
 
 		CGraphicsContext::Get()->ClearAllSurfaces();
-
+#endif
 		gFirstCall = false;
 	}
 

@@ -101,7 +101,7 @@ void R4300_CALL_TYPE CPU_InvalidateICacheRange( u32 address, u32 length )
 {
 	if( gFragmentCache.ShouldInvalidateOnWrite( address, length ) )
 	{
-#ifndef DAEDALUS_PUBLIC_RELEASE
+#ifndef DAEDALUS_SILENT
 		printf( "Write to %08x (%d bytes) overlaps fragment cache entries\n", address, length );
 #endif
 		CPU_ResetFragmentCache();
@@ -461,10 +461,12 @@ void CPU_HandleDynaRecOnBranch( bool backwards, bool trace_already_enabled )
 							Patch_PatchAll();
 #endif
 						}
+#ifndef DAEDALUS_SILENT
 						else
 						{
 							DBGConsole_Msg(0, "Safely skipped one flush");
 						}
+#endif
 						gResetFragmentCache = false;
 					}
 

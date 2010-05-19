@@ -25,6 +25,7 @@
 #ifndef DAEDALUSASSERT_H_
 #define DAEDALUSASSERT_H_
 
+
 // Ideas for the ignored assert taken from Game Programming Gems I
 
 //
@@ -42,6 +43,9 @@ template<int x> struct static_assert_test{};
 
 #define DAEDALUS_STATIC_ASSERT( x )								\
    typedef static_assert_test<sizeof(STATIC_ASSERTION_FAILURE< (bool)( x ) >)>	static_assert_typedef_##__COUNTER__
+
+//
+#ifdef DAEDALUS_ENABLE_ASSERTS
 
 enum EAssertResult
 {
@@ -140,7 +144,7 @@ inline void SetAssertHook( DaedalusAssertHook hook )
 	}																			\
 }
 
-
+#endif // DAEDALUS_ENABLE_ASSERTS
 
 #ifndef DAEDALUS_ENABLE_ASSERTS
 

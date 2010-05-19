@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Utility/Singleton.h"
 
+#ifdef DAEDALUS_DEBUG_CONSOLE
+
 class CDebugConsole : public CSingleton< CDebugConsole >
 {
 	public:
@@ -63,8 +65,9 @@ class CDebugConsole : public CSingleton< CDebugConsole >
 
 		virtual void DAEDALUS_VARARG_CALL_TYPE	Stats( StatType stat, const char * format, ... ) = 0;
 };
+#endif	// DAEDALUS_DEBUG_CONSOLE
 
-#ifdef DAEDALUS_SILENT
+#ifdef DAEDALUS_PUBLIC_RELEASE
 
 #define DBGConsole_Msg(...)					do {} while(0)
 

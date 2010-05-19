@@ -2460,7 +2460,7 @@ static void R4300_CALL_TYPE R4300_Cop1_S_ABS( R4300_CALL_SIGNATURE )
 
 	SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Single( op_code.fd, fabs(fX) );
+	StoreFPR_Single( op_code.fd, fabsf(fX) );
 }
 
 
@@ -2748,7 +2748,7 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ABS( R4300
 
 	SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Double< FullLength >( op_code.fd, fabs(fX) );
+	StoreFPR_Double< FullLength >( op_code.fd, fabsf(fX) );
 }
 
 template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ADD( R4300_CALL_SIGNATURE )

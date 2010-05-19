@@ -40,12 +40,12 @@ class CTextureCache : public CSingleton< CTextureCache >
 		virtual void		PurgeOldTextures() = 0;
 		virtual void		DropTextures() = 0;
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		virtual void		SetDumpTextures( bool dump_textures ) = 0;
 		virtual bool		GetDumpTextures( ) const = 0;
 
 		virtual void		DisplayStats() = 0;
 
-	#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		struct STextureInfoSnapshot
 		{
 		public:
@@ -61,7 +61,7 @@ class CTextureCache : public CSingleton< CTextureCache >
 			CRefPtr<CTexture>		Texture;
 		};
 		virtual void		Snapshot( std::vector< STextureInfoSnapshot > & snapshot ) const = 0;
-	#endif
+#endif
 
 		virtual CRefPtr<CTexture>	GetTexture( const TextureInfo * pti ) = 0;
 };

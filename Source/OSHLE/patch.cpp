@@ -451,13 +451,16 @@ void Patch_RecurseAndFind()
 	// Keep looping until a pass does not resolve any more symbols
 	nFound = 0;
 
+#ifdef DAEDALUS_DEBUG_CONSOLE
 	CDebugConsole::Get()->MsgOverwriteStart();
-
+#endif
 	// Loops through all symbols, until name is null
 	for (u32 i = 0; i < nPatchSymbols && !gCPUState.IsJobSet( CPU_STOP_RUNNING ); i++)
 	{
+#ifdef DAEDALUS_DEBUG_CONSOLE
 		CDebugConsole::Get()->MsgOverwrite(0, "OS HLE: %d / %d Looking for [G%s]",
 			i, nPatchSymbols, g_PatchSymbols[i]->szName);
+#endif
 
 		// Skip symbol if already found, or if it is a variable
 		if (g_PatchSymbols[i]->bFound)
@@ -471,15 +474,18 @@ void Patch_RecurseAndFind()
 
 	if ( gCPUState.IsJobSet( CPU_STOP_RUNNING ) )
 	{
+#ifdef DAEDALUS_DEBUG_CONSOLE
 		CDebugConsole::Get()->MsgOverwrite( 0, "OS HLE: Aborted" );
 		CDebugConsole::Get()->MsgOverwriteEnd();
+#endif
 		return;
 	}
-
+#ifdef DAEDALUS_DEBUG_CONSOLE
 	CDebugConsole::Get()->MsgOverwrite(0, "OS HLE: %d / %d All done",
 		nPatchSymbols, nPatchSymbols);
 
 	CDebugConsole::Get()->MsgOverwriteEnd();
+#endif
 	dwFirst = u32(~0);
 	dwLast = 0;
 

@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "stdafx.h"
 #include "Debug/DBGConsole.h"
 
+#ifdef DAEDALUS_DEBUG_CONSOLE
+
 #include "Graphics/ColourValue.h"
 
 #include "Test/BatchTest.h"
@@ -362,4 +364,4 @@ void	IDebugConsole::MsgOverwriteEnd()
 {
 	printf( "\n" );		// Final newline for the terminal
 }
-
+#endif //DAEDALUS_DEBUG_CONSOLE

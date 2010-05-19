@@ -584,8 +584,10 @@ void CPUMain()
 
 	gCPURunning = false;
 
+#ifdef DAEDALUS_DEBUG_CONSOLE
 	// Update the screen. It's probably better handled elsewhere...
 	CDebugConsole::Get()->UpdateDisplay();
+#endif
 }
 
 //*****************************************************************************

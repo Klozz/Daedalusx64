@@ -191,5 +191,7 @@ void CPU_Step()
 
 	CPU_EXECUTE_OP< true >();
 
+#ifdef DAEDALUS_DEBUG_CONSOLE
 	CDebugConsole::Get()->UpdateDisplay();
+#endif
 }

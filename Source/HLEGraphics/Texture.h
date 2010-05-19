@@ -41,13 +41,15 @@ class CTexture : public CRefCounted
 		inline const CRefPtr<CNativeTexture> &	GetTexture() const					{ return mpTexture; }
 		const CRefPtr<CNativeTexture> &			GetRecolouredTexture( c32 colour ) const;				// Returns a texture with the RGB channels set to the specified colour (alpha remains the same)
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		u32								GetVideoMemoryUsage() const;
 		u32								GetSystemMemoryUsage() const;
-
+#endif
 		inline const TextureInfo &		GetTextureInfo() const				{ return mTextureInfo; }
 		void							UpdateIfNecessary();
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		void							DumpTexture() const;
-
+#endif
 		bool							HasExpired() const;
 
 	private:

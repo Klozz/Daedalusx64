@@ -570,7 +570,7 @@ void	CNativeTexture::SetData( void * data, void * palette )
 		}
 	}
 }
-
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -596,18 +596,19 @@ u32	CNativeTexture::GetSystemMemoryUsage() const
 
 	return 0;
 }
-
+#endif
 //*****************************************************************************
 //
 //*****************************************************************************
 u32	CNativeTexture::GetStride() const
 {
 	return CalcBytesRequired( mTextureBlockWidth, mTextureFormat );
-}
 
+}
 //*****************************************************************************
 //
 //*****************************************************************************
+
 u32		CNativeTexture::GetBytesRequired() const
 {
 	return GetStride() * mCorrectedHeight;

@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef DEBUGLOG_H_
 #define DEBUGLOG_H_
 
+#ifdef DAEDALUS_LOG
+
 #include <stdarg.h>
 
 enum EDebugFlags
@@ -57,8 +59,6 @@ enum EDebugFlags
 
 	DEBUG_FRAME =			 1<<22,
 };
-
-#ifdef DAEDALUS_LOG
 
 //
 //	Define a union of the above flags to determine what is logged.

@@ -73,7 +73,9 @@ namespace
 			const u32		TEMP_BUFFER_SIZE = 32 * 1024;
 			u8 *			p_temp_buffer( new u8[ TEMP_BUFFER_SIZE ] );
 
+#ifdef DAEDALUS_DEBUG_CONSOLE
 			CDebugConsole::Get()->MsgOverwriteStart();
+#endif
 
 			u32				offset( 0 );
 			u32				total_length( p_rom_file->GetRomSize() );
@@ -81,11 +83,12 @@ namespace
 
 			while( length_remaining > 0 )
 			{
+#ifdef DAEDALUS_DEBUG_CONSOLE
 				if ((offset % 0x8000) == 0)
 				{
 					CDebugConsole::Get()->MsgOverwrite(0, "Converted [M%d / %d] KB", offset /1024, total_length / 1024 );
 				}
-
+#endif
 				u32			length_to_process( Min( length_remaining, TEMP_BUFFER_SIZE ) );
 
 				if( !p_rom_file->ReadChunk( offset, p_temp_buffer, length_to_process ) )
@@ -103,10 +106,10 @@ namespace
 				offset += length_to_process;
 				length_remaining -= length_to_process;
 			}
-
+#ifdef DAEDALUS_DEBUG_CONSOLE
 			CDebugConsole::Get()->MsgOverwrite(0, "Converted [M%d / %d] KB", offset /1024, total_length / 1024 );
 			CDebugConsole::Get()->MsgOverwriteEnd();
-
+#endif
 
 			fclose( fh );
 			delete [] p_temp_buffer;

@@ -20,6 +20,9 @@
 
 #include "stdafx.h"
 #include "Debug/DaedalusAssert.h"
+
+#ifdef DAEDALUS_ENABLE_ASSERTS
+
 #include <pspdebug.h>
 #include <pspctrl.h>
 #include <pspgu.h>
@@ -136,3 +139,4 @@ EAssertResult DaedalusAssert( const char * expression, const char * file, unsign
 
 	return result;
 }
+#endif //DAEDALUS_ENABLE_ASSERTS

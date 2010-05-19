@@ -135,7 +135,9 @@ bool	ROM_DoCicCheckSum( ECicType cic_type, u32 * crc1, u32 * crc2 )
 //*****************************************************************************
 bool ROM_CheckSumCic6101( u32 * crc1, u32 * crc2 )
 {
+#ifdef DAEDALUS_DEBUG_CONSOLE
 	CDebugConsole::Get()->Msg( 0, "[MUnable to check CRC for CIC-6101]" );	
+#endif
 	return false;
 }
 
@@ -158,14 +160,18 @@ bool ROM_CheckSumCic6102( u32 * crc1, u32 * crc2 )
 	u32 t4 = 0xF8CA4DDC;
 	u32 t8, t6, a0;
 
+#ifdef DAEDALUS_DEBUG_CONSOLE
 	CDebugConsole::Get()->MsgOverwriteStart();
+#endif
 
 	for (address = 0; address < 0x00100000; address+=4)
 	{
+#ifdef DAEDALUS_DEBUG_CONSOLE
 		if ((address % 0x2000) == 0)
 		{
 			CDebugConsole::Get()->MsgOverwrite(0, "Generating CRC [M%d / %d]", address, 0x00100000);
 		}
+#endif
 		v0 = RomBuffer::ReadValueRaw< u32 >( address + RAMROM_GAME_OFFSET );
 		v1 = a3 + v0;
 		a1 = v1;
@@ -194,8 +200,10 @@ bool ROM_CheckSumCic6102( u32 * crc1, u32 * crc2 )
 	a3 ^= t2 ^ t3;	// CRC1
 	s0 ^= a2 ^ t4;	// CRC2
 
+#ifdef DAEDALUS_DEBUG_CONSOLE
 	CDebugConsole::Get()->MsgOverwrite(0, "Generating CRC [M%d / %d]", 0x00100000, 0x00100000);
 	CDebugConsole::Get()->MsgOverwriteEnd();
+#endif
 
 	*crc1 = a3;
 	*crc2 = s0;
@@ -207,7 +215,9 @@ bool ROM_CheckSumCic6102( u32 * crc1, u32 * crc2 )
 //*****************************************************************************
 bool ROM_CheckSumCic6103( u32 * crc1, u32 * crc2 )
 {
+#ifdef DAEDALUS_DEBUG_CONSOLE
 	CDebugConsole::Get()->Msg( 0, "[MUnable to check CRC for CIC-6103]" );	
+#endif
 	return false;
 }
 
@@ -216,7 +226,9 @@ bool ROM_CheckSumCic6103( u32 * crc1, u32 * crc2 )
 //*****************************************************************************
 bool ROM_CheckSumCic6104( u32 * crc1, u32 * crc2 )
 {
+#ifdef DAEDALUS_DEBUG_CONSOLE
 	CDebugConsole::Get()->Msg( 0, "[MUnable to check CRC for CIC-6104]" );	
+#endif
 	return false;
 }
 
@@ -239,12 +251,16 @@ bool ROM_CheckSumCic6105( u32 * crc1, u32 * crc2 )
 
 	address2 = 0;
 
+#ifdef DAEDALUS_DEBUG_CONSOLE
 	CDebugConsole::Get()->MsgOverwriteStart();
+#endif
 
 	for (address = 0; address < 0x00100000; address += 4)
 	{
+#ifdef DAEDALUS_DEBUG_CONSOLE
 		if ((address % 0x2000) == 0)
 			CDebugConsole::Get()->MsgOverwrite(0, "Generating CRC [M%d / %d]", address, 0x00100000);
+#endif
 
 		v0 = RomBuffer::ReadValueRaw< u32 >( address + RAMROM_GAME_OFFSET );
 		v1 = a3 + v0;
@@ -271,8 +287,10 @@ bool ROM_CheckSumCic6105( u32 * crc1, u32 * crc2 )
 	a3 ^= t2 ^ t3;
 	s0 ^= a2 ^ t4;
 
+#ifdef DAEDALUS_DEBUG_CONSOLE
 	CDebugConsole::Get()->MsgOverwrite(0, "Generating CRC [M%d / %d]", 0x00100000, 0x00100000);
 	CDebugConsole::Get()->MsgOverwriteEnd();
+#endif
 
 	*crc1 = a3;
 	*crc2 = s0;
@@ -284,7 +302,9 @@ bool ROM_CheckSumCic6105( u32 * crc1, u32 * crc2 )
 //*****************************************************************************
 bool ROM_CheckSumCic6106( u32 * crc1, u32 * crc2 )
 {
+#ifdef DAEDALUS_DEBUG_CONSOLE
 	CDebugConsole::Get()->Msg( 0, "[MUnable to check CRC for CIC-6106]" );	
+#endif
 	return false;
 }
 

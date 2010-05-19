@@ -546,7 +546,7 @@ void CTexture::UpdateTexture( const TextureInfo & texture_info, CNativeTexture *
 		}
 	}
 }
-
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*************************************************************************************
 // 
 //*************************************************************************************
@@ -589,7 +589,7 @@ void	CTexture::DumpTexture() const
 		}
 	}
 }
-
+#endif
 //*************************************************************************************
 // 
 //*************************************************************************************
@@ -667,6 +667,7 @@ const CRefPtr<CNativeTexture> &	CTexture::GetRecolouredTexture( c32 colour ) con
 	return mpRecolouredTexture;
 }
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -706,3 +707,5 @@ u32	CTexture::GetSystemMemoryUsage() const
 
 	return usage;
 }
+
+#endif	//DAEDALUS_DEBUG_DISPLAYLIST

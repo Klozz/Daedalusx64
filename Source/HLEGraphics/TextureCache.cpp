@@ -46,20 +46,20 @@ public:
 	
 			void			PurgeOldTextures();
 			void			DropTextures();
-
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 			void			SetDumpTextures( bool dump_textures )	{ mDumpTextures = dump_textures; }
 			bool			GetDumpTextures( ) const				{ return mDumpTextures; }
-	
+#endif	
 			CRefPtr<CTexture>GetTexture(const TextureInfo * pti);
-	
+
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	virtual	void			DisplayStats();
 
-		#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 			void			Snapshot( std::vector< STextureInfoSnapshot > & snapshot ) const;
-		#endif
 
 protected:
 			void			GetUsedTextureStats( u32 * p_num_textures, u32 * p_video_memory_used, u32 * p_system_memory_used ) const;
+#endif
 
 protected:
 	struct SSortTextureEntries
@@ -251,11 +251,12 @@ CRefPtr<CTexture> ITextureCache::GetTexture(const TextureInfo * pti)
 		texture = CTexture::Create( *pti );
 		if (texture != NULL)
 		{
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 			if ( mDumpTextures )
 			{
 				texture->DumpTexture();
 			}
-
+#endif
 			mTextures.insert( it, texture );
 		}
 
@@ -271,7 +272,7 @@ CRefPtr<CTexture> ITextureCache::GetTexture(const TextureInfo * pti)
 
 	return texture;
 }
-
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*************************************************************************************
 //
 //*************************************************************************************
@@ -311,7 +312,6 @@ void	ITextureCache::DisplayStats()
 	printf( " Used: %3d v:%4dKB s:%4dKB\n", used_textures, used_texture_video_mem / 1024, used_texture_system_mem / 1024 );
 }
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*************************************************************************************
 //
 //*************************************************************************************
@@ -351,4 +351,4 @@ CTextureCache::STextureInfoSnapshot::~STextureInfoSnapshot()
 }
 
 
-#endif
+#endif	//DAEDALUS_DEBUG_DISPLAYLIST

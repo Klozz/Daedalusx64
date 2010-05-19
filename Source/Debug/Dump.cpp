@@ -65,11 +65,12 @@ void Dump_GetDumpDirectory(char * p_file_path, const char * p_sub_dir)
 		p_file_path[MAX_PATH-1] = '\0';
 	}
 
+#ifdef DAEDALUS_DEBUG_CONSOLE
 	if(CDebugConsole::IsAvailable())
 	{
 		//DBGConsole_Msg( 0, "Dump dir: [C%s]", p_file_path );
 	}
-
+#endif
 	IO::Directory::EnsureExists(p_file_path);
 
 }
@@ -95,10 +96,12 @@ void Dump_GetSaveDirectory(char * p_file_path, const char * p_rom_name, const ch
 			g_DaedalusConfig.szSaveDir[MAX_PATH-1] = '\0';
 			IO::Path::RemoveFileSpec(g_DaedalusConfig.szSaveDir);
 
+#ifdef DAEDALUS_DEBUG_CONSOLE
 			if(CDebugConsole::IsAvailable())
 			{
 				DBGConsole_Msg(0, "SaveDir is still empty - defaulting to [C%s]", g_DaedalusConfig.szSaveDir);
 			}
+#endif
 		}
 	}
 

@@ -56,10 +56,10 @@ class CNativeTexture : public CRefCounted
 		inline bool						IsPalettised() const			{ return IsTextureFormatPalettised( mTextureFormat ); }
 
 		u32								GetBytesRequired() const;
-
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		u32								GetVideoMemoryUsage() const;
 		u32								GetSystemMemoryUsage() const;
-
+#endif
 		bool							HasData() const;				// If we run out of texture memory, this will return true
 
 	private:

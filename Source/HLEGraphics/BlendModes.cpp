@@ -812,6 +812,62 @@ void BlendMode_0x0050fea144fe7339LL (BLEND_MODE_ARGS)
 //#E
 */ 
 
+//Extreme XG2  - Menu triangles
+//case 0x00157e2a33fdfcfeLL:
+//aRGB0: (Texel0       - Primitive   ) * Prim_Alpha   + Primitive   
+//aA0  : (0            - 0           ) * 0            + 1           
+//aRGB1: (Texel0       - Primitive   ) * Prim_Alpha   + Primitive   
+//aA1  : (0            - 0           ) * 0            + 1      
+void BlendMode_0x00157e2a33fdfcfeLL (BLEND_MODE_ARGS)
+{
+	details.InstallTexture = true;
+	details.ColourAdjuster.SetRGB( details.PrimColour.ReplicateAlpha());
+	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
+}
+
+//ExtremeXG2 - Inside the inner ring
+  //case 0x00327ecbf0fffc3eLL:
+  //aRGB0: (Primitive    - 0           ) * Shade        + 0           
+  //aA0  : (0            - 0           ) * 0            + 1           
+  //aRGB1: (1            - Combined    ) * Shade_Alpha  + Combined    
+  //aA1  : (0            - 0           ) * 0            + 1     
+void BlendMode_0x00327ecbf0fffc3eLL (BLEND_MODE_ARGS)
+	{
+		details.InstallTexture = true;
+	details.ColourAdjuster.SetRGB(details.PrimColour);
+	//details.ColourAdjuster.SetAOpaque();
+				//	sceGuTexFunc(GU_TFX_modulate,GU_TCC_RGBA);
+				sceGuTexFunc(GU_TFX_DECAL,GU_TCC_RGB);
+	}
+								  
+									
+								  
+//Extreme XG2 - inner ring
+//case 0x00127eccf0fffc38LL:
+//aRGB0: (Texel0       - 0           ) * Shade        + 0           
+//aA0  : (0            - 0           ) * 0            + 1           
+//aRGB1: (1            - Combined    ) * Env_Alpha    + Combined    
+//aA1  : (0            - 0           ) * 0            + Combined 
+void BlendMode_0x00127eccf0fffc38LL (BLEND_MODE_ARGS)
+{
+//	details.ColourAdjuster.SetRGB( details.EnvColour.ReplicateAlpha());
+//	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
+}
+
+
+//Extreme GX2- Intro ring
+//case 0x00127ecbf0fffc3eLL:
+//aRGB0: (Texel0       - 0           ) * Shade        + 0           
+//aA0  : (0            - 0           ) * 0            + 1           
+//aRGB1: (1            - Combined    ) * Shade_Alpha  + Combined    
+//aA1  : (0            - 0           ) * 0            + 1           
+void BlendMode_0x00127ecbf0fffc3eLL (BLEND_MODE_ARGS)
+{
+	details.InstallTexture = true;
+//	details.ColourAdjuster.SetAOpaque();
+	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
+}
+
 //Extreme G - Transition Screen Intro
 //case 0x0015fe2b33fdf6fbLL:
 //aRGB0: (Texel0       - Primitive   ) * Shade_Alpha  + Primitive
@@ -4472,6 +4528,11 @@ OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 #define BLEND_MODE( x )		case (x):	return BlendMode_##x;
 			
 		//BLENDS#
+			
+		BLEND_MODE (0x00127eccf0fffc38LL);
+		BLEND_MODE (0x00157e2a33fdfcfeLL);
+		BLEND_MODE (0x00327ecbf0fffc3eLL);
+	BLEND_MODE (0x00127ecbf0fffc3eLL);
 		BLEND_MODE (0x0011fe052ffd73f8LL);
 		BLEND_MODE (0x00272c0415fc93feLL);
 		BLEND_MODE (0x001114a3f0fff638LL);

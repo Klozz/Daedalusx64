@@ -37,6 +37,13 @@
 //  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //  See http://www.boost.org/libs/static_assert for documentation.
 //
+#ifndef DAEDALUS_ENABLE_ASSERTS
+
+//#define DAEDALUS_STATIC_ASSERT( ... )	{}
+#define DAEDALUS_STATIC_ASSERT( x )
+
+#else
+
 template <bool> struct STATIC_ASSERTION_FAILURE;
 template <> struct STATIC_ASSERTION_FAILURE<true>{};
 template<int x> struct static_assert_test{};
@@ -44,8 +51,6 @@ template<int x> struct static_assert_test{};
 #define DAEDALUS_STATIC_ASSERT( x )								\
    typedef static_assert_test<sizeof(STATIC_ASSERTION_FAILURE< (bool)( x ) >)>	static_assert_typedef_##__COUNTER__
 
-//
-#ifdef DAEDALUS_ENABLE_ASSERTS
 
 enum EAssertResult
 {

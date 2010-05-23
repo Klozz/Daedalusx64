@@ -51,6 +51,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <map>
 #include <algorithm>
 
+/* Kernel Buttons functions */
+extern "C" {
+int getbuttons();
+}
+
+u32 new_kbuttons;
 
 namespace
 {
@@ -635,6 +641,19 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 					(*OnRomSelected)( mSelectedRom.c_str() );
 				}
 			}
+		}
+	}
+
+	// ToDo : Add a GUI tooltip, dialog, or option to exit, so users can be aware on how to exit.
+	//
+	// Init our kernel buttons, ex HOME button
+	new_kbuttons = getbuttons();
+
+	if(old_buttons != new_kbuttons)
+	{
+		if(new_kbuttons & PSP_CTRL_HOME) 
+		{
+			sceKernelExitGame();
 		}
 	}
 

@@ -49,8 +49,8 @@ static void DLParser_GBI2_Special1( MicroCodeCommand command );
 static void DLParser_GBI2_Special2( MicroCodeCommand command );
 static void DLParser_GBI2_Special3( MicroCodeCommand command );
 */
-static void DLParser_GBI2_MoveWord( MicroCodeCommand command );
-static void DLParser_GBI2_MoveMem( MicroCodeCommand command );
+void DLParser_GBI2_MoveWord( MicroCodeCommand command );
+void DLParser_GBI2_MoveMem( MicroCodeCommand command );
 
 static void DLParser_GBI2_RDPHalf_2( MicroCodeCommand command );
 
@@ -107,7 +107,7 @@ static void DLParser_TriShadeTxtrZ( MicroCodeCommand command );
 void DLParser_GBI2_DL_Count( MicroCodeCommand command );
 void DLParser_GBI2_0x8( MicroCodeCommand command );
 
-static MicroCodeInstruction gInstructionLookup[11][256] =
+static MicroCodeInstruction gInstructionLookup[12][256] =
 {
 	// uCode 0 - RSP SW 2.0X
 	// Games: Super Mario 64, Tetrisphere, Demos
@@ -1017,6 +1017,92 @@ static MicroCodeInstruction gInstructionLookup[11][256] =
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
 	//e0
 		DLParser_Nothing,	  DLParser_Nothing,		DLParser_Nothing,	   DLParser_Nothing,
+		DLParser_TexRect,	  DLParser_TexRectFlip, DLParser_RDPLoadSync,  DLParser_RDPPipeSync,
+		DLParser_RDPTileSync, DLParser_RDPFullSync, DLParser_SetKeyGB,	   DLParser_SetKeyR,
+		DLParser_SetConvert,  DLParser_SetScissor,  DLParser_SetPrimDepth, DLParser_RDPSetOtherMode,
+	//f0
+		DLParser_LoadTLut,	  DLParser_Nothing,		  DLParser_SetTileSize,	 DLParser_LoadBlock, 
+		DLParser_LoadTile,	  DLParser_SetTile,		  DLParser_FillRect,	 DLParser_SetFillColor,
+		DLParser_SetFogColor, DLParser_SetBlendColor, DLParser_SetPrimColor, DLParser_SetEnvColor,
+		DLParser_SetCombine,  DLParser_SetTImg,		  DLParser_SetZImg,		 DLParser_SetCImg
+	},
+		// Ucode:F3DEX_GBI_2 xx Conker
+		// Ucode:F3DEXBG_GBI_2 ?? Conker
+		// Games : Conker BFD
+	{
+		DLParser_GBI1_Noop,	  RSP_Vtx_Conker,		 DLParser_GBI1_ModifyVtx, DLParser_GBI2_CullDL,
+		DLParser_GBI1_BranchZ,	DLParser_GBI2_Tri1,	 DLParser_GBI2_Tri2,		 DLParser_GBI2_Quad,
+		DLParser_GBI2_0x8,	  DLParser_S2DEX_Bg1cyc, DLParser_S2DEX_BgCopy,  DLParser_S2DEX_ObjRendermode,
+		DLParser_Nothing,  DLParser_Nothing,	 DLParser_Nothing,	 DLParser_Nothing,
+	//10
+		DLParser_GBI2_Conker, DLParser_GBI2_Conker, DLParser_GBI2_Conker, DLParser_GBI2_Conker,
+		DLParser_GBI2_Conker, DLParser_GBI2_Conker, DLParser_GBI2_Conker, DLParser_GBI2_Conker,
+		DLParser_GBI2_Conker, DLParser_GBI2_Conker, DLParser_GBI2_Conker, DLParser_GBI2_Conker,
+		DLParser_GBI2_Conker, DLParser_GBI2_Conker, DLParser_GBI2_Conker, DLParser_GBI2_Conker,
+	//20
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+	//30
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+	//40
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+	//50
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+	//60
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+	//70
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+
+	//80
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+	//90
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+	//a0
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+	//b0
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+
+	//c0
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
+		DLParser_TriFill,	 DLParser_TriFillZ,	  DLParser_TriTxtr,	    DLParser_TriTxtrZ,
+		DLParser_TriShade,	 DLParser_TriShadeZ,	  DLParser_TriShadeTxtr, DLParser_TriShadeTxtrZ,
+	//d0
+		DLParser_Nothing,  DLParser_Nothing,		 DLParser_Nothing,	 DLParser_Nothing,
+		DLParser_Nothing,  DLParser_GBI2_DL_Count,	 DLParser_GBI2_DMA_IO, DLParser_GBI2_Texture,
+		DLParser_GBI2_PopMtx,  DLParser_GBI2_GeometryMode,          DLParser_GBI2_Mtx,		 RSP_MoveWord_Conker,
+		RSP_MoveMem_Conker, DLParser_GBI1_LoadUCode,	 DLParser_GBI2_DL,        DLParser_GBI2_EndDL,
+	//e0
+		DLParser_GBI1_SpNoop, DLParser_GBI1_RDPHalf_1,   DLParser_GBI2_SetOtherModeL, DLParser_GBI2_SetOtherModeH,
 		DLParser_TexRect,	  DLParser_TexRectFlip, DLParser_RDPLoadSync,  DLParser_RDPPipeSync,
 		DLParser_RDPTileSync, DLParser_RDPFullSync, DLParser_SetKeyGB,	   DLParser_SetKeyR,
 		DLParser_SetConvert,  DLParser_SetScissor,  DLParser_SetPrimDepth, DLParser_RDPSetOtherMode,

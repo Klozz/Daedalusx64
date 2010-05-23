@@ -65,6 +65,8 @@ void DLParser_S2DEX_RDPHalf_0		( MicroCodeCommand command );
 void DLParser_S2DEX_ObjMoveMem		( MicroCodeCommand command );
 void DLParser_S2DEX_Bg1cyc			( MicroCodeCommand command );
 void DLParser_S2DEX_ObjRectangleR	( MicroCodeCommand command );
+void DLParser_S2DEX_ObjRendermode_2 ( MicroCodeCommand command );
+void DLParser_S2DEX_Bg1cyc_2        ( MicroCodeCommand command );
 
 //*****************************************************************************
 // 

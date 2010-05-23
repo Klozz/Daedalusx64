@@ -84,6 +84,9 @@ bool DLParser_FetchNextCommand( MicroCodeCommand * p_command );
 void DLParser_Nothing( MicroCodeCommand command );
 void DLParser_GBI1_MoveWord( MicroCodeCommand command );
 void DLParser_TexRect( MicroCodeCommand command );
+void DLParser_GBI2_MoveMem( MicroCodeCommand command );
+void RDP_MoveMemLight(u32 light_idx, u32 address);
+void DLParser_GBI2_MoveWord( MicroCodeCommand command );
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 extern u32 gNumVertices;

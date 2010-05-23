@@ -95,6 +95,7 @@ static const MicrocodeData gMicrocodeData[] =
 	//The only games that need defining are custom ucodes and incorrectly detected ones
 	// If you believe a title should be here post the line for it from ucodes.txt @ http://www.daedalusx64.com
 	//Note - Games are in alphabetical order by game title
+	{ GBI_0_CK, F3DEX, 0x10372b79, "RSP Gfx ucode F3DEXBG.NoN fifo 2.08  Yoshitaka Yasumoto 1999 Nintendo.", "Conker's Bad Fur Day"}, 
 	{ GBI_0_LL, F3DEX,  0x9a824412, "", "Dark Rift"},
 	{ GBI_0_DKR, F3DEX, 0xa3f481d8, "", "Diddy Kong Racing (v1.0)"}, 
 	{ GBI_0_DKR, F3DEX, 0xd5d68f00, "", "Diddy Kong Racing (v1.1)"}, 

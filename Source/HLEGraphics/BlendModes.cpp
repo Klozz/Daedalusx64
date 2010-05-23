@@ -649,6 +649,55 @@ void BlendMode_0x00ff95fffffcfe38LL( BLEND_MODE_ARGS )
 //#C
 */
 
+//Conker - Window
+//case 0x00127e2455fdf2f9LL:
+//aRGB0: (Texel0 - Env ) * Shade + Primitive
+//aA0 : (0 - 0 ) * 0 + Texel0
+//aRGB1: (Texel0 - Env ) * Shade + Primitive
+//aA1 : (0 - 0 ) * 0 + Texel0 
+void BlendMode_0x00127e2455fdf2f9LL( BLEND_MODE_ARGS)
+{
+	details.InstallTexture = true;
+	details.ColourAdjuster.SetAOpaque();
+	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
+}
+
+//Conker - Chainsaw Smoke
+//case 0x003432685566ff7fLL:
+//aRGB0: (Primitive - Env ) * Texel0_Alp + Env
+//aA0 : (Primitive - 0 ) * Texel0 + 0
+//aRGB1: (Primitive - Env ) * Texel0_Alp + Env
+//aA1 : (Primitive - 0 ) * Texel0 + 0
+void BlendMode_0x003432685566ff7fLL( BLEND_MODE_ARGS)
+{
+	details.InstallTexture = true;
+}
+
+//Conker - Backwall
+//case 0x001218245531feffLL:
+//aRGB0: (Texel0       - Env         ) * Shade        + Primitive   
+//aA0  : (Texel0       - 0           ) * Shade        + 0           
+//aRGB1: (Texel0       - Env         ) * Shade        + Primitive   
+//aA1  : (Texel0       - 0           ) * Shade        + 0           
+void BlendMode_0x001218245531feffLL (BLEND_MODE_ARGS)
+{
+	details.InstallTexture = true;
+}
+
+// Conker Ground
+//case 0x0026a004151092ffLL:
+//aRGB0: (Texel1       - Texel0      ) * LOD_Frac     + Texel0      
+//aA0  : (Texel1       - Texel0      ) * Combined     + Texel0      
+//aRGB1: (Combined     - Env         ) * Shade        + Primitive   
+//aA1  : (Combined     - 0           ) * Shade        + 0    
+void BlendMode_0x0026a004151092ffLL (BLEND_MODE_ARGS)
+{
+	details.InstallTexture = true;
+	details.ColourAdjuster.SetRGB( details.PrimColour);
+	sceGuTexEnvColor( details.EnvColour.GetColour() );
+	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
+}
+
 //Command $ Conquer - Everything
 //case 0x0015982bff327f3fLL:
 //aRGB0: (Texel0       - 0           ) * Shade_Alpha  + Shade
@@ -4528,11 +4577,15 @@ OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 #define BLEND_MODE( x )		case (x):	return BlendMode_##x;
 			
 		//BLENDS#
-			
+		
+		BLEND_MODE (0x00127e2455fdf2f9LL);
+		BLEND_MODE (0x0026a004151092ffLL);
+		BLEND_MODE (0x001218245531feffLL);
+		BLEND_MODE (0x003432685566ff7fLL);
 		BLEND_MODE (0x00127eccf0fffc38LL);
 		BLEND_MODE (0x00157e2a33fdfcfeLL);
 		BLEND_MODE (0x00327ecbf0fffc3eLL);
-	BLEND_MODE (0x00127ecbf0fffc3eLL);
+		BLEND_MODE (0x00127ecbf0fffc3eLL);
 		BLEND_MODE (0x0011fe052ffd73f8LL);
 		BLEND_MODE (0x00272c0415fc93feLL);
 		BLEND_MODE (0x001114a3f0fff638LL);

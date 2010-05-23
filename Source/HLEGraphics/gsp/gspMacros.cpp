@@ -216,11 +216,13 @@ void DLParser_GBI1_Mtx( MicroCodeCommand command )
         }
 }
 
+extern u32 ConkerVtxZAddr;
 //*****************************************************************************
 //
 //*****************************************************************************
 void DLParser_GBI2_Mtx( MicroCodeCommand command )
 {
+		ConkerVtxZAddr = 0;	// For Conker BFD
         u32 address = RDPSegAddr(command.cmd1);
 
         // THESE ARE SWAPPED OVER FROM NORMAL MTX

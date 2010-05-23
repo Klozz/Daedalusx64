@@ -294,3 +294,29 @@ void DLParser_S2DEX_ObjRectangleR( MicroCodeCommand command )
 	}
 }
 
+void DLParser_S2DEX_Bg1cyc_2( MicroCodeCommand command )
+{
+	
+	if( ((command.cmd0)&0x00FFFFFF) != 0 )
+	{
+		DAEDALUS_ERROR("Mtx bg1cyc");
+		DLParser_GBI1_Mtx(command);
+		return;
+	}
+
+	DLParser_S2DEX_Bg1cyc(command);
+}
+
+void DLParser_S2DEX_ObjRendermode_2( MicroCodeCommand command )
+{
+
+	if( ((command.cmd0)&0xFFFFFF) != 0 || ((command.cmd1)&0xFFFFFF00) != 0 )
+	{
+		// This is a TRI2 cmd
+		DAEDALUS_ERROR("tri2 Y");
+		DLParser_GBI1_Tri2(command);
+		return;
+	}
+
+	DLParser_S2DEX_ObjRendermode(command);
+}

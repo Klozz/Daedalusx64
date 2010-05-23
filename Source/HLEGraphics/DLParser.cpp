@@ -166,6 +166,7 @@ u32 gVertexStride[] =
 	2,		// Last Legion, Toukon, Toukon 2
 	5,		// Shadows of the Empire (SOTE)
 	10,		// Golden Eye
+	NULL	// Conker BFD
 };
 
 static u32 ucode_ver;
@@ -438,7 +439,7 @@ static void DLParser_SetuCode( GBIVersion gbi_version, UCodeVersion ucode_versio
 			ucode_supported = true;
 			break;
 		case GBI_1:
-			ucode_ver = 1;
+			ucode_ver = 1;	
 			ucode_supported = true;
 			break;
 		case GBI_2:
@@ -465,15 +466,20 @@ static void DLParser_SetuCode( GBIVersion gbi_version, UCodeVersion ucode_versio
 			ucode_ver = 8;
 			ucode_supported = true;
 			break;
-		case GBI_0_GE:	// doesn't work yet
+		case GBI_0_GE:
 			ucode_ver = 10;
 			ucode_supported = true;
 			break;
-		/*default:
-			// Can this even happen happen? our auto ucode detector sets any unknown ucode as GBI0.
-			DBGConsole_Msg(0, "[RUcode wasn't set by ucode auto detector!!!] "); 
-			ucode_supported = false;
+		/*case GBI_0_CK:	// doesn't work yet
+			ucode_ver = 11;
+			ucode_supported = true;
 			break;*/
+		default:
+			// MMm conker isn't getting detected.check me !
+			ucode_ver = 11;
+			ucode_supported = true;
+			break;
+			
 		}
 	}
 
@@ -486,7 +492,7 @@ static void DLParser_SetuCode( GBIVersion gbi_version, UCodeVersion ucode_versio
 		DBGConsole_Msg(0, "[MException within loading unknown/unsupported ucode] at [R0x%08x 0x%08x]", command.cmd0, command.cmd1);
 	}
 
-	//DBGConsole_Msg(0, "Switching ucode table to %d", ucode_ver);
+	DAEDALUS_ERROR("Switching ucode table to %d", ucode_ver);
 	//
 	// Set up correct vertex stride
 	VertexStride = gVertexStride[ucode_ver];
@@ -2115,6 +2121,7 @@ void DLParser_SetCImg( MicroCodeCommand command )
 	g_CI.Width = width;
 }
 
+bool bConkerHideShadow = false;
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -2124,6 +2131,18 @@ void DLParser_SetCombine( MicroCodeCommand command )
 	u32 mux1 = command.cmd1;
 
 	u64 mux = (((u64)mux0) << 32) | (u64)mux1;
+
+	if(gFlushTrisHack)
+	{
+		if( mux1 == 0xffd21f0f && mux0 == 0x00ffe9ff )
+		{
+			bConkerHideShadow = true;
+		}
+		else
+		{
+			bConkerHideShadow = false;
+		}
+	}
 
 	RDP_SetMux( mux );
 	

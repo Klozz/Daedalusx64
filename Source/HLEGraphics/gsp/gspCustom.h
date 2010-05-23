@@ -20,6 +20,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef GSP_CUSTOM_H
 #define GSP_CUSTOM_H
 
+
+
+//*****************************************************************************
+//
+//*****************************************************************************
+
 void DLParser_GBI0_Vtx_ShadowOfEmpire( MicroCodeCommand command );
 void DLParser_RSP_Last_Legion_0x80( MicroCodeCommand command );
 void DLParser_RSP_Last_Legion_0x00( MicroCodeCommand command );
@@ -32,6 +38,10 @@ void DLParser_GBI0_Vtx_DKR( MicroCodeCommand command );
 void DLParser_GBI0_Vtx_WRUS( MicroCodeCommand command );
 void DLParser_DmaTri( MicroCodeCommand command );
 void DLParser_GBI0_Vtx_Gemini( MicroCodeCommand command );
+void DLParser_GBI2_Conker( MicroCodeCommand command );
+void RSP_MoveMem_Conker( MicroCodeCommand command );
+void RSP_MoveWord_Conker( MicroCodeCommand command );
+void RSP_Vtx_Conker( MicroCodeCommand command );
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 

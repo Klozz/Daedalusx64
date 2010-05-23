@@ -21,6 +21,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gspCommon.h"
 
 
+///
+// Conker multiple tri ucodes
+
+// Move these
+#define	TriC0 0x10
+#define	TriC1 0x11
+#define	TriC2 0x12
+#define	TriC3 0x13
+#define	TriC4 0x14
+#define	TriC5 0x15
+#define	TriC6 0x16
+#define	TriC7 0x17
+#define	TriC8 0x18
+#define	TriC9 0x19
+#define	TriCa 0x1a
+#define	TriCb 0x1b
+#define	TriCc 0x1c
+#define	TriCd 0x1d
+#define	TriCe 0x1e
+#define	TriCf 0x1f
+
+u32 ConkerVtxZAddr = 0;
+
 // DKR verts are extra 4 bytes
 //*****************************************************************************
 //
@@ -583,4 +606,151 @@ void DLParser_RDPHalf1_GoldenEye( MicroCodeCommand command )
 	PSPRenderer::Get()->TexRect( tile, xy0, xy1, uv0, uv1 );
 
 	gDisplayListStack.back().addr += 312;
+}
+
+//Conker
+//*****************************************************************************
+//
+//*****************************************************************************
+void DLParser_GBI2_Conker( MicroCodeCommand command )
+{
+
+	u32 pc = gDisplayListStack.back().addr;		// This points to the next instruction
+
+    bool tris_added = false;
+
+    while ( command.cmd == TriC0 || command.cmd == TriC1 || command.cmd == TriC2 ||
+			command.cmd == TriC3 || command.cmd == TriC4 ||	command.cmd == TriC5 ||
+			command.cmd == TriC6 || command.cmd == TriC7 || command.cmd == TriC8 ||
+			command.cmd == TriC9 || command.cmd == TriCa || command.cmd == TriCb ||
+			command.cmd == TriCc || command.cmd == TriCd || command.cmd == TriCe || 
+			command.cmd == TriCf )
+    {
+		u32 idx[12];
+		idx[0] = (command.cmd1   )&0x1F;
+		idx[1] = (command.cmd1>> 5)&0x1F;
+		idx[2] = (command.cmd1>>10)&0x1F;
+		idx[3] = (command.cmd1>>15)&0x1F;
+		idx[4] = (command.cmd1>>20)&0x1F;
+		idx[5] = (command.cmd1>>25)&0x1F;
+
+		idx[6] = (command.cmd0    )&0x1F;
+		idx[7] = (command.cmd0>> 5)&0x1F;
+		idx[8] = (command.cmd0>>10)&0x1F;
+
+		idx[ 9] = (((command.cmd0>>15)&0x7)<<2)|(command.cmd1>>30);
+		idx[10] = (command.cmd0>>18)&0x1F;
+		idx[11] = (command.cmd0>>23)&0x1F;
+
+		for( u32 i=0; i<4; i++)
+		{
+			u32 v0=idx[i*3  ];
+			u32 v1=idx[i*3+1];
+			u32 v2=idx[i*3+2];
+		
+			tris_added |= PSPRenderer::Get()->AddTri(v0, v1, v2);
+		}
+
+		command.cmd0			= *(u32 *)(g_pu8RamBase + pc+0);
+		command.cmd1			= *(u32 *)(g_pu8RamBase + pc+4);
+		pc += 8;
+    }
+
+	gDisplayListStack.back().addr = pc-8;
+
+    if (tris_added)
+    {
+            PSPRenderer::Get()->FlushTris();
+    }
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void RDP_GFX_Force_Vertex_Z_Conker(u32 address)
+{
+
+	ConkerVtxZAddr = address;
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void RSP_MoveMem_Conker( MicroCodeCommand command )
+{
+	u32 type = ((command.cmd0)     ) & 0xFE;
+	u32 address = RDPSegAddr(command.cmd1);
+
+	if( type == G_GBI2_MV_MATRIX )
+	{
+		RDP_GFX_Force_Vertex_Z_Conker(address);
+	}
+	else if( type == G_GBI2_MV_LIGHT )
+	{
+		u32 offset2 = ((command.cmd0) >> 5) & 0x3FFF;
+		u32 light = 0xFF;
+
+		if( offset2 >= 0x30 )
+		{
+			light = (offset2 - 0x30)/0x30;
+			DL_PF("    Light %d:", light);
+
+			RDP_MoveMemLight(light, address);
+		}
+		else
+		{
+			// fix me
+			//DBGConsole_Msg(0, "Check me in DLParser_MoveMem_Conker - MoveMem Light");
+		}
+	}
+	else
+	{
+		DLParser_GBI2_MoveMem( command );
+	}
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void RSP_MoveWord_Conker( MicroCodeCommand command )
+{
+	u32 type = ((command.cmd0) >> 16) & 0xFF;
+
+	if( type != G_MW_NUMLIGHT )
+	{
+		DLParser_GBI2_MoveWord( command );
+	}
+	else
+	{
+		u32 num_lights = command.cmd1/48;
+		DL_PF("     G_MW_NUMLIGHT: %d", num_lights);
+
+		gAmbientLightIdx = num_lights+1;
+		PSPRenderer::Get()->SetNumLights(num_lights);
+	}
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void RSP_Vtx_Conker( MicroCodeCommand command )
+{
+	
+	u32 address = RDPSegAddr(command.cmd1);
+	u32 len    = ((command.cmd0   )&0xFFF)/2;
+	u32 n      = ((command.cmd0>>12)&0xFFF);
+	u32 v0		= len - n;
+
+	use(len);
+
+	DL_PF("    Vtx: address 0x%08x, len: %d, v0: %d, n: %d", address, len, v0, n);
+
+	// XXX Fix me
+	PSPRenderer::Get()->SetNewVertexInfoVFPU_No_Light( address, v0, n );
+
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+      gNumVertices += n;
+      DLParser_DumpVtxInfo( address, v0, n );
+#endif
+
 }

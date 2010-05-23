@@ -142,6 +142,8 @@ const char * sc_szBlA2[4]  = { "1-A", "AMem", "1",      "?" };
 #define BLEND_FOG_ASHADE2		0xc8000000		// Fog * AShade + In * 1-A
 #define BLEND_FOG_APRIM1		0xc4000000
 #define BLEND_FOG_3				0xc0000000		// Fog * AIn + In * 1-A
+#define BLEND_FOG_MEM_FOG_MEM	0x04c00000		// In * AFog + Fog * 1-A
+
 
 #define BLEND_PASS1				0x0c080000		//GBL_c1(G_BL_CLR_IN, G_BL_0, G_BL_CLR_IN, G_BL_1)
 #define BLEND_PASS2				0x03020000
@@ -228,6 +230,7 @@ void InitBlenderMode()					// Set Alpha Blender mode
 		case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_NOOP1 ):		// 0c08 || 0000 - 1080 - Sky
 		case MAKE_BLEND_MODE( BLEND_FOG_APRIM1, BLEND_PASS2 ):	// c400 || 0302 - Donald Duck - Sky
 		case MAKE_BLEND_MODE( BLEND_FOG_APRIM1, BLEND_OPA2 ):	// c400 || 0011 - Donald Duck and GoldenEye - Items and Truck spots.
+		case MAKE_BLEND_MODE( BLEND_FOG_MEM_FOG_MEM, BLEND_PASS2 ):// 04c0 - :In * AFog + Fog * 1-A || 0302 - :In * 0 + In * 1 - Conker's face and body
 			enable_blend = false;
 			break;
 		case MAKE_BLEND_MODE( BLEND_NOOP1, BLEND_XLU2 ):		// 0000 || 0010 - Hey You Pikachu - Shade

@@ -42,6 +42,8 @@ void DLParser_GBI2_Conker( MicroCodeCommand command );
 void RSP_MoveMem_Conker( MicroCodeCommand command );
 void RSP_MoveWord_Conker( MicroCodeCommand command );
 void RSP_Vtx_Conker( MicroCodeCommand command );
+void RSP_Set_Vtx_CI_PD( MicroCodeCommand command );
+void RSP_Vtx_PD( MicroCodeCommand command );
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 

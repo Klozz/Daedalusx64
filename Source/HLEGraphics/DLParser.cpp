@@ -158,15 +158,16 @@ u32 gVertexStride[] =
 	10,		// Super Mario 64, Tetrisphere, Demos
 	2,		// Mario Kart, Star Fox
 	NULL,	// Zelda, and newer games
-	10,		// Diddy Kong Racing
-	2,		// Yoshi's Story, Pokemon Puzzle League
-	NULL,	// Kirby 64
 	5,		// Wave Racer USA
+	10,		// Diddy Kong Racing
 	10,		// Gemini and Mickey
 	2,		// Last Legion, Toukon, Toukon 2
 	5,		// Shadows of the Empire (SOTE)
 	10,		// Golden Eye
-	NULL	// Conker BFD
+	NULL,	// Conker BFD
+	10,		// Perfect Dark
+	2,		// Yoshi's Story, Pokemon Puzzle League
+	NULL,	// Kirby 64
 };
 
 static u32 ucode_ver;
@@ -409,21 +410,17 @@ static void DLParser_SetuCode( GBIVersion gbi_version, UCodeVersion ucode_versio
 {
 	MicroCodeCommand command;
 
-	// ToDo : Make this more efficient 
-
-	bool ucode_supported = false;
+	// ToDo : Create a new enum to handle GBI1/2 S2DEX 
 
 	if ( ucode_version == S2DEX )
 	{
 		switch( gbi_version )
 		{
 		case GBI_1:
-			ucode_ver = 4;
-			ucode_supported = true;
+			ucode_ver = 11;
 			break;
 		case GBI_2:
-			ucode_ver = 5;
-			ucode_supported = true;
+			ucode_ver = 12;
 			break;
 		default:
 			DBGConsole_Msg(0, "Trying to set a non GBI1/2 S2DEX ucode??"); // This definitvely can't happen..
@@ -432,75 +429,40 @@ static void DLParser_SetuCode( GBIVersion gbi_version, UCodeVersion ucode_versio
 	}
 	else
 	{
-		switch( gbi_version )
+		// This really important otherwise our ucode detector will pick up lots of junk.
+		// Also this sets apart unhandled ucodes
+		if ( gbi_version == GBI_0 ||
+			 gbi_version == GBI_0_WR ||
+			 gbi_version == GBI_0_GE ||
+			 gbi_version == GBI_0_DKR ||
+			 gbi_version == GBI_0_JFG ||
+			 gbi_version == GBI_0_LL ||
+			 gbi_version == GBI_0_SE ||
+			 gbi_version == GBI_0_CK ||
+			 gbi_version == GBI_0_PD ||
+			 gbi_version == GBI_1 ||
+			 gbi_version == GBI_2 )
 		{
-		case GBI_0:
-			ucode_ver = 0;
-			ucode_supported = true;
-			break;
-		case GBI_1:
-			ucode_ver = 1;	
-			ucode_supported = true;
-			break;
-		case GBI_2:
-			ucode_ver = 2;
-			ucode_supported = true;
-			break;
-		case GBI_0_WR:
-			ucode_ver = 6;
-			ucode_supported = true;
-			break;
-		case GBI_0_DKR:
-			ucode_ver = 3;
-			ucode_supported = true;
-			break;
-		case GBI_0_JFG:
-			ucode_ver = 7;
-			ucode_supported = true;
-			break;
-		case GBI_0_LL:	// doesn't work yet
-			ucode_ver = 9;
-			ucode_supported = true;
-			break;
-		case GBI_0_SE:	// doesn't work yet
-			ucode_ver = 8;
-			ucode_supported = true;
-			break;
-		case GBI_0_GE:
-			ucode_ver = 10;
-			ucode_supported = true;
-			break;
-		/*case GBI_0_CK:	// doesn't work yet
-			ucode_ver = 11;
-			ucode_supported = true;
-			break;*/
-		default:
-			// MMm conker isn't getting detected.check me !
-			ucode_ver = 11;
-			ucode_supported = true;
-			break;
-			
+			// Let our auto ucode detector decide which table to choose from :)
+			ucode_ver = gbi_version;
 		}
-	}
-
-	if(!ucode_supported)
-	{
-		// Do this to return user to romselector when trying to load an unsupported ucode.
-		// Alot nicer than allowing their psp to crash :)
-		//
-		CPU_Halt("Exception in Set uCode");
-		DBGConsole_Msg(0, "[MException within loading unknown/unsupported ucode] at [R0x%08x 0x%08x]", command.cmd0, command.cmd1);
+		else
+		{
+			// Return to romselector if unhandled ucode is loaded ex : Stunt Racer 64
+			CPU_Halt("Exception in Set uCode");
+			DBGConsole_Msg(0, "[MException within loading unsupported ucode] at [R0x%08x 0x%08x]", command.cmd0, command.cmd1);
+		}
 	}
 
 	DAEDALUS_ERROR("Switching ucode table to %d", ucode_ver);
 	//
 	// Set up correct vertex stride
+	//
 	VertexStride = gVertexStride[ucode_ver];
 	//
 	//Set up selected ucode table
 	//
 	gInstructionLookup[ucode_ver][command.cmd0>>24](command);
-
 }
 	
 //*****************************************************************************

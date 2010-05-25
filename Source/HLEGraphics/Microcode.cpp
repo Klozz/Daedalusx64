@@ -95,6 +95,7 @@ static const MicrocodeData gMicrocodeData[] =
 	//The only games that need defining are custom ucodes and incorrectly detected ones
 	// If you believe a title should be here post the line for it from ucodes.txt @ http://www.daedalusx64.com
 	//Note - Games are in alphabetical order by game title
+
 	{ GBI_0_CK, F3DEX, 0x10372b79, "RSP Gfx ucode F3DEXBG.NoN fifo 2.08  Yoshitaka Yasumoto 1999 Nintendo.", "Conker's Bad Fur Day"}, 
 	{ GBI_0_LL, F3DEX,  0x9a824412, "", "Dark Rift"},
 	{ GBI_0_DKR, F3DEX, 0xa3f481d8, "", "Diddy Kong Racing (v1.0)"}, 
@@ -102,9 +103,14 @@ static const MicrocodeData gMicrocodeData[] =
 	{ GBI_0_GE, FAST3D, 0x96c35300, "RSP SW Version: 2.0G, 09-30-96", "GoldenEye 007"}, 
 	{ GBI_0_JFG, F3DEX, 0x58823aab, "", "Jet Force Gemini"},    // Mickey's Speedway USA uses the same string mapping
 	{ GBI_0_LL, FAST3D, 0x85185534, "", "Last Legion UX"},		// Toukon 2 uses the same string mapping
+	{ GBI_0_PD, FAST3D, 0x84c127f1, "", "Perfect Dark (v1.1)"}, 
 	{ GBI_0_SE, FAST3D, 0xd010d659, "RSP SW Version: 2.0D, 04-01-96", "Star Wars - Shadows of the Empire (v1.0)"}, 
 	{ GBI_0_LL, FAST3D, 0xf9ec7828, "", "Toukon Road - Brave Spirits"}, //f3dex
 	{ GBI_0_WR, FAST3D, 0xbb5a808d, "RSP SW Version: 2.0D, 04-01-96", "Wave Race 64"},
+	{ GBI_0_UNK, F3DEX, 0x10b092bf, "", "World Driver Championship"}, // Stunt Racer 64 uses the same string
+	{ GBI_0_UNK, F3DEX, 0x5719c8de, "", "Star Wars - Rogue Squadron"}, 
+
+
 };
 
 //*****************************************************************************

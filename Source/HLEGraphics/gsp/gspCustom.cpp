@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	TriCf 0x1f
 
 u32 ConkerVtxZAddr = 0;
+u32 PDCIAddr = 0;
 
 // DKR verts are extra 4 bytes
 //*****************************************************************************
@@ -747,6 +748,42 @@ void RSP_Vtx_Conker( MicroCodeCommand command )
 
 	// XXX Fix me
 	PSPRenderer::Get()->SetNewVertexInfoVFPU_No_Light( address, v0, n );
+
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+      gNumVertices += n;
+      DLParser_DumpVtxInfo( address, v0, n );
+#endif
+
+}
+
+// Perfect Dark
+//*****************************************************************************
+//
+//*****************************************************************************
+void RSP_Set_Vtx_CI_PD( MicroCodeCommand command )
+{
+	// Color index buf address
+	PDCIAddr = RDPSegAddr(command.cmd1);
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void RSP_Vtx_PD( MicroCodeCommand command )
+{
+	
+	u32 address = RDPSegAddr(command.cmd1);
+	u32 v0 =  ((command.cmd0)>>16)&0x0F;
+	u32 n  = (((command.cmd0)>>20)&0x0F)+1;
+	u32 len = (command.cmd0)&0xFFFF;
+
+	use(len);
+
+	DL_PF("    Vtx: address 0x%08x, len: %d, v0: %d, n: %d", address, len, v0, n);
+
+	// Doesn't work anyways
+	// Todo : Implement proper vertex info for PD
+	PSPRenderer::Get()->SetNewVertexInfoVFPU( address, v0, n );
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
       gNumVertices += n;

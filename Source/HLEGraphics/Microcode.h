@@ -38,11 +38,13 @@ enum GBIVersion
 	GBI_2,
 	GBI_0_WR,
 	GBI_0_DKR,
-	GBI_0_CK,
 	GBI_0_JFG,
 	GBI_0_LL,
 	GBI_0_SE,
-	GBI_0_GE
+	GBI_0_GE,
+	GBI_0_CK,
+	GBI_0_PD,
+	GBI_0_UNK // This should always be the last
 };
 
 void	GBIMicrocode_DetectVersion( u32 code_base, u32 code_size, u32 data_base, u32 data_size, GBIVersion * gbi_version, UCodeVersion * ucode_version );

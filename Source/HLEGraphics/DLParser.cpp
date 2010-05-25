@@ -157,17 +157,17 @@ u32 gVertexStride[] =
 {
 	10,		// Super Mario 64, Tetrisphere, Demos
 	2,		// Mario Kart, Star Fox
-	NULL,	// Zelda, and newer games
+	2,		// Zelda, and newer games
 	5,		// Wave Racer USA
 	10,		// Diddy Kong Racing
 	10,		// Gemini and Mickey
 	2,		// Last Legion, Toukon, Toukon 2
 	5,		// Shadows of the Empire (SOTE)
 	10,		// Golden Eye
-	NULL,	// Conker BFD
+	2,		// Conker BFD
 	10,		// Perfect Dark
 	2,		// Yoshi's Story, Pokemon Puzzle League
-	NULL,	// Kirby 64
+	2		// Kirby 64
 };
 
 static u32 ucode_ver;
@@ -449,8 +449,11 @@ static void DLParser_SetuCode( GBIVersion gbi_version, UCodeVersion ucode_versio
 		else
 		{
 			// Return to romselector if unhandled ucode is loaded ex : Stunt Racer 64
-			CPU_Halt("Exception in Set uCode");
-			DBGConsole_Msg(0, "[MException within loading unsupported ucode] at [R0x%08x 0x%08x]", command.cmd0, command.cmd1);
+			if(gbi_version == GBI_0_UNK )
+			{
+				CPU_Halt("Exception in Set uCode");
+				DBGConsole_Msg(0, "[MException within loading unsupported ucode] at [R0x%08x 0x%08x]", command.cmd0, command.cmd1);
+			}
 		}
 	}
 

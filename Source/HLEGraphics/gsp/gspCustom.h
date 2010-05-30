@@ -1,5 +1,6 @@
 /*
 Copyright (C) 2009 StrmnNrmn
+Copyright (C) 2003-2009 Rice1964
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -23,31 +24,35 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 //*****************************************************************************
+// Custom
+//*****************************************************************************
+
+UcodeFunc( DLParser_GBI0_Vtx_ShadowOfEmpire );
+UcodeFunc( DLParser_RSP_Last_Legion_0x80 );
+UcodeFunc( DLParser_RSP_Last_Legion_0x00 );
+UcodeFunc( DLParser_TexRect_Last_Legion );
+UcodeFunc( DLParser_RDPHalf1_GoldenEye );
+UcodeFunc( DLParser_DLInMem );
+UcodeFunc( DLParser_MtxDKR );
+UcodeFunc( DLParser_MoveWord_DKR );
+UcodeFunc( DLParser_GBI0_Vtx_DKR );
+UcodeFunc( DLParser_GBI0_Vtx_WRUS );
+UcodeFunc( DLParser_DmaTri );
+UcodeFunc( DLParser_GBI0_Vtx_Gemini );
+UcodeFunc( DLParser_GBI2_Conker );
+UcodeFunc( RSP_MoveMem_Conker );
+UcodeFunc( RSP_MoveWord_Conker );
+UcodeFunc( RSP_Vtx_Conker );
+UcodeFunc( RSP_Set_Vtx_CI_PD );
+UcodeFunc( RSP_Vtx_PD );
+
+//*****************************************************************************
 //
 //*****************************************************************************
 
-void DLParser_GBI0_Vtx_ShadowOfEmpire( MicroCodeCommand command );
-void DLParser_RSP_Last_Legion_0x80( MicroCodeCommand command );
-void DLParser_RSP_Last_Legion_0x00( MicroCodeCommand command );
-void DLParser_TexRect_Last_Legion( MicroCodeCommand command );
-void DLParser_RDPHalf1_GoldenEye( MicroCodeCommand command );
-void DLParser_DLInMem( MicroCodeCommand command );
-void DLParser_MtxDKR( MicroCodeCommand command );
-void DLParser_MoveWord_DKR( MicroCodeCommand command );
-void DLParser_GBI0_Vtx_DKR( MicroCodeCommand command );
-void DLParser_GBI0_Vtx_WRUS( MicroCodeCommand command );
-void DLParser_DmaTri( MicroCodeCommand command );
-void DLParser_GBI0_Vtx_Gemini( MicroCodeCommand command );
-void DLParser_GBI2_Conker( MicroCodeCommand command );
-void RSP_MoveMem_Conker( MicroCodeCommand command );
-void RSP_MoveWord_Conker( MicroCodeCommand command );
-void RSP_Vtx_Conker( MicroCodeCommand command );
-void RSP_Set_Vtx_CI_PD( MicroCodeCommand command );
-void RSP_Vtx_PD( MicroCodeCommand command );
-
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 
-void DLParser_DumpVtxInfoDKR(u32 address, u32 v0_idx, u32 num_verts);
+UcodeFunc( DLParser_DumpVtxInfoDKR(u32 address, u32 v0_idx, u32 num_verts);
 #endif
 
 #endif /* GSP_CUSTOM_H */

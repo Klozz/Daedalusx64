@@ -70,6 +70,8 @@ struct MicroCodeCommand
 	};
 };
 
+#define UcodeFunc(name)	void name(MicroCodeCommand)
+
 typedef void ( * MicroCodeInstruction )( MicroCodeCommand command );
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST

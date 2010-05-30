@@ -25,36 +25,35 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // GBI1
 //*****************************************************************************
 
-void DLParser_Nothing( MicroCodeCommand command );
-static void DLParser_GBI1_SpNoop( MicroCodeCommand command );
-static void DLParser_GBI1_MoveMem( MicroCodeCommand command );
-
-static void DLParser_GBI1_Reserved( MicroCodeCommand command );
-
-static void DLParser_GBI1_RDPHalf_Cont( MicroCodeCommand command );
-static void DLParser_GBI1_RDPHalf_2( MicroCodeCommand command );
-static void DLParser_GBI1_RDPHalf_1( MicroCodeCommand command );
-void DLParser_GBI1_MoveWord( MicroCodeCommand command );
-static void DLParser_GBI1_Noop( MicroCodeCommand command );
+UcodeFunc( DLParser_Nothing);
+UcodeFunc( DLParser_GBI1_SpNoop );
+UcodeFunc( DLParser_GBI1_MoveMem );
+UcodeFunc( DLParser_GBI1_Reserved );
+UcodeFunc( DLParser_GBI1_RDPHalf_Cont );
+UcodeFunc( DLParser_GBI1_RDPHalf_2 );
+UcodeFunc( DLParser_GBI1_RDPHalf_1 );
+UcodeFunc( DLParser_GBI1_MoveWord );
+UcodeFunc( DLParser_GBI1_Noop );
 
 //*****************************************************************************
 // GBI2
 //*****************************************************************************
-static void DLParser_GBI2_DMA_IO( MicroCodeCommand command );
 
-void DLParser_GBI2_MoveWord( MicroCodeCommand command );
-void DLParser_GBI2_MoveMem( MicroCodeCommand command );
-
-static void DLParser_GBI2_RDPHalf_2( MicroCodeCommand command );
+UcodeFunc( DLParser_GBI2_DMA_IO );
+UcodeFunc( DLParser_GBI2_MoveWord );
+UcodeFunc( DLParser_GBI2_MoveMem );
 
 //*****************************************************************************
 // New GBI2 ucodes
 //*****************************************************************************
-void DLParser_GBI2_DL_Count( MicroCodeCommand command );
-void DLParser_GBI2_0x8( MicroCodeCommand command );
 
+UcodeFunc( DLParser_GBI2_DL_Count );
+UcodeFunc( DLParser_GBI2_0x8 );
 
+//*****************************************************************************
 // Include ucode header files
+//*****************************************************************************
+
 #include "gsp/gspMacros.h"
 #include "gsp/gspSprite2D.h"
 #include "gsp/gspS2DEX.h"
@@ -64,43 +63,47 @@ void DLParser_GBI2_0x8( MicroCodeCommand command );
 //*****************************************************************************
 // RDP Commands
 //*****************************************************************************
-void DLParser_TexRect( MicroCodeCommand command );
-static void DLParser_TexRectFlip( MicroCodeCommand command );
-static void DLParser_RDPLoadSync( MicroCodeCommand command );
-static void DLParser_RDPPipeSync( MicroCodeCommand command );
-static void DLParser_RDPTileSync( MicroCodeCommand command );
-static void DLParser_RDPFullSync( MicroCodeCommand command );
-static void DLParser_SetKeyGB( MicroCodeCommand command );
-static void DLParser_SetKeyR( MicroCodeCommand command );
-static void DLParser_SetConvert( MicroCodeCommand command );
-static void DLParser_SetScissor( MicroCodeCommand command );
-static void DLParser_SetPrimDepth( MicroCodeCommand command );
-static void DLParser_RDPSetOtherMode( MicroCodeCommand command );
-static void DLParser_LoadTLut( MicroCodeCommand command );
-static void DLParser_SetTileSize( MicroCodeCommand command );
-static void DLParser_LoadBlock( MicroCodeCommand command );
-static void DLParser_LoadTile( MicroCodeCommand command );
-static void DLParser_SetTile( MicroCodeCommand command );
-static void DLParser_FillRect( MicroCodeCommand command );
-static void DLParser_SetFillColor( MicroCodeCommand command );
-static void DLParser_SetFogColor( MicroCodeCommand command );
-static void DLParser_SetBlendColor( MicroCodeCommand command );
-static void DLParser_SetPrimColor( MicroCodeCommand command );
-static void DLParser_SetEnvColor( MicroCodeCommand command );
-static void DLParser_SetCombine( MicroCodeCommand command );
-static void DLParser_SetTImg( MicroCodeCommand command );
-static void DLParser_SetZImg( MicroCodeCommand command );
-static void DLParser_SetCImg( MicroCodeCommand command );
 
+UcodeFunc( DLParser_TexRect );
+UcodeFunc( DLParser_TexRectFlip );
+UcodeFunc( DLParser_RDPLoadSync );
+UcodeFunc( DLParser_RDPPipeSync );
+UcodeFunc( DLParser_RDPTileSync );
+UcodeFunc( DLParser_RDPFullSync );
+UcodeFunc( DLParser_SetKeyGB );
+UcodeFunc( DLParser_SetKeyR );
+UcodeFunc( DLParser_SetConvert );
+UcodeFunc( DLParser_SetScissor );
+UcodeFunc( DLParser_SetPrimDepth );
+UcodeFunc( DLParser_RDPSetOtherMode );
+UcodeFunc( DLParser_LoadTLut );
+UcodeFunc( DLParser_SetTileSize );
+UcodeFunc( DLParser_LoadBlock );
+UcodeFunc( DLParser_LoadTile );
+UcodeFunc( DLParser_SetTile );
+UcodeFunc( DLParser_FillRect );
+UcodeFunc( DLParser_SetFillColor );
+UcodeFunc( DLParser_SetFogColor );
+UcodeFunc( DLParser_SetBlendColor );
+UcodeFunc( DLParser_SetPrimColor );
+UcodeFunc( DLParser_SetEnvColor );
+UcodeFunc( DLParser_SetCombine );
+UcodeFunc( DLParser_SetTImg );
+UcodeFunc( DLParser_SetZImg );
+UcodeFunc( DLParser_SetCImg );
 
-static void DLParser_TriFill( MicroCodeCommand command );
-static void DLParser_TriFillZ( MicroCodeCommand command );
-static void DLParser_TriTxtr( MicroCodeCommand command );
-static void DLParser_TriTxtrZ( MicroCodeCommand command );
-static void DLParser_TriShade( MicroCodeCommand command );
-static void DLParser_TriShadeZ( MicroCodeCommand command );
-static void DLParser_TriShadeTxtr( MicroCodeCommand command );
-static void DLParser_TriShadeTxtrZ( MicroCodeCommand command );
+//*****************************************************************************
+// RSP Tri Commands
+//*****************************************************************************
+
+UcodeFunc( DLParser_TriFill );
+UcodeFunc( DLParser_TriFillZ );
+UcodeFunc( DLParser_TriTxtr );
+UcodeFunc( DLParser_TriTxtrZ );
+UcodeFunc( DLParser_TriShade );
+UcodeFunc( DLParser_TriShadeZ );
+UcodeFunc( DLParser_TriShadeTxtr );
+UcodeFunc( DLParser_TriShadeTxtrZ );
 
 //*****************************************************************************
 //

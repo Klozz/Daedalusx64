@@ -17,17 +17,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-//
-//	gSP Macros
-//
-
 #ifndef GSP_MACROS_H
 #define GSP_MACROS_H
 
 
-//***************************************************************************** 
-//
-//***************************************************************************** 
+//*****************************************************************************
+// Macros
+//*****************************************************************************
 
 #define G_ZELDA_ZBUFFER				G_ZBUFFER	// Guess 
 #define G_ZELDA_CULL_BACK			0x00000200  /*G_CULL_FRONT */ 
@@ -42,45 +38,45 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 //***************************************************************************** 
 
-void DLParser_GBI1_CullDL	( MicroCodeCommand command );
-void DLParser_GBI2_CullDL	( MicroCodeCommand command );
-void DLParser_GBI1_DL		( MicroCodeCommand command );
-void DLParser_GBI2_DL		( MicroCodeCommand command );
-void DLParser_GBI1_EndDL	( MicroCodeCommand command );
-void DLParser_GBI2_EndDL	( MicroCodeCommand command );
-void DLParser_GBI1_BranchZ	( MicroCodeCommand command );
-void DLParser_GBI1_LoadUCode( MicroCodeCommand command );
+UcodeFunc( DLParser_GBI1_CullDL );
+UcodeFunc( DLParser_GBI2_CullDL );
+UcodeFunc( DLParser_GBI1_DL );
+UcodeFunc( DLParser_GBI2_DL );
+UcodeFunc( DLParser_GBI1_EndDL );
+UcodeFunc( DLParser_GBI2_EndDL );
+UcodeFunc( DLParser_GBI1_BranchZ );
+UcodeFunc( DLParser_GBI1_LoadUCode );
 
-void DLParser_GBI1_SetGeometryMode	( MicroCodeCommand command );
-void DLParser_GBI1_ClearGeometryMode( MicroCodeCommand command );
-void DLParser_GBI2_GeometryMode		( MicroCodeCommand command );
-void DLParser_GBI1_SetOtherModeL	( MicroCodeCommand command );
-void DLParser_GBI1_SetOtherModeH	( MicroCodeCommand command );
-void DLParser_GBI2_SetOtherModeL	( MicroCodeCommand command );
-void DLParser_GBI2_SetOtherModeH	( MicroCodeCommand command );
+UcodeFunc( DLParser_GBI1_SetGeometryMode );
+UcodeFunc( DLParser_GBI1_ClearGeometryMode );
+UcodeFunc( DLParser_GBI2_GeometryMode );
+UcodeFunc( DLParser_GBI1_SetOtherModeL );
+UcodeFunc( DLParser_GBI1_SetOtherModeH );
+UcodeFunc( DLParser_GBI2_SetOtherModeL );
+UcodeFunc( DLParser_GBI2_SetOtherModeH );
 
-void DLParser_GBI1_Texture	( MicroCodeCommand command );
-void DLParser_GBI2_Texture	( MicroCodeCommand command );
+UcodeFunc( DLParser_GBI1_Texture );
+UcodeFunc( DLParser_GBI2_Texture );
 
-void DLParser_GBI0_Vtx		( MicroCodeCommand command );
-void DLParser_GBI1_Vtx		( MicroCodeCommand command );
-void DLParser_GBI2_Vtx		( MicroCodeCommand command );
-void DLParser_GBI1_ModifyVtx( MicroCodeCommand command );
+UcodeFunc( DLParser_GBI0_Vtx );
+UcodeFunc( DLParser_GBI1_Vtx );
+UcodeFunc( DLParser_GBI2_Vtx );
+UcodeFunc( DLParser_GBI1_ModifyVtx );
 
-void DLParser_GBI1_Mtx		( MicroCodeCommand command );
-void DLParser_GBI2_Mtx		( MicroCodeCommand command );
-void DLParser_GBI1_PopMtx	( MicroCodeCommand command );
-void DLParser_GBI2_PopMtx	( MicroCodeCommand command );
+UcodeFunc( DLParser_GBI1_Mtx );
+UcodeFunc( DLParser_GBI2_Mtx );
+UcodeFunc( DLParser_GBI1_PopMtx );
+UcodeFunc( DLParser_GBI2_PopMtx );
 
-void DLParser_GBI2_Quad		( MicroCodeCommand command );
-void DLParser_GBI2_Line3D	( MicroCodeCommand command );
-void DLParser_GBI2_Tri1		( MicroCodeCommand command );
-void DLParser_GBI0_Tri2		( MicroCodeCommand command );
-void DLParser_GBI2_Tri2		( MicroCodeCommand command );
+UcodeFunc( DLParser_GBI2_Quad );
+UcodeFunc( DLParser_GBI2_Line3D );
+UcodeFunc( DLParser_GBI2_Tri1 );
+UcodeFunc( DLParser_GBI0_Tri2 );
+UcodeFunc( DLParser_GBI2_Tri2 );
 
-void DLParser_GBI1_Tri1( MicroCodeCommand command );
-void DLParser_GBI1_Tri2( MicroCodeCommand command );
-void DLParser_GBI1_Line3D( MicroCodeCommand command );
+UcodeFunc( DLParser_GBI1_Tri1 );
+UcodeFunc( DLParser_GBI1_Tri2 );
+UcodeFunc( DLParser_GBI1_Line3D );
 
 
 #endif /* GSP_MACROS_H */

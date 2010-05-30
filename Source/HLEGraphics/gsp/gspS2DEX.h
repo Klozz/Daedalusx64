@@ -1,3 +1,23 @@
+/*
+Copyright (C) 2009 Grazz
+Copyright (C) 2003-2009 Rice1964
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+*/
+
 #ifndef GSP_S2DEX_H
 #define GSP_S2DEX_H
 
@@ -52,21 +72,21 @@
 //*****************************************************************************
 
 
-void DLParser_S2DEX_BgCopy			( MicroCodeCommand command );
-void DLParser_S2DEX_SelectDl		( MicroCodeCommand command );
-void DLParser_S2DEX_ObjSprite		( MicroCodeCommand command );
-void DLParser_S2DEX_ObjRectangle	( MicroCodeCommand command );
-void DLParser_S2DEX_ObjRendermode	( MicroCodeCommand command );
-void DLParser_S2DEX_ObjLoadTxtr		( MicroCodeCommand command );
-void DLParser_S2DEX_ObjLdtxSprite	( MicroCodeCommand command );
-void DLParser_S2DEX_ObjLdtxRect		( MicroCodeCommand command );
-void DLParser_S2DEX_ObjLdtxRectR	( MicroCodeCommand command );
-void DLParser_S2DEX_RDPHalf_0		( MicroCodeCommand command );
-void DLParser_S2DEX_ObjMoveMem		( MicroCodeCommand command );
-void DLParser_S2DEX_Bg1cyc			( MicroCodeCommand command );
-void DLParser_S2DEX_ObjRectangleR	( MicroCodeCommand command );
-void DLParser_S2DEX_ObjRendermode_2 ( MicroCodeCommand command );
-void DLParser_S2DEX_Bg1cyc_2        ( MicroCodeCommand command );
+UcodeFunc( DLParser_S2DEX_BgCopy );
+UcodeFunc( DLParser_S2DEX_SelectDl );
+UcodeFunc( DLParser_S2DEX_ObjSprite );
+UcodeFunc( DLParser_S2DEX_ObjRectangle );
+UcodeFunc( DLParser_S2DEX_ObjRendermode );
+UcodeFunc( DLParser_S2DEX_ObjLoadTxtr );
+UcodeFunc( DLParser_S2DEX_ObjLdtxSprite );
+UcodeFunc( DLParser_S2DEX_ObjLdtxRect );
+UcodeFunc( DLParser_S2DEX_ObjLdtxRectR );
+UcodeFunc( DLParser_S2DEX_RDPHalf_0 );
+UcodeFunc( DLParser_S2DEX_ObjMoveMem );
+UcodeFunc( DLParser_S2DEX_Bg1cyc );
+UcodeFunc( DLParser_S2DEX_ObjRectangleR );
+UcodeFunc( DLParser_S2DEX_ObjRendermode_2 );
+UcodeFunc( DLParser_S2DEX_Bg1cyc_2 );
 
 //*****************************************************************************
 // 

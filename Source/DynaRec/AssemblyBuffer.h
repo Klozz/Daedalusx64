@@ -75,7 +75,7 @@ class CAssemblyBuffer
 			mpCodeBuffer = pbuffer;
 
 			// For the PSP we don't want to cache our writes, ToDo:why?
-			mpWritePointer = reinterpret_cast< u8 * >( reinterpret_cast<u32>(mpCodeBuffer) | 0x40000000 );
+			mpWritePointer = (u8*)MAKE_UNCACHED_PTR(mpCodeBuffer);
 			//ToDo: Test this
 			//mpWritePointer = mpCodeBuffer;
 			mCurrentPos = 0;

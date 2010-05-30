@@ -1707,10 +1707,12 @@ void DLParser_LoadBlock( MicroCodeCommand command )
 
 	gRDPStateManager.LoadBlock( tile_idx, src_offset, swapped );
 
+#if RDP_EMULATE_TMEM
 	RDP_TileSize tile;
 	tile.cmd0 = command.cmd0;
 	tile.cmd1 = command.cmd1;
 	RDP_LoadBlock( tile );
+#endif
 }
 
 //*****************************************************************************
@@ -1724,10 +1726,10 @@ void DLParser_LoadTile( MicroCodeCommand command )
 	
 	DL_PF("    Tile:%d (%d,%d) -> (%d,%d) [%d x %d]",	tile.tile_idx, tile.left/4, tile.top/4, tile.right/4 + 1, tile.bottom / 4 + 1, (tile.right - tile.left)/4+1, (tile.bottom - tile.top)/4+1);
 	DL_PF("    Offset: 0x%08x",							g_TI.GetOffset( tile.left, tile.top ) );
-
-	gRDPStateManager.LoadTile( tile );
-
+#if RDP_EMULATE_TMEM
 	RDP_LoadTile( tile );
+#endif
+	gRDPStateManager.LoadTile( tile );
 }
 
 //*****************************************************************************

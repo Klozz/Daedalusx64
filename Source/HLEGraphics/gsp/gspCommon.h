@@ -65,7 +65,7 @@ extern u32 gAmbientLightIdx;
 extern Matrix4x4 mat;
 
 extern std::vector< DList > gDisplayListStack;
-extern MicroCodeInstruction gInstructionLookup[256];
+//extern MicroCodeInstruction gInstructionLookup[256];
 extern const char *gInstructionName[256];
 
 #define RDPSegAddr(seg) 		( (gSegments[((seg)>>24)&0x0F]&0x00ffffff) + ((seg)&0x00FFFFFF) )
@@ -75,18 +75,20 @@ extern const char *gInstructionName[256];
 #define RDP_NOIMPL_WARN(op)             DAEDALUS_DL_ERROR( op )
 #define RDP_NOIMPL( op, cmd0, cmd1 )    DAEDALUS_DL_ERROR( "Not Implemented: %s 0x%08x 0x%08x", op, cmd0, cmd1 )
 
+UcodeFunc( DLParser_Nothing );
+UcodeFunc( DLParser_GBI1_MoveWord );
+UcodeFunc( DLParser_TexRect );
+UcodeFunc( DLParser_GBI2_MoveMem );
+UcodeFunc( DLParser_GBI2_MoveWord );
+
 void MatrixFromN64FixedPoint( u32 address );
 void DLParser_PushDisplayList( const DList & dl );
 void DLParser_CallDisplayList( const DList & dl );
 void DLParser_PopDL();
 void DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 data_size );
 bool DLParser_FetchNextCommand( MicroCodeCommand * p_command );
-void DLParser_Nothing( MicroCodeCommand command );
-void DLParser_GBI1_MoveWord( MicroCodeCommand command );
-void DLParser_TexRect( MicroCodeCommand command );
-void DLParser_GBI2_MoveMem( MicroCodeCommand command );
 void RDP_MoveMemLight(u32 light_idx, u32 address);
-void DLParser_GBI2_MoveWord( MicroCodeCommand command );
+
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 extern u32 gNumVertices;

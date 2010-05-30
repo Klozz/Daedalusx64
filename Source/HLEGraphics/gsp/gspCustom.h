@@ -51,8 +51,7 @@ UcodeFunc( RSP_Vtx_PD );
 //*****************************************************************************
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-
-UcodeFunc( DLParser_DumpVtxInfoDKR(u32 address, u32 v0_idx, u32 num_verts);
+void DLParser_DumpVtxInfoDKR(u32 address, u32 v0_idx, u32 num_verts);
 #endif
 
 #endif /* GSP_CUSTOM_H */

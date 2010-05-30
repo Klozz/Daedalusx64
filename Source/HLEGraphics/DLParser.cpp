@@ -295,7 +295,6 @@ const char *sc_colcombtypes8[8] =
 //
 //*****************************************************************************
 const char * gInstructionName[256];
-//MicroCodeInstruction gInstructionLookup[256];
 
 //DKR: 00229BA8: 05710080 001E4AF0 CMD G_DMATRI  Triangles 9 at 801E4AF0
 
@@ -920,31 +919,11 @@ void DLParser_GBI2_DMA_IO( MicroCodeCommand command )
 	DL_PF( "~*Not Implemented (G_DMA_IO in GBI 2)" );
 	DL_UNIMPLEMENTED_ERROR( "G_DMA_IO" );
 }
-//
-// Redundant, remove me !
-/*
-void DLParser_GBI2_Special1( MicroCodeCommand command )
-{
-	DL_PF( "~*Not Implemented (G_SPECIAL_1 in GBI 2)" );
-	DL_UNIMPLEMENTED_ERROR( "G_DMA_SPECIAL_1" );
-}
 
-void DLParser_GBI2_Special2( MicroCodeCommand command )
-{
-	DL_PF( "~*Not Implemented (G_SPECIAL_2 in GBI 2)" );
-	DL_UNIMPLEMENTED_ERROR( "G_DMA_SPECIAL_2" );
-}
-
-void DLParser_GBI2_Special3( MicroCodeCommand command )
-{
-	DL_PF( "~*Not Implemented (G_SPECIAL_3 in GBI 2)" );
-	DL_UNIMPLEMENTED_ERROR( "G_DMA_SPECIAL_3" );
-}
-*/
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_GBI1_Reserved0( MicroCodeCommand command )
+void DLParser_GBI1_Reserved( MicroCodeCommand command )
 {	
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	DL_PF( "~*Not Implemented" );
@@ -954,67 +933,7 @@ void DLParser_GBI1_Reserved0( MicroCodeCommand command )
 
 	if (!warned)
 	{
-		RDP_NOIMPL("RDP: Reserved1 (0x%08x 0x%08x)", command.cmd0, command.cmd1);
-		warned = true;
-	}
-#endif	
-	// Not implemented!
-}
-//*****************************************************************************
-//
-//*****************************************************************************
-void DLParser_GBI1_Reserved1( MicroCodeCommand command )
-{	
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	DL_PF( "~*Not Implemented" );
-
-	// Spiderman
-	static bool warned = false;
-
-	if (!warned)
-	{
-		RDP_NOIMPL("RDP: Reserved1 (0x%08x 0x%08x)", command.cmd0, command.cmd1);
-		warned = true;
-	}
-#endif	
-	// Not implemented!
-}
-
-//*****************************************************************************
-//
-//*****************************************************************************
-void DLParser_GBI1_Reserved2( MicroCodeCommand command )
-{
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	DL_PF( "~*Not Implemented" );
-
-	// Spiderman
-	static bool warned = false;
-
-	if (!warned)
-	{
-		RDP_NOIMPL("RDP: Reserved2 (0x%08x 0x%08x)", command.cmd0, command.cmd1);
-		warned = true;
-	}
-#endif	
-	// Not implemented!
-}
-
-
-//*****************************************************************************
-//
-//*****************************************************************************
-void DLParser_GBI1_Reserved3( MicroCodeCommand command )
-{
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	DL_PF( "~*Not Implemented" );
-
-	// Spiderman
-	static bool warned = false;
-
-	if (!warned)
-	{
-		RDP_NOIMPL("RDP: Reserved3 (0x%08x 0x%08x)", command.cmd0, command.cmd1);
+		RDP_NOIMPL("RDP: Reserved (0x%08x 0x%08x)", command.cmd0, command.cmd1);
 		warned = true;
 	}
 #endif	

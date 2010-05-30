@@ -349,6 +349,7 @@ void ROM_ReBoot()
 
 	g_ROM.cic_chip = ROM_GenerateCICType( rom_base );
 
+#ifndef DAEDALUS_SILENT
 	if (g_ROM.cic_chip == CIC_UNKNOWN)
 	{
 		//DAEDALUS_ERROR( "Unknown CIC CRC: 0x%08x\nAssuming CIC-6102", crc );
@@ -379,7 +380,7 @@ void ROM_ReBoot()
 		}
 */
 	}
-
+#endif
 	// XXXX Update this rom's boot info
 
 	g_dwNumFrames = 0;

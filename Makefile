@@ -216,6 +216,19 @@ include $(PSPSDK)/lib/build.mak
 BUILDS_DIR = ./Builds
 BUILDS_PSP_DIR = $(BUILDS_DIR)/PSP
 
+#svn revision in code
+RESULT := $(shell svnversion -n 2> Makefile.cache)
+ifeq ($(RESULT),)
+#try windows with tortoise svn
+
+svn:
+	@echo svnrevision not found, trying SubWCRev
+	@SubWCRev . ./Source/svnversion.txt ./Source/svnversion.h
+else
+#linux
++CFLAGS += -DSVNVERSION=\"$(RESULT)\"
+endif
+
 psplink: $(PSP_EBOOT) $(TARGET).elf
 	prxtool -y $(TARGET).elf > $(BUILDS_PSP_DIR)/$(TARGET).sym
 	

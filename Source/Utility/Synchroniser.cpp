@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "stdafx.h"
 #include "Synchroniser.h"
+
+#ifdef DAEDALUS_ENABLE_SYNCHRONISATION
+
 #include "ZlibWrapper.h"
 
 #include "Math/MathUtil.h"
@@ -272,3 +275,5 @@ void CSynchroniser::InitialiseSynchroniser()
 
 	//return p_synch != NULL && p_synch->IsOpen();
 }
+
+#endif	//DAEDALUS_ENABLE_SYNCHRONISATION

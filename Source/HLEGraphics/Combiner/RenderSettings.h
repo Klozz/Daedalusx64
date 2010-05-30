@@ -78,8 +78,9 @@ public:
 	void			Finalise();
 
 	void			Apply( bool texture_installed, const SRenderState & state, SRenderStateOut & out ) const;
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	void			Print( bool texture_installed ) const;
-
+#endif
 	bool			UsesTexture0() const		{ return mUsesTexel0; }
 	bool			UsesTexture1() const		{ return mUsesTexel1; }
 
@@ -108,8 +109,9 @@ public:
 	virtual bool			UsesTexture0() const = 0;
 	virtual bool			UsesTexture1() const = 0;
 	virtual void			Apply( bool texture_installed, const SRenderState & state, SRenderStateOut & out ) const = 0;
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	virtual void			Print( bool texture_installed ) const = 0;
-
+#endif
 	const char *			GetDescription() const							{ return mDescription.c_str(); }
 
 private:
@@ -125,7 +127,9 @@ public:
 	virtual bool			UsesTexture0() const							{ return false; }
 	virtual bool			UsesTexture1() const							{ return false; }
 	virtual void			Apply( bool texture_installed, const SRenderState & state, SRenderStateOut & out ) const	{ }
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	virtual void			Print( bool texture_installed ) const			{ printf( "Invalid\n" ); }
+#endif
 };
 
 class CRenderSettingsModulate : public CRenderSettings
@@ -147,7 +151,9 @@ public:
 	virtual bool			UsesTexture1() const			{ return mUsesTexel1; }
 
 	virtual void			Apply( bool texture_installed, const SRenderState & state, SRenderStateOut & out ) const;
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	virtual void			Print( bool texture_installed ) const;
+#endif
 
 private:
 	const CBlendConstantExpression *	mConstantExpression;
@@ -169,7 +175,9 @@ public:
 	virtual bool			UsesTexture1() const			{ return false; }
 
 	virtual void			Apply( bool texture_installed, const SRenderState & state, SRenderStateOut & out ) const;
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	virtual void			Print( bool texture_installed ) const;
+#endif
 
 private:
 	const CBlendConstantExpression *	mConstantExpressionA;
@@ -186,9 +194,9 @@ public:
 	~CBlendStates();
 
 	bool					IsInexact() const;
-
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	void					Print() const;
-
+#endif
 	void					SetAlphaSettings( const CAlphaRenderSettings * alpha_settings )				{ DAEDALUS_ASSERT( mAlphaSettings == NULL, "Overwriting settings" ); mAlphaSettings = alpha_settings; }
 	void					AddColourSettings( const CRenderSettings * colour_settings )				{ mColourSettings.push_back( colour_settings ); }
 

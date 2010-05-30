@@ -118,7 +118,7 @@ void ExceptionHandler(PspDebugRegBlock * regs)
     pspDebugScreenPrintf("\nPress O to quit");
 
     for (;;){
-        sceCtrlReadBufferPositive(&pad, 1);
+        sceCtrlPeekBufferPositive(&pad, 1);
         if (pad.Buttons & PSP_CTRL_CROSS){
 			DumpInformation(regs);
             break;

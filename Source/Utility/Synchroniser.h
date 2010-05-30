@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef SYNCHRONISER_H_
 #define SYNCHRONISER_H_
 
+#ifdef DAEDALUS_ENABLE_SYNCHRONISATION
 //*****************************************************************************
 //	Synchronisation flags
 //*****************************************************************************
@@ -124,7 +125,6 @@ class CSynchroniser
 		static CSynchroniser *	mpSynchroniser;
 };
 
-#ifdef DAEDALUS_ENABLE_SYNCHRONISATION
 
 #define		SYNCH_POINT( flags, x, msg )		if ( DAED_SYNC_MASK & (flags) ) CSynchroniser::SynchPoint( x, msg )
 #define		SYNCH_DATA( x )						CSynchroniser::SynchData( x )

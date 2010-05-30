@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "SysPSP/Utility/PathsPSP.h"
 
+#include "svnversion.h"
+
 #include <pspctrl.h>
 #include <pspgu.h>
 
@@ -39,7 +41,7 @@ namespace
 	const u32				TEXT_AREA_LEFT = 40;
 	const u32				TEXT_AREA_RIGHT = 480-40;
 
-	const char * const DAEDALUS_VERSION_TEXT = "DaedalusX64 Alpha";
+	const char * const DAEDALUS_VERSION_TEXT = "DaedalusX64 Revision "SVNVERSION"";
 
 	const char * const		DATE_TEXT = "Built " __DATE__;
 
@@ -175,3 +177,4 @@ void	IAboutComponent::Render()
 	mpContext->DrawTextAlign( TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_CENTRE, y, URL_TEXT_1, DrawTextUtilities::TextRed, c32( 255,255,255,160 ) );	y += line_height;
 	mpContext->DrawTextAlign( TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_CENTRE, y, URL_TEXT_2, DrawTextUtilities::TextRed, c32( 255,255,255,255 ) );	y += line_height;
 }
+

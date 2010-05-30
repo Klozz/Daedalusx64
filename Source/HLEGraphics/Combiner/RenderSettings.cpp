@@ -161,7 +161,7 @@ void		CAlphaRenderSettings::Apply( bool texture_installed, const SRenderState & 
 		out.BlendAlphaMode = PBAM_RGB;
 	}
 }
-
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -182,7 +182,7 @@ void		CAlphaRenderSettings::Print( bool texture_installed ) const
 	}
 }
 
-
+#endif
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -285,7 +285,7 @@ void		CRenderSettingsModulate::Apply( bool texture_installed, const SRenderState
 		DAEDALUS_ASSERT( mConstantExpression != NULL, "No texture or diffuse" );
 	}
 }
-
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -325,7 +325,7 @@ void		CRenderSettingsModulate::Print( bool texture_installed ) const
 	}
 }
 
-
+#endif
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -362,7 +362,7 @@ void		CRenderSettingsBlend::Apply( bool texture_installed, const SRenderState & 
 	out.TextureFactor = mConstantExpressionB->EvaluateConstant( state.PrimitiveColour, state.EnvironmentColour );
 	out.BlendMode = PBM_BLEND;
 }
-
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -375,7 +375,7 @@ void		CRenderSettingsBlend::Print( bool texture_installed ) const
 	printf( "    GU_TFX_BLEND, shade(a) := %s, factor(b) := %s\n", mod_str_a.c_str(), mod_str_b.c_str() );
 }
 
-
+#endif
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -420,9 +420,7 @@ bool	CBlendStates::IsInexact() const
 	return false;
 }
 
-
-
-
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -463,3 +461,4 @@ void	CBlendStates::Print() const
 	}
 
 }
+#endif

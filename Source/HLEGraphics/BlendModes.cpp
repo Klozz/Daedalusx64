@@ -112,7 +112,7 @@ void PrintMux( FILE * fh, u64 mux )
  also please check common games (Mario, Zelda, Majora's Mask before commiting)
  
  Blending Options
- details.InstallTexture = true;
+ 
 
  details.ColourAdjuster.SetRGB();
  details.ColourAdjuster.SetA();
@@ -179,7 +179,7 @@ details.ColourAdjuster.ModulateA();
 //aA1  : (0            - 0           ) * 0            + Primitive  
 void BlendMode_0x00357e6a11fcf67bLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 //	details.ColourAdjuster.SetRGBA( details.PrimColour.ReplicateAlpha() );
 	
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB); // Not ready yet.
@@ -195,7 +195,7 @@ void BlendMode_0x00357e6a11fcf67bLL (BLEND_MODE_ARGS)
 void BlendMode_0x0026a0041ffc93fcLL( BLEND_MODE_ARGS )
 {
 	// XXXX need 2nd texture
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -216,7 +216,7 @@ void BlendMode_0x0026a0041ffc93fcLL( BLEND_MODE_ARGS )
 void BlendMode_0x0026a0041ffc93fdLL( BLEND_MODE_ARGS )
 {
 	// XXXX need 2nd texture
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -237,7 +237,7 @@ void BlendMode_0x0026a0041ffc93fdLL( BLEND_MODE_ARGS )
 void BlendMode_0x0026e4041ffcfffcLL( BLEND_MODE_ARGS )
 {
 	// XXXX need 2nd texture
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 		details.ColourAdjuster.SetAOpaque();	// Alpha 1.0		XXXX Need to modulate with t1 alpha
@@ -258,7 +258,7 @@ void BlendMode_0x0026e4041ffcfffcLL( BLEND_MODE_ARGS )
 //aA1  : (Combined     - 0           ) * Shade        + Primitive   
 void BlendMode_0x0026a0041f1093fbLL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
+	
 	//XXXX placeholder
 	
 	if( num_cycles == 1 )
@@ -280,7 +280,7 @@ void BlendMode_0x0026a0041f1093fbLL( BLEND_MODE_ARGS )
 void BlendMode_0x0026a0041f1093ffLL( BLEND_MODE_ARGS )
 {
 	// XXXX need 2nd texture
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -300,7 +300,7 @@ void BlendMode_0x0026a0041f1093ffLL( BLEND_MODE_ARGS )
 void BlendMode_0x0026a0041f1493ffLL( BLEND_MODE_ARGS )
 {
 	// XXXX need 2nd texture
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -320,8 +320,6 @@ void BlendMode_0x0026a0041f1493ffLL( BLEND_MODE_ARGS )
 //aA1  : (Combined     - 0           ) * Primitive    + 0           
 void BlendMode_0x001690031f0c93ffLL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
-	
 	if( num_cycles != 1 )
 	{
 		details.ColourAdjuster.SetRGBA( details.PrimColour );
@@ -338,7 +336,7 @@ void BlendMode_0x001690031f0c93ffLL( BLEND_MODE_ARGS )
 //aA1  : (Combined     - 0           ) * Shade        + 0           
 void BlendMode_0x00111404ff13ffffLL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -358,7 +356,7 @@ void BlendMode_0x00111404ff13ffffLL( BLEND_MODE_ARGS )
 void BlendMode_0x001598045ffedbf8LL( BLEND_MODE_ARGS )
 {
 	// XXXX incorrect, need env and prim, blend has wrong source
-	details.InstallTexture = true;
+	
 	
 	// Use the primitive for the r,g,b, override the alpha with 1.0
 	details.ColourAdjuster.SetRGB( c32::White );		// XXXX Really want to replicate
@@ -373,7 +371,7 @@ void BlendMode_0x001598045ffedbf8LL( BLEND_MODE_ARGS )
 //aA1  : (0            - 0           ) * 0            + Primitive   
 void BlendMode_0x00167e2c33fdf6fbLL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
+	
 	
 	// XXXX Need to blend( Prim, T0, Enva )
 	details.ColourAdjuster.SetRGBA( details.PrimColour );
@@ -393,7 +391,7 @@ void BlendMode_0x00167e2c33fdf6fbLL( BLEND_MODE_ARGS )
 //aA1  : (0            - 0           ) * 0            + Combined 
 void BlendMode_0x00157fff2ffd7a38LL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.EnvColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
 }
@@ -409,7 +407,7 @@ void BlendMode_0x00627fff1ffcfc38LL( BLEND_MODE_ARGS )
 	// RGB = Blend( T0, 1, Shade )
 	// A   = 1
 	//Install brakes Pilot Wings' sky
-	//details.InstallTexture = true;
+	//
 	details.ColourAdjuster.SetAOpaque();	// Alpha 1.0
 	
 	// XXXX this is just selecting the texture colour, ignoring the blend
@@ -431,7 +429,7 @@ void BlendMode_0x00627fff1ffcfc38LL( BLEND_MODE_ARGS )
 //aA1  : (0            - 0           ) * 0            + Texel1
 void BlendMode_0x00117e04fffffffaLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);	
 }
 //Banjo Tooie - Ground
@@ -442,7 +440,7 @@ void BlendMode_0x00117e04fffffffaLL (BLEND_MODE_ARGS)
 //aA1  : (1            - Texel0      ) * Primitive    + 0   
 void BlendMode_0x00ffe7ffffcf9fcfLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	
 }
@@ -456,7 +454,7 @@ void BlendMode_0x00ffe7ffffcf9fcfLL (BLEND_MODE_ARGS)
 void BlendMode_0x0026a1ff1ffc9238LL (BLEND_MODE_ARGS)
 {
 	//Alpha causes hosting
-	details.InstallTexture = true;
+	
 	if( num_cycles != 1 )
 	{
 		//details.ColourAdjuster.SetAOpaque();
@@ -472,7 +470,7 @@ void BlendMode_0x0026a1ff1ffc9238LL (BLEND_MODE_ARGS)
 void BlendMode_0x00277fff1ffcf438LL (BLEND_MODE_ARGS)
 {
 	// Alpha causes ghosting =/
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
@@ -490,8 +488,8 @@ void BlendMode_0x00277fff1ffcf438LL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Env          + 0          
 void BlendMode_0x002698041f14ffffLL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
-	//XXXX assume 2 cytes
+	
+	//XXXX assume 2 cycles
 	details.ColourAdjuster.ModulateA( details.EnvColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
@@ -507,7 +505,7 @@ void BlendMode_0x002698041f14ffffLL( BLEND_MODE_ARGS )
 void BlendMode_0x00127e2433fdf8fcLL( BLEND_MODE_ARGS )
 {
 	// Just select texture RGB and shade A for now
-	details.InstallTexture = true;
+	
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
 }
@@ -521,18 +519,14 @@ void BlendMode_0x00127e2433fdf8fcLL( BLEND_MODE_ARGS )
 
 void BlendMode_0x001298043f15ffffLL( BLEND_MODE_ARGS )
 {
-	//details.InstallTexture = true; //New Edit
+	// //New Edit
 	// RGB = Blend( Prim, T0, Env ) * Shade
 	// A   = T0 * Shade * Env
 	
 	// Assume this is only ever used in 2 cycle
 	
 	// Hoplessly wrong - do Prim * Shade * T0, Env * Shade * T0
-	//details.InstallTexture = true; //New Edit
-	//details.ColourAdjuster.ModulateRGB( details.PrimColour );
-	//details.ColourAdjuster.ModulateA( details.EnvColour );
 	
-	details.InstallTexture = true;
 	if( num_cycles == 1 )
 	{
 		details.ColourAdjuster.SetRGB( c32::White );		// Set RGB to 1.0, i.e. select Texture
@@ -558,7 +552,7 @@ void BlendMode_0x001298043f15ffffLL( BLEND_MODE_ARGS )
 void BlendMode_0x00377e041ffcf7f8LL (BLEND_MODE_ARGS)
 
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
@@ -573,7 +567,7 @@ void BlendMode_0x00377e041ffcf7f8LL (BLEND_MODE_ARGS)
 void BlendMode_0x00377e041ffcfdf8LL (BLEND_MODE_ARGS)
 
 {
-	details.InstallTexture = true;
+	
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 }
 
@@ -587,7 +581,7 @@ void BlendMode_0x00377e041ffcfdf8LL (BLEND_MODE_ARGS)
 void BlendMode_0x00377e041ffcf3f8LL (BLEND_MODE_ARGS)
 
 {
-	details.InstallTexture = true;
+	
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
@@ -603,14 +597,14 @@ void BlendMode_0x00377e041ffcf3f8LL (BLEND_MODE_ARGS)
 void BlendMode_0x00272c60150c937fLL (BLEND_MODE_ARGS)
 
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
 
-// Banjo Kazooie -- StrmnNrmn
+// Banjo Kazooie -- Backdrop // StrmnNrmn
 //case 0x0062fe043f15f9ffLL:
 //aRGB0: (1            - Primitive   ) * Env          + Primitive   
 //aA0  : (0            - 0           ) * 0            + Shade       
@@ -639,7 +633,7 @@ void BlendMode_0x0062fe043f15f9ffLL( BLEND_MODE_ARGS )
 //aA1  : (0            - 0           ) * 0            + Combined    
 void BlendMode_0x00ff95fffffcfe38LL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
+	
 	// XXXX needs t1 in alpha
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
@@ -657,31 +651,9 @@ void BlendMode_0x00ff95fffffcfe38LL( BLEND_MODE_ARGS )
 //aA1 : (0 - 0 ) * 0 + Texel0 
 void BlendMode_0x00127e2455fdf2f9LL( BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
-}
-
-//Conker - Chainsaw Smoke
-//case 0x003432685566ff7fLL:
-//aRGB0: (Primitive - Env ) * Texel0_Alp + Env
-//aA0 : (Primitive - 0 ) * Texel0 + 0
-//aRGB1: (Primitive - Env ) * Texel0_Alp + Env
-//aA1 : (Primitive - 0 ) * Texel0 + 0
-void BlendMode_0x003432685566ff7fLL( BLEND_MODE_ARGS)
-{
-	details.InstallTexture = true;
-}
-
-//Conker - Backwall
-//case 0x001218245531feffLL:
-//aRGB0: (Texel0       - Env         ) * Shade        + Primitive   
-//aA0  : (Texel0       - 0           ) * Shade        + 0           
-//aRGB1: (Texel0       - Env         ) * Shade        + Primitive   
-//aA1  : (Texel0       - 0           ) * Shade        + 0           
-void BlendMode_0x001218245531feffLL (BLEND_MODE_ARGS)
-{
-	details.InstallTexture = true;
 }
 
 // Conker Ground
@@ -692,7 +664,7 @@ void BlendMode_0x001218245531feffLL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Shade        + 0    
 void BlendMode_0x0026a004151092ffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour);
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -706,7 +678,7 @@ void BlendMode_0x0026a004151092ffLL (BLEND_MODE_ARGS)
 //aA1  : (Texel0       - 0           ) * Shade        + 0
 void BlendMode_0x0015982bff327f3fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);	
 }
@@ -720,7 +692,7 @@ void BlendMode_0x0015982bff327f3fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x001147fffffffe38LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);	
 }
@@ -733,7 +705,7 @@ void BlendMode_0x001147fffffffe38LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0015fe2bfffff3f9LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);	
 }
@@ -746,7 +718,7 @@ void BlendMode_0x0015fe2bfffff3f9LL (BLEND_MODE_ARGS)
      
 void BlendMode_0x0061fec311fcf67bLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetA( details.PrimColour  );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -760,7 +732,7 @@ void BlendMode_0x0061fec311fcf67bLL (BLEND_MODE_ARGS)
 void BlendMode_0x00ffd5fffffcf238LL( BLEND_MODE_ARGS )
 {
 	// XXXX needs Env*T1 for alpha
-	details.InstallTexture = true;
+	
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
 
@@ -776,7 +748,7 @@ void BlendMode_0x00ffd5fffffcf238LL( BLEND_MODE_ARGS )
 //aA1  : (0            - 0           ) * 0            + 1       
 void BlendMode_0x00177e2efffefd7eLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles != 1 )
 	{
 		details.ColourAdjuster.SetAOpaque();
@@ -792,7 +764,7 @@ void BlendMode_0x00177e2efffefd7eLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined   
 void BlendMode_0x00671603fffcff78LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -814,7 +786,7 @@ void BlendMode_0x00671603fffcff78LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00671604fffcff78LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
@@ -836,7 +808,7 @@ void BlendMode_0x0030b26144664924LL( BLEND_MODE_ARGS )
 	// Need to modulate the texture*shade for RGBA for Duke
 	//
 	// This makes Mario's 3D head shiny as supposed to be.
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.EnvColour );
 	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
 }
@@ -850,7 +822,7 @@ void BlendMode_0x0030b26144664924LL( BLEND_MODE_ARGS )
 void BlendMode_0x0050fea144fe7339LL (BLEND_MODE_ARGS)
 {
 	
-	details.InstallTexture = true;
+	
 	//details.ColourAdjuster.SetRGB (details.EnvColour);
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -869,7 +841,7 @@ void BlendMode_0x0050fea144fe7339LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + 1      
 void BlendMode_0x00157e2a33fdfcfeLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour.ReplicateAlpha());
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
@@ -882,7 +854,7 @@ void BlendMode_0x00157e2a33fdfcfeLL (BLEND_MODE_ARGS)
   //aA1  : (0            - 0           ) * 0            + 1     
 void BlendMode_0x00327ecbf0fffc3eLL (BLEND_MODE_ARGS)
 	{
-		details.InstallTexture = true;
+		
 	details.ColourAdjuster.SetRGB(details.PrimColour);
 	//details.ColourAdjuster.SetAOpaque();
 				//	sceGuTexFunc(GU_TFX_modulate,GU_TCC_RGBA);
@@ -912,7 +884,7 @@ void BlendMode_0x00127eccf0fffc38LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + 1           
 void BlendMode_0x00127ecbf0fffc3eLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 //	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
@@ -925,7 +897,7 @@ void BlendMode_0x00127ecbf0fffc3eLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Primitive 
 void BlendMode_0x0015fe2b33fdf6fbLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
 }
@@ -941,7 +913,7 @@ void BlendMode_0x0015fe2b33fdf6fbLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + 1           
 void BlendMode_0x00157e80fffdfd7eLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB(details.PrimColour.ReplicateAlpha());
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
@@ -970,7 +942,7 @@ void BlendMode_0x00347e04fffcfdfeLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + 1           
 void BlendMode_0x0061fe041ffcfdfeLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB(details.PrimColour);
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
@@ -985,7 +957,7 @@ void BlendMode_0x0061fe041ffcfdfeLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + 1
 void BlendMode_0x00257e04fffcfd7eLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	if (num_cycles == 1)
 	{
 		details.ColourAdjuster.SetRGB(details.PrimColour.ReplicateAlpha());
@@ -1019,7 +991,7 @@ void BlendMode_0x0055a68730fd923eLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + 1  
 void BlendMode_0x0010fe043ffdfdfeLL(BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.ModulateRGB(details.PrimColour);
 	//	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGB);
@@ -1034,7 +1006,7 @@ void BlendMode_0x0010fe043ffdfdfeLL(BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + 1   
 void BlendMode_0x0027fe041ffcfdfeLL(BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
 	
@@ -1048,7 +1020,7 @@ void BlendMode_0x0027fe041ffcfdfeLL(BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + 1     
 void BlendMode_0x00257e041ffcfdfeLL(BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
 }
 // Fighting Force - Ground
@@ -1061,7 +1033,7 @@ void BlendMode_0x00257e041ffcfdfeLL(BLEND_MODE_ARGS)
 void BlendMode_0x0026a0031ffc93f9LL( BLEND_MODE_ARGS )
 {
 	// XXXX need 2nd texture
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
@@ -1095,7 +1067,7 @@ void BlendMode_0x0026a0031ffc93f9LL( BLEND_MODE_ARGS )
 void BlendMode_0x0030fe045ffefbf8LL (BLEND_MODE_ARGS)
 
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGBA( details.EnvColour );
 	//sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);		/Do not use it !
 }
@@ -1113,7 +1085,7 @@ void BlendMode_0x00147e045ffefbf8LL( BLEND_MODE_ARGS )
 	// A   = Env
 	
 	// XXXX needs to modulate again by shade
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGBA( details.EnvColour );
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
 	sceGuTexFunc(GU_TFX_DECAL,GU_TCC_RGBA);		
@@ -1129,7 +1101,7 @@ void BlendMode_0x00147e045ffefbf8LL( BLEND_MODE_ARGS )
 void BlendMode_0x0030f861fff393c9LL (BLEND_MODE_ARGS)
 
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
@@ -1156,7 +1128,7 @@ void BlendMode_0x0030f861fff393c9LL (BLEND_MODE_ARGS)
 void BlendMode_0x00327e6411fcf87cLL (BLEND_MODE_ARGS)
 
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGBA( details.PrimColour );
 	//details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
@@ -1175,7 +1147,7 @@ void BlendMode_0x00327e6411fcf87cLL (BLEND_MODE_ARGS)
 void BlendMode_0x0040fe8155fef97cLL (BLEND_MODE_ARGS)
 {
 	//XXX Placeholder
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	//XXX Color has to be constant aka blend.
 	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
@@ -1186,6 +1158,7 @@ void BlendMode_0x0040fe8155fef97cLL (BLEND_MODE_ARGS)
 */ 
 
 //ISS 64 - Ground
+// Tested okay by Wally 1/06/2010
 //case 0x0012680322fd7eb8LL:
 //aRGB0: (Texel0       - Texel1      ) * Shade        + Texel1
 //aA0  : (1            - 0           ) * Shade        + 0
@@ -1194,13 +1167,14 @@ void BlendMode_0x0040fe8155fef97cLL (BLEND_MODE_ARGS)
 void BlendMode_0x0012680322fd7eb8LL (BLEND_MODE_ARGS)
 {
 	// We neeeded XXX blender, now ground looks perfect :)
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);	
 }
 
 //ISS 2000 - Ground
+// Tested okay by Wally 1/06/2010
 //case 0x0011fe052ffd73f8LL:
 //aRGB0: (Texel0       - Texel1      ) * Primitive    + Texel1
 //aA0  : (0            - 0           ) * 0            + Texel0
@@ -1209,7 +1183,7 @@ void BlendMode_0x0012680322fd7eb8LL (BLEND_MODE_ARGS)
 void BlendMode_0x0011fe052ffd73f8LL (BLEND_MODE_ARGS)
 {
 	// XXXX - needs t1, but overall blend looks perfect :)
-	details.InstallTexture = true;
+	
 	// RGB = Blend( T1, T0, Prim )
 	// A   = 1
 	details.ColourAdjuster.SetAOpaque();
@@ -1227,7 +1201,7 @@ void BlendMode_0x0011fe052ffd73f8LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined
 void BlendMode_0x0030fe045ffefdf8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
@@ -1241,7 +1215,7 @@ void BlendMode_0x0030fe045ffefdf8LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Texel0
 void BlendMode_0x0040fe8155fef379LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	
 }
@@ -1254,7 +1228,7 @@ void BlendMode_0x0040fe8155fef379LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0040fe8155fefd7eLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	
@@ -1271,7 +1245,7 @@ void BlendMode_0x0040fe8155fefd7eLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined
 void BlendMode_0x001277ffffff9238LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour);
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
@@ -1283,7 +1257,7 @@ void BlendMode_0x001277ffffff9238LL (BLEND_MODE_ARGS)
 //aA1  : (0            - Texel0      ) * Primitive    + Texel0         
 void BlendMode_0x00127624ffef93c9LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour  );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA); //15.9 fps MODULATE
 }
@@ -1296,7 +1270,7 @@ void BlendMode_0x00127624ffef93c9LL (BLEND_MODE_ARGS)
 
  void BlendMode_0x00127e8bf0fffc3eLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( c32::White );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
@@ -1309,7 +1283,7 @@ void BlendMode_0x00127624ffef93c9LL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Texel1       + 0
 void BlendMode_0x003135ff5f0ada3fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	// XXXX needs t1 in alpha..*sigh*
 	details.ColourAdjuster.SetRGB ( details.PrimColour );
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
@@ -1325,7 +1299,7 @@ void BlendMode_0x00147e2844fe7b3dLL( BLEND_MODE_ARGS )
 {
 	// RGB = Blend( Shade, T0, T0Alpha )  -- essentially DECAL mode on PSP
 	// A   = Env
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.EnvColour );
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
 	sceGuTexFunc(GU_TFX_DECAL,GU_TCC_RGBA);		
@@ -1339,7 +1313,7 @@ void BlendMode_0x00147e2844fe7b3dLL( BLEND_MODE_ARGS )
 //aA1  : (0            - 0           ) * 0            + Shade
 void BlendMode_0x00147e2844fe793cLL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 		sceGuTexFunc(GU_TFX_DECAL,GU_TCC_RGBA);
@@ -1358,7 +1332,7 @@ void BlendMode_0x00147e2844fe793cLL( BLEND_MODE_ARGS )
 //aA1  : (0            - 0           ) * 0            + Combined    
 void BlendMode_0x005632801ffcfff8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.ModulateA( details.PrimColour );
 	details.ColourAdjuster.SetRGBA( details.EnvColour);
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -1372,7 +1346,7 @@ void BlendMode_0x005632801ffcfff8LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + 1           
 void BlendMode_0x00115407f1ffca7eLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	// RGB = T0 * T1 + T0 * CombAlp
 	// A = Env * Shade + 1
 	
@@ -1392,7 +1366,7 @@ void BlendMode_0x00115407f1ffca7eLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined   
 void BlendMode_0x00157e602ffd77f8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGBA( details.PrimColour.ReplicateAlpha() );
 	
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -1405,7 +1379,7 @@ void BlendMode_0x00157e602ffd77f8LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + 1
 void BlendMode_0x0011fe2355fefd7eLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour  );
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
@@ -1418,7 +1392,7 @@ void BlendMode_0x0011fe2355fefd7eLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Texel0
 void BlendMode_0x0011fe2344fe7339LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour  );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
 }
@@ -1442,7 +1416,7 @@ void BlendMode_0x0011fe2344fe7339LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + 1
 void BlendMode_0x00272c0415fc93feLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
 }
@@ -1455,7 +1429,7 @@ void BlendMode_0x00272c0415fc93feLL (BLEND_MODE_ARGS)
 //aA1  : (0      
 void BlendMode_0x001114a3f0fff638LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	// XXXX needs t1 in alpha anyways
 	//details.ColourAdjuster.SetRGB ( details.PrimColour );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -1472,7 +1446,7 @@ void BlendMode_0x001114a3f0fff638LL (BLEND_MODE_ARGS)
 void BlendMode_0x0015fe042ffd79fcLL (BLEND_MODE_ARGS)
 
 {
-	details.InstallTexture = true;
+	
 	//details.ColourAdjuster.SetA( details.EnvColour );
 	//sceGuTexEnvColor( details.PrimColour.GetColour() );
 	details.ColourAdjuster.SetAOpaque();
@@ -1487,7 +1461,7 @@ void BlendMode_0x0015fe042ffd79fcLL (BLEND_MODE_ARGS)
 void BlendMode_0x00117e80f5fff438LL (BLEND_MODE_ARGS)
 {
 //Needs T1 for full fix!!!!!!! Makes Mario & his partner appear as black boxes.( This game has this same problem everywhere.)
-        details.InstallTexture = true;
+        
 	details.ColourAdjuster.SetRGBA( details.EnvColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
 }
@@ -1500,7 +1474,7 @@ void BlendMode_0x00117e80f5fff438LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined    
 void BlendMode_0x00127e0af3fff238LL (BLEND_MODE_ARGS)
 {
-        details.InstallTexture = true;
+        
 	details.ColourAdjuster.SetRGBA( details.EnvColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
 }
@@ -1513,7 +1487,7 @@ void BlendMode_0x00127e0af3fff238LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00309861550eff4fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour  );
 	details.ColourAdjuster.SetA( details.PrimColour  );
 	sceGuTexFunc(GU_TFX_ADD,GU_TCC_RGBA);
@@ -1528,7 +1502,7 @@ void BlendMode_0x00309861550eff4fLL (BLEND_MODE_ARGS)
 void BlendMode_0x00619ac31137f7fbLL (BLEND_MODE_ARGS)
 {
 	//XXX
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetA( details.EnvColour);
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);	
@@ -1542,7 +1516,7 @@ void BlendMode_0x00619ac31137f7fbLL (BLEND_MODE_ARGS)
 void BlendMode_0x00357e6a11fcfc7eLL (BLEND_MODE_ARGS)
 {
 	//XXX Needs debugging
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGBA( details.PrimColour.ReplicateAlpha() );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -1556,7 +1530,7 @@ void BlendMode_0x00357e6a11fcfc7eLL (BLEND_MODE_ARGS)
 //aA1  : (Texel0       - 0           ) * Primitive    + 0        
 void BlendMode_0x007196e3332cfe7fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_ADD,GU_TCC_RGBA);
@@ -1569,7 +1543,7 @@ void BlendMode_0x007196e3332cfe7fLL (BLEND_MODE_ARGS)
 //aA1  : (1            - Texel0      ) * Primitive    + Texel0      
 void BlendMode_0x00ffe7ffffcd92c9LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour);
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -1583,7 +1557,7 @@ void BlendMode_0x00ffe7ffffcd92c9LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0026a0031ffc9378LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles != 1 )
 	{
 		details.ColourAdjuster.SetRGB( details.PrimColour  );
@@ -1621,7 +1595,7 @@ void BlendMode_0x00117e60f5fff578LL (BLEND_MODE_ARGS)
 void BlendMode_0x0020a204ff13ffffLL (BLEND_MODE_ARGS)
 {
 	// XXXX need T1 in both textures..
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -1640,7 +1614,7 @@ void BlendMode_0x0020a204ff13ffffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00ffabffff0d92ffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles != 1 )
 	{
 		details.ColourAdjuster.SetA( details.EnvColour );
@@ -1657,7 +1631,7 @@ void BlendMode_0x00ffabffff0d92ffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0010e5e0230b1d52LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour);
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -1671,7 +1645,7 @@ void BlendMode_0x0010e5e0230b1d52LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined     
 void BlendMode_0x0030abff5ffe9238LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour);
 	details.ColourAdjuster.SetA( details.EnvColour);
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -1685,7 +1659,7 @@ void BlendMode_0x0030abff5ffe9238LL (BLEND_MODE_ARGS)
      
 void BlendMode_0x00f09a61501374ffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -1698,7 +1672,7 @@ void BlendMode_0x00f09a61501374ffLL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Primitive    + 0       
 void BlendMode_0x00322bff5f0e923fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 		
 	if( num_cycles == 1 )
 	{
@@ -1723,7 +1697,7 @@ void BlendMode_0x00322bff5f0e923fLL (BLEND_MODE_ARGS)
 void BlendMode_0x00262a6016fc9378LL (BLEND_MODE_ARGS)
 {
 	//XXX Needs a bit of Debugging.
-	details.InstallTexture = true;
+	
 	sceGuTexEnvColor( details.PrimColour.GetColour() ); // Removing this removes black place
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);	
 }
@@ -1737,7 +1711,7 @@ void BlendMode_0x00262a6016fc9378LL (BLEND_MODE_ARGS)
 void BlendMode_0x0010a2c3f00fd23fLL (BLEND_MODE_ARGS)
 {
 	//XXX Correct :D
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	
@@ -1771,7 +1745,7 @@ void BlendMode_0x00317fff5ffef438LL (BLEND_MODE_ARGS)
 void BlendMode_0x00127ffffffdfe3fLL (BLEND_MODE_ARGS)
 {
 	// Do not install, it brakes the bases on most stages
-	//details.InstallTexture = true; 
+	// 
 	if( num_cycles == 1 )
 	{
 	//	details.ColourAdjuster.SetRGB( c32::White );
@@ -1792,7 +1766,7 @@ void BlendMode_0x00127ffffffdfe3fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x001217ff3ffe7e38LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour);
 	details.ColourAdjuster.SetA( details.PrimColour);
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -1806,7 +1780,7 @@ void BlendMode_0x001217ff3ffe7e38LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0030fe045ffeff3fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	//details.ColourAdjuster.SetRGB( details.EnvColour);
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
@@ -1820,7 +1794,7 @@ void BlendMode_0x0030fe045ffeff3fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x006093ff3f0dfe3fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles != 1 )
 	{
 		details.ColourAdjuster.SetRGB( details.PrimColour);
@@ -1838,7 +1812,7 @@ void BlendMode_0x006093ff3f0dfe3fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00277e0413fcff3fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	//details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
@@ -1852,7 +1826,7 @@ void BlendMode_0x00277e0413fcff3fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00127e03fffe73f8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	
@@ -1867,7 +1841,7 @@ void BlendMode_0x00127e03fffe73f8LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00272c603510e37fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;  
+	  
 
 	//Needs Texel1, but looks nice now.
 	details.ColourAdjuster.SetRGB( details.EnvColour );
@@ -1885,7 +1859,7 @@ void BlendMode_0x00272c603510e37fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00117e03fffe7fffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);	
@@ -1900,7 +1874,7 @@ void BlendMode_0x00117e03fffe7fffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x004193ffff0ffe3fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);	
@@ -1915,7 +1889,7 @@ void BlendMode_0x004193ffff0ffe3fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00127e03fffe7fffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	
 }
@@ -1929,7 +1903,7 @@ void BlendMode_0x00127e03fffe7fffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00127fff3ffe7e3fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	
 }
@@ -1943,7 +1917,7 @@ void BlendMode_0x00127fff3ffe7e3fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00127fff3ffe7238LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();	// testing opaque
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);	// Testing replace
@@ -1958,7 +1932,7 @@ void BlendMode_0x00127fff3ffe7238LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00272c60350c937fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	
@@ -1973,7 +1947,7 @@ void BlendMode_0x00272c60350c937fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00517e023f55ffffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);	
@@ -1987,7 +1961,7 @@ void BlendMode_0x00517e023f55ffffLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined
 void BlendMode_0x001616c0fffdf3f8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	// Testing replace
@@ -2002,7 +1976,7 @@ void BlendMode_0x001616c0fffdf3f8LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00127fff3ffefe3fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();
 	//sceGuTexEnvColor( details.EnvColour.GetColour() );
@@ -2018,7 +1992,7 @@ void BlendMode_0x00127fff3ffefe3fLL (BLEND_MODE_ARGS)
 
  void BlendMode_0x00171a2e3336ff7fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.EnvColour ); 
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	//sceGuTexEnvColor( details.EnvColour.GetColour() );
@@ -2033,7 +2007,7 @@ void BlendMode_0x00127fff3ffefe3fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x004093ffff0dfe3fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetA ( details.PrimColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -2047,7 +2021,7 @@ void BlendMode_0x004093ffff0dfe3fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0060fe043ffdf3f8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
@@ -2061,7 +2035,7 @@ void BlendMode_0x0060fe043ffdf3f8LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00457fff3ffcfe3fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
@@ -2075,7 +2049,7 @@ void BlendMode_0x00457fff3ffcfe3fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0017666025fd7f78LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	if (num_cycles == 1 )
 	{
 		details.ColourAdjuster.ModulateRGB( details.PrimColour );
@@ -2099,7 +2073,7 @@ void BlendMode_0x0017666025fd7f78LL (BLEND_MODE_ARGS)
 
  void BlendMode_0x0025fe0513fcff3fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
@@ -2113,7 +2087,7 @@ void BlendMode_0x0017666025fd7f78LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combine
 void BlendMode_0x0020a205f3fff738LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
@@ -2128,7 +2102,7 @@ void BlendMode_0x0020a205f3fff738LL (BLEND_MODE_ARGS)
 void BlendMode_0x0050d2a133a5b6dbLL( BLEND_MODE_ARGS )
 {
 	// Modulate the texture*shade for RGBA
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetA( details.EnvColour );
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
@@ -2144,7 +2118,7 @@ void BlendMode_0x0020fe04f3ffff7fLL (BLEND_MODE_ARGS)
 {
 	//RGB: INEXACT = ( Shade * blend(Env,Prim,Texel0) )
 	//Alpha: Texel0
-	details.InstallTexture = true;
+	
 	// Correct
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetAOpaque();
@@ -2160,7 +2134,7 @@ void BlendMode_0x0020fe04f3ffff7fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00fffe04f3fcf378LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
@@ -2176,7 +2150,7 @@ void BlendMode_0x00fffe04f3fcf378LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00227fff3ffef238LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
@@ -2194,7 +2168,7 @@ void BlendMode_0x00121804f3ffff78LL (BLEND_MODE_ARGS)
 {
 	//RGB: INEXACT = ( Shade * blend(Env,Prim,Texel1) )
 	//Alpha: Texel0
-	details.InstallTexture = true;
+	
 	// Correct
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetAOpaque();
@@ -2211,7 +2185,7 @@ void BlendMode_0x00121604f3ffff78LL (BLEND_MODE_ARGS)
 {
 	//RGB: INEXACT = ( Shade * blend(Env,Prim,Texel1) )
 	//Alpha: Texel0
-	details.InstallTexture = true;
+	
 	// Correct
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetA( details.PrimColour );
@@ -2228,7 +2202,7 @@ void BlendMode_0x00121604f3ffff78LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00127e03ffffffffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
@@ -2242,7 +2216,7 @@ void BlendMode_0x00127e03ffffffffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00127e035ffe7fffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
@@ -2259,7 +2233,7 @@ void BlendMode_0x00127e035ffe7fffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00f5fa67f50c997fLL (BLEND_MODE_ARGS)
 {
-        details.InstallTexture = true;
+        
         details.ColourAdjuster.SetRGB( details.PrimColour );
         sceGuTexFunc(GU_TFX_ADD, GU_TCC_RGBA);
 }
@@ -2274,7 +2248,7 @@ void BlendMode_0x00f5fa67f50c997fLL (BLEND_MODE_ARGS)
 void BlendMode_0x00262a04130cf37dLL (BLEND_MODE_ARGS)
 {
 //XXXX needs T1 for full fix.
-        details.InstallTexture = true;
+        
         details.ColourAdjuster.SetRGB( details.PrimColour );
         sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA); //Needs T1, partially fixed. 
 } 
@@ -2288,7 +2262,7 @@ void BlendMode_0x00262a04130cf37dLL (BLEND_MODE_ARGS)
 void BlendMode_0x00272c60350cf37fLL (BLEND_MODE_ARGS)
 {
 //XXXX Needs T1 for full fix.
-details.InstallTexture = true;
+
 if(num_cycles == 1)
   {
   details.ColourAdjuster.SetRGBA( details.PrimColour );
@@ -2310,7 +2284,7 @@ else
 void BlendMode_0x00171660f50d757dLL (BLEND_MODE_ARGS)
 {
 //XXXX Needs T1 for full fix.
-details.InstallTexture = true;
+
 details.ColourAdjuster.SetRGBA( details.EnvColour );
 sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 }
@@ -2327,7 +2301,7 @@ sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 //aA1  : (0            - 0           ) * 0            + Combined
 void BlendMode_0x00117ffffffefc38LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetAOpaque();;
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -2344,7 +2318,7 @@ void BlendMode_0x00117ffffffefc38LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined
 void BlendMode_0x001216acf0fffe38LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour);
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -2357,7 +2331,7 @@ void BlendMode_0x001216acf0fffe38LL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Primitive    + 0
 void BlendMode_0x0022aa041f0c93ffLL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
+	
 	//RGB:	INEXACT = ( Shade * blend(Texel0,Texel1,Env) )
 	//Alpha: INEXACT: ( Prim * blend(Texel0,Texel1,Env) )
 	if( num_cycles == 1 )
@@ -2380,7 +2354,7 @@ void BlendMode_0x0022aa041f0c93ffLL( BLEND_MODE_ARGS )
 //aA1  : (0            - 0           ) * 0            + Combined
 void BlendMode_0x00272c041ffc93f8LL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles != 1 )
 	{
 		details.ColourAdjuster.SetAOpaque();	// Alpha 1.0
@@ -2397,7 +2371,7 @@ void BlendMode_0x00272c041ffc93f8LL( BLEND_MODE_ARGS )
 void BlendMode_0x0030b2615566db6dLL( BLEND_MODE_ARGS )
 {
 	// Modulate the texture*shade for RGBA
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
@@ -2414,7 +2388,7 @@ void BlendMode_0x0030fe045ffef3f8LL( BLEND_MODE_ARGS )
 {
 	//RGB: INEXACT = ( Shade * blend(Env,Prim,Texel0) )
 	//Alpha: Texel0
-	details.InstallTexture = true;
+	
 	// Correct
 	//details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetAOpaque();
@@ -2433,7 +2407,7 @@ void BlendMode_0x0040b467f0fffe3eLL( BLEND_MODE_ARGS )
 	// Assuming this is always 2 cycles
 	//RGB: INEXACT = blend(( Texel0 * Shade ),Prim,(T0a*T1a))
 	//Alpha: 1
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.ModulateRGB( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -2449,7 +2423,7 @@ void BlendMode_0x00117e045ffef3f8LL( BLEND_MODE_ARGS )
 {
 	// RGB:  ( Shade * blend(Env,Texel0,Texel1) )
 	// A:	Texel0
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 		// XXXX need blend Env->T0
@@ -2474,7 +2448,7 @@ void BlendMode_0x00117e045ffef3f8LL( BLEND_MODE_ARGS )
 //aA1  : (0            - 0           ) * 0            + Combined    
 void BlendMode_0x0030b3ff5ffeda38LL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
+	
 	// RGB = Blend( Env, Primitive, T0 )
 	// A   = T0 * Primitive
 	details.ColourAdjuster.SetRGB( details.EnvColour );
@@ -2493,7 +2467,7 @@ void BlendMode_0x0030b3ff5ffeda38LL( BLEND_MODE_ARGS )
 void BlendMode_0x0050fe6b20fd7c3dLL (BLEND_MODE_ARGS)
 {
 	
-	details.InstallTexture = true;
+	
 	if (num_cycles == 1)
 	{
 		details.ColourAdjuster.SetRGB(details.PrimColour);
@@ -2519,7 +2493,7 @@ void BlendMode_0x0050fe6b20fd7c3dLL (BLEND_MODE_ARGS)
 void BlendMode_0x00127e61f0fff83eLL (BLEND_MODE_ARGS)
 
 {
-	details.InstallTexture = true;
+	
 	if (num_cycles == 1)
 	{
 		details.ColourAdjuster.SetRGB(details.PrimColour);
@@ -2541,7 +2515,7 @@ void BlendMode_0x00127e61f0fff83eLL (BLEND_MODE_ARGS)
 void BlendMode_0x00127e0bf1fffc7bLL (BLEND_MODE_ARGS)
 
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
@@ -2554,7 +2528,7 @@ void BlendMode_0x00127e0bf1fffc7bLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0030b3ff5f12da3fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
@@ -2567,7 +2541,7 @@ void BlendMode_0x0030b3ff5f12da3fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0021246015fc9378LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
 	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
@@ -2580,7 +2554,7 @@ void BlendMode_0x0021246015fc9378LL (BLEND_MODE_ARGS)
 //aA1  : (0            - Shade       ) * 0            + Combined
 void BlendMode_0x0026a0041ffc93e0LL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 	else
@@ -2598,7 +2572,7 @@ void BlendMode_0x0026a0041ffc93e0LL( BLEND_MODE_ARGS )
 
 void BlendMode_0x0025fe6014fcf73bLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
@@ -2612,7 +2586,7 @@ void BlendMode_0x0025fe6014fcf73bLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combine
 void BlendMode_0x0025a86014fcb738LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
@@ -2625,7 +2599,7 @@ void BlendMode_0x0025a86014fcb738LL (BLEND_MODE_ARGS)
 void BlendMode_0x00272c6015fc9378LL( BLEND_MODE_ARGS )
 	
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles != 1 )
 	{
 		details.ColourAdjuster.SetRGB( details.EnvColour );
@@ -2648,7 +2622,7 @@ void BlendMode_0x00272c6015fc9378LL( BLEND_MODE_ARGS )
 
 void BlendMode_0x00327feffffff638LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 		details.ColourAdjuster.SetRGBA( details.PrimColour );
@@ -2670,7 +2644,7 @@ void BlendMode_0x00327feffffff638LL (BLEND_MODE_ARGS)
 void BlendMode_0x00f7ffeffffcf67bLL (BLEND_MODE_ARGS)
 
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour);
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -2686,7 +2660,7 @@ void BlendMode_0x00f7ffeffffcf67bLL (BLEND_MODE_ARGS)
 void BlendMode_0x00127e00f003f200LL (BLEND_MODE_ARGS)
 
 {
-	details.InstallTexture = true;
+	
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
 
@@ -2701,7 +2675,7 @@ void BlendMode_0x00ffabfffffc9238LL( BLEND_MODE_ARGS )
 	// XXXX placeholder implementation - needs t1
 	// RGB = T0
 	// A   =  blend(Texel0,Texel1,Env)
-	details.InstallTexture = true;
+	
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
 //SSB - CPU Select Badge 
@@ -2712,7 +2686,7 @@ void BlendMode_0x00ffabfffffc9238LL( BLEND_MODE_ARGS )
 //aA1  : (0            - 0           ) * 0            + Texel0
 void BlendMode_0x0012fe2533fdf2f9LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 
 	if( num_cycles == 1 )
 	{
@@ -2736,7 +2710,7 @@ void BlendMode_0x0012fe2533fdf2f9LL (BLEND_MODE_ARGS)
 void BlendMode_0x00127eacf0fff238LL( BLEND_MODE_ARGS )
 {
 	// By Kreationz & Shinydude100
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetAOpaque();//Opaque still isn't doing much on the Alpha..?
 	details.ColourAdjuster.SetRGB( details.EnvColour );	
 	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA); //Not sure if BLEND is doing anything?
@@ -2753,7 +2727,7 @@ void BlendMode_0x0026a1ff1ffc923cLL (BLEND_MODE_ARGS)
 
 {
 	// Needs Texel1 for Peach picture to display 
-	details.InstallTexture = true;
+	
 	if( num_cycles != 1 )
 	{
 		details.ColourAdjuster.SetAOpaque();
@@ -2769,7 +2743,7 @@ void BlendMode_0x0026a1ff1ffc923cLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00541aa83335feffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour);
 	details.ColourAdjuster.SetA( details.EnvColour );
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
@@ -2784,7 +2758,7 @@ void BlendMode_0x00541aa83335feffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x001114a7f3fffef8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.ModulateRGB( details.EnvColour);
 	details.ColourAdjuster.SetAOpaque();
 	//sceGuTexEnvColor( details.PrimColour.GetColour() );
@@ -2800,7 +2774,7 @@ void BlendMode_0x001114a7f3fffef8LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00547ea833fdf2f9LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour);
 
 	// A Needs to be 1 or Shade to be Opaque
@@ -2820,7 +2794,7 @@ void BlendMode_0x00547ea833fdf2f9LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00551aaa1134fe7fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGBA( details.PrimColour.ReplicateAlpha() );
 	details.ColourAdjuster.SetA( details.EnvColour);
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -2837,7 +2811,7 @@ void BlendMode_0x00551aaa1134fe7fLL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Primitive    + 0           
 void BlendMode_0x0026a0041f0c93ffLL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
+	
 	//XXXX placeholder
 	
 	details.ColourAdjuster.SetA( details.PrimColour );
@@ -2852,7 +2826,7 @@ void BlendMode_0x0026a0041f0c93ffLL( BLEND_MODE_ARGS )
 //aA1  : (Combined     - 0           ) * Env          + 0           
 void BlendMode_0x005094023f15ffffLL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
+	
 	// XXXX Needs T1
 	if( num_cycles == 1 )
 	{
@@ -2884,7 +2858,7 @@ void BlendMode_0x005094023f15ffffLL( BLEND_MODE_ARGS )
 // THPS Title Screen 
 void BlendMode_0x00ffffffff09f63fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 	//	details.ColourAdjuster.SetRGB( c32::White );		// Set RGB to 1.0, i.e. select Texture
@@ -2909,7 +2883,7 @@ void BlendMode_0x00ffffffff09f63fLL (BLEND_MODE_ARGS)
 void BlendMode_0x0026a0041ffc93f8LL( BLEND_MODE_ARGS )
 {
 	// XXXX need 2nd texture
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 	else
@@ -2936,7 +2910,7 @@ void BlendMode_0x0026a0041ffc93f8LL( BLEND_MODE_ARGS )
 void BlendMode_0x0017fe2f77fcf87cLL (BLEND_MODE_ARGS)
 {
 	//*K5 not handled .
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
@@ -2949,7 +2923,7 @@ void BlendMode_0x0017fe2f77fcf87cLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0055fe041ffcf3f8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour  );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -2968,7 +2942,7 @@ void BlendMode_0x0055fe041ffcf3f8LL (BLEND_MODE_ARGS)
 void BlendMode_0x0022ffff1ffcfa38LL (BLEND_MODE_ARGS)
 {
 	// XXXX placeholder implementation
-	details.InstallTexture = true;
+	
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
 // Wave Racer - Placeholders and Signs !!!
@@ -2979,7 +2953,7 @@ void BlendMode_0x0022ffff1ffcfa38LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined
 void BlendMode_0x0021a6ac10fc9238LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
@@ -2994,7 +2968,7 @@ void BlendMode_0x0021a6ac10fc9238LL (BLEND_MODE_ARGS)
 void BlendMode_0x00567eac11fcf279LL (BLEND_MODE_ARGS)
 {
 	// XXXX
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 		//RGBA takes care of the placeholders : )
@@ -3015,7 +2989,7 @@ void BlendMode_0x00567eac11fcf279LL (BLEND_MODE_ARGS)
 void BlendMode_0x0011ffff2ffd7c38LL( BLEND_MODE_ARGS )
 {
 	// XXXX - needs t1
-	details.InstallTexture = true;
+	
 	// RGB = Blend( T1, T0, Prim )
 	// A   = 1
 	details.ColourAdjuster.SetAOpaque();
@@ -3034,7 +3008,7 @@ void BlendMode_0x0011ffff2ffd7c38LL( BLEND_MODE_ARGS )
 //aA1  : (Texel0       - 0           ) * Primitive    + Env         
 void BlendMode_0x00309661552efb7dLL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
+	
 	// RGB = Blend( Env, Primitive, T0 )
 	// A   = T0 * Primitive + Env
 	details.ColourAdjuster.SetRGB( details.EnvColour );
@@ -3053,7 +3027,7 @@ void BlendMode_0x00309661552efb7dLL( BLEND_MODE_ARGS )
 void BlendMode_0x0030b2045ffefff8LL( BLEND_MODE_ARGS )
 {
 	// XXXX placeholder implementation - correct for 1 cycle?
-	details.InstallTexture = true;
+	
 	
 	// Use Env for RGB, Prim for A
 	details.ColourAdjuster.SetRGB( details.EnvColour );
@@ -3084,7 +3058,7 @@ void BlendMode_0x0030b2045ffefff8LL( BLEND_MODE_ARGS )
 //aA1  : (Texel0       - 0           ) * Primitive    + Env         
 void BlendMode_0x00ff97ffff2cfa7dLL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( c32::White );
 	details.ColourAdjuster.SetA( details.PrimColour );
 
@@ -3104,7 +3078,7 @@ void BlendMode_0x00ff97ffff2cfa7dLL( BLEND_MODE_ARGS )
 //aA1  : (0            - 0           ) * 0            + 1
 void BlendMode_0x00177e6035fcfd7eLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 		details.ColourAdjuster.SetRGB( details.EnvColour );
@@ -3125,7 +3099,7 @@ void BlendMode_0x00177e6035fcfd7eLL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Primitive    + 0
 void BlendMode_0x0026a060150c937fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB ( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
@@ -3139,7 +3113,7 @@ void BlendMode_0x0026a060150c937fLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined  
 void BlendMode_0x00127ec1f0fffa38LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA(details.EnvColour);
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }	
@@ -3151,7 +3125,7 @@ void BlendMode_0x00127ec1f0fffa38LL (BLEND_MODE_ARGS)
 //aA1  : (Texel1       - 0           ) * 1            + Combined
 void BlendMode_0x00119bffff5bfe38LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour);
 	//details.ColourAdjuster.SetA( details.EnvColour);
 	details.ColourAdjuster.SetAOpaque();
@@ -3167,7 +3141,7 @@ void BlendMode_0x00119bffff5bfe38LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00262a041ffc93f8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetAOpaque();
 	details.EnvColour.ReplicateAlpha();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -3182,7 +3156,7 @@ void BlendMode_0x00262a041ffc93f8LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00267e051ffcfdf8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
@@ -3197,7 +3171,7 @@ void BlendMode_0x00267e051ffcfdf8LL (BLEND_MODE_ARGS)
 void BlendMode_0x00262a603510937fLL (BLEND_MODE_ARGS)
 {
 		// XXXX placeholder implementation
-	details.InstallTexture = true;
+	
 		
 	if( num_cycles == 1 )
 	{
@@ -3222,7 +3196,7 @@ void BlendMode_0x00262a603510937fLL (BLEND_MODE_ARGS)
 void BlendMode_0x00272c60350ce37fLL( BLEND_MODE_ARGS )
 {
 	// XXXX placeholder implementation
-	details.InstallTexture = true;
+	
 	
 	if( num_cycles == 1 )
 	{
@@ -3250,7 +3224,7 @@ void BlendMode_0x00272c60350ce37fLL( BLEND_MODE_ARGS )
 void BlendMode_0x00272c80350cf37fLL( BLEND_MODE_ARGS )
 {
 	//Semi-fix, a few white streaks through the water, T1 for full fix.
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetA ( details.PrimColour );
     sceGuTexEnvColor ( details.PrimColour.GetColour() );
@@ -3265,7 +3239,7 @@ void BlendMode_0x00272c80350cf37fLL( BLEND_MODE_ARGS )
 //aA1  : (0            - 0           ) * 0            + Primitive
 void BlendMode_0x0012fec8f2fdfe3bLL ( BLEND_MODE_ARGS )
 {
-        details.InstallTexture = true;
+        
         details.ColourAdjuster.SetRGB ( details.EnvColour );
         details.ColourAdjuster.ModulateA ( details.PrimColour );
         sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
@@ -3281,7 +3255,7 @@ void BlendMode_0x0012fec8f2fdfe3bLL ( BLEND_MODE_ARGS )
  //aA1  : (Combined     - 0           ) * Env          + 0
 void BlendMode_0x00272c603514937fLL ( BLEND_MODE_ARGS )
 {
-        details.InstallTexture = true;
+        
         details.ColourAdjuster.SetRGBA ( details.EnvColour );
         sceGuTexEnvColor ( details.PrimColour.GetColour() );
         sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
@@ -3297,7 +3271,7 @@ void BlendMode_0x00272c603514937fLL ( BLEND_MODE_ARGS )
 //aA1  : (Combined     - 0           ) * Primitive    + 0
 void BlendMode_0x0020ac03ff0f93ffLL ( BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -3312,7 +3286,7 @@ void BlendMode_0x0020ac03ff0f93ffLL ( BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Primitive    + 0
 void BlendMode_0x00272c031f0c93ffLL ( BLEND_MODE_ARGS )
 {
-    details.InstallTexture = true;
+    
 	details.ColourAdjuster.SetRGBA ( details.PrimColour );
     sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
@@ -3326,7 +3300,7 @@ void BlendMode_0x00272c031f0c93ffLL ( BLEND_MODE_ARGS )
 //aA1  : (Combined     - 0           ) * Shade        + 0
 void BlendMode_0x00272c603410f33fLL ( BLEND_MODE_ARGS )
 {
-      details.InstallTexture = true;
+      
       details.ColourAdjuster.SetRGB ( details.PrimColour );
       details.ColourAdjuster.ModulateA ( details.PrimColour );
       sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -3340,7 +3314,7 @@ void BlendMode_0x00272c603410f33fLL ( BLEND_MODE_ARGS )
 void BlendMode_0x002527ff1ffc9238LL( BLEND_MODE_ARGS )
 {
 	// XXXX placeholder implementation - is blending between T0/T1 using primitive colour
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGBA( details.PrimColour.ReplicateAlpha() );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA); //Can't mod black, needs REPLACE (Wally)
 }
@@ -3354,7 +3328,7 @@ void BlendMode_0x002527ff1ffc9238LL( BLEND_MODE_ARGS )
 void BlendMode_0x00262a60150c937fLL( BLEND_MODE_ARGS )
 {
 	// XXXX placeholder implementation
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB ( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
@@ -3370,7 +3344,7 @@ void BlendMode_0x00262a60150c937fLL( BLEND_MODE_ARGS )
 void BlendMode_0x00167e6035fcff7eLL( BLEND_MODE_ARGS )
 {
 	// XXXX incorrect, need env and prim, blend has wrong source
-	details.InstallTexture = true;
+	
 	
 	// Use the primitive for the r,g,b, override the alpha with 1.0
 	details.ColourAdjuster.SetRGB( details.PrimColour );
@@ -3388,7 +3362,7 @@ void BlendMode_0x00167e6035fcff7eLL( BLEND_MODE_ARGS )
 //aA1  : (Combined     - 0           ) * Primitive    + 0           
 void BlendMode_0x00267e041f0cfdffLL( BLEND_MODE_ARGS )
 {
-	details.InstallTexture = true;
+	
 	
 	if( num_cycles == 1 )
 	{
@@ -3413,7 +3387,7 @@ void BlendMode_0x00267e041f0cfdffLL( BLEND_MODE_ARGS )
 void BlendMode_0x00267e041ffcfdf8LL( BLEND_MODE_ARGS )
 {
 	// XXXX placeholder implementation - ok except t1?
-	details.InstallTexture = true;
+	
 	// RGB = Blend(T0, T1, EnvAlpha) * Shade
 	// A   = 1
 	details.ColourAdjuster.SetAOpaque();	// Alpha 1.0
@@ -3429,7 +3403,7 @@ void BlendMode_0x00267e041ffcfdf8LL( BLEND_MODE_ARGS )
 void BlendMode_0x00267e60350cf37fLL( BLEND_MODE_ARGS )
 {
 	// XXXX need 2nd texture
-	details.InstallTexture = true;
+	
 	
 	// XXXX need to blend using env
 	
@@ -3446,7 +3420,7 @@ void BlendMode_0x00267e60350cf37fLL( BLEND_MODE_ARGS )
 void BlendMode_0x00121603ff5bfff8LL( BLEND_MODE_ARGS )
 {
 	// XXXX placeholder implementation - think is correct except t1
- 	details.InstallTexture = true;
+ 	
 	// RGB = T0 * Shade * Primitive
 	// A   = T0 * Primitive + T1
 	if( num_cycles != 1 )
@@ -3465,7 +3439,7 @@ void BlendMode_0x00121603ff5bfff8LL( BLEND_MODE_ARGS )
 //aA1  : (1            - 1           ) * 1            + 1      
 void BlendMode_0x0030ec045fdaedf6LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGBA( details.PrimColour );
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	
@@ -3479,7 +3453,7 @@ void BlendMode_0x0030ec045fdaedf6LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0011fffffffffc38LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	//details.ColourAdjuster.SetA( c32::White );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -3506,7 +3480,7 @@ void BlendMode_0x00373c6e117b9fcfLL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Primitive    + 0
 void BlendMode_0x00262a60350ce37fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB ( details.EnvColour ); 
 	details.EnvColour.ReplicateAlpha();
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
@@ -3522,41 +3496,10 @@ void BlendMode_0x00262a60350ce37fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00262a041f5893f8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);	
-}
-
-//Oot - Hearts ==> Needs more work
-//case 0x00272a8013fc92f8LL:
-//aRGB0: (Texel1       - Texel0      ) * PrimLODFrac  + Texel0
-//aA0  : (Texel1       - Texel0      ) * Env          + Texel0
-//aRGB1: (Shade        - Primitive   ) * Combined     + Primitive
-//aA1  : (0            - 0           ) * 0            + Combined
-/*
- 1 Cycle:
- Alpha: INEXACT: blend(Texel0,Texel1,Env)
- Stage 0: INEXACT = blend(Texel0,Texel1,PrimLodFrac)
- Invalid
- GU_TCC_RGB, diffuse_a := 1
- 2 Cycles:
- Alpha: INEXACT: blend(Texel0,Texel1,Env)
- Stage 0: INEXACT = blend(Prim,Shade,blend(Texel0,Texel1,PrimLodFrac))
- Invalid
- GU_TCC_RGB, diffuse_a := 1
- */
-
-void BlendMode_0x00272a8013fc92f8LL (BLEND_MODE_ARGS)
-
-{
-	details.InstallTexture = true;
-	if( num_cycles != 1 )
-	{
-		details.ColourAdjuster.SetRGB( details.PrimColour );
-		sceGuTexEnvColor( details.PrimColour.GetColour() );
-	}
-	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
 
 //Beginner's sword on Legend of Zelda: OOT (bottom part) and Chikens
@@ -3567,7 +3510,7 @@ void BlendMode_0x00272a8013fc92f8LL (BLEND_MODE_ARGS)
 void BlendMode_0x0030fe045ffefdfeLL( BLEND_MODE_ARGS )
 {
 	// By Shinydude100 & Wally & Salvy : P
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -3581,7 +3524,7 @@ void BlendMode_0x0030fe045ffefdfeLL( BLEND_MODE_ARGS )
 //aA1  : (Combined     - 0           ) * Primitive  + 0
 void BlendMode_0x0020ac60350c937fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB ( details.EnvColour ); /// Env does the trick !
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
@@ -3593,7 +3536,7 @@ void BlendMode_0x0020ac60350c937fLL (BLEND_MODE_ARGS)
 //aA1  : (1            - Texel0      ) * 1            + Primitive
 void BlendMode_0x00ffedffffd996cbLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	
 	// XXXX Correct no need to show Alpha, atleast for now.
 	// Alpha shows white circles on the screen...
@@ -3609,7 +3552,7 @@ void BlendMode_0x00ffedffffd996cbLL (BLEND_MODE_ARGS)
 void BlendMode_0x0020fe04ff0ff7ffLL (BLEND_MODE_ARGS)
 {
 	// XXXX Needed to fix Telescope : S
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -3622,7 +3565,7 @@ void BlendMode_0x0020fe04ff0ff7ffLL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Primitive    + 0
 void BlendMode_0x0020ac0aff0f93ffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 
 	//( Prim * ( Texel0 + Texel1 - Texel0 ) )
 	details.ColourAdjuster.SetRGBA( details.PrimColour.ReplicateAlpha() );
@@ -3638,7 +3581,7 @@ void BlendMode_0x0020ac0aff0f93ffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x002714041f0cffffLL (BLEND_MODE_ARGS)
 {	
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -3652,7 +3595,7 @@ void BlendMode_0x002714041f0cffffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0020fe05f3fff738LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour  );
 	details.ColourAdjuster.SetA( details.PrimColour  );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -3666,7 +3609,7 @@ void BlendMode_0x0020fe05f3fff738LL (BLEND_MODE_ARGS)
 void BlendMode_0x002712041f0cffffLL( BLEND_MODE_ARGS )
 {
 	// XXXX Z Fighting....
-	details.InstallTexture = true;
+	
 		
 	if( num_cycles == 1 )
 	{
@@ -3690,7 +3633,7 @@ void BlendMode_0x002712041f0cffffLL( BLEND_MODE_ARGS )
 //aA1  : (1            - Texel0      ) * Primitive    + 0
 void BlendMode_0x0061e6c311cf9fcfLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	
 	// XXXX Needs S2DEX for full fix
 	// Alpha not needed we're missing S2DEX texture.
@@ -3706,7 +3649,7 @@ void BlendMode_0x0061e6c311cf9fcfLL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Primitive    + 0
 void BlendMode_0x002722041f0cffffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles != 1 )
 	{
 		details.ColourAdjuster.SetA( details.PrimColour );
@@ -3721,7 +3664,7 @@ void BlendMode_0x002722041f0cffffLL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Primitive    + 0
 void BlendMode_0x0020a204ff0fffffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -3735,7 +3678,7 @@ void BlendMode_0x0020a204ff0fffffLL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Primitive    + 0
 void BlendMode_0x00242c04ff0f93ffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -3749,7 +3692,7 @@ void BlendMode_0x00242c04ff0f93ffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00273c60f514e37fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 
 	// S2DEX for full fix :/
 	details.ColourAdjuster.ModulateRGB( details.PrimColour );
@@ -3766,7 +3709,7 @@ void BlendMode_0x00273c60f514e37fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0025266015fc9378LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGBA( details.PrimColour.ReplicateAlpha() );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA); //Wally says is REPLACE
 }
@@ -3779,7 +3722,7 @@ void BlendMode_0x0025266015fc9378LL (BLEND_MODE_ARGS)
 
  void BlendMode_0x0020ac04ff0f93ffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -3793,7 +3736,7 @@ void BlendMode_0x0025266015fc9378LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00272c031f1093ffLL (BLEND_MODE_ARGS)
 {	
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -3807,7 +3750,7 @@ void BlendMode_0x00272c031f1093ffLL (BLEND_MODE_ARGS)
 
  void BlendMode_0x00167e6035fcf378LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -3821,7 +3764,7 @@ void BlendMode_0x00272c031f1093ffLL (BLEND_MODE_ARGS)
 void BlendMode_0x00272e041f0c93ffLL (BLEND_MODE_ARGS)
 {
 	// XXXX Z-Figthing...and T1...
-	details.InstallTexture = true;
+	
 	if( num_cycles != 1 )
 	{
 		details.ColourAdjuster.SetA( details.PrimColour );
@@ -3837,7 +3780,7 @@ void BlendMode_0x00272e041f0c93ffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00272c041f0c93ffLL (BLEND_MODE_ARGS)
 {	
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -3851,7 +3794,7 @@ void BlendMode_0x00272c041f0c93ffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00209c03ff0f93ffLL (BLEND_MODE_ARGS)
 {	
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetAOpaque();
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -3865,7 +3808,7 @@ void BlendMode_0x00209c03ff0f93ffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00272c041f1093ffLL (BLEND_MODE_ARGS)
 {	
-	details.InstallTexture = true;
+	
 
 	if( num_cycles == 1 )
 	{
@@ -3887,7 +3830,7 @@ void BlendMode_0x00272c041f1093ffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0020ac04ff0f92ffLL (BLEND_MODE_ARGS)
 {	
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -3900,7 +3843,7 @@ void BlendMode_0x0020ac04ff0f92ffLL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Primitive    + 0
 void BlendMode_0x00277e041f0cf7ffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles != 1 )
 	{
 		details.ColourAdjuster.SetA( details.PrimColour );
@@ -3916,7 +3859,7 @@ void BlendMode_0x00277e041f0cf7ffLL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Primitive    + 0   
 void BlendMode_0x00267e031f0cfdffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB ( details.EnvColour );
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);	
@@ -3933,7 +3876,7 @@ void BlendMode_0x00267e031f0cfdffLL (BLEND_MODE_ARGS)
 void BlendMode_0x00262a041f1093ffLL (BLEND_MODE_ARGS)
 {
 	// XXXX needs T1
-	details.InstallTexture = true;
+	
 	//details.ColourAdjuster.SetRGB( details.EnvColour );
 	//details.ColourAdjuster.SetA( details.EnvColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
@@ -3949,7 +3892,7 @@ void BlendMode_0x00262a041f1093ffLL (BLEND_MODE_ARGS)
 void BlendMode_0x00267e041f10fdffLL (BLEND_MODE_ARGS)
 {
 	// T1 huh?
-	details.InstallTexture = true;
+	
 	// RGB = Shade
 	// A = 1
 	details.ColourAdjuster.SetAOpaque();
@@ -3967,7 +3910,7 @@ void BlendMode_0x00ffadfffffd9238LL( BLEND_MODE_ARGS )
 	// XXXX placeholder implementation - needs t1
 	// RGB = Prim
 	// A   = (T1-T0)+T0 = T1
-	details.InstallTexture = true;
+	
 	details.RecolourTextureWhite = true;
 	details.ColourAdjuster.SetRGB( details.PrimColour );		// Want to select texture alpha
 	details.ColourAdjuster.SetAOpaque();
@@ -3982,7 +3925,7 @@ void BlendMode_0x00ffadfffffd9238LL( BLEND_MODE_ARGS )
 //aA1  : (0            - 0           ) * 0            + Texel0     
 void BlendMode_0x0071fee311fcf279LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.ModulateRGB( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -3997,7 +3940,7 @@ void BlendMode_0x0071fee311fcf279LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00272c60150ce37fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB ( details.EnvColour ); /// Env does the trick !
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -4011,7 +3954,7 @@ void BlendMode_0x00272c60150ce37fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00177e6035fcfd78LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	
@@ -4025,7 +3968,7 @@ void BlendMode_0x00177e6035fcfd78LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0030fe045f0ef3ffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB ( details.EnvColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
@@ -4039,7 +3982,7 @@ void BlendMode_0x0030fe045f0ef3ffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00171c6035fd6578LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB ( details.EnvColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
@@ -4054,7 +3997,7 @@ void BlendMode_0x00171c6035fd6578LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00272a60150c937fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB ( details.EnvColour );
 	details.ColourAdjuster.SetA ( details.PrimColour );
 	sceGuTexEnvColor( details.EnvColour.GetColour() ); /// Testing Env
@@ -4069,7 +4012,7 @@ void BlendMode_0x00272a60150c937fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00121a03ff5bfff8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB ( details.PrimColour );
 	details.ColourAdjuster.SetA ( details.EnvColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
@@ -4083,7 +4026,7 @@ void BlendMode_0x00121a03ff5bfff8LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00121803ff5bfff8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -4097,7 +4040,7 @@ void BlendMode_0x00121803ff5bfff8LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00277e041ffcfdf8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles != 1 )
 	{
 		details.ColourAdjuster.SetAOpaque();
@@ -4113,7 +4056,7 @@ void BlendMode_0x00277e041ffcfdf8LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0017166035fcff78LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	// XXXX Needs T1
 	if( num_cycles == 1 )
 	{
@@ -4139,7 +4082,7 @@ void BlendMode_0x0017166035fcff78LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00119604ff5bfff8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGBA( details.PrimColour );
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -4153,7 +4096,7 @@ void BlendMode_0x00119604ff5bfff8LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00262a041f0c93ffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetA( details.EnvColour );
 	sceGuTexEnvColor( details.EnvColour.GetColour() ); // Testing Env
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -4167,7 +4110,7 @@ void BlendMode_0x00262a041f0c93ffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00262a601510937fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour ); //I think I can disable it
 	details.ColourAdjuster.SetA( details.EnvColour ); // Does the trick !
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -4181,7 +4124,7 @@ void BlendMode_0x00262a601510937fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x001197ffff5bfe38LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetA( details.PrimColour ); 
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -4194,7 +4137,7 @@ void BlendMode_0x001197ffff5bfe38LL (BLEND_MODE_ARGS)
 //aA1  : (Env          - 0           ) * Combined     + 0
 void BlendMode_0x00272c6035a0937fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetA( details.EnvColour ); 
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
@@ -4209,7 +4152,7 @@ void BlendMode_0x00272c6035a0937fLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00272c603510937fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
@@ -4223,7 +4166,7 @@ void BlendMode_0x00272c603510937fLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined
 void BlendMode_0x00267e031ffcfdf8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -4237,7 +4180,7 @@ void BlendMode_0x00267e031ffcfdf8LL (BLEND_MODE_ARGS)
 void BlendMode_0x00262a60150d157fLL (BLEND_MODE_ARGS)
 {
 	// XXXX placeholder implementation
-	details.InstallTexture = true;
+	
 		
 	if( num_cycles == 1 )
 	{
@@ -4261,7 +4204,7 @@ void BlendMode_0x00262a60150d157fLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined
 void BlendMode_0x00167e6035fcfd78LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
@@ -4275,7 +4218,7 @@ void BlendMode_0x00167e6035fcfd78LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined
 void BlendMode_0x00267e051ffcf7f8LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetA( details.PrimColour ); 
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -4288,7 +4231,7 @@ void BlendMode_0x00267e051ffcf7f8LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined
 void BlendMode_0x0030b3fffffefa38LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetA( details.PrimColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	
@@ -4303,7 +4246,7 @@ void BlendMode_0x0030b3fffffefa38LL (BLEND_MODE_ARGS)
 void BlendMode_0x00272c601510f37fLL (BLEND_MODE_ARGS)
 {
 	// XXXX Z Fighting....
-	details.InstallTexture = true;
+	
 		
 	if( num_cycles == 1 )
 	{
@@ -4327,7 +4270,7 @@ void BlendMode_0x00272c601510f37fLL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Primitive    + 0
 void BlendMode_0x0022aa031f0c93ffLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	if( num_cycles == 1 )
 	{
 		details.ColourAdjuster.SetRGBA( details.EnvColour );
@@ -4354,7 +4297,7 @@ void BlendMode_0x0022aa031f0c93ffLL (BLEND_MODE_ARGS)
 void BlendMode_0x00161a6025fd2578LL (BLEND_MODE_ARGS)
 {
 	// XXXX placeholder implementation
-	details.InstallTexture = true;
+	
 		
 	if( num_cycles == 1 )
 	{
@@ -4379,7 +4322,7 @@ void BlendMode_0x00161a6025fd2578LL (BLEND_MODE_ARGS)
 void BlendMode_0x00272c601510c37fLL (BLEND_MODE_ARGS)
 {
 	// XXXX Z Fighting....
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour  );
 	details.ColourAdjuster.SetA( details.EnvColour  );
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
@@ -4396,7 +4339,7 @@ void BlendMode_0x00272c601510c37fLL (BLEND_MODE_ARGS)
 void BlendMode_0x00262a60f50ce37fLL (BLEND_MODE_ARGS)
 {
 	// XXXX placeholder implementation
-	details.InstallTexture = true;
+	
 		
 	if( num_cycles == 1 )
 	{
@@ -4421,7 +4364,7 @@ void BlendMode_0x00262a60f50ce37fLL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Shade        + 0
 void BlendMode_0x00262660f510ff7fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.PrimColour );
 	details.ColourAdjuster.SetAOpaque();
 	//sceGuTexEnvColor( details.EnvColour.GetColour() ); 
@@ -4437,7 +4380,7 @@ void BlendMode_0x00262660f510ff7fLL (BLEND_MODE_ARGS)
 void BlendMode_0x00261a60f50ce37fLL (BLEND_MODE_ARGS)
 {
 	// XXXX placeholder implementation
-	details.InstallTexture = true;
+	
 		
 	if( num_cycles == 1 )
 	{
@@ -4462,7 +4405,7 @@ void BlendMode_0x00261a60f50ce37fLL (BLEND_MODE_ARGS)
 void BlendMode_0x0030fe045ffefffeLL( BLEND_MODE_ARGS )
 {
 	// XXXX placeholder implementation
-	details.InstallTexture = true;
+	
 		
 	if( num_cycles == 1 )
 	{
@@ -4487,7 +4430,7 @@ void BlendMode_0x0030fe045ffefffeLL( BLEND_MODE_ARGS )
 void BlendMode_0x00161a60f50d657fLL( BLEND_MODE_ARGS )
 {
 	// XXXX placeholder implementation
-	details.InstallTexture = true;
+	
 		
 	if( num_cycles == 1 )
 	{
@@ -4526,7 +4469,7 @@ Stage 0: Texel0
 
 void BlendMode_0x00ffe5fffffcfa38LL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.EnvColour.ReplicateAlpha();
 	//details.ColourAdjuster.SetA ( details.EnvColour );
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -4558,7 +4501,7 @@ void BlendMode_0x00ffe5fffffcfa38LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0020a203ff13ff7fLL (BLEND_MODE_ARGS)
 {
-	details.InstallTexture = true;
+	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
@@ -4578,10 +4521,6 @@ OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 			
 		//BLENDS#
 		
-		BLEND_MODE (0x00127e2455fdf2f9LL);
-		BLEND_MODE (0x0026a004151092ffLL);
-		BLEND_MODE (0x001218245531feffLL);
-		BLEND_MODE (0x003432685566ff7fLL);
 		BLEND_MODE (0x00127eccf0fffc38LL);
 		BLEND_MODE (0x00157e2a33fdfcfeLL);
 		BLEND_MODE (0x00327ecbf0fffc3eLL);
@@ -4753,7 +4692,6 @@ OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 		BLEND_MODE( 0x00147e045ffefbf8LL );
 		BLEND_MODE( 0x0026a1ff1ffc923cLL );
 		BLEND_MODE( 0x00262a041f5893f8LL );
-		BLEND_MODE( 0x00272a8013fc92f8LL );
 		BLEND_MODE( 0x00272c60350c937fLL );
 		BLEND_MODE( 0x00272c603510e37fLL );
 		BLEND_MODE( 0x00ffabffff0d92ffLL );

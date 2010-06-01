@@ -913,7 +913,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		// Local vars for now
 		SBlendModeDetails		details;
 
-		details.InstallTexture = false;
+		details.InstallTexture = true;
 		details.EnvColour = mEnvColour;
 		details.PrimColour = mPrimitiveColour;
 		details.ColourAdjuster.Reset();

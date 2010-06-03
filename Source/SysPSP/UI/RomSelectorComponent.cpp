@@ -51,6 +51,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <map>
 #include <algorithm>
 
+#include "../Utility/Thread.h"
+
 /* Kernel Buttons functions */
 extern "C" {
 int getbuttons();
@@ -258,6 +260,8 @@ class IRomSelectorComponent : public CRomSelectorComponent
 		u32							mPreviewIdx;
 		float						mPreviewLoadedTime;		// How long the preview has been loaded (so we can fade in)
 		float						mTimeSinceScroll;		// 
+
+		bool						mQuitTriggered;
 };
 
 //*************************************************************************************
@@ -296,6 +300,7 @@ IRomSelectorComponent::IRomSelectorComponent( CUIContext * p_context, CFunctor1<
 ,	mPreviewIdx( u32(-1) )
 ,	mPreviewLoadedTime( 0.0f )
 ,	mTimeSinceScroll( 0.0f )
+,	mQuitTriggered(false)
 {
 	for( u32 i = 0; i < ARRAYSIZE( gRomsDirectories ); ++i )
 	{
@@ -1140,6 +1145,10 @@ void IRomSelectorComponent::Render()
 	} else if (sortbyletter) { 
 		RenderCategoryList();
 	}
+	
+	if(mQuitTriggered)
+		mpContext->DrawTextAlign(0,480,AT_CENTRE,135,"Press X to quit",
+				DrawTextUtilities::TextRed,DrawTextUtilities::TextWhite);
 }
 
 //*************************************************************************************
@@ -1165,6 +1174,9 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 	ECategory current_category( GetCurrentCategory() );
 
 	u32				initial_selection( mCurrentSelection );
+		
+	if( (new_buttons & PSP_CTRL_CROSS) && mQuitTriggered)
+			sceKernelExitGame();
 
 	mDisplayFilenames = (new_buttons & PSP_CTRL_TRIANGLE) != 0;		
 	if (new_buttons & PSP_CTRL_CIRCLE) {	
@@ -1206,6 +1218,7 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 	}
 	else { showmoreinfo = 0; }
 	if (old_buttons != new_buttons)	{
+		mQuitTriggered=false;
 		if (!(new_buttons & PSP_CTRL_CIRCLE)) {
 			if (new_buttons & PSP_CTRL_LEFT)
 			{
@@ -1228,6 +1241,7 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 				}
 			}
 		}
+
 		if((new_buttons & PSP_CTRL_START) ||
 			(new_buttons & PSP_CTRL_CROSS))
 		{
@@ -1241,10 +1255,9 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 				}
 			}
 		}	
+
 	}
 
-	// ToDo : Add a GUI tooltip, dialog, or option to exit, so users can be aware on how to exit.
-	//
 	// Init our kernel buttons, ex HOME button
 	new_kbuttons = getbuttons();
 
@@ -1252,7 +1265,10 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 	{
 		if(new_kbuttons & PSP_CTRL_HOME) 
 		{
-			sceKernelExitGame();
+			if(!mQuitTriggered)
+			{
+				mQuitTriggered=true;
+			}
 		}
 	}
 	//
@@ -1264,6 +1280,7 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 		if(mCurrentSelection < mRomsList.size() - 1)
 		{
 			mCurrentSelection++;
+			mQuitTriggered=false;
 		}
 		mSelectionAccumulator -= 1.0f;
 	}
@@ -1272,6 +1289,7 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 		if(mCurrentSelection > 0)
 		{
 			mCurrentSelection--;
+			mQuitTriggered=false;
 		}
 		mSelectionAccumulator += 1.0f;
 	}

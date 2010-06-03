@@ -232,7 +232,9 @@ BUILDS_DIR = ./Builds
 BUILDS_PSP_DIR = $(BUILDS_DIR)/PSP/GAME/DaedalusX64
 
 #svn revision in code
-RESULT := $(shell LC_ALL=C svn info | grep Revision | grep -e [0-9]* -o | tr -d '\n')
+#RESULT := $(shell LC_ALL=C svn info | grep Revision | grep -e [0-9]* -o | tr -d '\n') #does not work with Windows...
+RESULT := $(shell svnversion -n)
+
 ifeq ($(RESULT),)
 	#try windows with tortoise svn
 

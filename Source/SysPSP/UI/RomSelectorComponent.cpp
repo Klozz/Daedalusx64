@@ -1131,24 +1131,32 @@ void IRomSelectorComponent::RenderCategoryList()
 //*************************************************************************************
 void IRomSelectorComponent::Render()
 {
-	RenderPreview();
-
-	if( mRomsList.empty() )	{
-		s32 offset( 0 );
-		for( u32 i = 0; i < ARRAYSIZE( gNoRomsText ); ++i )	{
-			mpContext->DrawText(240 - (mpContext->GetTextWidth( gNoRomsText[ i ]) / 2 ), 75 + offset, gNoRomsText[ i ], c32::White );
-			offset += 10;
-			if ((i == 0) || (i == 4)) { offset += 10; }
-		}
-	} else if (!sortbyletter) {
-		RenderRomList();
-	} else if (sortbyletter) { 
-		RenderCategoryList();
-	}
-	
 	if(mQuitTriggered)
-		mpContext->DrawTextAlign(0,480,AT_CENTRE,135,"Press X to quit",
-				DrawTextUtilities::TextRed,DrawTextUtilities::TextWhite);
+	{
+		mpContext->DrawTextAlign(0,480,AT_CENTRE,135,"Press X to confirm you want to quit",
+			       	DrawTextUtilities::TextRed);
+		mpContext->DrawTextAlign(0,480,AT_CENTRE,150,"Any other key will cancel",
+			       	DrawTextUtilities::TextRed);
+	}
+	else
+	{
+
+		RenderPreview();
+
+		if( mRomsList.empty() )	{
+			s32 offset( 0 );
+			for( u32 i = 0; i < ARRAYSIZE( gNoRomsText ); ++i )	{
+				mpContext->DrawText(240 - (mpContext->GetTextWidth( gNoRomsText[ i ]) / 2 ), 75 + offset,
+						gNoRomsText[ i ], c32::White );
+				offset += 10;
+				if ((i == 0) || (i == 4)) { offset += 10; }
+			}
+		} else if (!sortbyletter) {
+			RenderRomList();
+		} else if (sortbyletter) { 
+			RenderCategoryList();
+		}
+	}
 }
 
 //*************************************************************************************
@@ -1175,8 +1183,16 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 
 	u32				initial_selection( mCurrentSelection );
 		
-	if( (new_buttons & PSP_CTRL_CROSS) && mQuitTriggered)
+	if( mQuitTriggered)
+	{
+		if(new_buttons & PSP_CTRL_CROSS)
 			sceKernelExitGame();
+		else if(new_buttons != old_buttons)
+		{
+			mQuitTriggered=false;
+			return;
+		}
+	}
 
 	mDisplayFilenames = (new_buttons & PSP_CTRL_TRIANGLE) != 0;		
 	if (new_buttons & PSP_CTRL_CIRCLE) {	
@@ -1218,7 +1234,6 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 	}
 	else { showmoreinfo = 0; }
 	if (old_buttons != new_buttons)	{
-		mQuitTriggered=false;
 		if (!(new_buttons & PSP_CTRL_CIRCLE)) {
 			if (new_buttons & PSP_CTRL_LEFT)
 			{
@@ -1265,10 +1280,7 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 	{
 		if(new_kbuttons & PSP_CTRL_HOME) 
 		{
-			if(!mQuitTriggered)
-			{
 				mQuitTriggered=true;
-			}
 		}
 	}
 	//
@@ -1280,7 +1292,6 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 		if(mCurrentSelection < mRomsList.size() - 1)
 		{
 			mCurrentSelection++;
-			mQuitTriggered=false;
 		}
 		mSelectionAccumulator -= 1.0f;
 	}
@@ -1289,7 +1300,6 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 		if(mCurrentSelection > 0)
 		{
 			mCurrentSelection--;
-			mQuitTriggered=false;
 		}
 		mSelectionAccumulator += 1.0f;
 	}

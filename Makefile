@@ -173,8 +173,9 @@ ifdef DEBUG
 	CONFIG=Dev #default config in Debug build is "Dev"
 
 	CFLAGS			= -g -O3 -G0 -D_DEBUG -MD \
-				  -W -Wcast-qual -Wchar-subscripts -Wno-unused -Wpointer-arith -Wredundant-decls -Wshadow -Wwrite-strings
-	#-Winline -Wcast-align 
+				  -W -Wcast-qual -Wchar-subscripts -Wno-unused -Wpointer-arith\
+				  -Wredundant-decls -Wshadow -Wwrite-strings
+			       	#-Winline -Wcast-align 
 	LDFLAGS = -g
 
 	SRCS			= $(CORE_SRCS) $(ADDITIONAL_DEBUG_SRCS) $(ADDITIONAL_SYNC_SRCS)
@@ -225,14 +226,13 @@ PSP_LARGE_MEMORY = 1
 
 EXTRA_CLEAN=$(DEP_FILES)
 
-include $(PSPSDK)/lib/build.mak
 
 DATA_DIR = ../data
 BUILDS_DIR = ./Builds
 BUILDS_PSP_DIR = $(BUILDS_DIR)/PSP/GAME/DaedalusX64
 
 #svn revision in code
-RESULT := $(shell svnversion -n 2> Makefile.cache)
+RESULT := $(shell LC_ALL=C svn info | grep Revision | grep -e [0-9]* -o | tr -d '\n')
 ifeq ($(RESULT),)
 	#try windows with tortoise svn
 
@@ -241,8 +241,11 @@ svn:
 	@SubWCRev . ./Source/svnversion.txt ./Source/svnversion.h
 else
 	#linux
-	+CFLAGS += -DSVNVERSION=\"$(RESULT)\"
+	CFLAGS += -DSVNVERSION=\"$(RESULT)\"
+	PSP_EBOOT_TITLE += $(RESULT)
 endif
+
+include $(PSPSDK)/lib/build.mak
 
 
 psplink: $(PSP_EBOOT) $(TARGET).elf
@@ -252,7 +255,7 @@ install: $(PSP_EBOOT) $(TARGET).prx dvemgr.prx exception.prx mediaengine.prx ker
 	[ -d $(BUILDS_PSP_DIR) ] || mkdir -p "$(BUILDS_PSP_DIR)"
 	svn export --force "$(DATA_DIR)" "$(BUILDS_PSP_DIR)"
 	cp $(PSP_EBOOT) "$(BUILDS_PSP_DIR)"
-	cp $(TARGET).elf "$(BUILDS_PSP_DIR)"
+	#cp $(TARGET).elf "$(BUILDS_PSP_DIR)"
 	cp *.prx "$(BUILDS_PSP_DIR)"
 
 Source/SysPSP/MediaEnginePRX/MediaEngine.S:
@@ -278,9 +281,6 @@ allclean: clean
 	$(MAKE) -C Source/SysPSP/MediaEnginePRX clean
 	$(MAKE) -C Source/SysPSP/DveMgr clean
 	$(MAKE) -C Source/SysPSP/KernelButtonsPrx clean
-
-CC       = psp-gcc
-CXX      = psp-g++
 
 -include $(DEP_FILES)
 

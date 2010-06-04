@@ -229,36 +229,42 @@ EXTRA_CLEAN=$(DEP_FILES)
 
 DATA_DIR = ../data
 BUILDS_DIR = ./Builds
-BUILDS_PSP_DIR = $(BUILDS_DIR)/PSP/GAME/DaedalusX64
+BUILDS_PSP_DIR = $(BUILDS_DIR)/PSP
+BUILDS_GAME_DIR = $(BUILDS_PSP_DIR)/GAME
+BUILDS_DX_DIR = $(BUILDS_GAME_DIR)/DaedalusX64
 
-#svn revision in code
+
 #RESULT := $(shell LC_ALL=C svn info | grep Revision | grep -e [0-9]* -o | tr -d '\n') #does not work with Windows...
-RESULT := $(shell svnversion -n)
+VERSION = $(shell svnversion -n 2> Makefile.cache)
 
-ifeq ($(RESULT),)
-	#try windows with tortoise svn
-
+ifeq ($(VERSION),)
+	#Windows
+	EXTRA_TARGETS := svn $(EXTRA_TARGETS)
+	include $(PSPSDK)/lib/build.mak
 svn:
-	@echo svnrevision not found, trying SubWCRev
+	@echo svnversion not found, trying SubWCRev
 	@SubWCRev . ./Source/svnversion.txt ./Source/svnversion.h
 else
-	#linux
-	CFLAGS += -DSVNVERSION=\"$(RESULT)\"
-	PSP_EBOOT_TITLE += $(RESULT)
-endif
+	#Unix
+	CFLAGS += -DSVNVERSION=\"$(VERSION)\"
+	PSP_EBOOT_TITLE += $(VERSION)
 
-include $(PSPSDK)/lib/build.mak
+	include $(PSPSDK)/lib/build.mak
+endif
 
 
 psplink: $(PSP_EBOOT) $(TARGET).elf
-	prxtool -y $(TARGET).elf > $(BUILDS_PSP_DIR)/$(TARGET).sym
+	prxtool -y $(TARGET).elf > $(BUILDS_DX_DIR)/$(TARGET).sym
 
+#Need to create dirs one by one because windows can't use mkdir -p
 install: $(PSP_EBOOT) $(TARGET).prx dvemgr.prx exception.prx mediaengine.prx kernelbuttons.prx $(TARGET).elf
-	[ -d $(BUILDS_PSP_DIR) ] || mkdir -p "$(BUILDS_PSP_DIR)"
-	svn export --force "$(DATA_DIR)" "$(BUILDS_PSP_DIR)"
-	cp $(PSP_EBOOT) "$(BUILDS_PSP_DIR)"
-	#cp $(TARGET).elf "$(BUILDS_PSP_DIR)"
-	cp *.prx "$(BUILDS_PSP_DIR)"
+	-mkdir "$(BUILDS_DIR)"
+	-mkdir "$(BUILDS_PSP_DIR)"
+	-mkdir "$(BUILDS_GAME_DIR)"
+	-mkdir "$(BUILDS_DX_DIR)"
+	svn export --force "$(DATA_DIR)" "$(BUILDS_DX_DIR)"
+	cp $(PSP_EBOOT) "$(BUILDS_DX_DIR)"
+	cp *.prx "$(BUILDS_DX_DIR)"
 
 Source/SysPSP/MediaEnginePRX/MediaEngine.S:
 	$(MAKE) -C Source/SysPSP/MediaEnginePRX all

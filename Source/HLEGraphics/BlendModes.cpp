@@ -108,11 +108,8 @@ void PrintMux( FILE * fh, u64 mux )
 #endif
 /* To Devs,
  Once blendmodes are complete please clean up after yourself before commiting.
- Incomplete blendmodes should be kept at the bottom and Blends should be kept in order for cross referencing
- also please check common games (Mario, Zelda, Majora's Mask before commiting)
  
  Blending Options
- 
 
  details.ColourAdjuster.SetRGB();
  details.ColourAdjuster.SetA();
@@ -129,10 +126,8 @@ details.ColourAdjuster.ModulateA();
  details.ColourAdjuster.SetA( details.EnvColour );
  
 * Environment Color in SDK 
-
  sceGuTexEnvColor( details.xxxColour.GetColour() ); - xxx = Env or Prim
  
-
  -- Closure of blend
  sceGuTexFunc(xx,yy); - This is used in the texture function when a constant color is needed.
  
@@ -143,7 +138,6 @@ details.ColourAdjuster.ModulateA();
  GU_TFX_BLEND - 
  GU_TFX_DECAL - 
  
- yy
 
  The fields TCC_RGB and TCC_RGBA specify components that differ between the two different component modes.
 
@@ -159,6 +153,10 @@ details.ColourAdjuster.ModulateA();
  TIPS:
  
  If Ghosting Occurs, use RGB instead of RGBA or remove Opaque.
+ 
+ 
+ ** Textures are installed by default. To disable use : details.InstallTexture = false;
+ Read the Cycle guide carefully
  */
 
 
@@ -170,7 +168,7 @@ details.ColourAdjuster.ModulateA();
 */
 
 
-// 1080 Snowboarding 
+// 1080 Snowboarding Sky
 
 //case 0x00357e6a11fcf67bLL:
 //aRGB0: (Primitive    - Texel0      ) * Prim_Alpha   + Texel0      
@@ -180,9 +178,9 @@ details.ColourAdjuster.ModulateA();
 void BlendMode_0x00357e6a11fcf67bLL (BLEND_MODE_ARGS)
 {
 	
-//	details.ColourAdjuster.SetRGBA( details.PrimColour.ReplicateAlpha() );
+	details.ColourAdjuster.SetRGB( details.PrimColour.ReplicateAlpha() );
 	
-	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB); // Not ready yet.
+	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA); 
 }
 
 // 007 - Floor, Turok Enviroments, Silicon Valley Enviroments, and Pilot WIngs' Castle.
@@ -206,27 +204,6 @@ void BlendMode_0x0026a0041ffc93fcLL( BLEND_MODE_ARGS )
 		sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
 	}
 }
-//No Name and Monster Truck Madness Smog <-- looks like a bad blend
-//case 0x0026a0041ffc93fdLL:
-//aRGB0: (Texel1       - Texel0      ) * LOD_Frac     + Texel0      
-//aA0  : (Texel1       - Texel0      ) * Combined     + Texel0      
-//aRGB1: (Combined     - 0           ) * Shade        + 0           
-//aA1  : (0            - 0           ) * 0            + Env    
-
-void BlendMode_0x0026a0041ffc93fdLL( BLEND_MODE_ARGS )
-{
-	// XXXX need 2nd texture
-	
-	if( num_cycles == 1 )
-	{
-		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
-	}
-	else
-	{
-		details.ColourAdjuster.SetA( details.EnvColour );
-		sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
-	}
-}
 
 // 007 - Mountains
 //case 0x0026e4041ffcfffcLL:
@@ -241,7 +218,7 @@ void BlendMode_0x0026e4041ffcfffcLL( BLEND_MODE_ARGS )
 	if( num_cycles == 1 )
 	{
 		details.ColourAdjuster.SetAOpaque();	// Alpha 1.0		XXXX Need to modulate with t1 alpha
-		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
+		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 	}
 	else
 	{
@@ -259,18 +236,18 @@ void BlendMode_0x0026e4041ffcfffcLL( BLEND_MODE_ARGS )
 void BlendMode_0x0026a0041f1093fbLL( BLEND_MODE_ARGS )
 {
 	
-	//XXXX placeholder
-	
 	if( num_cycles == 1 )
 	{
+		details.ColourAdjuster.SetRGB(details.PrimColour);
 		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 	}
 	else
 	{
-		sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);			// XXXX Need to add Prim alpha
-	}
+	
+		sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
 
+}
 // AFA/007/- Gun/Bits and Paper Mario/Pilot Wings/Beetle Adventure Racing 
 //case 0x0026a0041f1093ffLL:
 //aRGB0: (Texel1       - Texel0      ) * LOD_Frac     + Texel0      
@@ -279,19 +256,42 @@ void BlendMode_0x0026a0041f1093fbLL( BLEND_MODE_ARGS )
 //aA1  : (Combined     - 0           ) * Shade        + 0           
 void BlendMode_0x0026a0041f1093ffLL( BLEND_MODE_ARGS )
 {
-	// XXXX need 2nd texture
-	
 	if( num_cycles == 1 )
 	{
+		details.ColourAdjuster.SetAOpaque();
 		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 	}
 	else
 	{
+	    details.ColourAdjuster.SetAOpaque();
 		sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 	}
+
+}
+// 007 watch guns
+//case 0x0026ea041f10ffffLL:
+//aRGB0: (Texel1       - Texel0      ) * LOD_Frac     + Texel0      
+//aA0  : (1            - 0           ) * Env          + 0           
+//aRGB1: (Combined     - 0           ) * Shade        + 0           
+//aA1  : (Combined     - 0           ) * Shade        + 0 
+
+void BlendMode_0x0026ea041f10ffffLL( BLEND_MODE_ARGS)
+{
+	if (num_cycles == 1)
+	{
+		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
+	}
+	else {
+		details.ColourAdjuster.SetAOpaque();
+		sceGuTexEnvColor( details.EnvColour.GetColour() );
+
+	}
+		sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGB);
 }
 
-// 007
+
+
+// 007 bridges and windows
 //case 0x0026a0041f1493ffLL:
 //aRGB0: (Texel1       - Texel0      ) * LOD_Frac     + Texel0      
 //aA0  : (Texel1       - Texel0      ) * Combined     + Texel0      
@@ -327,25 +327,7 @@ void BlendMode_0x001690031f0c93ffLL( BLEND_MODE_ARGS )
 	// Use the primitive for the r,g,b,a
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
-
-// 007 and Pilot Wings - Air.
-//case 0x00111404ff13ffffLL:
-//aRGB0: (Texel0       - 0           ) * Texel1       + 0           
-//aA0  : (Texel0       - 0           ) * Texel1       + 0           
-//aRGB1: (Combined     - 0           ) * Shade        + 0           
-//aA1  : (Combined     - 0           ) * Shade        + 0           
-void BlendMode_0x00111404ff13ffffLL( BLEND_MODE_ARGS )
-{
-	
-	if( num_cycles == 1 )
-	{
-		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
-	}
-	else
-	{
-		sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
-	}
-}
+ 
 
 // 007
 //case 0x001598045ffedbf8LL:
@@ -363,7 +345,7 @@ void BlendMode_0x001598045ffedbf8LL( BLEND_MODE_ARGS )
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
 }
 
-// 007
+// 007 menu backdrop
 //case 0x00167e2c33fdf6fbLL:
 //aRGB0: (Texel0       - Primitive   ) * Env_Alpha    + Primitive   
 //aA0  : (0            - 0           ) * 0            + Primitive   
@@ -374,8 +356,9 @@ void BlendMode_0x00167e2c33fdf6fbLL( BLEND_MODE_ARGS )
 	
 	
 	// XXXX Need to blend( Prim, T0, Enva )
-	details.ColourAdjuster.SetRGBA( details.PrimColour );
-	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
+	details.ColourAdjuster.SetRGB(details.EnvColour.ReplicateAlpha());
+	details.ColourAdjuster.SetA( details.PrimColour);
+	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGB);
 }
 
 
@@ -394,26 +377,6 @@ void BlendMode_0x00157fff2ffd7a38LL( BLEND_MODE_ARGS )
 	
 	details.ColourAdjuster.SetA( details.EnvColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
-}
-
-//AeroFighters Assault / Pilot Wing Sky
-//case 0x00627fff1ffcfc38LL:
-//aRGB0: (1            - Texel0      ) * Shade        + Texel0      
-//aA0  : (0            - 0           ) * 0            + 1           
-//aRGB1: (0            - 0           ) * 0            + Combined    
-//aA1  : (0            - 0           ) * 0            + Combined    
-void BlendMode_0x00627fff1ffcfc38LL( BLEND_MODE_ARGS )
-{
-	// RGB = Blend( T0, 1, Shade )
-	// A   = 1
-	//Install brakes Pilot Wings' sky
-	//
-	details.ColourAdjuster.SetAOpaque();	// Alpha 1.0
-	
-	// XXXX this is just selecting the texture colour, ignoring the blend
-	// Could do this by manually shading texture...
-	
-	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
 
 
@@ -453,13 +416,9 @@ void BlendMode_0x00ffe7ffffcf9fcfLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined
 void BlendMode_0x0026a1ff1ffc9238LL (BLEND_MODE_ARGS)
 {
-	//Alpha causes hosting
+	//Textures look corrupt (lines)
 	
-	if( num_cycles != 1 )
-	{
-		//details.ColourAdjuster.SetAOpaque();
-	}
-	sceGuTexFunc(GU_TFX_ADD,GU_TCC_RGB);
+		sceGuTexFunc(GU_TFX_ADD,GU_TCC_RGB);
 }
 //Blitz and All NFL Games - End Fields
 //case 0x00277fff1ffcf438LL:
@@ -510,7 +469,7 @@ void BlendMode_0x00127e2433fdf8fcLL( BLEND_MODE_ARGS )
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
 }
 
-// Banjo Kazooie - StrmnNrmn
+// Banjo Kazooie - StrmnNrmn *** (N64 Logo, characters etc)
 //case 0x001298043f15ffffLL:
 //aRGB0: (Texel0       - Primitive   ) * Env          + Primitive   
 //aA0  : (Texel0       - 0           ) * Shade        + 0           
@@ -519,6 +478,7 @@ void BlendMode_0x00127e2433fdf8fcLL( BLEND_MODE_ARGS )
 
 void BlendMode_0x001298043f15ffffLL( BLEND_MODE_ARGS )
 {
+
 	// //New Edit
 	// RGB = Blend( Prim, T0, Env ) * Shade
 	// A   = T0 * Shade * Env
@@ -526,7 +486,6 @@ void BlendMode_0x001298043f15ffffLL( BLEND_MODE_ARGS )
 	// Assume this is only ever used in 2 cycle
 	
 	// Hoplessly wrong - do Prim * Shade * T0, Env * Shade * T0
-	
 	if( num_cycles == 1 )
 	{
 		details.ColourAdjuster.SetRGB( c32::White );		// Set RGB to 1.0, i.e. select Texture
@@ -534,7 +493,6 @@ void BlendMode_0x001298043f15ffffLL( BLEND_MODE_ARGS )
 	else
 	{
 		// Leave RGB shade untouched
-		
 		details.ColourAdjuster.ModulateA( details.EnvColour );
 		
 	}
@@ -612,6 +570,7 @@ void BlendMode_0x00272c60150c937fLL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Env          + 0           
 void BlendMode_0x0062fe043f15f9ffLL( BLEND_MODE_ARGS )
 {
+	details.InstallTexture = false; 
 	c32		blend( details.PrimColour.Interpolate( c32::White, details.EnvColour ) );
 	
 	if( num_cycles == 1 )
@@ -625,23 +584,24 @@ void BlendMode_0x0062fe043f15f9ffLL( BLEND_MODE_ARGS )
 	}
 }
 
-// Banjo Kazooie - StrmnNrmn
-//case 0x00ff95fffffcfe38LL:
-//aRGB0: (0            - 0           ) * 0            + Texel0      
-//aA0  : (Texel0       - 0           ) * Texel1       + 0           
-//aRGB1: (0            - 0           ) * 0            + Combined    
-//aA1  : (0            - 0           ) * 0            + Combined    
-void BlendMode_0x00ff95fffffcfe38LL( BLEND_MODE_ARGS )
-{
-	
-	// XXXX needs t1 in alpha
-	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
-}
-
 
 /*
 //#C
 */
+// Conker Table
+//case 0x001218245531feffLL:
+//aRGB0: (Texel0       - Env         ) * Shade        + Primitive   
+//aA0  : (Texel0       - 0           ) * Shade        + 0           
+//aRGB1: (Texel0       - Env         ) * Shade        + Primitive   
+//aA1  : (Texel0       - 0           ) * Shade        + 0           
+void BlendMode_0x001218245531feffLL (BLEND_MODE_ARGS)
+{
+	details.ColourAdjuster.SetRGB (details.PrimColour);
+	details.ColourAdjuster.SetAOpaque();
+	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
+}
+
+
 
 //Conker - Window
 //case 0x00127e2455fdf2f9LL:
@@ -1146,11 +1106,9 @@ void BlendMode_0x00327e6411fcf87cLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Shade
 void BlendMode_0x0040fe8155fef97cLL (BLEND_MODE_ARGS)
 {
-	//XXX Placeholder
-	
+	details.ColourAdjuster.SetAOpaque();
 	details.ColourAdjuster.SetRGB( details.EnvColour );
-	//XXX Color has to be constant aka blend.
-	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
+	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGB);
 }
 
 /*
@@ -1248,18 +1206,6 @@ void BlendMode_0x001277ffffff9238LL (BLEND_MODE_ARGS)
 	
 	details.ColourAdjuster.SetA( details.PrimColour);
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
-}
-//Mario Party - River in Main Screen
-//case 0x00127624ffef93c9LL:
-//aRGB0: (Texel0       - 0           ) * Shade        + 0           
-//aA0  : (0            - Texel0      ) * Primitive    + Texel0      
-//aRGB1: (Texel0       - 0           ) * Shade        + 0           
-//aA1  : (0            - Texel0      ) * Primitive    + Texel0         
-void BlendMode_0x00127624ffef93c9LL (BLEND_MODE_ARGS)
-{
-	
-	details.ColourAdjuster.SetA( details.PrimColour  );
-	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA); //15.9 fps MODULATE
 }
 // Monster Truck Madness - Sky
 //case 0x00127e8bf0fffc3eLL:
@@ -1446,11 +1392,9 @@ void BlendMode_0x001114a3f0fff638LL (BLEND_MODE_ARGS)
 void BlendMode_0x0015fe042ffd79fcLL (BLEND_MODE_ARGS)
 
 {
-	
-	//details.ColourAdjuster.SetA( details.EnvColour );
-	//sceGuTexEnvColor( details.PrimColour.GetColour() );
 	details.ColourAdjuster.SetAOpaque();
-	//sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);		// No Modulate or Replace
+	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
+
 }
 //Paper Mario Lava Room - Mario & His Partner
 //case 0x00117e80f5fff438LL:
@@ -1535,36 +1479,7 @@ void BlendMode_0x007196e3332cfe7fLL (BLEND_MODE_ARGS)
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_ADD,GU_TCC_RGBA);
 }
-//Paper Mario - Mario Figure Transition.
-//case 0x00ffe7ffffcd92c9LL:
-//aRGB0: (0            - 0           ) * 0            + Primitive   
-//aA0  : (1            - Texel0      ) * Primitive    + Texel0      
-//aRGB1: (0            - 0           ) * 0            + Primitive   
-//aA1  : (1            - Texel0      ) * Primitive    + Texel0      
-void BlendMode_0x00ffe7ffffcd92c9LL (BLEND_MODE_ARGS)
-{
-	
-	details.ColourAdjuster.SetRGB( details.PrimColour);
-	details.ColourAdjuster.SetAOpaque();
-	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
-}
-//Paper Mario - Bushes
-//case 0x0026a0031ffc9378LL:
-//aRGB0: (Texel1       - Texel0      ) * LOD_Frac     + Texel0      
-//aA0  : (Texel1       - Texel0      ) * Combined     + Texel0      
-//aRGB1: (Combined     - 0           ) * Primitive    + Env         
-//aA1  : (0            - 0           ) * 0            + Combined  
 
-void BlendMode_0x0026a0031ffc9378LL (BLEND_MODE_ARGS)
-{
-	
-	if( num_cycles != 1 )
-	{
-		details.ColourAdjuster.SetRGB( details.PrimColour  );
-	}
-	sceGuTexEnvColor( details.EnvColour.GetColour() );
-	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB); //replace
-}
 //Paper Mario - Sides of the letter in Intro and In Game Menu
 //case 0x00117e60f5fff578LL:
 //aRGB0: (Texel0       - 0           ) * Texel1       + 0           
@@ -2108,23 +2023,7 @@ void BlendMode_0x0050d2a133a5b6dbLL( BLEND_MODE_ARGS )
 	sceGuTexEnvColor( details.EnvColour.GetColour() );
 	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);			//Modulate(prim) for now
 }
-//Pokemon Stadium 2 - Grass Surrounding
-//case 0x0020fe04f3ffff7fLL:
-//aRGB0: (Texel1       - 0           ) * Texel0       + 0
-//aA0  : (0            - 0           ) * 0            + 0
-//aRGB1: (Combined     - Primitive   ) * Shade        + Env
-//aA1  : (0            - 0           ) * 0            + 0
-void BlendMode_0x0020fe04f3ffff7fLL (BLEND_MODE_ARGS)
-{
-	//RGB: INEXACT = ( Shade * blend(Env,Prim,Texel0) )
-	//Alpha: Texel0
-	
-	// Correct
-	details.ColourAdjuster.SetRGB( details.EnvColour );
-	details.ColourAdjuster.SetAOpaque();
-	sceGuTexEnvColor( details.PrimColour.GetColour() );
-	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);		
-}
+
 //Pokemon Stadium 2 - (Beach Arena) Buildings Far, Top Base, and Chairs.
 //case 0x00fffe04f3fcf378LL:
 //aRGB0: (0            - 0           ) * 0            + Texel0
@@ -2141,23 +2040,7 @@ void BlendMode_0x00fffe04f3fcf378LL (BLEND_MODE_ARGS)
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
 
-//Pokemon Stadium 2 - Trees
-//case 0x00227fff3ffef238LL:
-//aRGB0: (Texel1       - Primitive   ) * Shade        + Env
-//aA0  : (0            - 0           ) * 0            + Texel0
-//aRGB1: (0            - 0           ) * 0            + Combined
-//aA1  : (0            - 0           ) * 0            + Combined
 
-void BlendMode_0x00227fff3ffef238LL (BLEND_MODE_ARGS)
-{
-	
-	details.ColourAdjuster.SetRGB( details.EnvColour );
-	details.ColourAdjuster.SetAOpaque();
-	sceGuTexEnvColor( details.PrimColour.GetColour() );
-
-	// RGBA = blend(e,p,t) for RGB, Modulate(t,1)
-	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);			
-}
 //Pokemon Stadium 2 -  Pole
 //case 0x00121804f3ffff78LL:
 //aRGB0: (Texel0       - 0           ) * Shade        + 0
@@ -2293,19 +2176,6 @@ sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
 //#Q
 */ 
 
-//Quake 64 - Everything lol
-//case 0x00117ffffffefc38LL:
-//aRGB0: (Texel0       - 0           ) * Texel1       + Env
-//aA0  : (0            - 0           ) * 0            + 1
-//aRGB1: (0            - 0           ) * 0            + Combined
-//aA1  : (0            - 0           ) * 0            + Combined
-void BlendMode_0x00117ffffffefc38LL (BLEND_MODE_ARGS)
-{
-	
-	details.ColourAdjuster.SetRGB( details.EnvColour );
-	details.ColourAdjuster.SetAOpaque();;
-	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
-}
 /* 
 //#R
 */
@@ -2362,7 +2232,7 @@ void BlendMode_0x00272c041ffc93f8LL( BLEND_MODE_ARGS )
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
 
-// Ridge Racer 64 - StrmnNrmn
+// Ridge Racer 64 menu text 
 //case 0x0030b2615566db6dLL:
 //aRGB0: (Primitive    - Env         ) * Texel0       + Env
 //aA0  : (Primitive    - Env         ) * Texel0       + Env
@@ -2396,7 +2266,7 @@ void BlendMode_0x0030fe045ffef3f8LL( BLEND_MODE_ARGS )
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);			// _RGBA = blend(e,p,t) for RGB, Modulate(t,1) for alpha blend breaks wictg
 }
 
-// Ridge Racer 64 - StrmnNrmn
+// Ridge Racer 64 Car backs
 //case 0x0040b467f0fffe3eLL:
 //aRGB0: (Shade        - 0           ) * Texel0       + 0
 //aA0  : (Primitive    - 0           ) * Texel1       + 0
@@ -2413,7 +2283,7 @@ void BlendMode_0x0040b467f0fffe3eLL( BLEND_MODE_ARGS )
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
 
-// Ridge Racer 64 - StrmnNrmn
+// Ridge Racer 64, road- StrmnNrmn
 //case 0x00117e045ffef3f8LL:
 //aRGB0: (Texel0       - Env         ) * Texel1       + Env
 //aA0  : (0            - 0           ) * 0            + Texel0
@@ -2613,7 +2483,7 @@ void BlendMode_0x00272c6015fc9378LL( BLEND_MODE_ARGS )
 	}
 }
 	 
-//Super Bowling 64 - Characters, Pines, and Ball
+//Super Bowling 64 - Character
 //case 0x00327feffffff638LL:
 //aRGB0: (Primitive    - 0           ) * Shade        + 0
 //aA0  : (0            - 0           ) * 0            + Primitive
@@ -2650,19 +2520,6 @@ void BlendMode_0x00f7ffeffffcf67bLL (BLEND_MODE_ARGS)
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
 
-//Super Bowling 64 - Fixes game / Blue Stuff
-//case 0x00127e00f003f200LL:
-//aRGB0: (Texel0       - 0           ) * Shade        + 0
-//aA0  : (0            - 0           ) * 0            + Texel0
-//aRGB1: (Combined     - Combined    ) * Combined     + Combined
-//aA1  : (Combined     - Combined    ) * Combined     + Combined
-
-void BlendMode_0x00127e00f003f200LL (BLEND_MODE_ARGS)
-
-{
-	
-	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
-}
 
 // San frasisco racing
 //case 0x00ffabfffffc9238LL:
@@ -2861,17 +2718,14 @@ void BlendMode_0x00ffffffff09f63fLL (BLEND_MODE_ARGS)
 	
 	if( num_cycles == 1 )
 	{
-	//	details.ColourAdjuster.SetRGB( c32::White );		// Set RGB to 1.0, i.e. select Texture
+		details.ColourAdjuster.SetRGB(details.PrimColour);
+		sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 	}
 	else
 	{
-		// Leave RGB shade untouched
 		
-	//	details.ColourAdjuster.ModulateA( details.PrimColour );
-		details.ColourAdjuster.SetAOpaque();
+		details.ColourAdjuster.SetRGBA(details.PrimColour);
 	}
-	
-	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
 
 // Tony Hawk Pro Skater and Top Gear Stages - StrmnNrmn
@@ -2967,18 +2821,9 @@ void BlendMode_0x0021a6ac10fc9238LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Texel0
 void BlendMode_0x00567eac11fcf279LL (BLEND_MODE_ARGS)
 {
-	// XXXX
-	
-	if( num_cycles == 1 )
-	{
-		//RGBA takes care of the placeholders : )
-		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA); 
-	}
-	else
-	{
-		// Yellow balloons are showing red......
-		sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
-	}
+
+	details.ColourAdjuster.SetRGB(details.EnvColour);
+		sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
 }
 // Wetrix
 //case 0x0011ffff2ffd7c38LL:
@@ -3069,6 +2914,28 @@ void BlendMode_0x00ff97ffff2cfa7dLL( BLEND_MODE_ARGS )
 /*
 //#Z
 */
+// Zelda Goron Bracelet, Giant Knife
+//case 0x00176c6035d8ed76LL:
+//aRGB0: (Texel0       - Primitive   ) * PrimLODFrac  + Texel0      
+//aA0  : (1            - 1           ) * 1            + 1           
+//aRGB1: (Primitive    - Env         ) * Combined     + Env         
+//aA1  : (1            - 1           ) * 1            + 1   
+void BlendMode_0x00176c6035d8ed76LL (BLEND_MODE_ARGS)
+{
+	if (num_cycles != 1)
+	{
+		
+		details.ColourAdjuster.SetRGB( details.EnvColour);
+		sceGuTexFunc(GU_TFX_ADD,GU_TCC_RGBA);
+	}
+	else
+	{
+			sceGuTexEnvColor( details.PrimColour.GetColour() );
+		//	details.ColourAdjuster.SetAOpaque();
+		sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
+	}
+
+}
 
 //Kokiri Sword Blade - Zelda OOT
 //case 0x00177e6035fcfd7eLL:
@@ -3987,6 +3854,7 @@ void BlendMode_0x00171c6035fd6578LL (BLEND_MODE_ARGS)
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
 	sceGuTexFunc(GU_TFX_ADD,GU_TCC_RGBA);
+	
 }
 // OOT - Dessert
 //case 0x00272a60150c937fLL:
@@ -4047,6 +3915,8 @@ void BlendMode_0x00277e041ffcfdf8LL (BLEND_MODE_ARGS)
 	}
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
+
+
 // OOT - Magical Stuff when Teleport to Temples
 //case 0x0017166035fcff78LL:
 //aRGB0: (Texel0       - Primitive   ) * PrimLODFrac  + Texel0
@@ -4313,203 +4183,12 @@ void BlendMode_0x00161a6025fd2578LL (BLEND_MODE_ARGS)
 }
 
 /*
-//MM - Globe on End
-//case 0x00272c601510c37fLL:
-//aRGB0: (Texel1       - Texel0      ) * PrimLODFrac  + Texel0
-//aA0  : (Texel1       - Shade       ) * 1            + Texel0
-//aRGB1: (Primitive    - Env         ) * Combined     + Env
-//aA1  : (Combined     - 0           ) * Shade        + 0
-void BlendMode_0x00272c601510c37fLL (BLEND_MODE_ARGS)
-{
-	// XXXX Z Fighting....
-	
-	details.ColourAdjuster.SetRGB( details.PrimColour  );
-	details.ColourAdjuster.SetA( details.EnvColour  );
-	sceGuTexEnvColor( details.EnvColour.GetColour() );
-	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
-}
-
-//Ocarina of time - Witches' Hairs
-//case 0x00262a60f50ce37fLL:
-//aRGB0: (Texel1       - 0           ) * Env_Alpha    + Texel0
-//aA0  : (Texel1       - 1           ) * Env          + Texel0
-//aRGB1: (Primitive    - Env         ) * Combined     + Env
-//aA1  : (Combined     - 0           ) * Primitive    + 0
-
-void BlendMode_0x00262a60f50ce37fLL (BLEND_MODE_ARGS)
-{
-	// XXXX placeholder implementation
-	
-		
-	if( num_cycles == 1 )
-	{
-		sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
-	}
-	else
-	{
-		//details.ColourAdjuster.SetRGB( details.PrimColour );
-		details.ColourAdjuster.SetRGBA( details.EnvColour.ReplicateAlpha() );
-		details.ColourAdjuster.SetAOpaque();
-		
-		// Show real color and not red.
-		sceGuTexEnvColor( details.PrimColour.GetColour() ); 
-		sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
-	}	
-}
-// OOT - Smog when wiches use their powers
-//case 0x00262660f510ff7fLL:
-//aRGB0: (Texel1       - 0           ) * Env_Alpha    + Texel0
-//aA0  : (Texel1       - 0           ) * Primitive    + 0
-//aRGB1: (Primitive    - Env         ) * Combined     + Env
-//aA1  : (Combined     - 0           ) * Shade        + 0
-void BlendMode_0x00262660f510ff7fLL (BLEND_MODE_ARGS)
-{
-	
-	details.ColourAdjuster.SetRGB( details.PrimColour );
-	details.ColourAdjuster.SetAOpaque();
-	//sceGuTexEnvColor( details.EnvColour.GetColour() ); 
-	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);		
-}
-// OOT - Witches Explotions from fire and ice.
-//case 0x00261a60f50ce37fLL:
-//aRGB0: (Texel1       - 0           ) * Env_Alpha    + Texel0
-//aA0  : (Texel0       - 1           ) * Env          + Texel0
-//aRGB1: (Primitive    - Env         ) * Combined     + Env
-//aA1  : (Combined     - 0           ) * Primitive    + 0
-
-void BlendMode_0x00261a60f50ce37fLL (BLEND_MODE_ARGS)
-{
-	// XXXX placeholder implementation
-	
-		
-	if( num_cycles == 1 )
-	{
-		details.EnvColour.ReplicateAlpha();
-		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
-	}
-	else
-	{
-		details.ColourAdjuster.SetRGB( details.EnvColour );
-		details.ColourAdjuster.SetA( details.PrimColour  );
-		
-		//sceGuTexEnvColor( details.PrimColour.GetColour() ); 
-		sceGuTexFunc(GU_TFX_ADD,GU_TCC_RGBA);
-	}	
-}
-//Witch, and Axe
-//case 0x0030fe045ffefffeLL:
-//aRGB0: (Primitive    - Env         ) * Texel0       + Env
-//aA0  : (0            - 0           ) * 0            + 0
-//aRGB1: (Combined     - 0           ) * Shade        + 0
-//aA1  : (0            - 0           ) * 0            + 1
-void BlendMode_0x0030fe045ffefffeLL( BLEND_MODE_ARGS )
-{
-	// XXXX placeholder implementation
-	
-		
-	if( num_cycles == 1 )
-	{
-		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
-	}
-	else
-	{
-		details.ColourAdjuster.SetRGB( details.EnvColour );
-		//details.ColourAdjuster.SetA( details.PrimColour  );
-		
-		// Show real color and not red.
-		sceGuTexEnvColor( details.PrimColour.GetColour() ); 
-		sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
-	}	
-}
-//OOT Witches Powers and Majora's Mask Exlosions. 
-//case 0x00161a60f50d657fLL:
-//aRGB0: (Texel0       - 0           ) * Env_Alpha    + Texel1
-//aA0  : (Texel0       - 1           ) * Env          + Texel1
-//aRGB1: (Primitive    - Env         ) * Combined     + Env
-//aA1  : (Combined     - 0           ) * Primitive    + 0
-void BlendMode_0x00161a60f50d657fLL( BLEND_MODE_ARGS )
-{
-	// XXXX placeholder implementation
-	
-		
-	if( num_cycles == 1 )
-	{
-		details.EnvColour.ReplicateAlpha();
-		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
-	}
-	else
-	{
-		details.ColourAdjuster.SetRGB( details.EnvColour );
-		details.ColourAdjuster.SetA( details.PrimColour  );
-		
-		//sceGuTexEnvColor( details.PrimColour.GetColour() ); 
-		sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
-	}	
-}
-*/
-// INCOMPLETE / NON WORKING BLENDS //
-//									//
-// MM - Menu 2D doesnt work yet
-//case 0x00ffe5fffffcfa38LL:
-//aRGB0: (0            - 0           ) * 0            + Texel0
-//aA0  : (1            - 0           ) * Texel1       + Env
-//aRGB1: (0            - 0           ) * 0            + Combined
-//aA1  : (0            - 0           ) * 0            + Combined
-/*
-1 Cycle:
-Alpha: INEXACT: ( Texel1 + Env )
-Stage 0: Texel0
-    GU_TFX_REPLACE, diffuse_rgb ignored
-    GU_TCC_RGB, diffuse_a := 1
-2 Cycles:
-Alpha: INEXACT: ( Texel1 + Env )
-Stage 0: Texel0
-    GU_TFX_REPLACE, diffuse_rgb ignored
-    GU_TCC_RGB, diffuse_a := 1
-
-void BlendMode_0x00ffe5fffffcfa38LL (BLEND_MODE_ARGS)
-{
-	
-	details.EnvColour.ReplicateAlpha();
-	//details.ColourAdjuster.SetA ( details.EnvColour );
-	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
-}
- //Charmanders Tail
- //case 0x003096805f1affffLL:
- //aRGB0: (Primitive    - Env         ) * Texel0       + Env         
- //aA0  : (Texel0       - 0           ) * Primitive    + 0           
- //aRGB1: (Shade        - 0           ) * Combined     + 0           
- //aA1  : (Combined     - 0           ) * 1            + 0           
- 1 Cycle:
- Alpha: ( Texel0 * Prim )
- Stage 0: blend(Env,Prim,Texel0)
- GU_TFX_BLEND, shade(a) := Environment, factor(b) := Primitive
- GU_TCC_RGBA, diffuse_a := Primitive
- 2 Cycles:
- Alpha: ( Texel0 * Prim )
- Stage 0: INEXACT = ( Shade * blend(Env,Prim,Texel0) )
- Need white texture
- GU_TFX_MODULATE, diffuse_rgb := Shade
- GU_TCC_RGBA, diffuse_a := Primitive
-
-//Paper Mario - Intro 2
-//case 0x0020a203ff13ff7fLL:
-//aRGB0: (Texel1       - 0           ) * Texel0       + 0           
-//aA0  : (Texel1       - 0           ) * Texel0       + 0           
-//aRGB1: (Combined     - 0           ) * Primitive    + Env         
-//aA1  : (Combined     - 0           ) * Shade        + 0           
-
-void BlendMode_0x0020a203ff13ff7fLL (BLEND_MODE_ARGS)
-{
-	
-	details.ColourAdjuster.SetRGB( details.EnvColour );
-	sceGuTexEnvColor( details.PrimColour.GetColour() );
-	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
-}
-*/
-
-
-
+ We just need to declare correct installed blends with TextureInstalled = true;
+ More commonly found with Second Texture not being found.
+ */
+void BlendMode_0x00127e00f003f200LL (BLEND_MODE_ARGS) {} // Super Bowling 64 Blue Stuff
+void BlendMode_0x0026a0031ffc9378LL (BLEND_MODE_ARGS) {} // Paper Mario Bushes
+void BlendMode_0x00ffe7ffffcd92c9LL (BLEND_MODE_ARGS) {} // Paper Mario Figure Transitions
 
 OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 {
@@ -4519,262 +4198,240 @@ OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 	{
 #define BLEND_MODE( x )		case (x):	return BlendMode_##x;
 			
-		//BLENDS#
-		
-		BLEND_MODE (0x00127eccf0fffc38LL);
-		BLEND_MODE (0x00157e2a33fdfcfeLL);
-		BLEND_MODE (0x00327ecbf0fffc3eLL);
-		BLEND_MODE (0x00127ecbf0fffc3eLL);
-		BLEND_MODE (0x0011fe052ffd73f8LL);
-		BLEND_MODE (0x00272c0415fc93feLL);
+		BLEND_MODE (0x0010a2c3f00fd23fLL);
+		BLEND_MODE (0x0010e5e0230b1d52LL);
+		BLEND_MODE (0x0010fe043ffdfdfeLL);
 		BLEND_MODE (0x001114a3f0fff638LL);
-		BLEND_MODE (0x00272c80350cf37fLL);
-		BLEND_MODE (0x0012fec8f2fdfe3bLL);
-		BLEND_MODE (0x00272c603514937fLL);
-		BLEND_MODE (0x0020ac03ff0f93ffLL);
-		BLEND_MODE (0x00272c031f0c93ffLL);
-		BLEND_MODE (0x00272c603410f33fLL);
-		BLEND_MODE (0x00127e0af3fff238LL);
-		BLEND_MODE (0x00117e80f5fff438LL);
-		BLEND_MODE (0x00619ac31137f7fbLL);
+		BLEND_MODE (0x001147fffffffe38LL);
+		BLEND_MODE (0x00115407f1ffca7eLL);
+		BLEND_MODE (0x00117e03fffe7fffLL);
+		BLEND_MODE (0x00117e045ffef3f8LL);
+		BLEND_MODE (0x00117e60f5fff578LL);
+		BLEND_MODE (0x00117e80f5fff438LL);	
+		BLEND_MODE (0x00119604ff5bfff8LL);
+		BLEND_MODE (0x001197ffff5bfe38LL);
+		BLEND_MODE (0x00119bffff5bfe38LL);
+		BLEND_MODE (0x0011fe052ffd73f8LL);
 		BLEND_MODE (0x0011fe2344fe7339LL);
 		BLEND_MODE (0x0011fe2355fefd7eLL);
-		BLEND_MODE (0x0022aa031f0c93ffLL);
-		BLEND_MODE (0x00161a6025fd2578LL);
-		BLEND_MODE (0x00117e04fffffffaLL);
-		BLEND_MODE (0x0012680322fd7eb8LL);
-		BLEND_MODE (0x0015fe2bfffff3f9LL);
-		BLEND_MODE (0x001147fffffffe38LL);
-		BLEND_MODE (0x0015982bff327f3fLL);
-		BLEND_MODE (0x0040fe8155fef379LL);
-		BLEND_MODE (0x0040fe8155fefd7eLL);
-		BLEND_MODE (0x0030fe045ffefdf8LL);
-		BLEND_MODE (0x0040fe8155fef97cLL);
-		BLEND_MODE (0x00ffe7ffffcf9fcfLL);
-		BLEND_MODE (0x00117ffffffefc38LL);
-		BLEND_MODE (0x00177e2efffefd7eLL);
-		BLEND_MODE (0x001277ffffff9238LL);
-		BLEND_MODE (0x001216acf0fffe38LL);
-		BLEND_MODE (0x0015fe2b33fdf6fbLL);
-		BLEND_MODE (0x007196e3332cfe7fLL);
-		BLEND_MODE (0x00f09a61501374ffLL);
-		BLEND_MODE (0x00127624ffef93c9LL);
-		BLEND_MODE (0x0061fec311fcf67bLL);
-		BLEND_MODE (0x0010a2c3f00fd23fLL);
-		BLEND_MODE (0x00262a6016fc9378LL);
-		BLEND_MODE (0x00322bff5f0e923fLL);
-		BLEND_MODE (0x0030abff5ffe9238LL);
-		BLEND_MODE (0x003135ff5f0ada3fLL);
-		BLEND_MODE (0x0010e5e0230b1d52LL);
-		BLEND_MODE (0x00117e60f5fff578LL);
-		BLEND_MODE (0x0026a0031ffc9378LL);
-		BLEND_MODE (0x0055fe041ffcf3f8LL);
-		BLEND_MODE (0x00309861550eff4fLL);
-		BLEND_MODE (0x0017fe2f77fcf87cLL);
-		BLEND_MODE (0x00277fff1ffcf438LL);
-		BLEND_MODE (0x0026a1ff1ffc9238LL);
-	//	BLEND_MODE (0x00272c601510c37fLL);
-		BLEND_MODE (0x00272c601510f37fLL);
-		BLEND_MODE (0x0020fe05f3fff738LL);
-		BLEND_MODE (0x00242c04ff0f93ffLL);
-		BLEND_MODE (0x0020a204ff0fffffLL);
-		BLEND_MODE (0x002722041f0cffffLL);
-		BLEND_MODE (0x0061e6c311cf9fcfLL);
-	//	BLEND_MODE (0x00261a60f50ce37fLL);
-	//	BLEND_MODE (0x00262660f510ff7fLL);
-		BLEND_MODE (0x0030b3fffffefa38LL);
-		BLEND_MODE (0x002712041f0cffffLL);
-	//	BLEND_MODE (0x00161a60f50d657fLL);
-		BLEND_MODE (0x00272e041f0c93ffLL);
-		BLEND_MODE (0x0020ac0aff0f93ffLL);
-	//	BLEND_MODE (0x0030fe045ffefffeLL);
-		BLEND_MODE (0x00262a60150d157fLL);
-	//	BLEND_MODE (0x00262a60f50ce37fLL);
-		BLEND_MODE (0x0020fe04ff0ff7ffLL);
-		BLEND_MODE (0x00ffedffffd996cbLL);
-		BLEND_MODE (0x0012fe2533fdf2f9LL);
-		BLEND_MODE (0x00272c041f1093ffLL);
-		BLEND_MODE (0x00209c03ff0f93ffLL);
-		BLEND_MODE (0x00157e80fffdfd7eLL);
-		BLEND_MODE (0x00347e04fffcfdfeLL);
-		BLEND_MODE (0x0061fe041ffcfdfeLL); 
-		BLEND_MODE (0x00257e04fffcfd7eLL);
-		BLEND_MODE (0x0055a68730fd923eLL);
-		BLEND_MODE (0x0010fe043ffdfdfeLL);
-		BLEND_MODE (0x00257e041ffcfdfeLL);
-		BLEND_MODE (0x0027fe041ffcfdfeLL);
-		BLEND_MODE (0x00127e035ffe7fffLL);
-		BLEND_MODE (0x00127e03ffffffffLL);
-		BLEND_MODE (0x00f5fa67f50c997fLL);
-		BLEND_MODE (0x00262a04130cf37dLL);
-		BLEND_MODE (0x00272c60350cf37fLL);
-		BLEND_MODE (0x00171660f50d757dLL);
-		BLEND_MODE (0x00121604f3ffff78LL);
-		BLEND_MODE (0x00121804f3ffff78LL);
-		BLEND_MODE (0x00227fff3ffef238LL);
-		BLEND_MODE (0x00277e041f0cf7ffLL);
-		BLEND_MODE (0x00fffe04f3fcf378LL);
-		BLEND_MODE (0x0020fe04f3ffff7fLL);
-		BLEND_MODE (0x0025fe0513fcff3fLL);
+		BLEND_MODE (0x0011ffff2ffd7c38LL);
+		BLEND_MODE (0x0011fffffffffc38LL);
 		BLEND_MODE (0x0020a205f3fff738LL);
-		BLEND_MODE (0x0050d2a133a5b6dbLL);
-		BLEND_MODE (0x00127e8bf0fffc3eLL);
-		BLEND_MODE (0x001217ff3ffe7e38LL);
-		BLEND_MODE (0x00127ffffffdfe3fLL);
-		BLEND_MODE (0x006093ff3f0dfe3fLL);
-		BLEND_MODE (0x00457fff3ffcfe3fLL);
-		BLEND_MODE (0x0060fe043ffdf3f8LL);
-		BLEND_MODE (0x00273c60f514e37fLL);
-		BLEND_MODE (0x00127fff3ffefe3fLL);
-		BLEND_MODE (0x0020ac04ff0f93ffLL);
-		BLEND_MODE (0x00167e6035fcf378LL);
-		BLEND_MODE (0x001616c0fffdf3f8LL);
-		BLEND_MODE (0x00567eac11fcf279LL);
-		BLEND_MODE (0x0021a6ac10fc9238LL);
-		BLEND_MODE (0x0022ffff1ffcfa38LL);
-		BLEND_MODE (0x00267e051ffcf7f8LL);
-		BLEND_MODE (0x00167e6035fcfd78LL);
-		BLEND_MODE (0x00267e031ffcfdf8LL);
-		BLEND_MODE (0x00272c603510937fLL);
-		BLEND_MODE (0x00272c6035a0937fLL);
-		BLEND_MODE (0x001197ffff5bfe38LL);
-		BLEND_MODE (0x00127ec1f0fffa38LL);
-		BLEND_MODE (0x00262a041f0c93ffLL);
-		BLEND_MODE (0x00262a601510937fLL);
-		BLEND_MODE (0x0050fe6b20fd7c3dLL);	
-		BLEND_MODE (0x0017166035fcff78LL);
-		BLEND_MODE (0x00119604ff5bfff8LL);
-		BLEND_MODE (0x00277e041ffcfdf8LL);
+		BLEND_MODE (0x00121603ff5bfff8LL);
 		BLEND_MODE (0x00121803ff5bfff8LL);
+		BLEND_MODE (0x00121804f3ffff78LL);
+		BLEND_MODE (0x001218245531feffLL);
 		BLEND_MODE (0x00121a03ff5bfff8LL);
-		BLEND_MODE (0x00272a60150c937fLL);
-		BLEND_MODE (0x00177e6035fcfd78LL);
-		BLEND_MODE (0x00171c6035fd6578LL);
-		BLEND_MODE (0x0030fe045f0ef3ffLL);
-		BLEND_MODE (0x001114a7f3fffef8LL);
-		BLEND_MODE (0x00272c60150ce37fLL);
-		BLEND_MODE (0x00547ea833fdf2f9LL);
-		BLEND_MODE (0x00551aaa1134fe7fLL);
-		BLEND_MODE (0x00157fff2ffd7a38LL);
-		BLEND_MODE (0x0026a0031ffc93f9LL);
-		BLEND_MODE (0x002714041f0cffffLL);
+		BLEND_MODE (0x00121604f3ffff78LL);
+		BLEND_MODE (0x001217ff3ffe7e38LL);
+		BLEND_MODE (0x0012680322fd7eb8LL);
+		BLEND_MODE (0x001277ffffff9238LL);
+		BLEND_MODE (0x00127e00f003f200LL);
+		BLEND_MODE (0x00127e035ffe7fffLL);
+		BLEND_MODE (0x00127e03fffe73f8LL);
+		BLEND_MODE (0x00127e03fffe7fffLL);
+		BLEND_MODE (0x00127e03ffffffffLL);
+		BLEND_MODE (0x00127e0af3fff238LL);
 		BLEND_MODE (0x00127e0bf1fffc7bLL);
-		BLEND_MODE (0x00377e041ffcf7f8LL);
+		BLEND_MODE (0x00127ec1f0fffa38LL);
+		BLEND_MODE (0x00127ecbf0fffc3eLL);
+		BLEND_MODE (0x00127eccf0fffc38LL);
+		BLEND_MODE (0x00127e2433fdf8fcLL);
 		BLEND_MODE (0x00127e61f0fff83eLL);
-		BLEND_MODE (0x00272c031f1093ffLL);
-		BLEND_MODE (0x0020ac04ff0f92ffLL);
+		BLEND_MODE (0x00127eacf0fff238LL);
+		BLEND_MODE (0x00127fff3ffe7238LL);
+		BLEND_MODE (0x00127fff3ffe7e3fLL);
+		BLEND_MODE (0x00127fff3ffefe3fLL);
+		BLEND_MODE (0x00127ffffffdfe3fLL);
+		BLEND_MODE (0x001298043f15ffffLL);
+		BLEND_MODE (0x0012fe2533fdf2f9LL);	
+		BLEND_MODE (0x0012fec8f2fdfe3bLL);
+		BLEND_MODE (0x00147e045ffefbf8LL);
+		BLEND_MODE (0x00147e2844fe793cLL); 
+		BLEND_MODE (0x00147e2844fe7b3dLL);
+		BLEND_MODE (0x00157e602ffd77f8LL);
+		BLEND_MODE (0x00157e2a33fdfcfeLL);
+		BLEND_MODE (0x00157e80fffdfd7eLL);
+		BLEND_MODE (0x00157fff2ffd7a38LL);
+		BLEND_MODE (0x001598045ffedbf8LL);
+		BLEND_MODE (0x0015982bff327f3fLL);	
+		BLEND_MODE (0x0015fe2b33fdf6fbLL);
+		BLEND_MODE (0x0015fe042ffd79fcLL);
+		BLEND_MODE (0x0015fe2bfffff3f9LL);
+		BLEND_MODE (0x00161a6025fd2578LL);	
+		BLEND_MODE (0x001616c0fffdf3f8LL);
+		BLEND_MODE (0x00167e2c33fdf6fbLL);
+		BLEND_MODE (0x00167e6035fcf378LL);
+		BLEND_MODE (0x00167e6035fcfd78LL);
+		BLEND_MODE (0x00167e6035fcff7eLL);
+		BLEND_MODE (0x001690031f0c93ffLL);
+		BLEND_MODE (0x0017166035fcff78LL);	
+		BLEND_MODE (0x00171660f50d757dLL);
+		BLEND_MODE (0x00171a2e3336ff7fLL);
+		BLEND_MODE (0x00171c6035fd6578LL);
+		BLEND_MODE (0x00176c6035d8ed76LL);
 		BLEND_MODE (0x0017666025fd7f78LL);
-		BLEND_MODE (0x0026a060150c937fLL);
-		BLEND_MODE (0x0030fe045ffeff3fLL);
-		BLEND_MODE (0x00277e0413fcff3fLL);
-		BLEND_MODE (0x0025a86014fcb738LL);
-		BLEND_MODE (0x0021246015fc9378LL);
-		BLEND_MODE (0x0030b3ff5f12da3fLL);
-		BLEND_MODE (0x0026a0041ffc93e0LL);
-		BLEND_MODE (0x0025fe6014fcf73bLL);
-		BLEND_MODE (0x00119bffff5bfe38LL);
-		BLEND_MODE (0x00262a041ffc93f8LL);
-		BLEND_MODE (0x00267e051ffcfdf8LL);
-		BLEND_MODE (0x00262a603510937fLL);
-		BLEND_MODE (0x00262a60350ce37fLL);
+		BLEND_MODE (0x00177e2efffefd7eLL);
+		BLEND_MODE (0x00177e6035fcfd78LL);	
+		BLEND_MODE (0x00177e6035fcfd7eLL);
+		BLEND_MODE (0x0017fe2f77fcf87cLL);
+		BLEND_MODE (0x00209c03ff0f93ffLL);
+		BLEND_MODE (0x0020a204ff13ffffLL);
+		BLEND_MODE (0x0020a204ff0fffffLL);
+		BLEND_MODE (0x0020ac04ff0f92ffLL);
+		BLEND_MODE (0x0020ac03ff0f93ffLL);
+		BLEND_MODE (0x0020ac04ff0f93ffLL);
+		BLEND_MODE (0x0020ac0aff0f93ffLL);
 		BLEND_MODE (0x0020ac60350c937fLL);
-		BLEND_MODE ( 0x00272c041f0c93ffLL);
+		BLEND_MODE (0x0020fe04ff0ff7ffLL);
+		BLEND_MODE (0x0020fe05f3fff738LL);
+		BLEND_MODE (0x0021246015fc9378LL);
+		BLEND_MODE (0x0021a6ac10fc9238LL);
+		BLEND_MODE (0x0022aa031f0c93ffLL);
+		BLEND_MODE (0x0022aa041f0c93ffLL);
+		BLEND_MODE (0x00242c04ff0f93ffLL);
 		BLEND_MODE (0x0025266015fc9378LL);
-		BLEND_MODE ( 0x00262a041f1093ffLL);
-		BLEND_MODE ( 0x00267e041f10fdffLL);
-		BLEND_MODE ( 0x00267e031f0cfdffLL );
-		BLEND_MODE( 0x00ffe7ffffcd92c9LL );
-		BLEND_MODE( 0x00127e03fffe7fffLL );
-		BLEND_MODE( 0x00117e03fffe7fffLL );
-		BLEND_MODE( 0x00127e03fffe73f8LL );
-		BLEND_MODE( 0x00127fff3ffe7e3fLL );
-		BLEND_MODE( 0x00127fff3ffe7238LL );
-		BLEND_MODE( 0x00147e045ffefbf8LL );
-		BLEND_MODE( 0x0026a1ff1ffc923cLL );
-		BLEND_MODE( 0x00262a041f5893f8LL );
-		BLEND_MODE( 0x00272c60350c937fLL );
-		BLEND_MODE( 0x00272c603510e37fLL );
-		BLEND_MODE( 0x00ffabffff0d92ffLL );
-		BLEND_MODE (0x00177e6035fcfd7eLL );
-		BLEND_MODE( 0x0030f861fff393c9LL );
-		BLEND_MODE( 0x0030fe045ffefbf8LL );
-		BLEND_MODE( 0x00317fff5ffef438LL );
-		BLEND_MODE( 0x00327feffffff638LL );
-		BLEND_MODE( 0x00327e6411fcf87cLL );
-		BLEND_MODE( 0x00357e6a11fcfc7eLL );
-		BLEND_MODE( 0x00517e023f55ffffLL );
-	//	BLEND_MODE( 0x0020a203ff13ff7fLL );
-		BLEND_MODE( 0x0020a204ff13ffffLL );
-		BLEND_MODE( 0x00f7ffeffffcf67bLL );
-		BLEND_MODE( 0x005632801ffcfff8LL );
-		BLEND_MODE( 0x0050fea144fe7339LL );
-		BLEND_MODE( 0x0071fee311fcf279LL );
-		BLEND_MODE (0x0011fffffffffc38LL );
-        BLEND_MODE( 0x00111404ff13ffffLL );
-        BLEND_MODE( 0x00117e045ffef3f8LL );
-		BLEND_MODE( 0x00127e00f003f200LL );
-		BLEND_MODE( 0x0011ffff2ffd7c38LL );
-		BLEND_MODE( 0x00115407f1ffca7eLL );
-		BLEND_MODE( 0x00121603ff5bfff8LL );
-		BLEND_MODE( 0x00127e2433fdf8fcLL );
-		BLEND_MODE( 0x001298043f15ffffLL );
-		BLEND_MODE( 0x00147e2844fe7b3dLL );
-		BLEND_MODE( 0x00147e2844fe793cLL ); 
-		BLEND_MODE( 0x0015fe042ffd79fcLL );
-		BLEND_MODE( 0x00157e602ffd77f8LL );	
-		BLEND_MODE( 0x001598045ffedbf8LL );
-		BLEND_MODE( 0x00167e2c33fdf6fbLL );
-		BLEND_MODE( 0x00167e6035fcff7eLL );
-		BLEND_MODE( 0x001690031f0c93ffLL );
-		BLEND_MODE( 0x00171a2e3336ff7fLL );
-		BLEND_MODE( 0x0022aa041f0c93ffLL );
-		BLEND_MODE( 0x002527ff1ffc9238LL );
-		BLEND_MODE( 0x00262a60150c937fLL );
-		BLEND_MODE( 0x00267e041f0cfdffLL ); 
-		BLEND_MODE( 0x00267e041ffcfdf8LL );
-		BLEND_MODE( 0x00267e60350cf37fLL );
-		BLEND_MODE( 0x002698041f14ffffLL );
-		BLEND_MODE( 0x0026a0041f0c93ffLL );
-		BLEND_MODE( 0x0026a0041f1093fbLL );
-		BLEND_MODE( 0x0026a0041f1093ffLL );
-		BLEND_MODE( 0x0026a0041f1493ffLL );
-		BLEND_MODE( 0x0026a0041ffc93f8LL );
-		BLEND_MODE( 0x0026a0041ffc93fcLL );
-		BLEND_MODE( 0x0026a0041ffc93fdLL );
-        BLEND_MODE( 0x0026e4041ffcfffcLL );
-        BLEND_MODE( 0x00272c041ffc93f8LL );
-		BLEND_MODE( 0x00272c60150c937fLL );
-		BLEND_MODE( 0x00272c6015fc9378LL );
-		BLEND_MODE( 0x00272c60350ce37fLL );
-		BLEND_MODE( 0x00309661552efb7dLL );
-		BLEND_MODE( 0x0030b2045ffefff8LL );
-		BLEND_MODE( 0x0030b26144664924LL );
-	    BLEND_MODE( 0x0030b2615566db6dLL );
-		BLEND_MODE( 0x0030b3ff5ffeda38LL );
-		BLEND_MODE( 0x0030ec045fdaedf6LL );
-        BLEND_MODE( 0x0030fe045ffef3f8LL );
-		BLEND_MODE( 0x00357e6a11fcf67bLL );
-		BLEND_MODE( 0x00373c6e117b9fcfLL );
-        BLEND_MODE( 0x00377e041ffcf3f8LL );
-		BLEND_MODE( 0x00377e041ffcfdf8LL );
-		BLEND_MODE( 0x0040b467f0fffe3eLL );
-		BLEND_MODE( 0x004093ffff0dfe3fLL );
-		BLEND_MODE( 0x004193ffff0ffe3fLL );
-		BLEND_MODE( 0x005094023f15ffffLL );
-		BLEND_MODE( 0x00541aa83335feffLL );	
-		BLEND_MODE( 0x00627fff1ffcfc38LL );
-		BLEND_MODE( 0x0062fe043f15f9ffLL );
-		BLEND_MODE( 0x00671604fffcff78LL );
-		BLEND_MODE( 0x00671603fffcff78LL );
-		BLEND_MODE( 0x00ff95fffffcfe38LL );
-		BLEND_MODE( 0x00ff97ffff2cfa7dLL );
-        BLEND_MODE( 0x00ffabfffffc9238LL );
-		BLEND_MODE( 0x00ffadfffffd9238LL );
-		BLEND_MODE( 0x00ffd5fffffcf238LL );
-		BLEND_MODE( 0x00ffffffff09f63fLL );
-		BLEND_MODE( 0x00127eacf0fff238LL );
-		BLEND_MODE( 0x0030fe045ffefdfeLL );
-
+		BLEND_MODE (0x002527ff1ffc9238LL);
+		BLEND_MODE (0x00257e041ffcfdfeLL);
+		BLEND_MODE (0x00257e04fffcfd7eLL);
+		BLEND_MODE (0x0025a86014fcb738LL);
+		BLEND_MODE (0x0025fe0513fcff3fLL);
+		BLEND_MODE (0x0025fe6014fcf73bLL);
+		BLEND_MODE (0x00262a04130cf37dLL);
+		BLEND_MODE (0x00262a041f1093ffLL);	
+		BLEND_MODE (0x00262a041f5893f8LL);
+		BLEND_MODE (0x00262a041ffc93f8LL);
+		BLEND_MODE (0x00262a041f0c93ffLL);
+		BLEND_MODE (0x00262a60150c937fLL);
+		BLEND_MODE (0x00262a60150d157fLL);
+		BLEND_MODE (0x00262a601510937fLL);
+		BLEND_MODE (0x00262a60350ce37fLL);
+		BLEND_MODE (0x00262a603510937fLL);
+		BLEND_MODE (0x0026a0031ffc93f9LL);
+		BLEND_MODE (0x0026a0031ffc9378LL); 
+		BLEND_MODE (0x0026a1ff1ffc923cLL);
+		BLEND_MODE (0x0026a1ff1ffc9238LL);
+		BLEND_MODE (0x0026ea041f10ffffLL);
+		BLEND_MODE (0x00262a6016fc9378LL);
+		BLEND_MODE (0x00267e031f0cfdffLL);
+		BLEND_MODE (0x00267e031ffcfdf8LL);
+		BLEND_MODE (0x00267e051ffcf7f8LL);
+		BLEND_MODE (0x00267e051ffcfdf8LL);
+		BLEND_MODE (0x00267e60350cf37fLL);	
+		BLEND_MODE (0x00267e041ffcfdf8LL);
+		BLEND_MODE (0x00267e041f0cfdffLL); 
+		BLEND_MODE (0x00267e041f10fdffLL);
+		BLEND_MODE (0x002698041f14ffffLL);
+		BLEND_MODE (0x0026a0041f0c93ffLL);
+		BLEND_MODE (0x0026a0041f1093fbLL);
+		BLEND_MODE (0x0026a0041f1093ffLL);
+		BLEND_MODE (0x0026a0041f1493ffLL);
+		BLEND_MODE (0x0026a0041ffc93f8LL);
+		BLEND_MODE (0x0026a0041ffc93fcLL);
+		BLEND_MODE (0x0026a060150c937fLL);
+        BLEND_MODE (0x0026e4041ffcfffcLL);
+		BLEND_MODE (0x002712041f0cffffLL);
+		BLEND_MODE (0x002714041f0cffffLL);
+		BLEND_MODE (0x002722041f0cffffLL);
+		BLEND_MODE (0x00272a60150c937fLL);
+		BLEND_MODE (0x00272c031f0c93ffLL);	
+		BLEND_MODE (0x00272c031f1093ffLL);
+		BLEND_MODE (0x00272c0415fc93feLL);
+		BLEND_MODE (0x00272c041f0c93ffLL);
+		BLEND_MODE (0x00272c041f1093ffLL);
+		BLEND_MODE (0x00272c041ffc93f8LL);
+		BLEND_MODE (0x00272c60150c937fLL);
+		BLEND_MODE (0x00272c60150ce37fLL);
+		BLEND_MODE (0x00272c603410f33fLL);	
+		BLEND_MODE (0x00272c603510937fLL);
+		BLEND_MODE (0x00272c601510f37fLL);
+		BLEND_MODE (0x00272c6035a0937fLL);
+		BLEND_MODE (0x00272c6015fc9378LL);
+		BLEND_MODE (0x00272c60350c937fLL);
+		BLEND_MODE (0x00272c60350ce37fLL);
+		BLEND_MODE (0x00272c60350cf37fLL);
+		BLEND_MODE (0x00272c603510e37fLL);
+		BLEND_MODE (0x00272c603514937fLL);
+		BLEND_MODE (0x00273c60f514e37fLL);
+		BLEND_MODE (0x00272c80350cf37fLL);
+		BLEND_MODE (0x00277e0413fcff3fLL);
+		BLEND_MODE (0x00277e041f0cf7ffLL);
+		BLEND_MODE (0x00272e041f0c93ffLL);
+		BLEND_MODE (0x00277e041ffcfdf8LL);
+		BLEND_MODE (0x00277fff1ffcf438LL);	
+		BLEND_MODE (0x0027fe041ffcfdfeLL);	
+		BLEND_MODE (0x00309861550eff4fLL);
+		BLEND_MODE (0x00309661552efb7dLL);
+		BLEND_MODE (0x0030abff5ffe9238LL);
+		BLEND_MODE (0x0030b2045ffefff8LL);
+		BLEND_MODE (0x0030b26144664924LL);
+	    BLEND_MODE (0x0030b2615566db6dLL);	
+		BLEND_MODE (0x0030b3ff5ffeda38LL);
+		BLEND_MODE (0x0030b3ff5f12da3fLL);	
+		BLEND_MODE (0x0030b3fffffefa38LL);
+		BLEND_MODE (0x0030ec045fdaedf6LL);
+		BLEND_MODE (0x0030f861fff393c9LL);
+		BLEND_MODE (0x0030fe045f0ef3ffLL);
+        BLEND_MODE (0x0030fe045ffef3f8LL);
+		BLEND_MODE (0x0030fe045ffefbf8LL);
+		BLEND_MODE (0x0030fe045ffefdf8LL);
+		BLEND_MODE (0x0030fe045ffefdfeLL);
+		BLEND_MODE (0x0030fe045ffeff3fLL);
+		BLEND_MODE (0x003135ff5f0ada3fLL);
+		BLEND_MODE (0x00317fff5ffef438LL);
+		BLEND_MODE (0x00322bff5f0e923fLL);
+		BLEND_MODE (0x00327e6411fcf87cLL);	
+		BLEND_MODE (0x00327ecbf0fffc3eLL);
+		BLEND_MODE (0x00327feffffff638LL);
+		BLEND_MODE (0x00347e04fffcfdfeLL);
+		BLEND_MODE (0x00357e6a11fcf67bLL);
+		BLEND_MODE (0x00357e6a11fcfc7eLL);
+		BLEND_MODE (0x00373c6e117b9fcfLL);
+        BLEND_MODE (0x00377e041ffcf3f8LL);
+		BLEND_MODE (0x00377e041ffcf7f8LL);
+		BLEND_MODE (0x00377e041ffcfdf8LL);
+		BLEND_MODE (0x0040b467f0fffe3eLL);	
+		BLEND_MODE (0x004093ffff0dfe3fLL);
+		BLEND_MODE (0x0040fe8155fef379LL);
+		BLEND_MODE (0x0040fe8155fef97cLL);
+		BLEND_MODE (0x0040fe8155fefd7eLL);
+		BLEND_MODE (0x004193ffff0ffe3fLL);
+		BLEND_MODE (0x00457fff3ffcfe3fLL);	
+		BLEND_MODE (0x005094023f15ffffLL);
+		BLEND_MODE (0x0050d2a133a5b6dbLL);
+		BLEND_MODE (0x0050fea144fe7339LL);
+		BLEND_MODE (0x0050fe6b20fd7c3dLL);	
+		BLEND_MODE (0x00517e023f55ffffLL);
+		BLEND_MODE (0x00541aa83335feffLL);
+		BLEND_MODE (0x00547ea833fdf2f9LL);
+		BLEND_MODE (0x0055a68730fd923eLL);
+		BLEND_MODE (0x0055fe041ffcf3f8LL);
+		BLEND_MODE (0x005632801ffcfff8LL);
+		BLEND_MODE (0x00567eac11fcf279LL);
+		BLEND_MODE (0x006093ff3f0dfe3fLL);
+		BLEND_MODE (0x0060fe043ffdf3f8LL);
+		BLEND_MODE (0x00619ac31137f7fbLL);
+		BLEND_MODE (0x0061e6c311cf9fcfLL);
+		BLEND_MODE (0x0061fe041ffcfdfeLL); 
+		BLEND_MODE (0x0061fec311fcf67bLL);
+		BLEND_MODE (0x0062fe043f15f9ffLL);
+		BLEND_MODE (0x00671604fffcff78LL);
+		BLEND_MODE (0x00671603fffcff78LL);
+		BLEND_MODE (0x0071fee311fcf279LL);
+		BLEND_MODE (0x00f09a61501374ffLL);
+		BLEND_MODE (0x00f5fa67f50c997fLL);
+		BLEND_MODE (0x00f7ffeffffcf67bLL);
+		BLEND_MODE (0x00ff97ffff2cfa7dLL);
+		BLEND_MODE (0x00ffabffff0d92ffLL);	
+        BLEND_MODE (0x00ffabfffffc9238LL);
+		BLEND_MODE (0x00ffadfffffd9238LL);
+		BLEND_MODE (0x00ffd5fffffcf238LL);
+		BLEND_MODE (0x00fffe04f3fcf378LL);
+		BLEND_MODE (0x00ffe7ffffcd92c9LL);
+		BLEND_MODE (0x00ffe7ffffcf9fcfLL);
+		BLEND_MODE (0x00ffedffffd996cbLL);
+		BLEND_MODE (0x00ffffffff09f63fLL);
+			
 #undef BLEND_MODE
 	}
 

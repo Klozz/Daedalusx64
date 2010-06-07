@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ConvertImage.h"			// Convert555ToRGBA
 #include "Microcode.h"
 #include "Ucode.h"
+#include "UcodeDefs.h"
 
 #include "Utility/Profiler.h"
 #include "Utility/IO.h"
@@ -464,8 +465,6 @@ static void DLParser_SetuCode( GBIVersion gbi_version, UCodeVersion ucode_versio
 	//
 	//Set up selected ucode table
 	//
-	//gInstructionLookup[ucode_ver][command.cmd0>>24](&command);	// Check me : &command
-
 	gInstructionLookup[ucode_ver][command.cmd0>>24](&command);
 }
 	
@@ -643,6 +642,9 @@ static void	DLParser_ProcessDList()
 		PROFILE_DL_CMD( command.cmd );
 		
 		// Mm what do to here? This feels akward, should we set up our ucode tables here??
+		// Conker and other games are crashing here if undef DAEDALUS_DEBUG_DISPLAYLIST... weird...
+		// Somethin really bad is here.
+		//
 		gInstructionLookup[ ucode_ver ][ command.cmd ]( &command );
 
 		// Check limit
@@ -1662,14 +1664,16 @@ void DLParser_SetTileSize( MicroCodeCommand *command )
 //*****************************************************************************
 void DLParser_SetTImg( MicroCodeCommand *command )
 {
-	g_TI.Format		= (command->cmd0>>21)&0x7;
-	g_TI.Size		= (command->cmd0>>19)&0x3;
-	g_TI.Width		= (command->cmd0&0x0FFF) + 1;
-	g_TI.Address	= RDPSegAddr(command->cmd1);
+	SetTImg* temp = (SetTImg*)command;
+
+	g_TI.Format		= temp->fmt;
+	g_TI.Size		= temp->siz;
+	g_TI.Width		= temp->width + 1;
+	g_TI.Address	= RDPSegAddr(temp->addr);
+	//g_TI.bpl		= g_TI.Width << g_TI.Size >> 1; // Do we need to handle?
 
 	DL_PF("    Image: 0x%08x Fmt: %s/%s Width: %d (Pitch: %d)", g_TI.Address, gFormatNames[g_TI.Format], gSizeNames[g_TI.Size], g_TI.Width, g_TI.GetPitch());
 }
-
 
 //*****************************************************************************
 //
@@ -1988,21 +1992,26 @@ void DLParser_SetZImg( MicroCodeCommand *command )
 
 void DLParser_SetCImg( MicroCodeCommand *command )
 {
-	u32 format = (command->cmd0>>21)&0x7;
-	u32 size   = (command->cmd0>>19)&0x3;
-	u32 width  = (command->cmd0&0x0FFF) + 1;
-	u32 newaddr	= RDPSegAddr(command->cmd1) & 0x00FFFFFF;
-	//u32 bpl		= width << size >> 1;	// Bpl doesn't seem to exist on real N64, but it seems to help.. Unused for now..
+	SetTImg* temp = (SetTImg*)command;
+
+	u32 format = temp->fmt;
+	u32 size   = temp->siz;
+	u32 width  = temp->width + 1;
+	u32 newaddr	= RDPSegAddr(temp->addr) & 0x00FFFFFF;
+	//u32 bpl		= width << size >> 1;	// Do we need to handle?
 
 	DL_PF("    Image: 0x%08x", RDPSegAddr(command->cmd1));
 	DL_PF("    Fmt: %s Size: %s Width: %d", gFormatNames[ format ], gSizeNames[ size ], width);
 
+	// Not sure if this really necesary.
+	//
+	/*
 	if( g_CI.Address == newaddr && g_CI.Format == format && g_CI.Size == size && g_CI.Width == width )
 	{
 		DL_PF("    Set CIMG to the same address, no change, skipped");
 		//DBGConsole_Msg(0, "SetCImg: Addr=0x%08X, Fmt:%s-%sb, Width=%d\n", g_CI.Address, gFormatNames[ format ], gSizeNames[ size ], width);
 		return;
-	}
+	}*/
 
 	//g_CI.Bpl = bpl;
 	g_CI.Address = newaddr;
@@ -2061,14 +2070,11 @@ void DLParser_SetFillColor( MicroCodeCommand *command )
 //*****************************************************************************
 void DLParser_SetFogColor( MicroCodeCommand *command )
 {
-	u8 r	= N64COL_GETR(command->cmd1);
-	u8 g	= N64COL_GETG(command->cmd1);
-	u8 b	= N64COL_GETB(command->cmd1);
-	u8 a	= N64COL_GETA(command->cmd1);
+	SetColor* temp = (SetColor*)command;
+	DL_PF("    RGBA: %d %d %d %d", temp->r, temp->g, temp->b, temp->a);
+	DL_PF("	   Set Fog color: %08X", temp->color);
 
-	DL_PF("    RGBA: %d %d %d %d", r, g, b, a);
-
-	c32	fog_colour( r, g, b, a );
+	c32	fog_colour( temp->r, temp->g, temp->b, temp->a );
 
 	PSPRenderer::Get()->SetFogColour( fog_colour );
 }
@@ -2078,18 +2084,10 @@ void DLParser_SetFogColor( MicroCodeCommand *command )
 //*****************************************************************************
 void DLParser_SetBlendColor( MicroCodeCommand *command )
 {
-	u8 r	= N64COL_GETR(command->cmd1);
-	u8 g	= N64COL_GETG(command->cmd1);
-	u8 b	= N64COL_GETB(command->cmd1);
-	u8 a	= N64COL_GETA(command->cmd1);
+	SetColor* temp = (SetColor*)command;
+	DL_PF("    RGBA: %d %d %d %d", temp->r, temp->g, temp->b, temp->a);
 
-	use(r);
-	use(g);
-	use(b);
-
-	DL_PF("    RGBA: %d %d %d %d", r, g, b, a);
-
-	PSPRenderer::Get()->SetAlphaRef(a);
+	PSPRenderer::Get()->SetAlphaRef( temp->a );
 }
 
 //*****************************************************************************
@@ -2097,19 +2095,10 @@ void DLParser_SetBlendColor( MicroCodeCommand *command )
 //*****************************************************************************
 void DLParser_SetPrimColor( MicroCodeCommand *command )
 {
-	u32 m	= (command->cmd0>>8)&0xFF;
-	u32 l	= (command->cmd0)&0xFF;
-	u8 r	= N64COL_GETR(command->cmd1);
-	u8 g	= N64COL_GETG(command->cmd1);
-	u8 b	= N64COL_GETB(command->cmd1);
-	u8 a	= N64COL_GETA(command->cmd1);
+	SetColor* temp = (SetColor*)command;
+	DL_PF("    M:%d L:%d RGBA: %d %d %d %d", temp->prim_min_level, temp->prim_level, temp->r, temp->g, temp->b, temp->a);
 
-	use(m);
-	use(l);
-
-	DL_PF("    M:%d L:%d RGBA: %d %d %d %d", m, l, r, g, b, a);
-
-	c32	prim_colour( r, g, b, a );
+	c32	prim_colour( temp->r, temp->g, temp->b, temp->a );
 
 	PSPRenderer::Get()->SetPrimitiveColour( prim_colour );
 }
@@ -2119,18 +2108,13 @@ void DLParser_SetPrimColor( MicroCodeCommand *command )
 //*****************************************************************************
 void DLParser_SetEnvColor( MicroCodeCommand *command )
 {
-	u8 r	= N64COL_GETR(command->cmd1);
-	u8 g	= N64COL_GETG(command->cmd1);
-	u8 b	= N64COL_GETB(command->cmd1);
-	u8 a	= N64COL_GETA(command->cmd1);
+	SetColor* temp = (SetColor*)command;
+	DL_PF("    RGBA: %d %d %d %d", temp->r, temp->g, temp->b, temp->a);
 
-	DL_PF("    RGBA: %d %d %d %d", r, g, b, a);
-
-	c32	env_colour( r, g, b, a );
+	c32	env_colour( temp->r, temp->g, temp->b, temp->a );
 
 	PSPRenderer::Get()->SetEnvColour( env_colour );
 }
-
 
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST

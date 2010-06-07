@@ -65,5 +65,94 @@ struct GBI2_Matrix
 	unsigned int    addr;
 };
 
+struct GBI0_Vtx
+{
+	unsigned int len:16;
+	unsigned int v0:4;
+	unsigned int n:4;
+	unsigned int cmd:8;
+	unsigned int addr;
+};
+
+struct GBI1_Vtx
+{
+	unsigned int len:10;
+	unsigned int n:6;
+	unsigned int :1;
+	unsigned int v0:7;
+	unsigned int cmd:8;
+	unsigned int addr;
+};
+
+
+struct GBI2_Vtx
+{
+	unsigned int vend:8;
+	unsigned int :4;
+	unsigned int n:8;
+	unsigned int :4;
+	unsigned int cmd:8;
+	unsigned int addr;
+};
+
+struct GBI_Texture
+{
+	unsigned int	enable_gbi0:1;
+	unsigned int	enable_gbi2:1;
+	unsigned int	:6;
+	unsigned int	tile:3;
+	unsigned int	level:3;
+	unsigned int	:10;
+	unsigned int	cmd:8;
+	unsigned int	scaleT:16;
+	unsigned int	scaleS:16;
+};
+
+struct SetTImg
+{
+	unsigned int    width:12;
+	unsigned int    :7;
+	unsigned int    siz:2;
+	unsigned int    fmt:3;
+	unsigned int	cmd:8;
+	unsigned int    addr;
+};
+
+struct LoadTile
+{
+	unsigned int	tl:12;
+	unsigned int	sl:12;
+	unsigned int	cmd:8;
+
+	unsigned int	th:12;
+	unsigned int	sh:12;
+	unsigned int	tile:3;
+	unsigned int	pad:5;
+};
+
+struct SetColor 
+{
+	unsigned int	prim_level:8;
+	unsigned int	prim_min_level:8;
+	unsigned int	pad:8;
+	unsigned int	cmd:8;
+
+	union 
+	{
+		unsigned int	color;
+		struct 
+		{
+			unsigned int fillcolor:16;
+			unsigned int fillcolor2:16;
+		};
+		struct 
+		{
+			unsigned int a:8;
+			unsigned int b:8;
+			unsigned int g:8;
+			unsigned int r:8;
+		};
+	};
+};
 
 #endif

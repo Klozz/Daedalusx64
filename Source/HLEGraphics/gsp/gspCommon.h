@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../DebugDisplayList.h"
 #include "../TextureCache.h"
 #include "../Microcode.h"
+#include "../UcodeDefs.h"
 
 #include "../Utility/Profiler.h"
 

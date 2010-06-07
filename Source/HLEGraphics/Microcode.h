@@ -48,7 +48,7 @@ enum GBIVersion
 };
 
 void	GBIMicrocode_DetectVersion( u32 code_base, u32 code_size, u32 data_base, u32 data_size, GBIVersion * gbi_version, UCodeVersion * ucode_version );
-
+/*
 struct MicroCodeCommand
 {
 	union
@@ -69,10 +69,30 @@ struct MicroCodeCommand
 		};
 	};
 };
+*/
+struct MicroCodeCommand
+{
+	struct 
+	{
+		union 
+		{
+			//u64		_u64;
 
-#define UcodeFunc(name)	void name(MicroCodeCommand)
+			unsigned int cmd0;
+			struct 
+			{
+				unsigned int arg0:24;
+				unsigned int cmd:8;
+			};
+		};
+		unsigned int cmd1;
+	};
+	u64	force_structure_alignment;
+};
 
-typedef void ( * MicroCodeInstruction )( MicroCodeCommand command );
+typedef void(*MicroCodeInstruction)(MicroCodeCommand*);
+
+#define UcodeFunc(name)	void name(MicroCodeCommand*)
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 void			GBIMicrocode_ResetMicrocodeHistory();

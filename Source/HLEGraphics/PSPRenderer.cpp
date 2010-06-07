@@ -2350,7 +2350,7 @@ void	PSPRenderer::SetScissor( s32 x0, s32 y0, s32 x1, s32 y1 )
 //*****************************************************************************
 //
 //*****************************************************************************
-void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, EMatrixLoadStyle load_style)
+void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace)
 {
 	if (bPush)
 	{
@@ -2359,7 +2359,7 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, EMatrixLoadSt
 		else
 			mProjectionTop++;
 
-		if (load_style == MATRIX_LOAD)
+		if (bReplace)
 			// Load projection matrix
 			mProjectionStack[mProjectionTop] = mat;
 		else
@@ -2368,7 +2368,7 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, EMatrixLoadSt
 	}
 	else
 	{
-		if (load_style == MATRIX_LOAD)
+		if (bReplace)
 			// Load projection matrix
 			mProjectionStack[mProjectionTop] = mat;
 		else
@@ -2381,7 +2381,7 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, EMatrixLoadSt
 //*****************************************************************************
 //
 //*****************************************************************************
-void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, EMatrixLoadStyle load_style)
+void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace)
 {
 	// ModelView
 	if (bPush)
@@ -2392,7 +2392,7 @@ void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, EMatrixLoadSty
 			mModelViewTop++;
 
 		// We should store the current projection matrix...
-		if (load_style == MATRIX_LOAD)
+		if (bReplace)
 		{
 			// Load projection matrix
 			mModelViewStack[mModelViewTop] = mat;
@@ -2404,7 +2404,7 @@ void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, EMatrixLoadSty
 	}
 	else	// NoPush
 	{
-		if (load_style == MATRIX_LOAD)
+		if (bReplace)
 		{
 			// Load projection matrix
 			mModelViewStack[mModelViewTop] = mat;

@@ -21,26 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gspCommon.h"
 
 
-///
-// Conker multiple tri ucodes
-
-// Move these
-#define	TriC0 0x10
-#define	TriC1 0x11
-#define	TriC2 0x12
-#define	TriC3 0x13
-#define	TriC4 0x14
-#define	TriC5 0x15
-#define	TriC6 0x16
-#define	TriC7 0x17
-#define	TriC8 0x18
-#define	TriC9 0x19
-#define	TriCa 0x1a
-#define	TriCb 0x1b
-#define	TriCc 0x1c
-#define	TriCd 0x1d
-#define	TriCe 0x1e
-#define	TriCf 0x1f
 
 u32 ConkerVtxZAddr = 0;
 u32 PDCIAddr = 0;
@@ -109,11 +89,11 @@ void DLParser_DumpVtxInfoDKR(u32 address, u32 v0_idx, u32 num_verts)
 //
 //*****************************************************************************
 
-void DLParser_GBI0_Vtx_Gemini( MicroCodeCommand command )
+void DLParser_GBI0_Vtx_Gemini( MicroCodeCommand *command )
 {
-	u32 address = RDPSegAddr((command.cmd1));
-	u32 v0_idx =  (((command.cmd0)>>9)&0x1F);
-	u32 num_verts  = (((command.cmd0) >>19 )&0x1F);
+	u32 address = RDPSegAddr((command->cmd1));
+	u32 v0_idx =  (((command->cmd0)>>9)&0x1F);
+	u32 num_verts  = (((command->cmd0) >>19 )&0x1F);
 
 
 	DL_PF("    Address 0x%08x, v0: %d, Num: %d", address, v0_idx, num_verts);
@@ -130,7 +110,7 @@ void DLParser_GBI0_Vtx_Gemini( MicroCodeCommand command )
 
 	//if( dwAddr == 0 || dwAddr < 0x2000)
 	//{
-	//	address = (command.cmd1)+RDPSegAddr(dwDKRVtxAddr);
+	//	address = (command->cmd1)+RDPSegAddr(dwDKRVtxAddr);
 	//}
 
 	// Check that address is valid...
@@ -153,12 +133,12 @@ void DLParser_GBI0_Vtx_Gemini( MicroCodeCommand command )
 //
 //*****************************************************************************
 // MOVE!
-void DLParser_GBI0_Vtx_ShadowOfEmpire( MicroCodeCommand command )
+void DLParser_GBI0_Vtx_ShadowOfEmpire( MicroCodeCommand *command )
 {
-      u32 address = RDPSegAddr((command.cmd1));
-      u32 len = ((command.cmd0))&0xffff;
+      u32 address = RDPSegAddr((command->cmd1));
+      u32 len = ((command->cmd0))&0xffff;
 
-      u32 n= (((command.cmd0) >> 4) & 0xfff) / 33 + 1;
+      u32 n= (((command->cmd0) >> 4) & 0xfff) / 33 + 1;
       u32 v0 = 0;
 
       use(len);
@@ -191,11 +171,11 @@ void DLParser_GBI0_Vtx_ShadowOfEmpire( MicroCodeCommand command )
 //00229A58: 06000000 800DE520 CMD G_GBI1_DL  Displaylist at 800DE520 (stackp 1, limit 0)
 //00229B90: 07070038 00225850 CMD G_DLINMEM  Displaylist at 80225850 (stackp 1, limit 7)
 
-void DLParser_DLInMem( MicroCodeCommand command )
+void DLParser_DLInMem( MicroCodeCommand *command )
 {
-	u32		length( (command.cmd0 >> 16) & 0xFF );
-	u32		push( G_DL_PUSH ); //(command.cmd0 >> 16) & 0xFF;
-	u32		address( 0x00000000 | command.cmd1 ); //RDPSegAddr(command.cmd1);
+	u32		length( (command->cmd0 >> 16) & 0xFF );
+	u32		push( G_DL_PUSH ); //(command->cmd0 >> 16) & 0xFF;
+	u32		address( 0x00000000 | command->cmd1 ); //RDPSegAddr(command->cmd1);
 
 	DL_PF("    Address=0x%08x Push: 0x%02x", address, push);
 
@@ -225,11 +205,11 @@ void DLParser_DLInMem( MicroCodeCommand command )
 // 0x40 load
 
 
-void DLParser_MtxDKR( MicroCodeCommand command )
+void DLParser_MtxDKR( MicroCodeCommand *command )
 {	
-	u32 address     = RDPSegAddr(command.cmd1);
-	u32 mtx_command = (command.cmd0>>16)&0xFF;
-	u32 length      = (command.cmd0)    &0xFFFF;
+	u32 address     = RDPSegAddr(command->cmd1);
+	u32 mtx_command = (command->cmd0>>16)&0xFF;
+	u32 length      = (command->cmd0)    &0xFFFF;
 
 	use(length);
 
@@ -304,15 +284,15 @@ void DLParser_MtxDKR( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_MoveWord_DKR( MicroCodeCommand command )
+void DLParser_MoveWord_DKR( MicroCodeCommand *command )
 {
 	u32 num_lights;
 
-	switch ((command.cmd0) & 0xFF)
+	switch ((command->cmd0) & 0xFF)
 	{
 	case G_MW_NUMLIGHT:
 		{
-			num_lights = (command.cmd1)&0x7;
+			num_lights = (command->cmd1)&0x7;
 			DL_PF("    G_MW_NUMLIGHT: Val:%d", num_lights);
 
 			gAmbientLightIdx = num_lights;
@@ -332,11 +312,11 @@ void DLParser_MoveWord_DKR( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_GBI0_Vtx_DKR( MicroCodeCommand command )
+void DLParser_GBI0_Vtx_DKR( MicroCodeCommand *command )
 {
-	u32 address = RDPSegAddr(command.cmd1);
+	u32 address = RDPSegAddr(command->cmd1);
 	u32 v0_idx =  0;
-	u32 num_verts  = ((command.cmd0 & 0xFFF) - 0x08) / 0x12;
+	u32 num_verts  = ((command->cmd0 & 0xFFF) - 0x08) / 0x12;
 
 	DL_PF("    Address 0x%08x, v0: %d, Num: %d", address, v0_idx, num_verts);
 
@@ -371,17 +351,17 @@ void DLParser_GBI0_Vtx_DKR( MicroCodeCommand command )
 // The previous way of calculating was based on the assumption that
 // there was no "n" field. I didn't realise that the n/length fields shared the
 // lower 16 bits (in a 7:9 split).
-// u32 length    = (command.cmd0)&0xFFFF;
+// u32 length    = (command->cmd0)&0xFFFF;
 // u32 num_verts = (length + 1) / 0x210;					// 528
-// u32 v0_idx    = ((command.cmd0>>16)&0xFF)/VertexStride;	// /5
+// u32 v0_idx    = ((command->cmd0>>16)&0xFF)/VertexStride;	// /5
 //*****************************************************************************
-void DLParser_GBI0_Vtx_WRUS( MicroCodeCommand command )
+void DLParser_GBI0_Vtx_WRUS( MicroCodeCommand *command )
 {
-	u32 address = RDPSegAddr(command.cmd1);
+	u32 address = RDPSegAddr(command->cmd1);
 	
-	u32 v0  = ((command.cmd0 >>16 ) & 0xff) / 5;
-	u32 n   =  (command.cmd0 >>9  ) & 0x7f;
-	u32 len =  (command.cmd0      ) & 0x1ff;
+	u32 v0  = ((command->cmd0 >>16 ) & 0xff) / 5;
+	u32 n   =  (command->cmd0 >>9  ) & 0x7f;
+	u32 len =  (command->cmd0      ) & 0x1ff;
 
 	use(len);
 
@@ -406,20 +386,20 @@ void DLParser_GBI0_Vtx_WRUS( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_DmaTri( MicroCodeCommand command )
+void DLParser_DmaTri( MicroCodeCommand *command )
 {
 	bool tris_added = false;
-	u32 address = RDPSegAddr(command.cmd1);
+	u32 address = RDPSegAddr(command->cmd1);
 
 
-	u32 flag = (command.cmd0 & 0x00FF0000) >> 16;
+	u32 flag = (command->cmd0 & 0x00FF0000) >> 16;
 	if (flag&1) 
 		PSPRenderer::Get()->SetCullMode(false,true);
 	else
 		PSPRenderer::Get()->SetCullMode(false,false);
 
 
-	u32 count = ((command.cmd0 & 0xFFF0) >> 4);
+	u32 count = ((command->cmd0 & 0xFFF0) >> 4);
 	u32 i;
 	u32 * pData = &g_pu32RamBase[address/4];
 
@@ -464,7 +444,7 @@ void DLParser_DmaTri( MicroCodeCommand command )
 // Dark Rift runs properly without custom microcodes, and has the same symptoms...
 // We need Turbo3D ucode support, actually a modified version of it, thanks Gonetz for the info :D
 
-void DLParser_RSP_Last_Legion_0x80( MicroCodeCommand command )
+void DLParser_RSP_Last_Legion_0x80( MicroCodeCommand *command )
 {     
       gDisplayListStack.back().addr += 16;
 	  DL_PF("DLParser_RSP_Last_Legion_0x80");
@@ -473,15 +453,15 @@ void DLParser_RSP_Last_Legion_0x80( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_RSP_Last_Legion_0x00( MicroCodeCommand command )
+void DLParser_RSP_Last_Legion_0x00( MicroCodeCommand *command )
 {
 
       gDisplayListStack.back().addr += 16;
 	  DL_PF("DLParser_RSP_Last_Legion_0x00");
 
-      if( (command.cmd0) == 0 && (command.cmd1) )
+      if( (command->cmd0) == 0 && (command->cmd1) )
       {
-              u32 newaddr = RDPSegAddr((command.cmd1));
+              u32 newaddr = RDPSegAddr((command->cmd1));
               if( newaddr >= MAX_RAM_ADDRESS )
               {
                       DLParser_PopDL();
@@ -510,7 +490,7 @@ void DLParser_RSP_Last_Legion_0x00( MicroCodeCommand command )
                       gDisplayListStack.push_back(dl);
               }
       }
-      else if( (command.cmd1) == 0 )
+      else if( (command->cmd1) == 0 )
       {
               DLParser_PopDL();
       }
@@ -524,7 +504,7 @@ void DLParser_RSP_Last_Legion_0x00( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_TexRect_Last_Legion( MicroCodeCommand command )
+void DLParser_TexRect_Last_Legion( MicroCodeCommand *command )
 {
 	u32 pc = gDisplayListStack.back().addr;		// This points to the next instruction
 	u32 command2 = *(u32 *)(g_ps8RamBase + pc);
@@ -535,8 +515,8 @@ void DLParser_TexRect_Last_Legion( MicroCodeCommand command )
 	DL_PF("0x%08x: %08x %08x", pc, *(u32 *)(g_ps8RamBase + pc+0), *(u32 *)(g_ps8RamBase + pc+4));
 
 	RDP_TexRect tex_rect;
-	tex_rect.cmd0 = command.cmd0;
-	tex_rect.cmd1 = command.cmd1;
+	tex_rect.cmd0 = command->cmd0;
+	tex_rect.cmd1 = command->cmd1;
 	
 	//Fisnihing up instructions ! 
 	tex_rect.cmd2 = command2;
@@ -563,10 +543,10 @@ void DLParser_TexRect_Last_Legion( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_RDPHalf1_GoldenEye( MicroCodeCommand command )
+void DLParser_RDPHalf1_GoldenEye( MicroCodeCommand *command )
 {
 	// Check for invalid address
-	if ( (command.cmd1)>>24 != 0xce )	
+	if ( (command->cmd1)>>24 != 0xce )	
 		return;
 
 	u32 tile = 0;
@@ -609,39 +589,38 @@ void DLParser_RDPHalf1_GoldenEye( MicroCodeCommand command )
 	gDisplayListStack.back().addr += 312;
 }
 
-//Conker
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_GBI2_Conker( MicroCodeCommand command )
+void DLParser_GBI2_Conker( MicroCodeCommand *command )
 {
 
 	u32 pc = gDisplayListStack.back().addr;		// This points to the next instruction
 
     bool tris_added = false;
 
-    while ( command.cmd == TriC0 || command.cmd == TriC1 || command.cmd == TriC2 ||
-			command.cmd == TriC3 || command.cmd == TriC4 ||	command.cmd == TriC5 ||
-			command.cmd == TriC6 || command.cmd == TriC7 || command.cmd == TriC8 ||
-			command.cmd == TriC9 || command.cmd == TriCa || command.cmd == TriCb ||
-			command.cmd == TriCc || command.cmd == TriCd || command.cmd == TriCe || 
-			command.cmd == TriCf )
+    while ( command->cmd == 0x10 || command->cmd == 0x11 || command->cmd == 0x12 ||
+			command->cmd == 0x13 || command->cmd == 0x14 || command->cmd == 0x15 ||
+			command->cmd == 0x16 || command->cmd == 0x17 || command->cmd == 0x18 ||
+			command->cmd == 0x19 || command->cmd == 0x1a || command->cmd == 0x1b ||
+			command->cmd == 0x1c || command->cmd == 0x1d || command->cmd == 0x1e || 
+			command->cmd == 0x1f )
     {
 		u32 idx[12];
-		idx[0] = (command.cmd1   )&0x1F;
-		idx[1] = (command.cmd1>> 5)&0x1F;
-		idx[2] = (command.cmd1>>10)&0x1F;
-		idx[3] = (command.cmd1>>15)&0x1F;
-		idx[4] = (command.cmd1>>20)&0x1F;
-		idx[5] = (command.cmd1>>25)&0x1F;
+		idx[0] = (command->cmd1   )&0x1F;
+		idx[1] = (command->cmd1>> 5)&0x1F;
+		idx[2] = (command->cmd1>>10)&0x1F;
+		idx[3] = (command->cmd1>>15)&0x1F;
+		idx[4] = (command->cmd1>>20)&0x1F;
+		idx[5] = (command->cmd1>>25)&0x1F;
 
-		idx[6] = (command.cmd0    )&0x1F;
-		idx[7] = (command.cmd0>> 5)&0x1F;
-		idx[8] = (command.cmd0>>10)&0x1F;
+		idx[6] = (command->cmd0    )&0x1F;
+		idx[7] = (command->cmd0>> 5)&0x1F;
+		idx[8] = (command->cmd0>>10)&0x1F;
 
-		idx[ 9] = (((command.cmd0>>15)&0x7)<<2)|(command.cmd1>>30);
-		idx[10] = (command.cmd0>>18)&0x1F;
-		idx[11] = (command.cmd0>>23)&0x1F;
+		idx[ 9] = (((command->cmd0>>15)&0x7)<<2)|(command->cmd1>>30);
+		idx[10] = (command->cmd0>>18)&0x1F;
+		idx[11] = (command->cmd0>>23)&0x1F;
 
 		for( u32 i=0; i<4; i++)
 		{
@@ -652,8 +631,8 @@ void DLParser_GBI2_Conker( MicroCodeCommand command )
 			tris_added |= PSPRenderer::Get()->AddTri(v0, v1, v2);
 		}
 
-		command.cmd0			= *(u32 *)(g_pu8RamBase + pc+0);
-		command.cmd1			= *(u32 *)(g_pu8RamBase + pc+4);
+		command->cmd0			= *(u32 *)(g_pu8RamBase + pc+0);
+		command->cmd1			= *(u32 *)(g_pu8RamBase + pc+4);
 		pc += 8;
     }
 
@@ -677,10 +656,10 @@ void RDP_GFX_Force_Vertex_Z_Conker(u32 address)
 //*****************************************************************************
 //
 //*****************************************************************************
-void RSP_MoveMem_Conker( MicroCodeCommand command )
+void RSP_MoveMem_Conker( MicroCodeCommand *command )
 {
-	u32 type = ((command.cmd0)     ) & 0xFE;
-	u32 address = RDPSegAddr(command.cmd1);
+	u32 type = ((command->cmd0)     ) & 0xFE;
+	u32 address = RDPSegAddr(command->cmd1);
 
 	if( type == G_GBI2_MV_MATRIX )
 	{
@@ -688,7 +667,7 @@ void RSP_MoveMem_Conker( MicroCodeCommand command )
 	}
 	else if( type == G_GBI2_MV_LIGHT )
 	{
-		u32 offset2 = ((command.cmd0) >> 5) & 0x3FFF;
+		u32 offset2 = ((command->cmd0) >> 5) & 0x3FFF;
 		u32 light = 0xFF;
 
 		if( offset2 >= 0x30 )
@@ -713,9 +692,9 @@ void RSP_MoveMem_Conker( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-void RSP_MoveWord_Conker( MicroCodeCommand command )
+void RSP_MoveWord_Conker( MicroCodeCommand *command )
 {
-	u32 type = ((command.cmd0) >> 16) & 0xFF;
+	u32 type = ((command->cmd0) >> 16) & 0xFF;
 
 	if( type != G_MW_NUMLIGHT )
 	{
@@ -723,7 +702,7 @@ void RSP_MoveWord_Conker( MicroCodeCommand command )
 	}
 	else
 	{
-		u32 num_lights = command.cmd1/48;
+		u32 num_lights = command->cmd1/48;
 		DL_PF("     G_MW_NUMLIGHT: %d", num_lights);
 
 		gAmbientLightIdx = num_lights+1;
@@ -734,12 +713,12 @@ void RSP_MoveWord_Conker( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-void RSP_Vtx_Conker( MicroCodeCommand command )
+void RSP_Vtx_Conker( MicroCodeCommand *command )
 {
 	
-	u32 address = RDPSegAddr(command.cmd1);
-	u32 len    = ((command.cmd0   )&0xFFF)/2;
-	u32 n      = ((command.cmd0>>12)&0xFFF);
+	u32 address = RDPSegAddr(command->cmd1);
+	u32 len    = ((command->cmd0   )&0xFFF)/2;
+	u32 n      = ((command->cmd0>>12)&0xFFF);
 	u32 v0		= len - n;
 
 	use(len);
@@ -760,22 +739,22 @@ void RSP_Vtx_Conker( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-void RSP_Set_Vtx_CI_PD( MicroCodeCommand command )
+void RSP_Set_Vtx_CI_PD( MicroCodeCommand *command )
 {
 	// Color index buf address
-	PDCIAddr = RDPSegAddr(command.cmd1);
+	PDCIAddr = RDPSegAddr(command->cmd1);
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-void RSP_Vtx_PD( MicroCodeCommand command )
+void RSP_Vtx_PD( MicroCodeCommand *command )
 {
 	
-	u32 address = RDPSegAddr(command.cmd1);
-	u32 v0 =  ((command.cmd0)>>16)&0x0F;
-	u32 n  = (((command.cmd0)>>20)&0x0F)+1;
-	u32 len = (command.cmd0)&0xFFFF;
+	u32 address = RDPSegAddr(command->cmd1);
+	u32 v0 =  ((command->cmd0)>>16)&0x0F;
+	u32 n  = (((command->cmd0)>>20)&0x0F)+1;
+	u32 len = (command->cmd0)&0xFFFF;
 
 	use(len);
 

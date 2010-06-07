@@ -120,8 +120,8 @@ public:
 
 	void				ResetMatrices();
 	void				PrintActive();
-	void				SetProjection(const Matrix4x4 & mat, bool bPush, EMatrixLoadStyle load_style);
-	void				SetWorldView(const Matrix4x4 & mat, bool bPush, EMatrixLoadStyle load_style);
+	void				SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace);
+	void				SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace);
 	void				PopProjection();
 	void				PopWorldView();
 

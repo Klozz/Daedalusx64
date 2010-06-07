@@ -115,7 +115,7 @@ DAED_PSP_SRCS =		Source/SysPSP/Graphics/DrawText.cpp \
 			Source/SysPSP/MediaEnginePRX/MediaEngine.S \
 			Source/SysPSP/MediaEnginePRX/me.c \
 			Source/SysPSP/DveMgr/pspDveManager.S \
-			Source/SysPSP/KernelButtonsPrx/KernelButtons.S \
+			Source/SysPSP/KernelButtonsPrx/kernelbuttons.S \
 			Source/SysPSP/Utility/exception.cpp
 
 DAED_HLEGFX_SRCS =	Source/SysPSP/Plugins/GraphicsPluginPSP.cpp \
@@ -243,7 +243,7 @@ ifeq ($(VERSION),)
 	include $(PSPSDK)/lib/build.mak
 svn:
 	@echo svnversion not found, trying SubWCRev
-	@SubWCRev . ./Source/svnversion.txt ./Source/svnversion.h
+	@-SubWCRev . ./Source/svnversion.txt ./Source/svnversion.h
 else
 	#Unix
 	CFLAGS += -DSVNVERSION=\"$(VERSION)\"
@@ -280,6 +280,9 @@ mediaengine.prx:
 
 exception.prx:
 	$(MAKE) -C Source/SysPSP/ExceptionHandler/prx all
+
+Source/SysPSP/KernelButtonsPrx/kernelbuttons.o:
+	$(MAKE) -C Source/SysPSP/KernelButtonsPrx kernelbuttons.o
 
 kernelbuttons.prx:
 	$(MAKE) -C Source/SysPSP/KernelButtonsPrx all

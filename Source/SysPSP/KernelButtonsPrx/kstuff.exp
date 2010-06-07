@@ -9,9 +9,8 @@ PSP_EXPORT_VAR_HASH(module_info)
 PSP_EXPORT_END
 
 # Export our function
-PSP_EXPORT_START(buttons, 0, 0x4001) 
+PSP_EXPORT_START(kernelbuttons, 0, 0x4001) 
 PSP_EXPORT_FUNC_HASH(getbuttons)
-
 
 PSP_EXPORT_END
 

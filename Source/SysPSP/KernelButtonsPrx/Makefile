@@ -21,7 +21,8 @@ LIBS=$(STDLIBS)$(YOURLIBS)
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build.mak
 
-EXTRA_TARGETS = kernelbuttons.S
+EXTRA_TARGETS += kernelbuttons.S
+EXTRA_CLEAN += kernelbuttons.o
 
 kernelbuttons.S : $(PRX_EXPORTS)
 	psp-build-exports --build-stubs $(PRX_EXPORTS)

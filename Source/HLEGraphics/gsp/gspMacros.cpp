@@ -32,37 +32,37 @@ u32 gGeometryMode = 0;
 //*****************************************************************************
 void DLParser_GBI0_Vtx( MicroCodeCommand *command )
 {
-        u32 address = RDPSegAddr(command->cmd1);
+	u32 address = RDPSegAddr(command->cmd1);
 
-        u32 len = (command->cmd0)&0xFFFF;
-        u32 v0 =  (command->cmd0>>16)&0x0F;
-        u32 n  = ((command->cmd0>>20)&0x0F)+1;
+	u32 len = (command->cmd0)&0xFFFF;
+	u32 v0 =  (command->cmd0>>16)&0x0F;
+	u32 n  = ((command->cmd0>>20)&0x0F)+1;
 
-        use(len);
+	use(len);
 
-        DL_PF("    Address 0x%08x, v0: %d, Num: %d, Length: 0x%04x", address, v0, n, len);
+	DL_PF("    Address 0x%08x, v0: %d, Num: %d, Length: 0x%04x", address, v0, n, len);
 
-        if ( (v0 + n) > 32 )
-        {
-                DL_PF("        Warning, attempting to load into invalid vertex positions");
-                DBGConsole_Msg(0, "DLParser_GBI0_Vtx: Warning, attempting to load into invalid vertex positions");
-                return;
-        }
+	if ( (v0 + n) > 32 )
+	{
+		DL_PF("        Warning, attempting to load into invalid vertex positions");
+		DBGConsole_Msg(0, "DLParser_GBI0_Vtx: Warning, attempting to load into invalid vertex positions");
+		return;
+	}
 
-        // Check that address is valid...
-        if ( (address + (n*16)) > MAX_RAM_ADDRESS )
-        {
-                DBGConsole_Msg( 0, "SetNewVertexInfoVFPU: Address out of range (0x%08x)", address );
-        }
-        else
-        {
-                PSPRenderer::Get()->SetNewVertexInfoVFPU( address, v0, n );
+	// Check that address is valid...
+	if ( (address + (n*16)) > MAX_RAM_ADDRESS )
+	{
+		DBGConsole_Msg( 0, "SetNewVertexInfoVFPU: Address out of range (0x%08x)", address );
+	}
+	else
+	{
+		PSPRenderer::Get()->SetNewVertexInfoVFPU( address, v0, n );
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-                gNumVertices += n;
-                DLParser_DumpVtxInfo( address, v0, n );
+		gNumVertices += n;
+		DLParser_DumpVtxInfo( address, v0, n );
 #endif
-        }
+	}
 }
 
 //*****************************************************************************
@@ -75,38 +75,38 @@ void DLParser_GBI0_Vtx( MicroCodeCommand *command )
 //*****************************************************************************
 void DLParser_GBI1_Vtx( MicroCodeCommand *command )
 {
-        u32 address = RDPSegAddr(command->cmd1);
+	u32 address = RDPSegAddr(command->cmd1);
 
-        //u32 length    = (command->cmd0)&0xFFFF;
-        //u32 num_verts = (length + 1) / 0x410;
-        //u32 v0_idx    = ((command->cmd0>>16)&0x3f)/2;
+	//u32 length    = (command->cmd0)&0xFFFF;
+	//u32 num_verts = (length + 1) / 0x410;
+	//u32 v0_idx    = ((command->cmd0>>16)&0x3f)/2;
 
-        u32 v0  = (command->cmd0 >>17 ) & 0x7f;          // ==((x>>16)&0xff)/2
-        u32 n   = (command->cmd0 >>10 ) & 0x3f;
-        u32 len = (command->cmd0      ) & 0x3ff;
+	u32 v0  = (command->cmd0 >>17 ) & 0x7f;          // ==((x>>16)&0xff)/2
+	u32 n   = (command->cmd0 >>10 ) & 0x3f;
+	u32 len = (command->cmd0      ) & 0x3ff;
 
-        use(len);
+	use(len);
 
-        DL_PF("    Address 0x%08x, v0: %d, Num: %d, Length: 0x%04x", address, v0, n, len);
+	DL_PF("    Address 0x%08x, v0: %d, Num: %d, Length: 0x%04x", address, v0, n, len);
 
-        if ( address > MAX_RAM_ADDRESS )
-        {
-                DL_PF("     Address out of range - ignoring load");
-                return;
-        }
+	if ( address > MAX_RAM_ADDRESS )
+	{
+		DL_PF("     Address out of range - ignoring load");
+		return;
+	}
 
-        if ( (v0 + n) > 64 )
-        {
-                DL_PF("        Warning, attempting to load into invalid vertex positions");
-                DBGConsole_Msg( 0, "        DLParser_GBI1_Vtx: Warning, attempting to load into invalid vertex positions" );
-                return;
-        }
+	if ( (v0 + n) > 64 )
+	{
+		DL_PF("        Warning, attempting to load into invalid vertex positions");
+		DBGConsole_Msg( 0, "        DLParser_GBI1_Vtx: Warning, attempting to load into invalid vertex positions" );
+		return;
+	}
 
-        PSPRenderer::Get()->SetNewVertexInfoVFPU( address, v0, n );
+	PSPRenderer::Get()->SetNewVertexInfoVFPU( address, v0, n );
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-        gNumVertices += n;
-        DLParser_DumpVtxInfo( address, v0, n );
+	gNumVertices += n;
+	DLParser_DumpVtxInfo( address, v0, n );
 #endif
 }
 
@@ -115,35 +115,35 @@ void DLParser_GBI1_Vtx( MicroCodeCommand *command )
 //*****************************************************************************
 void DLParser_GBI2_Vtx( MicroCodeCommand *command )
 {
-        u32 address = RDPSegAddr(command->cmd1);
-        u32 vend   = ((command->cmd0   )&0xFFF)/2;
-        u32 n      = ((command->cmd0>>12)&0xFFF);
+	u32 address = RDPSegAddr(command->cmd1);
+	u32 vend   = ((command->cmd0   )&0xFFF)/2;
+	u32 n      = ((command->cmd0>>12)&0xFFF);
 
-        u32 v0          = vend - n;
+	u32 v0          = vend - n;
 
-        DL_PF( "    Address 0x%08x, vEnd: %d, v0: %d, Num: %d", address, vend, v0, n );
+	DL_PF( "    Address 0x%08x, vEnd: %d, v0: %d, Num: %d", address, vend, v0, n );
 
-        if ( vend > 64 )
-        {
-                DL_PF( "    *Warning, attempting to load into invalid vertex positions" );
-                DBGConsole_Msg( 0, "DLParser_GBI2_Vtx: Warning, attempting to load into invalid vertex positions: %d -> %d", v0, v0+n );
-                return;
-        }
+	if ( vend > 64 )
+	{
+		DL_PF( "    *Warning, attempting to load into invalid vertex positions" );
+		DBGConsole_Msg( 0, "DLParser_GBI2_Vtx: Warning, attempting to load into invalid vertex positions: %d -> %d", v0, v0+n );
+		return;
+	}
 
-        // Check that address is valid...
-        if ( (address + (n*16) ) > MAX_RAM_ADDRESS )
-        {
-                DBGConsole_Msg( 0, "SetNewVertexInfoVFPU: Address out of range (0x%08x)", address );
-        }
-        else
-        {
-                PSPRenderer::Get()->SetNewVertexInfoVFPU( address, v0, n );
+	// Check that address is valid...
+	if ( (address + (n*16) ) > MAX_RAM_ADDRESS )
+	{
+		DBGConsole_Msg( 0, "SetNewVertexInfoVFPU: Address out of range (0x%08x)", address );
+	}
+	else
+	{
+		PSPRenderer::Get()->SetNewVertexInfoVFPU( address, v0, n );
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-                gNumVertices += n;
-                DLParser_DumpVtxInfo( address, v0, n );
+		gNumVertices += n;
+		DLParser_DumpVtxInfo( address, v0, n );
 #endif
-        }
+	}
 }
 
 //*****************************************************************************
@@ -749,27 +749,30 @@ void DLParser_GBI2_Quad( MicroCodeCommand *command )
 
     while ( command->cmd == G_GBI2_QUAD )
     {
-            // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
-            u32 v2_idx = ((command->cmd1>>16)&0xFF)/2;
-            u32 v1_idx = ((command->cmd1>>8 )&0xFF)/2;
-            u32 v0_idx = ((command->cmd1    )&0xFF)/2;
+        // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
+		GBI2_Line3D* temp = (GBI2_Line3D*)command;
 
-            u32 v5_idx = ((command->cmd0>>16)&0xFF)/2;
-            u32 v4_idx = ((command->cmd0>>8 )&0xFF)/2;
-            u32 v3_idx = ((command->cmd0    )&0xFF)/2;
+        // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
+        u32 v2_idx = temp->v2/2;
+        u32 v1_idx = temp->v1/2;
+        u32 v0_idx = temp->v0/2;
 
-            tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
-            tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
+        u32 v5_idx = temp->v5/2;
+        u32 v4_idx = temp->v4/2;
+        u32 v3_idx = temp->v3/2;
 
-            command->cmd0 = *pCmdBase++;
-            command->cmd1 = *pCmdBase++;
-            pc += 8;
+        tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+        tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
+
+        command->cmd0 = *pCmdBase++;
+        command->cmd1 = *pCmdBase++;
+        pc += 8;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-            if ( command->cmd == G_GBI2_QUAD )
-            {
-                    DL_PF("0x%08x: %08x %08x %-10s", pc-8, command->cmd0, command->cmd1, gInstructionName[ command->cmd ]);
-            }
+        if ( command->cmd == G_GBI2_QUAD )
+        {
+                DL_PF("0x%08x: %08x %08x %-10s", pc-8, command->cmd0, command->cmd1, gInstructionName[ command->cmd ]);
+        }
 #endif
     }
     gDisplayListStack.back().addr = pc-8;
@@ -794,27 +797,29 @@ void DLParser_GBI2_Line3D( MicroCodeCommand *command )
 
     while ( command->cmd == G_GBI2_LINE3D )
     {
-            // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
-            u32 v2_idx = ((command->cmd1>>16)&0xFF)/2;
-            u32 v1_idx = ((command->cmd1>>8 )&0xFF)/2;
-            u32 v0_idx = ((command->cmd1    )&0xFF)/2;
+		GBI2_Line3D* temp = (GBI2_Line3D*)command;
 
-            u32 v5_idx = ((command->cmd0>>16)&0xFF)/2;
-            u32 v4_idx = ((command->cmd0>>8 )&0xFF)/2;
-            u32 v3_idx = ((command->cmd0    )&0xFF)/2;
+        // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
+        u32 v2_idx = temp->v2/2;
+        u32 v1_idx = temp->v1/2;
+        u32 v0_idx = temp->v0/2;
 
-            tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
-            tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
+        u32 v5_idx = temp->v5/2;
+        u32 v4_idx = temp->v4/2;
+        u32 v3_idx = temp->v3/2;
 
-            command->cmd0 = *pCmdBase++;
-            command->cmd1 = *pCmdBase++;
-            pc += 8;
+        tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+        tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
+
+        command->cmd0 = *pCmdBase++;
+        command->cmd1 = *pCmdBase++;
+        pc += 8;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-            if ( command->cmd == G_GBI2_LINE3D )
-            {
-                    DL_PF("0x%08x: %08x %08x %-10s", pc-8, command->cmd0, command->cmd1, gInstructionName[ command->cmd ]);
-            }
+        if ( command->cmd == G_GBI2_LINE3D )
+        {
+                DL_PF("0x%08x: %08x %08x %-10s", pc-8, command->cmd0, command->cmd1, gInstructionName[ command->cmd ]);
+        }
 #endif
     }
     gDisplayListStack.back().addr = pc-8;
@@ -838,22 +843,24 @@ void DLParser_GBI2_Tri1( MicroCodeCommand *command )
 
     while ( command->cmd == G_GBI2_TRI1 )
     {
-            //u32 flags = (command->cmd1>>24)&0xFF;
-            u32 v0_idx = ((command->cmd0    )&0xFF)/2;
-            u32 v1_idx = ((command->cmd0>>8 )&0xFF)/2;
-            u32 v2_idx = ((command->cmd0>>16)&0xFF)/2;
+		GBI2_Tri1* temp = (GBI2_Tri1*)command;
 
-            tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+        //u32 flags = (command->cmd1>>24)&0xFF;
+		u32 v2_idx = temp->v2/2;
+		u32 v1_idx = temp->v1/2;
+        u32 v0_idx = temp->v0/2;
 
-            command->cmd0 = *pCmdBase++;
-            command->cmd1 = *pCmdBase++;
-            pc += 8;
+        tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+
+        command->cmd0 = *pCmdBase++;
+        command->cmd1 = *pCmdBase++;
+        pc += 8;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-            if ( command->cmd == G_GBI2_TRI1 )
-            {
-                    DL_PF("0x%08x: %08x %08x %-10s", pc-8, command->cmd0, command->cmd1, gInstructionName[ command->cmd ]);
-            }
+        if ( command->cmd == G_GBI2_TRI1 )
+        {
+                DL_PF("0x%08x: %08x %08x %-10s", pc-8, command->cmd0, command->cmd1, gInstructionName[ command->cmd ]);
+        }
 #endif			
     }
     gDisplayListStack.back().addr = pc-8;
@@ -939,28 +946,31 @@ void DLParser_GBI2_Tri2( MicroCodeCommand *command )
 
     while ( command->cmd == G_GBI2_TRI2 )
     {
-            u32 v2_idx = ((command->cmd1>>16)&0xFF)/2;
-            u32 v1_idx = ((command->cmd1>>8 )&0xFF)/2;
-            u32 v0_idx = ((command->cmd1    )&0xFF)/2;
+		GBI2_Tri2* temp = (GBI2_Tri2*)command;
 
-            u32 v5_idx = ((command->cmd0>>16)&0xFF)/2;
-            u32 v4_idx = ((command->cmd0>>8 )&0xFF)/2;
-            u32 v3_idx = ((command->cmd0    )&0xFF)/2;
+		// Vertex indices are exact !
+        u32 v2_idx = temp->v2;
+        u32 v1_idx = temp->v1;
+        u32 v0_idx = temp->v0;
 
-            tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
-            tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
+        u32 v5_idx = temp->v5;
+        u32 v4_idx = temp->v4;
+        u32 v3_idx = temp->v3;
 
-            command->cmd0 = *pCmdBase++;
-            command->cmd1 = *pCmdBase++;
-            pc += 8;
+        tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+        tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
+
+        command->cmd0 = *pCmdBase++;
+        command->cmd1 = *pCmdBase++;
+        pc += 8;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-            if ( command->cmd == G_GBI2_TRI2 )
-            {
-                    DL_PF("0x%08x: %08x %08x %-10s", pc-8, command->cmd0, command->cmd1, gInstructionName[ command->cmd ]);
-            }
+        if ( command->cmd == G_GBI2_TRI2 )
+        {
+                DL_PF("0x%08x: %08x %08x %-10s", pc-8, command->cmd0, command->cmd1, gInstructionName[ command->cmd ]);
+        }
 #endif
-    }
+	}
     gDisplayListStack.back().addr = pc-8;
 
     if (tris_added)
@@ -974,43 +984,45 @@ void DLParser_GBI2_Tri2( MicroCodeCommand *command )
 //*****************************************************************************
 void DLParser_GBI1_Tri2( MicroCodeCommand *command )
 {
-        // While the next command pair is Tri2, add vertices
-        u32 pc = gDisplayListStack.back().addr;
-        u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
+    // While the next command pair is Tri2, add vertices
+    u32 pc = gDisplayListStack.back().addr;
+    u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
 
-        bool tris_added = false;
+    bool tris_added = false;
 
-        while (command->cmd == G_GBI1_TRI2)
-        {
-                // Vertex indices are multiplied by 10 for GBI0, by 2 for GBI1
-                u32 v0_idx = ((command->cmd1>>16)&0xFF) / VertexStride;
-                u32 v1_idx = ((command->cmd1>>8 )&0xFF) / VertexStride;
-                u32 v2_idx = ((command->cmd1    )&0xFF) / VertexStride;
+    while (command->cmd == G_GBI1_TRI2)
+    {
+		GBI1_Tri2* temp = (GBI1_Tri2*)command;
 
-                u32 v3_idx = ((command->cmd0>>16)&0xFF) / VertexStride;
-                u32 v4_idx = ((command->cmd0>>8 )&0xFF) / VertexStride;
-                u32 v5_idx = ((command->cmd0    )&0xFF) / VertexStride;
+		// Vertex indices are multiplied by 10 for GBI0, by 2 for GBI1
+		u32 v0_idx = temp->v0 / VertexStride;
+		u32 v1_idx = temp->v1 / VertexStride;
+		u32 v2_idx = temp->v2 / VertexStride;
 
-                tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
-                tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
+		u32 v3_idx = temp->v3 / VertexStride;
+		u32 v4_idx = temp->v4 / VertexStride;
+		u32 v5_idx = temp->v5 / VertexStride;
 
-                command->cmd0= *pCmdBase++;
-                command->cmd1= *pCmdBase++;
-                pc += 8;
+		tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+		tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-                if ( command->cmd == G_GBI1_TRI2 )
-                {
-//                        DL_PF("0x%08x: %08x %08x %-10s", pc-8, command->cmd0, command->cmd1, gInstructionName[ command->cmd ]);
-                }
+		command->cmd0= *pCmdBase++;
+		command->cmd1= *pCmdBase++;
+		pc += 8;
+
+	#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+		if ( command->cmd == G_GBI1_TRI2 )
+		{
+	//		DL_PF("0x%08x: %08x %08x %-10s", pc-8, command->cmd0, command->cmd1, gInstructionName[ command->cmd ]);
+		}
 #endif
-        }
-        gDisplayListStack.back().addr = pc-8;
+    }
+    gDisplayListStack.back().addr = pc-8;
 
-        if (tris_added)
-        {
-                PSPRenderer::Get()->FlushTris();
-        }
+    if (tris_added)
+    {
+            PSPRenderer::Get()->FlushTris();
+    }
 }
 
 //*****************************************************************************
@@ -1026,23 +1038,25 @@ void DLParser_GBI1_Line3D( MicroCodeCommand *command )
 
         while ( command->cmd == G_GBI1_LINE3D )
         {
-                u32 v3_idx   = ((command->cmd1>>24)&0xFF) / VertexStride;
-                u32 v0_idx   = ((command->cmd1>>16)&0xFF) / VertexStride;
-                u32 v1_idx   = ((command->cmd1>>8 )&0xFF) / VertexStride;
-                u32 v2_idx   = ((command->cmd1    )&0xFF) / VertexStride;
+			GBI1_Line3D* temp = (GBI1_Line3D*)command;
 
-                tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
-                tris_added |= PSPRenderer::Get()->AddTri(v2_idx, v3_idx, v0_idx);
+            u32 v3_idx   = temp->v3 / VertexStride;
+            u32 v0_idx   = temp->v0 / VertexStride;
+            u32 v1_idx   = temp->v1 / VertexStride;
+            u32 v2_idx   = temp->v2 / VertexStride;
 
-                command->cmd0 = *pCmdBase++;
-                command->cmd1 = *pCmdBase++;
-                pc += 8;
+            tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+            tris_added |= PSPRenderer::Get()->AddTri(v2_idx, v3_idx, v0_idx);
+
+            command->cmd0 = *pCmdBase++;
+            command->cmd1 = *pCmdBase++;
+            pc += 8;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-                if ( command->cmd == G_GBI1_LINE3D )
-                {
+            if ( command->cmd == G_GBI1_LINE3D )
+            {
 //                        DL_PF("0x%08x: %08x %08x %-10s", pc-8, command->cmd0, command->cmd1, gInstructionName[ command->cmd ]);
-                }
+            }
 #endif
         }
 
@@ -1059,38 +1073,40 @@ void DLParser_GBI1_Line3D( MicroCodeCommand *command )
 //*****************************************************************************
 void DLParser_GBI1_Tri1( MicroCodeCommand *command )
 {
-        DAEDALUS_PROFILE( "DLParser_GBI1_Tri1_T" );
+	DAEDALUS_PROFILE( "DLParser_GBI1_Tri1_T" );
 
-		DAEDALUS_ERROR("vertex : %d",VertexStride);
+	DAEDALUS_ERROR("vertex : %d",VertexStride);
 
 
-        // While the next command pair is Tri1, add vertices
-        u32 pc = gDisplayListStack.back().addr;
-        u32 * pCmdBase = (u32 *)( g_pu8RamBase + pc );
+	// While the next command pair is Tri1, add vertices
+	u32 pc = gDisplayListStack.back().addr;
+	u32 * pCmdBase = (u32 *)( g_pu8RamBase + pc );
 
-        bool tris_added = false;
+	bool tris_added = false;
 
-        while (command->cmd == G_GBI1_TRI1)
-        {
-                //u32 flags = (command->cmd1>>24)&0xFF;
-                // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
-                u32 v0_idx = ((command->cmd1>>16)&0xFF) / VertexStride;
-                u32 v1_idx = ((command->cmd1>>8 )&0xFF) / VertexStride;
-                u32 v2_idx = ((command->cmd1    )&0xFF) / VertexStride;
+	while (command->cmd == G_GBI1_TRI1)
+	{
+		GBI1_Tri1* temp = (GBI1_Tri1*)command;
 
-                tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+		//u32 flags = (command->cmd1>>24)&0xFF;
+		// Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
+		u32 v0_idx = temp->v0 / VertexStride;
+		u32 v1_idx = temp->v1 / VertexStride;
+		u32 v2_idx = temp->v2 / VertexStride;
 
-                command->cmd0= *pCmdBase++;
-                command->cmd1= *pCmdBase++;
-                pc += 8;
+		tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+
+		command->cmd0= *pCmdBase++;
+		command->cmd1= *pCmdBase++;
+		pc += 8;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-                if ( command->cmd == G_GBI1_TRI1 )
-                {
-  //                      DL_PF("0x%08x: %08x %08x %-10s", pc-8, command->cmd0, command->cmd1, gInstructionName[ command->cmd ]);
-                }
+		if ( command->cmd == G_GBI1_TRI1 )
+		{
+		//	DL_PF("0x%08x: %08x %08x %-10s", pc-8, command->cmd0, command->cmd1, gInstructionName[ command->cmd ]);
+		}
 #endif
-        }
+	}
 
         gDisplayListStack.back().addr = pc-8;
 

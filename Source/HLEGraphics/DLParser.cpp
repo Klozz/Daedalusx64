@@ -1093,11 +1093,9 @@ void DLParser_RDPFullSync( MicroCodeCommand *command )
 void DLParser_GBI1_MoveWord( MicroCodeCommand *command )
 {
 	// Type of movement is in low 8bits of cmd0.
+	GBI1_MoveWord* temp = (GBI1_MoveWord*)command;
 
-	u32 index = command->cmd0 & 0xFF;
-	u32 offset = (command->cmd0 >> 8) & 0xFFFF;
-
-	switch (index)
+	switch (temp->type)
 	{
 	case G_MW_MATRIX:
 		DL_PF("    G_MW_MATRIX");
@@ -1107,7 +1105,7 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand *command )
 	case G_MW_NUMLIGHT:
 		//#define NUML(n)		(((n)+1)*32 + 0x80000000)
 		{
-			u32 num_lights = ((command->cmd1-0x80000000)/32) - 1;
+			u32 num_lights = ((temp->value-0x80000000)/32) - 1;
 			DL_PF("    G_MW_NUMLIGHT: Val:%d", num_lights);
 
 			gAmbientLightIdx = num_lights;
@@ -1117,7 +1115,7 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand *command )
 		break;
 	case G_MW_CLIP:	// Seems to be unused?
 		{
-			switch (offset)
+			switch (temp->offset)
 			{
 			case G_MWO_CLIP_RNX:
 			case G_MWO_CLIP_RNY:
@@ -1130,16 +1128,16 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand *command )
 		break;
 	case G_MW_SEGMENT:
 		{
-			u32 segment = (offset >> 2) & 0xF;
-			u32 base = command->cmd1;
+			u32 segment = (temp->offset >> 2) & 0xF;
+			u32 base = temp->value & 0x00FFFFFF;
 			DL_PF("    G_MW_SEGMENT Seg[%d] = 0x%08x", segment, base);
 			gSegments[segment] = base;
 		}
 		break;
 	case G_MW_FOG:
 		{
-			u16 wMult = u16(command->cmd1 >> 16);
-			u16 wOff  = u16(command->cmd1      );
+			u16 wMult = u16(temp->value >> 16);
+			u16 wOff  = u16(temp->value      );
 
 			f32 fMult = ((f32)(s16)wMult) / 65536.0f;
 			f32 fOff  = ((f32)(s16)wOff)  / 65536.0f;
@@ -1152,10 +1150,10 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand *command )
 		break;
 	case G_MW_LIGHTCOL:
 		{
-			u32 light_idx = offset / 0x20;
-			u32 field_offset = (offset & 0x7);
+			u32 light_idx = temp->offset / 0x20;
+			u32 field_offset = (temp->offset & 0x7);
 
-			DL_PF("    G_MW_LIGHTCOL/0x%08x: 0x%08x", offset, command->cmd1);
+			DL_PF("    G_MW_LIGHTCOL/0x%08x: 0x%08x", temp->offset, command->cmd1);
 
 			switch (field_offset)
 			{
@@ -1164,13 +1162,13 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand *command )
 				// Light col, not the copy
 				if (light_idx == gAmbientLightIdx)
 				{
-					u32 n64col( command->cmd1 );
+					u32 n64col( temp->value );
 
 					PSPRenderer::Get()->SetAmbientLight( v4( N64COL_GETR_F(n64col), N64COL_GETG_F(n64col), N64COL_GETB_F(n64col), 1.0f ) );
 				}
 				else
 				{
-					PSPRenderer::Get()->SetLightCol(light_idx, command->cmd1);
+					PSPRenderer::Get()->SetLightCol(light_idx, temp->value);
 				}
 				break;
 
@@ -1186,9 +1184,9 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand *command )
 		break;
 	case G_MW_POINTS:	// Used in FIFA 98
 		{
-			u32 vtx = offset/40;
-			u32 w	= offset - vtx*40;
-			u32 val = command->cmd1;	// Odd value given
+			u32 vtx = temp->offset/40;
+			u32 w	= temp->offset - vtx*40;
+			u32 val = temp->value;
 
 			DL_PF("    G_MW_POINTS");
 
@@ -1216,10 +1214,9 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand *command )
 //001889F0: DB020000 00000030 CMD Zelda_MOVEWORD  Mem[2][00]=00000030 Lightnum=2
 void DLParser_GBI2_MoveWord( MicroCodeCommand *command )
 {
-	u32 type   = (command->cmd0 >> 16) & 0xFF;
-	u32 offset = (command->cmd0      ) & 0xFFFF;
+	GBI2_MoveWord* temp = (GBI2_MoveWord*)command;
 
-	switch (type)
+	switch (temp->type)
 	{
 	case G_MW_MATRIX:
 		DL_PF("    G_MW_MATRIX");
@@ -1233,7 +1230,7 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand *command )
 			// 0x18 = 24 = 0 lights
 			// 0x30 = 48 = 2 lights
 
-			u32 num_lights = command->cmd1/24;
+			u32 num_lights = temp->value/24;
 			DL_PF("     G_MW_NUMLIGHT: %d", num_lights);
 
 			gAmbientLightIdx = num_lights;
@@ -1243,7 +1240,7 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand *command )
 
 	case G_MW_CLIP:	// Seems to be unused?
 		{
-			switch (offset)
+			switch (temp->offset)
 			{
 			case G_MWO_CLIP_RNX:
 			case G_MWO_CLIP_RNY:
@@ -1257,8 +1254,8 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand *command )
 
 	case G_MW_SEGMENT:
 		{
-			u32 segment = offset / 4;
-			u32 address	= command->cmd1;
+			u32 segment = temp->offset / 4;
+			u32 address	= temp->value & 0x00FFFFFF;			// Hack - convert to physical
 
 			DL_PF( "      G_MW_SEGMENT Segment[%d] = 0x%08x", segment, address );
 
@@ -1267,8 +1264,8 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand *command )
 		break;
 	case G_MW_FOG:
 		{
-			u16 wMult = u16(command->cmd1 >> 16);
-			u16 wOff  = u16(command->cmd1      );
+			u16 wMult = u16(temp->value >> 16);
+			u16 wOff  = u16(temp->value      );
 
 			f32 fMult = ((f32)(s16)wMult) / 65536.0f;
 			f32 fOff  = ((f32)(s16)wOff)  / 65536.0f;
@@ -1281,10 +1278,10 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand *command )
 		break;
 	case G_MW_LIGHTCOL:
 		{
-			u32 light_idx = offset / 0x18;
-			u32 field_offset = (offset & 0x7);
+			u32 light_idx = temp->offset / 0x18;
+			u32 field_offset = (temp->offset & 0x7);
 
-			DL_PF("     G_MW_LIGHTCOL/0x%08x: 0x%08x", offset, command->cmd1);
+			DL_PF("     G_MW_LIGHTCOL/0x%08x: 0x%08x", temp->offset, temp->value);
 
 			switch (field_offset)
 			{
@@ -1293,13 +1290,13 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand *command )
 				// Light col, not the copy
 				if (light_idx == gAmbientLightIdx)
 				{
-					u32 n64col( command->cmd1 );
+					u32 n64col( temp->value );
 
 					PSPRenderer::Get()->SetAmbientLight( v4( N64COL_GETR_F(n64col), N64COL_GETG_F(n64col), N64COL_GETB_F(n64col), 1.0f ) );
 				}
 				else
 				{
-					PSPRenderer::Get()->SetLightCol(light_idx, command->cmd1);
+					PSPRenderer::Get()->SetLightCol(light_idx, temp->value);
 				}
 				break;
 

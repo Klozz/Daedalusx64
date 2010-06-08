@@ -155,4 +155,93 @@ struct SetColor
 	};
 };
 
+struct GBI1_MoveWord
+{
+	unsigned int	type:8;
+	unsigned int	offset:16;
+	unsigned int	cmd:8;
+	unsigned int	value;
+};
+
+struct GBI2_MoveWord
+{
+	unsigned int	offset:16;
+	unsigned int	type:8;
+	unsigned int	cmd:8;
+	unsigned int	value;
+};
+
+struct GBI2_Tri1
+{
+	unsigned int v0:8;
+	unsigned int v1:8;
+	unsigned int v2:8;
+	unsigned int cmd:8;
+	unsigned int pad:24;
+	unsigned int flag:8;
+};
+
+struct GBI2_Tri2
+{
+	unsigned int :1;
+	unsigned int v3:7;
+	unsigned int :1;
+	unsigned int v4:7;
+	unsigned int :1;
+	unsigned int v5:7;
+	unsigned int cmd:8;
+	unsigned int :1;
+	unsigned int v0:7;
+	unsigned int :1;
+	unsigned int v1:7;
+	unsigned int :1;
+	unsigned int v2:7;
+	unsigned int flag:8;
+};
+
+
+struct GBI2_Line3D
+{
+	unsigned int v3:8;
+	unsigned int v4:8;
+	unsigned int v5:8;
+	unsigned int cmd:8;
+
+	unsigned int v0:8;
+	unsigned int v1:8;
+	unsigned int v2:8;
+	unsigned int flag:8;
+};
+
+struct GBI1_Line3D
+{
+	unsigned int w0;
+	unsigned int v2:8;
+	unsigned int v1:8;
+	unsigned int v0:8;
+	unsigned int v3:8;
+};
+
+struct GBI1_Tri1
+{
+	unsigned int w0;
+	unsigned int v2:8;
+	unsigned int v1:8;
+	unsigned int v0:8;
+	unsigned int flag:8;
+};
+
+struct GBI1_Tri2
+{
+	unsigned int v5:8;
+	unsigned int v4:8;
+	unsigned int v3:8;
+	unsigned int cmd:8;
+
+	unsigned int v2:8;
+	unsigned int v1:8;
+	unsigned int v0:8;
+	unsigned int flag:8;
+};
+
 #endif

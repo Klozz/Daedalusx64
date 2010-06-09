@@ -269,7 +269,7 @@ install: $(PSP_EBOOT) $(TARGET).prx dvemgr.prx exception.prx mediaengine.prx ker
 #this rule should only work with Unix environments such as GNU/Linux, Mac OS, Cygwin, etc...
 #be carefull of probably already compiled files with old rev number
 TMP_BASE_DIR=tmp_build
-TMP_DX_DIR=$(TMP_BASE_DIR)/PSP/GAME/DaedalusX64/
+TMP_DX_DIR:=$(TMP_BASE_DIR)/PSP/GAME/DaedalusX64_$(VERSION)/
 zip: $(PSP_EBOOT) dvemgr.prx mediaengine.prx exception.prx kernelbuttons.prx
 	-mkdir tarballs 2> /dev/null
 	-mkdir -p $(TMP_DX_DIR) 2> /dev/null

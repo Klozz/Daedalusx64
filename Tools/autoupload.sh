@@ -39,6 +39,7 @@ while :; do
 	if [ $CUR_REV -gt $LAST_REV ]; then
 		LAST_REV=$CUR_REV
 		rm Source/SysPSP/UI/AboutComponent.o 2> /dev/null #so About Screen has the actual rev number
+		rm PARAM.SFO 2> /dev/null # refresh eboot title
 		make zip >/dev/null
 		upload $1
 		echo "New Revision uploaded."

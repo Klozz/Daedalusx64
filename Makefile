@@ -175,7 +175,7 @@ ifdef DEBUG
 	CFLAGS			= -g -O3 -G0 -D_DEBUG -MD \
 				  -W -Wcast-qual -Wchar-subscripts -Wno-unused -Wpointer-arith\
 				  -Wredundant-decls -Wshadow -Wwrite-strings
-			       	#-Winline -Wcast-align 
+				#-Winline -Wcast-align 
 	LDFLAGS = -g
 
 	SRCS			= $(CORE_SRCS) $(ADDITIONAL_DEBUG_SRCS) $(ADDITIONAL_SYNC_SRCS)
@@ -265,6 +265,28 @@ install: $(PSP_EBOOT) $(TARGET).prx dvemgr.prx exception.prx mediaengine.prx ker
 	svn export --force "$(DATA_DIR)" "$(BUILDS_DX_DIR)"
 	cp $(PSP_EBOOT) "$(BUILDS_DX_DIR)"
 	cp *.prx "$(BUILDS_DX_DIR)"
+
+#this rule should only work with Unix environments such as GNU/Linux, Mac OS, Cygwin, etc...
+#be carefull of probably already compiled files with old rev number
+TMP_BASE_DIR=tmp_build
+TMP_DX_DIR=$(TMP_BASE_DIR)/PSP/GAME/DaedalusX64/
+zip: $(PSP_EBOOT) dvemgr.prx mediaengine.prx exception.prx kernelbuttons.prx
+	-mkdir tarballs 2> /dev/null
+	-mkdir -p $(TMP_DX_DIR) 2> /dev/null
+	cp $^ $(TMP_DX_DIR)
+	-mkdir $(TMP_DX_DIR)/Resources 2> /dev/null
+	cp $(DATA_DIR)/Resources/logo.png $(TMP_DX_DIR)/Resources
+	-mkdir $(TMP_DX_DIR)/Roms 2> /dev/null
+	svn export $(DATA_DIR)/SaveGames $(TMP_DX_DIR)/SaveGames
+	svn export $(DATA_DIR)/ControllerConfigs $(TMP_DX_DIR)/ControllerConfigs
+	-mkdir $(TMP_DX_DIR)/SaveStates 2> /dev/null
+	cp $(DATA_DIR)/changes.txt \
+		$(DATA_DIR)/copying.txt \
+		$(DATA_DIR)/readme.txt \
+		$(DATA_DIR)/roms.ini $(TMP_DX_DIR)
+	REV=$$(LC_ALL=C svn info | grep Revision | grep -e [0-9]* -o | tr -d '\n') && \
+	    cd tmp_build && zip -r ../tarballs/"DaedalusX64_$$REV.zip" PSP
+	rm -r $(TMP_BASE_DIR) 2>/dev/null
 
 Source/SysPSP/MediaEnginePRX/MediaEngine.S:
 	$(MAKE) -C Source/SysPSP/MediaEnginePRX all

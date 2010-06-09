@@ -749,7 +749,6 @@ void DLParser_GBI2_Quad( MicroCodeCommand *command )
 
     while ( command->cmd == G_GBI2_QUAD )
     {
-        // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
 		GBI2_Line3D* temp = (GBI2_Line3D*)command;
 
         // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
@@ -1030,42 +1029,42 @@ void DLParser_GBI1_Tri2( MicroCodeCommand *command )
 //*****************************************************************************
 void DLParser_GBI1_Line3D( MicroCodeCommand *command )
 {
-        // While the next command pair is Tri1, add vertices
-        u32 pc = gDisplayListStack.back().addr;
-        u32 * pCmdBase = (u32 *)( g_pu8RamBase + pc );
+    // While the next command pair is Tri1, add vertices
+    u32 pc = gDisplayListStack.back().addr;
+    u32 * pCmdBase = (u32 *)( g_pu8RamBase + pc );
 
-        bool tris_added = false;
+    bool tris_added = false;
 
-        while ( command->cmd == G_GBI1_LINE3D )
-        {
-			GBI1_Line3D* temp = (GBI1_Line3D*)command;
+    while ( command->cmd == G_GBI1_LINE3D )
+    {
+		GBI1_Line3D* temp = (GBI1_Line3D*)command;
 
-            u32 v3_idx   = temp->v3 / VertexStride;
-            u32 v0_idx   = temp->v0 / VertexStride;
-            u32 v1_idx   = temp->v1 / VertexStride;
-            u32 v2_idx   = temp->v2 / VertexStride;
+        u32 v3_idx   = temp->v3 / VertexStride;
+        u32 v0_idx   = temp->v0 / VertexStride;
+        u32 v1_idx   = temp->v1 / VertexStride;
+        u32 v2_idx   = temp->v2 / VertexStride;
 
-            tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
-            tris_added |= PSPRenderer::Get()->AddTri(v2_idx, v3_idx, v0_idx);
+        tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+        tris_added |= PSPRenderer::Get()->AddTri(v2_idx, v3_idx, v0_idx);
 
-            command->cmd0 = *pCmdBase++;
-            command->cmd1 = *pCmdBase++;
-            pc += 8;
+        command->cmd0 = *pCmdBase++;
+        command->cmd1 = *pCmdBase++;
+        pc += 8;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-            if ( command->cmd == G_GBI1_LINE3D )
-            {
-//                        DL_PF("0x%08x: %08x %08x %-10s", pc-8, command->cmd0, command->cmd1, gInstructionName[ command->cmd ]);
-            }
-#endif
-        }
-
-        gDisplayListStack.back().addr = pc-8;
-
-        if (tris_added)
+        if ( command->cmd == G_GBI1_LINE3D )
         {
-                PSPRenderer::Get()->FlushTris();
+//			DL_PF("0x%08x: %08x %08x %-10s", pc-8, command->cmd0, command->cmd1, gInstructionName[ command->cmd ]);
         }
+#endif
+    }
+
+    gDisplayListStack.back().addr = pc-8;
+
+    if (tris_added)
+    {
+            PSPRenderer::Get()->FlushTris();
+    }
 }
 
 //*****************************************************************************

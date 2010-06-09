@@ -29,6 +29,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //	Config options for the public release build
 //
 ///////////////////////////////////////////////////////////////////////////////
+#define DAEDALUS_CONFIG_VERSION		"Release"
+
 #undef	DAEDALUS_DEBUG_PIF					// Enable to enable various debugging options for PIF (Peripheral interface)
 #undef	DAEDALUS_DEBUG_CONSOLE				// Enable debug console
 #define DAEDALUS_ALIGN_REGISTERS

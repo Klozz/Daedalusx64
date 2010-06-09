@@ -80,11 +80,11 @@ struct MicrocodeCacheEntry
 static const u32				NUM_MICROCODE_CACHE_ENTRIES = 4;
 static MicrocodeCacheEntry		gMicrocodeCache[ NUM_MICROCODE_CACHE_ENTRIES ];
 static u32						gCurrentMicrocodeCacheEntry = 0;
+static u32						gMicrocodeHistoryCount = 0;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 static const u32				MICROCODE_HISTORY_MAX = 10;
 static MicrocodeString			gMicrocodeHistory[ MICROCODE_HISTORY_MAX ];
-static u32						gMicrocodeHistoryCount = 0;
 #endif
 
 //*****************************************************************************
@@ -283,14 +283,6 @@ void	GBIMicrocode_DetectVersion( u32 code_base, u32 code_size,
 //*****************************************************************************
 //
 //*****************************************************************************
-void GBIMicrocode_ResetMicrocodeHistory()
-{
-	gMicrocodeHistoryCount = 0;
-}
-
-//*****************************************************************************
-//
-//*****************************************************************************
 u32 GBIMicrocode_GetMicrocodeHistoryStringCount()
 {
 	return gMicrocodeHistoryCount = 0;
@@ -307,3 +299,11 @@ const char * GBIMicrocode_GetMicrocodeHistoryString( u32 i )
 	return NULL;
 }
 #endif
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void GBIMicrocode_ResetMicrocodeHistory()
+{
+	gMicrocodeHistoryCount = 0;
+}

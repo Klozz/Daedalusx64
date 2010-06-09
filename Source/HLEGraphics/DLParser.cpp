@@ -695,9 +695,12 @@ void DLParser_Process()
 	u32 data_base = (u32)pTask->t.ucode_data & 0x1fffffff;
 	u32 data_size = pTask->t.ucode_data_size;
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+	//
+	// Wow this is so weird ! If we ignore GBIMicrocode_ResetMicrocodeHistory
+	// Most games like TWINE and tarzan will crash in rev 515+ !!
+	//
 	GBIMicrocode_ResetMicrocodeHistory();
-#endif
+
 	DLParser_InitMicrocode( code_base, code_size, data_base, data_size );
 
 	//

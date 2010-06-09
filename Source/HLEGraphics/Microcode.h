@@ -95,10 +95,11 @@ typedef void(*MicroCodeInstruction)(MicroCodeCommand*);
 #define UcodeFunc(name)	void name(MicroCodeCommand*)
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-void			GBIMicrocode_ResetMicrocodeHistory();
 u32				GBIMicrocode_GetMicrocodeHistoryStringCount();
 const char *	GBIMicrocode_GetMicrocodeHistoryString( u32 i );
 #endif
+
+void			GBIMicrocode_ResetMicrocodeHistory();
 
 
 #endif // MICROCODE_H__

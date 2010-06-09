@@ -154,11 +154,11 @@ void	IAboutComponent::Render()
 	y = text_top;
 
 	CFixedString<128>	version( DAEDALUS_VERSION_TEXT );
-#ifndef DAEDALUS_PUBLIC_RELEASE
+
 	version += " (";
 	version += DAEDALUS_CONFIG_VERSION;
 	version += ")";
-#endif
+
 
 	mpContext->DrawTextAlign( TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_CENTRE, y, version, DrawTextUtilities::TextWhite ); y += line_height;
 	mpContext->DrawTextAlign( TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_CENTRE, y, DATE_TEXT, DrawTextUtilities::TextWhite ); y += line_height;

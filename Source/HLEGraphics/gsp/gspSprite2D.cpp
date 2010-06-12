@@ -25,9 +25,9 @@ Sprite2DInfo g_Sprite2DInfo;
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_GBI1_Sprite2DBase( MicroCodeCommand *command )
+void DLParser_GBI1_Sprite2DBase( MicroCodeCommand command )
 {
-        u32 address = RDPSegAddr(command->cmd1);
+        u32 address = RDPSegAddr(command.inst.cmd1);
 
         address &= (MAX_RAM_ADDRESS-1);
 
@@ -45,28 +45,28 @@ void DLParser_GBI1_Sprite2DBase( MicroCodeCommand *command )
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_GBI1_Sprite2DScaleFlip( MicroCodeCommand *command )
+void DLParser_GBI1_Sprite2DScaleFlip( MicroCodeCommand command )
 {
-        g_Sprite2DInfo.scaleX = (((command->cmd1)>>16)   &0xFFFF)/1024.0f;
-        g_Sprite2DInfo.scaleY = ( (command->cmd1)        &0xFFFF)/1024.0f;
+        g_Sprite2DInfo.scaleX = (((command.inst.cmd1)>>16)   &0xFFFF)/1024.0f;
+        g_Sprite2DInfo.scaleY = ( (command.inst.cmd1)        &0xFFFF)/1024.0f;
 
-        if( ((command->cmd1)&0xFFFF) < 0x100 )
+        if( ((command.inst.cmd1)&0xFFFF) < 0x100 )
         {
                 g_Sprite2DInfo.scaleY = g_Sprite2DInfo.scaleX;
         }
 
-        g_Sprite2DInfo.flipX = (unsigned short)(((command->cmd0)>>8)     &0xFF);
-        g_Sprite2DInfo.flipY = (unsigned short)( (command->cmd0)         &0xFF);
+        g_Sprite2DInfo.flipX = (unsigned short)(((command.inst.cmd0)>>8)     &0xFF);
+        g_Sprite2DInfo.flipY = (unsigned short)( (command.inst.cmd0)         &0xFF);
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_GBI1_Sprite2DDraw( MicroCodeCommand *command )
+void DLParser_GBI1_Sprite2DDraw( MicroCodeCommand command )
 {
         //DL_PF("Not fully implemented");
-        g_Sprite2DInfo.px = (short)(((command->cmd1)>>16)&0xFFFF)>>2;
-        g_Sprite2DInfo.py = (short)( (command->cmd1)     &0xFFFF)>>2;
+        g_Sprite2DInfo.px = (short)(((command.inst.cmd1)>>16)&0xFFFF)>>2;
+        g_Sprite2DInfo.py = (short)( (command.inst.cmd1)     &0xFFFF)>>2;
 
 		// This a hack for Wipeout.
 		// TODO : Find a workaround and remove this hack..

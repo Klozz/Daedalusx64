@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../TextureCache.h"
 #include "../Microcode.h"
 #include "../UcodeDefs.h"
+#include "../Ucode.h"
 
 #include "../Utility/Profiler.h"
 
@@ -76,18 +77,12 @@ extern const char *gInstructionName[256];
 #define RDP_NOIMPL_WARN(op)             DAEDALUS_DL_ERROR( op )
 #define RDP_NOIMPL( op, cmd0, cmd1 )    DAEDALUS_DL_ERROR( "Not Implemented: %s 0x%08x 0x%08x", op, cmd0, cmd1 )
 
-UcodeFunc( DLParser_Nothing );
-UcodeFunc( DLParser_GBI1_MoveWord );
-UcodeFunc( DLParser_TexRect );
-UcodeFunc( DLParser_GBI2_MoveMem );
-UcodeFunc( DLParser_GBI2_MoveWord );
-
 void MatrixFromN64FixedPoint( u32 address );
 void DLParser_PushDisplayList( const DList & dl );
 void DLParser_CallDisplayList( const DList & dl );
 void DLParser_PopDL();
 void DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 data_size );
-bool DLParser_FetchNextCommand( MicroCodeCommand * p_command );
+bool DLParser_FetchNextCommand( MicroCodeCommand *p_command );
 void RDP_MoveMemLight(u32 light_idx, u32 address);
 
 

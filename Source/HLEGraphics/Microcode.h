@@ -70,29 +70,6 @@ struct MicroCodeCommand
 	};
 };
 */
-struct MicroCodeCommand
-{
-	struct 
-	{
-		union 
-		{
-			//u64		_u64;
-
-			unsigned int cmd0;
-			struct 
-			{
-				unsigned int arg0:24;
-				unsigned int cmd:8;
-			};
-		};
-		unsigned int cmd1;
-	};
-	u64	force_structure_alignment;
-};
-
-typedef void(*MicroCodeInstruction)(MicroCodeCommand*);
-
-#define UcodeFunc(name)	void name(MicroCodeCommand*)
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 u32				GBIMicrocode_GetMicrocodeHistoryStringCount();

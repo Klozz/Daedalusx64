@@ -22,6 +22,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _UCODE_DEFS_H_
 
 
+struct Instruction
+{
+	union 
+	{
+		unsigned int cmd0;
+		struct 
+		{
+			unsigned int arg0:24;
+			unsigned int cmd:8;
+		};
+	};
+	unsigned int cmd1;
+};
+
 struct GBI1_Matrix
 {
 	unsigned int	len:16;
@@ -243,5 +257,17 @@ struct GBI1_Tri2
 	unsigned int v0:8;
 	unsigned int flag:8;
 };
+
+union MicroCodeCommand
+{
+	Instruction		inst;
+	GBI1_Tri1		tri1;
+	GBI1_Matrix		mtx1;
+	GBI2_Matrix		mtx2;
+	GBI1_PopMatrix	popmtx;
+
+	u64	force_structure_alignment;
+};
+
 
 #endif

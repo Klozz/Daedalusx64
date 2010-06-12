@@ -20,7 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 // This mostly based from ucode.h from Rice Video and Glide Napalm :)
 //
+typedef void(*MicroCodeInstruction)(MicroCodeCommand command);
 
+#define UcodeFunc(name)	void name(MicroCodeCommand)
 //*****************************************************************************
 // GBI1
 //*****************************************************************************

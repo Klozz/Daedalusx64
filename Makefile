@@ -172,7 +172,7 @@ CORE_SRCS = $(DAED_MAIN_SRCS) $(DAED_DEBUG_SRCS) $(DAED_CORE_SRCS) $(DAED_INTERF
 ifdef DEBUG
 	CONFIG=Dev #default config in Debug build is "Dev"
 
-	CFLAGS			= -g -O3 -G0 -D_DEBUG -MD \
+	CFLAGS			= -g -O3 -G0 -D_DEBUG -MD -ffast-math \
 				  -W -Wcast-qual -Wchar-subscripts -Wno-unused -Wpointer-arith\
 				  -Wredundant-decls -Wshadow -Wwrite-strings
 				#-Winline -Wcast-align 
@@ -180,7 +180,7 @@ ifdef DEBUG
 
 	SRCS			= $(CORE_SRCS) $(ADDITIONAL_DEBUG_SRCS) $(ADDITIONAL_SYNC_SRCS)
 else 
-	CFLAGS			= -O3 -G0 -DNDEBUG -Wall -MD
+	CFLAGS			= -O3 -G0 -DNDEBUG -Wall -MD -ffast-math
 	SRCS			= $(CORE_SRCS) $(DAED_RELEASE_SRCS)
 endif
 

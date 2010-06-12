@@ -261,10 +261,19 @@ struct GBI1_Tri2
 union MicroCodeCommand
 {
 	Instruction		inst;
-	GBI1_Tri1		tri1;
 	GBI1_Matrix		mtx1;
 	GBI2_Matrix		mtx2;
 	GBI1_PopMatrix	popmtx;
+	GBI1_Line3D		gbi1line3d;
+	GBI1_Tri1		gbi1tri1;
+	GBI1_Tri2		gbi1tri2;
+	GBI2_Line3D		gbi2line3d;
+	GBI2_Tri1		gbi2tri1;
+	GBI2_Tri2		gbi2tri2;
+	GBI1_MoveWord	mw1;
+	GBI2_MoveWord	mw2;
+	SetColor		color;
+	SetTImg			img;
 
 	u64	force_structure_alignment;
 };

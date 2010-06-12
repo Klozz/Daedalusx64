@@ -1090,10 +1090,7 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 {
 	// Type of movement is in low 8bits of cmd0.
 
-	u32 index = command.inst.cmd0 & 0xFF;
-	u32 offset = (command.inst.cmd0 >> 8) & 0xFFFF;
-
-	switch (index)
+	switch (command.mw1.type)
 	{
 	case G_MW_MATRIX:
 		DL_PF("    G_MW_MATRIX");
@@ -1103,7 +1100,7 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 	case G_MW_NUMLIGHT:
 		//#define NUML(n)		(((n)+1)*32 + 0x80000000)
 		{
-			u32 num_lights = ((command.inst.cmd1-0x80000000)/32) - 1;
+			u32 num_lights = ((command.mw1.value-0x80000000)/32) - 1;
 			DL_PF("    G_MW_NUMLIGHT: Val:%d", num_lights);
 
 			gAmbientLightIdx = num_lights;
@@ -1113,29 +1110,29 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 		break;
 	case G_MW_CLIP:	// Seems to be unused?
 		{
-			switch (offset)
+			switch (command.mw1.offset)
 			{
 			case G_MWO_CLIP_RNX:
 			case G_MWO_CLIP_RNY:
 			case G_MWO_CLIP_RPX:
 			case G_MWO_CLIP_RPY:
 				break;
-			default:					DL_PF("    G_MW_CLIP  ?   : 0x%08x", command.inst.cmd1);					break;
+			default:					DL_PF("    G_MW_CLIP  ?   : 0x%08x", command->cmd1);					break;
 			}
 		}
 		break;
 	case G_MW_SEGMENT:
 		{
-			u32 segment = (offset >> 2) & 0xF;
-			u32 base = command.inst.cmd1;
+			u32 segment = (command.mw1.offset >> 2) & 0xF;
+			u32 base = command.mw1.value & 0x00FFFFFF;
 			DL_PF("    G_MW_SEGMENT Seg[%d] = 0x%08x", segment, base);
 			gSegments[segment] = base;
 		}
 		break;
 	case G_MW_FOG:
 		{
-			u16 wMult = u16(command.inst.cmd1 >> 16);
-			u16 wOff  = u16(command.inst.cmd1      );
+			u16 wMult = u16(command.mw1.value >> 16);
+			u16 wOff  = u16(command.mw1.value      );
 
 			f32 fMult = ((f32)(s16)wMult) / 65536.0f;
 			f32 fOff  = ((f32)(s16)wOff)  / 65536.0f;
@@ -1148,25 +1145,25 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 		break;
 	case G_MW_LIGHTCOL:
 		{
-			u32 light_idx = offset / 0x20;
-			u32 field_offset = (offset & 0x7);
+			u32 light_idx = command.mw1.offset / 0x20;
+			u32 field_offset = (command.mw1.offset & 0x7);
 
-			DL_PF("    G_MW_LIGHTCOL/0x%08x: 0x%08x", offset, command.inst.cmd1);
+			DL_PF("    G_MW_LIGHTCOL/0x%08x: 0x%08x", command.mw1.offset, command->cmd1);
 
 			switch (field_offset)
 			{
 			case 0:
-				//g_N64Lights[light_idx].Colour = command.inst.cmd1;
+				//g_N64Lights[light_idx].Colour = command->cmd1;
 				// Light col, not the copy
 				if (light_idx == gAmbientLightIdx)
 				{
-					u32 n64col( command.inst.cmd1 );
+					u32 n64col( command.mw1.value );
 
 					PSPRenderer::Get()->SetAmbientLight( v4( N64COL_GETR_F(n64col), N64COL_GETG_F(n64col), N64COL_GETB_F(n64col), 1.0f ) );
 				}
 				else
 				{
-					PSPRenderer::Get()->SetLightCol(light_idx, command.inst.cmd1);
+					PSPRenderer::Get()->SetLightCol(light_idx, command.mw1.value);
 				}
 				break;
 
@@ -1182,9 +1179,9 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 		break;
 	case G_MW_POINTS:	// Used in FIFA 98
 		{
-			u32 vtx = offset/40;
-			u32 w	= offset - vtx*40;
-			u32 val = command.inst.cmd1;	// Odd value given
+			u32 vtx = command.mw1.offset/40;
+			u32 w	= command.mw1.offset - vtx*40;
+			u32 val = command.mw1.value;
 
 			DL_PF("    G_MW_POINTS");
 
@@ -1194,15 +1191,14 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 	case G_MW_PERSPNORM:
 		DL_PF("    G_MW_PERSPNORM");
 		//RDP_NOIMPL_WARN("G_MW_PESPNORM Not Implemented");		// Used in Starfox - sets to 0xa
-	//	if ((short)command.inst.cmd1 != 10)
-	//		DBGConsole_Msg(0, "PerspNorm: 0x%04x", (short)command.inst.cmd1);	
+	//	if ((short)command->cmd1 != 10)
+	//		DBGConsole_Msg(0, "PerspNorm: 0x%04x", (short)command->cmd1);	
 		break;
 	default:
 		DL_PF("    Type: Unknown");
 		RDP_NOIMPL_WARN("Unknown MoveWord");
 		break;
 	}
-
 }
 
 //*****************************************************************************
@@ -1212,10 +1208,8 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 //001889F0: DB020000 00000030 CMD Zelda_MOVEWORD  Mem[2][00]=00000030 Lightnum=2
 void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 {
-	u32 type   = (command.inst.cmd0 >> 16) & 0xFF;
-	u32 offset = (command.inst.cmd0      ) & 0xFFFF;
 
-	switch (type)
+	switch (command.mw2.type)
 	{
 	case G_MW_MATRIX:
 		DL_PF("    G_MW_MATRIX");
@@ -1225,11 +1219,11 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 	case G_MW_NUMLIGHT:
 		{
 			// Lightnum
-			// command.inst.cmd1:
+			// command->cmd1:
 			// 0x18 = 24 = 0 lights
 			// 0x30 = 48 = 2 lights
 
-			u32 num_lights = command.inst.cmd1/24;
+			u32 num_lights = command.mw2.value/24;
 			DL_PF("     G_MW_NUMLIGHT: %d", num_lights);
 
 			gAmbientLightIdx = num_lights;
@@ -1239,7 +1233,7 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 
 	case G_MW_CLIP:	// Seems to be unused?
 		{
-			switch (offset)
+			switch (command.mw2.offset)
 			{
 			case G_MWO_CLIP_RNX:
 			case G_MWO_CLIP_RNY:
@@ -1253,8 +1247,8 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 
 	case G_MW_SEGMENT:
 		{
-			u32 segment = offset / 4;
-			u32 address	= command.inst.cmd1;
+			u32 segment = command.mw2.offset / 4;
+			u32 address	= command.mw2.value & 0x00FFFFFF;			// Hack - convert to physical
 
 			DL_PF( "      G_MW_SEGMENT Segment[%d] = 0x%08x", segment, address );
 
@@ -1263,8 +1257,8 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 		break;
 	case G_MW_FOG:
 		{
-			u16 wMult = u16(command.inst.cmd1 >> 16);
-			u16 wOff  = u16(command.inst.cmd1      );
+			u16 wMult = u16(command.mw2.value >> 16);
+			u16 wOff  = u16(command.mw2.value      );
 
 			f32 fMult = ((f32)(s16)wMult) / 65536.0f;
 			f32 fOff  = ((f32)(s16)wOff)  / 65536.0f;
@@ -1277,25 +1271,25 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 		break;
 	case G_MW_LIGHTCOL:
 		{
-			u32 light_idx = offset / 0x18;
-			u32 field_offset = (offset & 0x7);
+			u32 light_idx = command.mw2.offset / 0x18;
+			u32 field_offset = (command.mw2.offset & 0x7);
 
-			DL_PF("     G_MW_LIGHTCOL/0x%08x: 0x%08x", offset, command.inst.cmd1);
+			DL_PF("     G_MW_LIGHTCOL/0x%08x: 0x%08x", command.mw2.offset, command.mw2.value);
 
 			switch (field_offset)
 			{
 			case 0:
-				//g_N64Lights[light_idx].Colour = command.inst.cmd1;
+				//g_N64Lights[light_idx].Colour = command->cmd1;
 				// Light col, not the copy
 				if (light_idx == gAmbientLightIdx)
 				{
-					u32 n64col( command.inst.cmd1 );
+					u32 n64col( command.mw2.value );
 
 					PSPRenderer::Get()->SetAmbientLight( v4( N64COL_GETR_F(n64col), N64COL_GETG_F(n64col), N64COL_GETB_F(n64col), 1.0f ) );
 				}
 				else
 				{
-					PSPRenderer::Get()->SetLightCol(light_idx, command.inst.cmd1);
+					PSPRenderer::Get()->SetLightCol(light_idx, command.mw2.value);
 				}
 				break;
 
@@ -1310,7 +1304,7 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 		break;
 
 	case G_MW_PERSPNORM:
-		DL_PF("     G_MW_PERSPNORM 0x%04x", (s16)command.inst.cmd1);
+		DL_PF("     G_MW_PERSPNORM 0x%04x", (s16)command->cmd1);
 		break;
 
 	case G_MW_POINTS:
@@ -1438,6 +1432,8 @@ ZeldaMoveMem: 0xdc080008 0x8010e3c0 Type: 08 Len: 08 Off: 4000
 
 void RDP_GFX_Force_Matrix(u32 address)
 {
+	// Fix me !
+	/*
 	if (address + 64 > MAX_RAM_ADDRESS)
 	{
 		DBGConsole_Msg(0, "ForceMtx: Address invalid (0x%08x)", address);
@@ -1446,6 +1442,7 @@ void RDP_GFX_Force_Matrix(u32 address)
 
 	MatrixFromN64FixedPoint(address);
 	PSPRenderer::Get()->SetProjection(mat, true, PSPRenderer::MATRIX_LOAD);	// Arrrg this isn't right, fix me !
+	*/
 }
 //*****************************************************************************
 //
@@ -1659,10 +1656,11 @@ void DLParser_SetTileSize( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_SetTImg( MicroCodeCommand command )
 {
-	g_TI.Format		= (command.inst.cmd0>>21)&0x7;
-	g_TI.Size		= (command.inst.cmd0>>19)&0x3;
-	g_TI.Width		= (command.inst.cmd0&0x0FFF) + 1;
-	g_TI.Address	= RDPSegAddr(command.inst.cmd1);
+	g_TI.Format		= command.img.fmt;
+	g_TI.Size		= command.img.siz;
+	g_TI.Width		= command.img.width + 1;
+	g_TI.Address	= RDPSegAddr(command.img.addr);
+	//g_TI.bpl		= g_TI.Width << g_TI.Size >> 1; // Do we need to handle?
 
 	DL_PF("    Image: 0x%08x Fmt: %s/%s Width: %d (Pitch: %d)", g_TI.Address, gFormatNames[g_TI.Format], gSizeNames[g_TI.Size], g_TI.Width, g_TI.GetPitch());
 }
@@ -1985,21 +1983,24 @@ void DLParser_SetZImg( MicroCodeCommand command )
 
 void DLParser_SetCImg( MicroCodeCommand command )
 {
-	u32 format = (command.inst.cmd0>>21)&0x7;
-	u32 size   = (command.inst.cmd0>>19)&0x3;
-	u32 width  = (command.inst.cmd0&0x0FFF) + 1;
-	u32 newaddr	= RDPSegAddr(command.inst.cmd1) & 0x00FFFFFF;
-	//u32 bpl		= width << size >> 1;	// Bpl doesn't seem to exist on real N64, but it seems to help.. Unused for now..
+	u32 format = command.img.fmt;
+	u32 size   = command.img.siz;
+	u32 width  = command.img.width + 1;
+	u32 newaddr	= RDPSegAddr(command.img.addr) & 0x00FFFFFF;
+	//u32 bpl		= width << size >> 1;	// Do we need to handle?
 
-	DL_PF("    Image: 0x%08x", RDPSegAddr(command.inst.cmd1));
+	DL_PF("    Image: 0x%08x", RDPSegAddr(command->cmd1));
 	DL_PF("    Fmt: %s Size: %s Width: %d", gFormatNames[ format ], gSizeNames[ size ], width);
 
+	// Not sure if this really necesary.
+	//
+	/*
 	if( g_CI.Address == newaddr && g_CI.Format == format && g_CI.Size == size && g_CI.Width == width )
 	{
 		DL_PF("    Set CIMG to the same address, no change, skipped");
 		//DBGConsole_Msg(0, "SetCImg: Addr=0x%08X, Fmt:%s-%sb, Width=%d\n", g_CI.Address, gFormatNames[ format ], gSizeNames[ size ], width);
 		return;
-	}
+	}*/
 
 	//g_CI.Bpl = bpl;
 	g_CI.Address = newaddr;
@@ -2058,14 +2059,9 @@ void DLParser_SetFillColor( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_SetFogColor( MicroCodeCommand command )
 {
-	u8 r	= N64COL_GETR(command.inst.cmd1);
-	u8 g	= N64COL_GETG(command.inst.cmd1);
-	u8 b	= N64COL_GETB(command.inst.cmd1);
-	u8 a	= N64COL_GETA(command.inst.cmd1);
+	DL_PF("    RGBA: %d %d %d %d", command.color.r, command.color.g, command.color.b, command.color.a);
 
-	DL_PF("    RGBA: %d %d %d %d", r, g, b, a);
-
-	c32	fog_colour( r, g, b, a );
+	c32	fog_colour( command.color.r, command.color.g, command.color.b, command.color.a );
 
 	PSPRenderer::Get()->SetFogColour( fog_colour );
 }
@@ -2075,18 +2071,9 @@ void DLParser_SetFogColor( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_SetBlendColor( MicroCodeCommand command )
 {
-	u8 r	= N64COL_GETR(command.inst.cmd1);
-	u8 g	= N64COL_GETG(command.inst.cmd1);
-	u8 b	= N64COL_GETB(command.inst.cmd1);
-	u8 a	= N64COL_GETA(command.inst.cmd1);
+	DL_PF("    RGBA: %d %d %d %d", command.color.r, command.color.g, command.color.b, command.color.a);
 
-	use(r);
-	use(g);
-	use(b);
-
-	DL_PF("    RGBA: %d %d %d %d", r, g, b, a);
-
-	PSPRenderer::Get()->SetAlphaRef(a);
+	PSPRenderer::Get()->SetAlphaRef( command.color.a );
 }
 
 //*****************************************************************************
@@ -2094,19 +2081,9 @@ void DLParser_SetBlendColor( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_SetPrimColor( MicroCodeCommand command )
 {
-	u32 m	= (command.inst.cmd0>>8)&0xFF;
-	u32 l	= (command.inst.cmd0)&0xFF;
-	u8 r	= N64COL_GETR(command.inst.cmd1);
-	u8 g	= N64COL_GETG(command.inst.cmd1);
-	u8 b	= N64COL_GETB(command.inst.cmd1);
-	u8 a	= N64COL_GETA(command.inst.cmd1);
+	DL_PF("    M:%d L:%d RGBA: %d %d %d %d", command.color.prim_min_level, command.color.prim_level, command.color.r, command.color.g, command.color.b, command.color.a);
 
-	use(m);
-	use(l);
-
-	DL_PF("    M:%d L:%d RGBA: %d %d %d %d", m, l, r, g, b, a);
-
-	c32	prim_colour( r, g, b, a );
+	c32	prim_colour( command.color.r, command.color.g, command.color.b, command.color.a );
 
 	PSPRenderer::Get()->SetPrimitiveColour( prim_colour );
 }
@@ -2116,19 +2093,12 @@ void DLParser_SetPrimColor( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_SetEnvColor( MicroCodeCommand command )
 {
-	u8 r	= N64COL_GETR(command.inst.cmd1);
-	u8 g	= N64COL_GETG(command.inst.cmd1);
-	u8 b	= N64COL_GETB(command.inst.cmd1);
-	u8 a	= N64COL_GETA(command.inst.cmd1);
+	DL_PF("    RGBA: %d %d %d %d", command.color.r, command.color.g, command.color.b, command.color.a);
 
-	DL_PF("    RGBA: %d %d %d %d", r, g, b, a);
-
-	c32	env_colour( r, g, b, a );
+	c32	env_colour( command.color.r, command.color.g,command.color.b, command.color.a );
 
 	PSPRenderer::Get()->SetEnvColour( env_colour );
 }
-
-
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*****************************************************************************

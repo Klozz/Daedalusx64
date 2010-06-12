@@ -2,7 +2,7 @@ TARGET = kernelbuttons
 OBJS = main.o
 
 INCDIR =
-CFLAGS = -O2 -G0 -Wall
+CFLAGS = -Os -G0 -Wall
 
 
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti

@@ -528,9 +528,11 @@ bool IGraphicsContext::Initialise()
 	save_disp_rel = disp_buffer_rel;
 	save_depth_rel = depth_buffer_rel;
 
+#ifndef DAEDALUS_SILENT
 	printf( "Allocated %d bytes of memory for draw buffer at %p\n", FRAME_SIZE, draw_buffer );
 	printf( "Allocated %d bytes of memory for draw buffer at %p\n", FRAME_SIZE, disp_buffer );
 	printf( "Allocated %d bytes of memory for draw buffer at %p\n", DEPTH_SIZE, depth_buffer );
+#endif
 
 	// buffer pointers for interlaced blits
 	LACED_DRAW = reinterpret_cast< u32 >(draw_buffer);

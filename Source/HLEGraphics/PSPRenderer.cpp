@@ -638,7 +638,7 @@ PSPRenderer::SBlendStateEntry	PSPRenderer::LookupBlendState( u64 mux, bool two_c
 	{
 		CCombinerTree				tree( mux, two_cycles );
 		entry.States = tree.GetBlendStates();
-#ifndef DAEDALUS_DEBUG_DISPLAYLIST
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		printf( "Adding %08x%08x - %d cycles", u32(mux>>32), u32(mux), two_cycles ? 2 : 1 );
 		if(entry.States->IsInexact())
 		{

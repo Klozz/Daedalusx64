@@ -75,7 +75,9 @@ namespace
 		TextureDestInfo dst( texture_format );
 		if( gTexelBuffer.size() < buffer_size || gTexelBuffer.size() > (64 * 1024))//Cut off for downsizing may need to be adjusted to prevent some thrashing
 		{
+			#ifdef DEBUG
 				printf( "Resizing texel buffer to %d bytes. Texture is %dx%d\n", buffer_size, texture_info.GetWidth(), texture_info.GetHeight() );
+			#endif
 				gTexelBuffer.resize( buffer_size );
 		}
 

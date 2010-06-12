@@ -1117,7 +1117,7 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 			case G_MWO_CLIP_RPX:
 			case G_MWO_CLIP_RPY:
 				break;
-			default:					DL_PF("    G_MW_CLIP  ?   : 0x%08x", command->cmd1);					break;
+			default:					DL_PF("    G_MW_CLIP  ?   : 0x%08x", command.inst.cmd1);					break;
 			}
 		}
 		break;
@@ -1148,7 +1148,7 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 			u32 light_idx = command.mw1.offset / 0x20;
 			u32 field_offset = (command.mw1.offset & 0x7);
 
-			DL_PF("    G_MW_LIGHTCOL/0x%08x: 0x%08x", command.mw1.offset, command->cmd1);
+			DL_PF("    G_MW_LIGHTCOL/0x%08x: 0x%08x", command.mw1.offset, command.inst.cmd1);
 
 			switch (field_offset)
 			{
@@ -1304,7 +1304,7 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 		break;
 
 	case G_MW_PERSPNORM:
-		DL_PF("     G_MW_PERSPNORM 0x%04x", (s16)command->cmd1);
+		DL_PF("     G_MW_PERSPNORM 0x%04x", (s16)command.inst.cmd1);
 		break;
 
 	case G_MW_POINTS:
@@ -1989,7 +1989,7 @@ void DLParser_SetCImg( MicroCodeCommand command )
 	u32 newaddr	= RDPSegAddr(command.img.addr) & 0x00FFFFFF;
 	//u32 bpl		= width << size >> 1;	// Do we need to handle?
 
-	DL_PF("    Image: 0x%08x", RDPSegAddr(command->cmd1));
+	DL_PF("    Image: 0x%08x", RDPSegAddr(command.inst.cmd1));
 	DL_PF("    Fmt: %s Size: %s Width: %d", gFormatNames[ format ], gSizeNames[ size ], width);
 
 	// Not sure if this really necesary.

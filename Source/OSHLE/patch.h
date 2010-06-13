@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // Returns return type to determine what kind of post-processing should occur
 typedef u32 (*PatchFunction)();
 
-#define VAR_ADDRESS(name)  (g_##name##_v.dwLocation)
+#define VAR_ADDRESS(name)  (g_##name##_v.location)
 #define VAR_FOUND(name)  (g_##name##_v.bFound)
 
 
@@ -44,7 +44,7 @@ struct _PatchSymbol;
 
 typedef struct
 {
-	u32 dwOffset;				// Opcode offset
+	u32 offset;				// Opcode offset
 	PATCH_CROSSREF_TYPE nType;	// Type - J/JAL/LUI/ORI
 	struct _PatchSymbol * pSymbol;		// Only one of these is valid
 	struct _PatchVariable * pVariable;
@@ -67,7 +67,7 @@ typedef struct
 typedef struct _PatchSymbol
 {
 	bool bFound;				// Has this symbol been found?
-	u32 dwLocation;				// What is the address of the symbol?
+	u32 location;				// What is the address of the symbol?
 	const char * szName;				// Symbol name
 
 	OpCode opReplaced;			// The op that was replaced when we were patched in
@@ -80,7 +80,7 @@ typedef struct _PatchSymbol
 typedef struct _PatchVariable
 {
 	bool bFound;				// Has this symbol been found?
-	u32 dwLocation;				// What is the address of the symbol?
+	u32 location;				// What is the address of the symbol?
 	const char * szName;				// Symbol name
 
 	// For now have these as separate fields. We probably want to 
@@ -181,11 +181,13 @@ extern u32 gNumOfOSFunctions;
 void Patch_Reset();
 void Patch_ApplyPatches();
 void Patch_PatchAll();
-const char * Patch_GetJumpAddressName(u32 dwJumpTarget);
+const char * Patch_GetJumpAddressName(u32 jump);
 u32 Patch_GetSymbolAddress(const char * szName);
 
+#ifdef DUMPOSFUNCTIONS
 void Patch_DumpOsThreadInfo();
 void Patch_DumpOsQueueInfo();
 void Patch_DumpOsEventInfo();
+#endif
 
 #endif

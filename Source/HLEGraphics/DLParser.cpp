@@ -1539,12 +1539,12 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 	}
 }
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*****************************************************************************
 //
 //*****************************************************************************
 void DLParser_DumpVtxInfo(u32 address, u32 v0_idx, u32 num_verts)
 {
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	if (gDisplayListFile != NULL)
 	{
 		s8 *pcSrc = (s8 *)(g_pu8RamBase + address);
@@ -1578,9 +1578,8 @@ void DLParser_DumpVtxInfo(u32 address, u32 v0_idx, u32 num_verts)
 				idx, wFlags, x, y, z, tu, tv, a, b, c, d, t.x, t.y, t.z );
 		}
 	}
-#endif
 }
-
+#endif
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -2140,46 +2139,12 @@ void DLParser_SetInstructionCountLimit( u32 limit )
 }
 #endif
 
-void DLParser_GBI2_DL_Count( MicroCodeCommand command )
-{
-	DAEDALUS_ERROR("DL_COUNT");
-
-	// This cmd is likely to execute number of ucode at the given address
-	u32 address  = RDPSegAddr(command.inst.cmd1);
-	{
-		DList dl;
-		dl.addr = address;
-		dl.limit = ((command.inst.cmd0)&0xFFFF);
-		gDisplayListStack.push_back(dl);
-	}
-}
-
-//*****************************************************************************
-//
-//*****************************************************************************
-void DLParser_GBI2_0x8( MicroCodeCommand command )
-{
-	if( ((command.inst.cmd0)&0x00FFFFFF) == 0x2F && ((command.inst.cmd1)&0xFF000000) == 0x80000000 )
-	{
-		// V-Rally 64
-		DLParser_S2DEX_ObjLdtxRectR(command);
-	}
-	else
-	{
-		DLParser_Nothing(command);
-	}
-}
-
 //*****************************************************************************
 //RSP TRI commands..
 //In HLE emulation you NEVER see this commands !
 //*****************************************************************************
 
-void DLParser_TriFill( MicroCodeCommand command ){ /*DL_PF("RSP Tri: (Ignored)");*/ }
-void DLParser_TriFillZ( MicroCodeCommand command ){ /*DL_PF("RSP Tri: (Ignored)");*/ }
-void DLParser_TriTxtr( MicroCodeCommand command ){ /*DL_PF("RSP Tri: (Ignored)");*/ }
-void DLParser_TriTxtrZ( MicroCodeCommand command ){ /*DL_PF("RSP Tri: (Ignored)");*/ }
-void DLParser_TriShade( MicroCodeCommand command ){ /*DL_PF("RSP Tri: (Ignored)");*/ }
-void DLParser_TriShadeZ( MicroCodeCommand command ){ /*DL_PF("RSP Tri: (Ignored)");*/ }
-void DLParser_TriShadeTxtr( MicroCodeCommand command ){ /*DL_PF("RSP Tri: (Ignored)");*/ }
-void DLParser_TriShadeTxtrZ( MicroCodeCommand command ){ /*DL_PF("RSP Tri: (Ignored)");*/ }
+void DLParser_TriRSP( MicroCodeCommand command ){ DL_PF("RSP Tri: (Ignored)"); }
+
+
+

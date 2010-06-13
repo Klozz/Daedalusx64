@@ -97,6 +97,12 @@ TEST_DISABLE_MESG_FUNCS
 u32 Patch_osRecvMesg()
 {
 TEST_DISABLE_MESG_FUNCS
+
+	if( gNeedHackforZelda )	// osRecvMesg brakes OOT's in-game menu
+	{
+		return PATCH_RET_NOT_PROCESSED0(osRecvMesg);
+	}
+
 	u32 queue     = gGPR[REG_a0]._u32_0;
 	u32 msg       = gGPR[REG_a1]._u32_0;
 	u32 BlockFlag = gGPR[REG_a2]._u32_0;
@@ -203,6 +209,12 @@ TEST_DISABLE_MESG_FUNCS
 u32 Patch_osSendMesg()
 {
 TEST_DISABLE_MESG_FUNCS
+
+	if( gNeedHackforZelda ) // osSendMesg brakes OOT's in-game menu
+	{
+		return PATCH_RET_NOT_PROCESSED0(osSendMesg);
+	}
+
 	u32 queue     = gGPR[REG_a0]._u32_0;
 	u32 msg       = gGPR[REG_a1]._u32_0;
 	u32 BlockFlag = gGPR[REG_a2]._u32_0;

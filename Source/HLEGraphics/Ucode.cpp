@@ -90,8 +90,8 @@ MicroCodeInstruction gInstructionLookup[13][256] =
 	//c0
 		DLParser_GBI1_Noop,   DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
-		DLParser_TriFill,	 DLParser_TriFillZ,	  DLParser_TriTxtr,	    DLParser_TriTxtrZ,
-		DLParser_TriShade,	 DLParser_TriShadeZ,	  DLParser_TriShadeTxtr, DLParser_TriShadeTxtrZ,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP,	    DLParser_TriRSP,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP, DLParser_TriRSP,
 	//d0
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
@@ -165,8 +165,8 @@ MicroCodeInstruction gInstructionLookup[13][256] =
       // c0-ff: RDP commands
         DLParser_GBI1_Noop,               DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,    
         DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,    
-		DLParser_TriFill,	 DLParser_TriFillZ,	  DLParser_TriTxtr,	    DLParser_TriTxtrZ,
-		DLParser_TriShade,	 DLParser_TriShadeZ,	  DLParser_TriShadeTxtr, DLParser_TriShadeTxtrZ,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP,	    DLParser_TriRSP,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP, DLParser_TriRSP,
         DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,    
         DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,    
         DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,    
@@ -248,8 +248,8 @@ MicroCodeInstruction gInstructionLookup[13][256] =
 	//c0
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
-		DLParser_TriFill,	 DLParser_TriFillZ,	  DLParser_TriTxtr,	    DLParser_TriTxtrZ,
-		DLParser_TriShade,	 DLParser_TriShadeZ,	  DLParser_TriShadeTxtr, DLParser_TriShadeTxtrZ,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP,	    DLParser_TriRSP,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP, DLParser_TriRSP,
 	//d0
 		DLParser_Nothing,  DLParser_Nothing,		 DLParser_Nothing,	 DLParser_Nothing,
 		DLParser_Nothing,  DLParser_GBI2_DL_Count,	 DLParser_GBI2_DMA_IO, DLParser_GBI2_Texture,
@@ -335,8 +335,8 @@ MicroCodeInstruction gInstructionLookup[13][256] =
 	//c0
 		DLParser_GBI1_Noop,   DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
-		DLParser_TriFill,	 DLParser_TriFillZ,	  DLParser_TriTxtr,	    DLParser_TriTxtrZ,
-		DLParser_TriShade,	 DLParser_TriShadeZ,	  DLParser_TriShadeTxtr, DLParser_TriShadeTxtrZ,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP,	    DLParser_TriRSP,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP, DLParser_TriRSP,
 	//d0
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
@@ -419,8 +419,8 @@ MicroCodeInstruction gInstructionLookup[13][256] =
 		//c0
 		DLParser_GBI1_Noop,   DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
-		DLParser_TriFill,	 DLParser_TriFillZ,	  DLParser_TriTxtr,	    DLParser_TriTxtrZ,
-		DLParser_TriShade,	 DLParser_TriShadeZ,	  DLParser_TriShadeTxtr, DLParser_TriShadeTxtrZ,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP,	    DLParser_TriRSP,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP, DLParser_TriRSP,
 		//d0
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
@@ -504,8 +504,8 @@ MicroCodeInstruction gInstructionLookup[13][256] =
 		//c0
 		DLParser_GBI1_Noop,   DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
-		DLParser_TriFill,	 DLParser_TriFillZ,	  DLParser_TriTxtr,	    DLParser_TriTxtrZ,
-		DLParser_TriShade,	 DLParser_TriShadeZ,	  DLParser_TriShadeTxtr, DLParser_TriShadeTxtrZ,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP,	    DLParser_TriRSP,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP, DLParser_TriRSP,
 		//d0
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
@@ -582,8 +582,8 @@ MicroCodeInstruction gInstructionLookup[13][256] =
       // c0-ff: RDP commands
         DLParser_GBI1_Noop,               DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,    
         DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,    
-		DLParser_TriFill,	 DLParser_TriFillZ,	  DLParser_TriTxtr,	    DLParser_TriTxtrZ,
-		DLParser_TriShade,	 DLParser_TriShadeZ,	  DLParser_TriShadeTxtr, DLParser_TriShadeTxtrZ,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP,	    DLParser_TriRSP,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP, DLParser_TriRSP,
         DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,    
         DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,    
         DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,                  DLParser_Nothing,    
@@ -665,8 +665,8 @@ MicroCodeInstruction gInstructionLookup[13][256] =
 	//c0
 		DLParser_GBI1_Noop,   DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
-		DLParser_TriFill,	 DLParser_TriFillZ,	  DLParser_TriTxtr,	    DLParser_TriTxtrZ,
-		DLParser_TriShade,	 DLParser_TriShadeZ,	  DLParser_TriShadeTxtr, DLParser_TriShadeTxtrZ,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP,	    DLParser_TriRSP,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP, DLParser_TriRSP,
 	//d0
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
@@ -751,8 +751,8 @@ MicroCodeInstruction gInstructionLookup[13][256] =
 	//c0
 		DLParser_GBI1_Noop,   DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
-		DLParser_TriFill,	 DLParser_TriFillZ,	  DLParser_TriTxtr,	    DLParser_TriTxtrZ,
-		DLParser_TriShade,	 DLParser_TriShadeZ,	  DLParser_TriShadeTxtr, DLParser_TriShadeTxtrZ,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP,	    DLParser_TriRSP,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP, DLParser_TriRSP,
 	//d0
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
@@ -775,7 +775,7 @@ MicroCodeInstruction gInstructionLookup[13][256] =
 	{
 		DLParser_GBI1_Noop,	  RSP_Vtx_Conker,		 DLParser_GBI1_ModifyVtx, DLParser_GBI2_CullDL,
 		DLParser_GBI1_BranchZ,	DLParser_GBI2_Tri1,	 DLParser_GBI2_Tri2,		 DLParser_GBI2_Quad,
-		DLParser_GBI2_0x8,	  DLParser_S2DEX_Bg1cyc, DLParser_S2DEX_BgCopy,  DLParser_S2DEX_ObjRendermode,
+/*DLParser_GBI2_0x8*/DLParser_GBI2_Line3D,	  DLParser_S2DEX_Bg1cyc, DLParser_S2DEX_BgCopy,  DLParser_S2DEX_ObjRendermode,
 		DLParser_Nothing,  DLParser_Nothing,	 DLParser_Nothing,	 DLParser_Nothing,
 	//10
 		DLParser_GBI2_Conker, DLParser_GBI2_Conker, DLParser_GBI2_Conker, DLParser_GBI2_Conker,
@@ -837,8 +837,8 @@ MicroCodeInstruction gInstructionLookup[13][256] =
 	//c0
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
-		DLParser_TriFill,	 DLParser_TriFillZ,	  DLParser_TriTxtr,	    DLParser_TriTxtrZ,
-		DLParser_TriShade,	 DLParser_TriShadeZ,	  DLParser_TriShadeTxtr, DLParser_TriShadeTxtrZ,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP,	    DLParser_TriRSP,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP, DLParser_TriRSP,
 	//d0
 		DLParser_Nothing,  DLParser_Nothing,		 DLParser_Nothing,	 DLParser_Nothing,
 		DLParser_Nothing,  DLParser_GBI2_DL_Count,	 DLParser_GBI2_DMA_IO, DLParser_GBI2_Texture,
@@ -921,8 +921,8 @@ MicroCodeInstruction gInstructionLookup[13][256] =
 		//c0
 		DLParser_GBI1_Noop,	 DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing, 
-		DLParser_TriFill,	 DLParser_TriFillZ,	  DLParser_TriTxtr,	    DLParser_TriTxtrZ,
-		DLParser_TriShade,	 DLParser_TriShadeZ,	  DLParser_TriShadeTxtr, DLParser_TriShadeTxtrZ,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP,	    DLParser_TriRSP,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP, DLParser_TriRSP,
 		//d0
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
@@ -1010,8 +1010,8 @@ MicroCodeInstruction gInstructionLookup[13][256] =
 	//c0
 		DLParser_GBI1_Noop,				DLParser_S2DEX_ObjLoadTxtr, DLParser_S2DEX_ObjLdtxSprite, DLParser_S2DEX_ObjLdtxRect,
 		DLParser_S2DEX_ObjLdtxRectR, DLParser_Nothing,		 DLParser_Nothing,			  DLParser_Nothing,
-		DLParser_TriFill,	 DLParser_TriFillZ,	  DLParser_TriTxtr,	    DLParser_TriTxtrZ,
-		DLParser_TriShade,	 DLParser_TriShadeZ,	  DLParser_TriShadeTxtr, DLParser_TriShadeTxtrZ,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP,	    DLParser_TriRSP,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP, DLParser_TriRSP,
 	//d0
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
@@ -1094,8 +1094,8 @@ MicroCodeInstruction gInstructionLookup[13][256] =
 		//c0
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,  DLParser_Nothing,
-		DLParser_TriFill,	 DLParser_TriFillZ,	  DLParser_TriTxtr,	    DLParser_TriTxtrZ,
-		DLParser_TriShade,	 DLParser_TriShadeZ,	  DLParser_TriShadeTxtr, DLParser_TriShadeTxtrZ,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP,	    DLParser_TriRSP,
+		DLParser_TriRSP,	 DLParser_TriRSP,	  DLParser_TriRSP, DLParser_TriRSP,
 		//d0
 		DLParser_Nothing,  DLParser_Nothing,		 DLParser_Nothing,	 DLParser_Nothing,
 		DLParser_Nothing,  DLParser_GBI2_DL_Count,	 DLParser_GBI2_DMA_IO, DLParser_GBI2_Texture,

@@ -60,7 +60,7 @@ static void MemoryModeRegMI( u32 value );
 static void MemoryUpdateMI( u32 value );
 static void MemoryUpdatePI( u32 value );
 static void MemoryUpdatePIF();
-static void MemoryDoDP();
+//static void MemoryDoDP();
 
 static void Memory_InitTables();
 
@@ -639,10 +639,11 @@ void Memory_InitTables()
 	}
 }
 
-#undef DISPLAY_RDP_COMMANDS
+//#undef DISPLAY_RDP_COMMANDS
 //*****************************************************************************
 //
 //*****************************************************************************
+/*
 void MemoryDoDP()
 {
 	u32 dpc_start	= Memory_DPC_GetRegister( DPC_START_REG );
@@ -722,21 +723,20 @@ void MemoryDoDP()
 		dpc_current += 8;
 	}
 
-/*
 
-	DBGConsole_Msg(0, "DP: S: %08x C: %08x E: %08x", dpc_start, dpc_current, dpc_end );
-	DBGConsole_Msg(0, "    Status: %08x Clock: %08x", dpc_status, dpc_clock );
-	DBGConsole_Msg(0, "    BufBusy: %08x PipeBusy: %08x Tmem: %08x", dpc_bufbusy, dpc_pipebusy, dpc_tmem );
+//	DBGConsole_Msg(0, "DP: S: %08x C: %08x E: %08x", dpc_start, dpc_current, dpc_end );
+//	DBGConsole_Msg(0, "    Status: %08x Clock: %08x", dpc_status, dpc_clock );
+//	DBGConsole_Msg(0, "    BufBusy: %08x PipeBusy: %08x Tmem: %08x", dpc_bufbusy, dpc_pipebusy, dpc_tmem );
 
-*/
+
 	Memory_DPC_SetRegister( DPC_CURRENT_REG, dpc_current );
-/*
-	Memory_DPC_ClrRegisterBits(DPC_STATUS_REG, DPC_STATUS_DMA_BUSY);
-	Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_DP);
-	R4300_Interrupt_UpdateCause3();
-*/
-}
 
+//	Memory_DPC_ClrRegisterBits(DPC_STATUS_REG, DPC_STATUS_DMA_BUSY);
+//	Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_DP);
+//	R4300_Interrupt_UpdateCause3();
+
+}
+*/
 //*****************************************************************************
 //
 //*****************************************************************************

@@ -23,45 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 //*****************************************************************************
-// GBI2 S2DEX
-//*****************************************************************************
-
-#define	G_GBI2_OBJ_RECTANGLE		0x01
-#define	G_GBI2_OBJ_SPRITE			0x02
-#define	G_GBI2_SELECT_DL			0x04
-#define	G_GBI2_OBJ_LOADTXTR			0x05
-#define	G_GBI2_OBJ_LDTX_SPRITE		0x06
-#define	G_GBI2_OBJ_LDTX_RECT		0x07
-#define	G_GBI2_OBJ_LDTX_RECT_R		0x08
-#define	G_GBI2_BG_1CYC				0x09
-#define	G_GBI2_BG_COPY				0x0a
-#define	G_GBI2_OBJ_RENDERMODE		0x0b
-#define	G_GBI2_OBJ_RECTANGLE_R		0xda
-#define	G_GBI2_OBJ_MOVEMEM			0xdc
-#define	G_GBI2_RDPHALF_0			0xe4
-
-//*****************************************************************************
-// GBI1 S2DEX
-//*****************************************************************************
-
-#define	G_GBI1_BG_1CYC				0x01
-#define	G_GBI1_BG_COPY				0x02
-#define	G_GBI1_OBJ_RECTANGLE		0x03
-#define	G_GBI1_OBJ_SPRITE			0x04
-#define	G_GBI1_OBJ_MOVEMEM			0x05
-#define	G_GBI1_SELECT_DL			0xb0
-#define	G_GBI1_OBJ_RENDERMODE		0xb1
-#define	G_GBI1_OBJ_RECTANGLE_R		0xb2
-#define	G_GBI1_OBJ_LOADTXTR			0xc1
-#define	G_GBI1_OBJ_LDTX_SPRITE		0xc2
-#define	G_GBI1_OBJ_LDTX_RECT		0xc3
-#define	G_GBI1_OBJ_LDTX_RECT_R		0xc4
-#define	G_GBI1_RDPHALF_0			0xe4
-
-//*****************************************************************************
 // Needed by S2DEX
 //*****************************************************************************
 
+#define	G_GBI2_SELECT_DL		0x04
 #define	S2DEX_OBJLT_TXTRBLOCK	0x00001033
 #define	S2DEX_OBJLT_TXTRTILE	0x00fc1034
 #define	S2DEX_OBJLT_TLUT		0x00000030
@@ -93,28 +58,28 @@ UcodeFunc( DLParser_S2DEX_Bg1cyc_2 );
 //*****************************************************************************
 struct uObjBg
 {
-        u16 imageW;
-        u16 imageX;
-        u16 frameW;
-        s16 frameX;
-        u16 imageH;
-        u16 imageY;
-        u16 frameH;
-        s16 frameY;
+    u16 imageW;
+    u16 imageX;
+    u16 frameW;
+    s16 frameX;
+    u16 imageH;
+    u16 imageY;
+    u16 frameH;
+    s16 frameY;
 
-        u32 imagePtr;
-        u8  imageSiz;
-        u8  imageFmt;
-        u16 imageLoad;
-        u16 imageFlip;
-        u16 imagePal;
+    u32 imagePtr;
+    u8  imageSiz;
+    u8  imageFmt;
+    u16 imageLoad;
+    u16 imageFlip;
+    u16 imagePal;
 
-        u16 tmemH;
-        u16 tmemW;
-        u16 tmemLoadTH;
-        u16 tmemLoadSH;
-        u16 tmemSize;
-        u16 tmemSizeW;
+    u16 tmemH;
+    u16 tmemW;
+    u16 tmemLoadTH;
+    u16 tmemLoadSH;
+    u16 tmemSize;
+    u16 tmemSizeW;
 };
 
 //*****************************************************************************
@@ -122,32 +87,32 @@ struct uObjBg
 //*****************************************************************************
 struct	uObjScaleBg
 {	
-  u16	imageW;		
-  u16	imageX;		
+	u16	imageW;		
+	u16	imageX;		
 
-  u16	frameW;		
-  s16	frameX;		
+	u16	frameW;		
+	s16	frameX;		
 
-  u16	imageH;		
-  u16	imageY; 	
+	u16	imageH;		
+	u16	imageY; 	
 
-  u16	frameH;		
-  s16	frameY;		
+	u16	frameH;		
+	s16	frameY;		
 
-  u32	imagePtr;	
+	u32	imagePtr;	
 
-  u8	imageSiz;	
-  u8	imageFmt;	
-  u16	imageLoad;	
+	u8	imageSiz;	
+	u8	imageFmt;	
+	u16	imageLoad;	
 
-  u16	imageFlip;	
-  u16	imagePal; 	
+	u16	imageFlip;	
+	u16	imagePal; 	
 
-  u16	scaleH;		
-  u16	scaleW;		
+	u16	scaleH;		
+	u16	scaleW;		
 
-  s32	imageYorig;	
-  u8	padding[4];
+	s32	imageYorig;	
+	u8	padding[4];
 };
 
 #endif /* GSP_S2DEX_H */

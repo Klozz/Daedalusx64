@@ -406,6 +406,40 @@ void DLParser_GBI2_EndDL( MicroCodeCommand command )
 }
 
 //*****************************************************************************
+//
+//*****************************************************************************
+void DLParser_GBI2_DL_Count( MicroCodeCommand command )
+{
+	DAEDALUS_ERROR("DL_COUNT");
+
+	// This cmd is likely to execute number of ucode at the given address
+	u32 address  = RDPSegAddr(command.inst.cmd1);
+	{
+		DList dl;
+		dl.addr = address;
+		dl.limit = ((command.inst.cmd0)&0xFFFF);
+		gDisplayListStack.push_back(dl);
+	}
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+/*
+void DLParser_GBI2_0x8( MicroCodeCommand command )
+{
+	if( ((command.inst.cmd0)&0x00FFFFFF) == 0x2F && ((command.inst.cmd1)&0xFF000000) == 0x80000000 )
+	{
+		// V-Rally 64
+		DLParser_S2DEX_ObjLdtxRectR(command);
+	}
+	else
+	{
+		DLParser_Nothing(command);
+	}
+}
+*/
+//*****************************************************************************
 // When the depth is less than the z value provided, branch to given address
 //*****************************************************************************
 void DLParser_GBI1_BranchZ( MicroCodeCommand command )

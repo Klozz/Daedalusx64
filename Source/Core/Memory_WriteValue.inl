@@ -206,13 +206,16 @@ static void WriteValue_8410_841F( u32 address, u32 value )
 
 		case DPC_END_REG:
 			Memory_DPC_SetRegister( DPC_END_REG, value );
-			//DBGConsole_Msg( 0, "Wrote to [WDPC_END_REG] 0x%08x", value );
+			//
+			// ToDo : Implement ProcessRDPList
+			//
+			DBGConsole_Msg( 0, "Wrote to [WDPC_END_REG] 0x%08x", value );
 
 			// Doesn't really seems to help, just MI_INTR_REG, MI_INTR_DP does something
 			// I'm inclining to remove MemoryDoDP and just use the proper interrupts, since it doesn't seem to help at all.
 			//
-			MemoryDoDP();
-			//Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_DP);
+			//MemoryDoDP();
+			Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_DP);		// Eerrrg hack for KI? ToDO : Remove me.
 			break;
 
 		case DPC_STATUS_REG:

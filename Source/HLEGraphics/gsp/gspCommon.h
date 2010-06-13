@@ -52,8 +52,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 struct DList
 {
-        u32 addr;
-        u32 limit;
+    u32 addr;
+    u32 limit;
 };
 
 extern u32 gSegments[16];
@@ -68,7 +68,7 @@ extern Matrix4x4 mat;
 
 extern std::vector< DList > gDisplayListStack;
 //extern MicroCodeInstruction gInstructionLookup[256];
-extern const char *gInstructionName[256];
+//extern const char *gInstructionName[256];
 
 #define RDPSegAddr(seg) 		( (gSegments[((seg)>>24)&0x0F]&0x00ffffff) + ((seg)&0x00FFFFFF) )
 

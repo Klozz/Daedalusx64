@@ -34,7 +34,8 @@ UcodeFunc( DLParser_GBI1_Sprite2DDraw );
 // 
 //*****************************************************************************
 
-typedef struct {
+struct SpriteStruct
+{
   u32 SourceImagePointer;
   u32 TlutPointer;
 
@@ -49,20 +50,21 @@ typedef struct {
   u16 SourceImageOffsetS;
 
   char  dummy[4];
-} SpriteStruct;
+};
 
 //*****************************************************************************
 // 
 //*****************************************************************************
 
-typedef struct{
-        u16 px;
-        u16 py;
-        float scaleX;
-        float scaleY;
-        u8  flipX;
-        u8  flipY;
-        SpriteStruct *spritePtr;
-} Sprite2DInfo;
+struct Sprite2DInfo
+{
+    u16 px;
+    u16 py;
+    f32 scaleX;
+    f32 scaleY;
+    u8  flipX;
+    u8  flipY;
+    SpriteStruct *spritePtr;
+};
 
 #endif /* GSP_SPRITE2D_H */

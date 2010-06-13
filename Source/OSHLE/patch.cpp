@@ -59,7 +59,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef DUMPOSFUNCTIONS
 #include "Debug/dump.h"
 #include "Utility/IO.h"
-#endif
 
 static const char * g_szEventStrings[23] =
 {
@@ -87,6 +86,7 @@ static const char * g_szEventStrings[23] =
 	"OS_EVENT_RDB_FLUSH_PROF",
 	"OS_EVENT_RDB_ACK_PROF"
 };
+#endif	// DUMPOSFUNCTIONS
 
 u32 gNumOfOSFunctions;
 
@@ -110,8 +110,8 @@ bool gPatchesInstalled = false;
 void Patch_ResetSymbolTable();
 void Patch_RecurseAndFind();
 static bool Patch_LocateFunction(PatchSymbol * ps);
-static bool Patch_VerifyLocation(PatchSymbol * ps, u32 dwIndex);
-static bool Patch_VerifyLocation_CheckSignature(PatchSymbol * ps, PatchSignature * psig, u32 dwIndex);
+static bool Patch_VerifyLocation(PatchSymbol * ps, u32 index);
+static bool Patch_VerifyLocation_CheckSignature(PatchSymbol * ps, PatchSignature * psig, u32 index);
 static bool Patch_GetCache();
 static void Patch_FlushCache();
 
@@ -188,10 +188,10 @@ void Patch_PatchAll()
 			Dump_GetDumpDirectory(buf, "oshle");
 			IO::Path::Append(buf, ps->szName);
 
-			Dump_Disassemble(PHYS_TO_K0(ps->dwLocation), PHYS_TO_K0(ps->dwLocation) + ps->pSignatures->nNumOps * sizeof(OpCode),
+			Dump_Disassemble(PHYS_TO_K0(ps->location), PHYS_TO_K0(ps->location) + ps->pSignatures->nNumOps * sizeof(OpCode),
 				buf);
 
-			fprintf(fp, "%s 0x%08x\n", ps->szName, PHYS_TO_K0(ps->dwLocation));
+			fprintf(fp, "%s 0x%08x\n", ps->szName, PHYS_TO_K0(ps->location));
 #endif
 			gNumOfOSFunctions++;
 			Patch_ApplyPatch(i);
@@ -204,11 +204,11 @@ void Patch_PatchAll()
 
 void Patch_ApplyPatch(u32 i)
 {
-	u32 dwPC = g_PatchSymbols[i]->dwLocation;
+	u32 pc = g_PatchSymbols[i]->location;
 
 #ifdef DAEDALUS_ENABLE_DYNAREC
 	CFragment *frag = new CFragment(gFragmentCache.GetCodeBufferManager(),
-		PHYS_TO_K0(dwPC), g_PatchSymbols[i]->pSignatures->nNumOps,
+		PHYS_TO_K0(pc), g_PatchSymbols[i]->pSignatures->nNumOps,
 									(void*)g_PatchSymbols[i]->pFunction
 									);
 
@@ -227,7 +227,7 @@ u32 Patch_GetSymbolAddress(const char * szName)
 			continue;
 
 		if (_strcmpi(g_PatchSymbols[p]->szName, szName) == 0)
-			return PHYS_TO_K0(g_PatchSymbols[p]->dwLocation);
+			return PHYS_TO_K0(g_PatchSymbols[p]->location);
 
 	}
 
@@ -238,12 +238,12 @@ u32 Patch_GetSymbolAddress(const char * szName)
 
 // Given a location, this function returns the name of the matching
 // symbol (if there is one)
-const char * Patch_GetJumpAddressName(u32 dwJumpTarget)
+const char * Patch_GetJumpAddressName(u32 jump)
 {
 	u32 * pdwOpBase;
 	u32 * pdwPatchBase;
 
-	if (!Memory_GetInternalReadAddress(dwJumpTarget, (void **)&pdwOpBase))
+	if (!Memory_GetInternalReadAddress(jump, (void **)&pdwOpBase))
 		return "??";
 
 	// Search new list
@@ -253,7 +253,7 @@ const char * Patch_GetJumpAddressName(u32 dwJumpTarget)
 		if (!g_PatchSymbols[p]->bFound)
 			continue;
 
-		pdwPatchBase = g_pu32RamBase + (g_PatchSymbols[p]->dwLocation>>2);
+		pdwPatchBase = g_pu32RamBase + (g_PatchSymbols[p]->location>>2);
 
 		// Symbol not found, attempt to locate on this pass. This may
 		// fail if all dependent symbols are not found
@@ -268,6 +268,7 @@ const char * Patch_GetJumpAddressName(u32 dwJumpTarget)
 	return "?";
 }
 
+#ifdef DUMPOSFUNCTIONS
 
 void Patch_DumpOsThreadInfo()
 {
@@ -304,7 +305,6 @@ void Patch_DumpOsThreadInfo()
 		if (dwPri == 0xFFFFFFFF)
 			break;
 
-#ifndef DAEDALUS_SILENT
 		if (dwThread == dwCurrentThread)
 		{
 			DBGConsole_Msg(0, "->0x%08x, % 4d, 0x%08x, 0x%04x, 0x%04x, 0x%08x, 0x%08x",
@@ -315,14 +315,12 @@ void Patch_DumpOsThreadInfo()
 			DBGConsole_Msg(0, "  0x%08x, % 4d, 0x%08x, 0x%04x, 0x%04x, 0x%08x, 0x%08x",
 				dwThread, dwPri, dwQueue, wState, wFlags, dwID, dwFP);
 		}
-#endif
 		dwThread = Read32Bits(dwThread + offsetof(OSThread, tlnext));
 
 		if (dwThread == dwFirstThread)
 			break;
 	}
 }
-
 
 void Patch_DumpOsQueueInfo()
 {
@@ -345,10 +343,8 @@ void Patch_DumpOsQueueInfo()
 	//DBGConsole_Msg(0, "01234567, 01234567, 01234567, xxxx, xxxx, xxxx, 01234567",
 	for (i = 0; i <	g_MessageQueues.size(); i++)
 	{
-#ifndef DAEDALUS_SILENT
 		char szFullQueue[30];
 		char szEmptyQueue[30];
-#endif
 		char szType[60] = "";
 
 		dwQueue = g_MessageQueues[i];
@@ -369,7 +365,6 @@ void Patch_DumpOsQueueInfo()
 			continue;
 		}
 
-#ifndef DAEDALUS_SILENT
 		if (dwFullQ == VAR_ADDRESS(osNullMsgQueue))
 			sprintf(szFullQueue, "       -");
 		else
@@ -389,7 +384,7 @@ void Patch_DumpOsQueueInfo()
 		{
 			sprintf(szType, "<- Pi Access");
 		}
-#endif
+
 
 		// Try and find in the event mesg array
 		if (strlen(szType) == 0 && VAR_FOUND(osEventMesgArray))
@@ -436,15 +431,15 @@ void Patch_DumpOsEventInfo()
 }
 
 
-
+#endif	// DUMPOSFUNCTIONS
 
 
 //ToDo: Add Status bar for loading OSHLE Patch Symbols.
 void Patch_RecurseAndFind()
 {
 	s32 nFound;
-	u32 dwFirst;
-	u32 dwLast;
+	u32 first;
+	u32 last;
 
 	DBGConsole_Msg(0, "Searching for os functions. This may take several seconds...");
 
@@ -486,8 +481,8 @@ void Patch_RecurseAndFind()
 
 	CDebugConsole::Get()->MsgOverwriteEnd();
 #endif
-	dwFirst = u32(~0);
-	dwLast = 0;
+	first = u32(~0);
+	last = 0;
 
 	nFound = 0;
 	for (u32 i = 0; i < nPatchSymbols; i++)
@@ -505,8 +500,8 @@ void Patch_RecurseAndFind()
 			{
 				if (g_PatchSymbols[i]->bFound &&
 					g_PatchSymbols[j]->bFound &&
-					(g_PatchSymbols[i]->dwLocation ==
-					g_PatchSymbols[j]->dwLocation))
+					(g_PatchSymbols[i]->location ==
+					g_PatchSymbols[j]->location))
 				{
 						DBGConsole_Msg(0, "Warning [C%s==%s]",
 							g_PatchSymbols[i]->szName,
@@ -522,9 +517,9 @@ void Patch_RecurseAndFind()
 
 			if (!found_duplicate)
 			{
-				u32 dwLocation = g_PatchSymbols[i]->dwLocation;
-				if (dwLocation < dwFirst) dwFirst = dwLocation;
-				if (dwLocation > dwLast)  dwLast = dwLocation;
+				u32 location = g_PatchSymbols[i]->location;
+				if (location < first) first = location;
+				if (location > last)  last = location;
 
 
 				// Actually patch:
@@ -537,7 +532,7 @@ void Patch_RecurseAndFind()
 	}
 
 	DBGConsole_Msg(0, "%d/%d symbols identified, in range 0x%08x -> 0x%08x",
-		nFound, nPatchSymbols, dwFirst, dwLast);
+		nFound, nPatchSymbols, first, last);
 
 	nFound = 0;
 	for (u32 i = 0; i < nPatchVariables; i++)
@@ -554,8 +549,8 @@ void Patch_RecurseAndFind()
 			{
 				if (g_PatchVariables[i]->bFound &&
 					g_PatchVariables[j]->bFound &&
-					(g_PatchVariables[i]->dwLocation ==
-					g_PatchVariables[j]->dwLocation))
+					(g_PatchVariables[i]->location ==
+					g_PatchVariables[j]->location))
 				{
 						DBGConsole_Msg(0, "Warning [C%s==%s]",
 							g_PatchVariables[i]->szName,
@@ -603,27 +598,27 @@ bool Patch_LocateFunction(PatchSymbol * ps)
 }
 
 
-#define JumpTarget(op, dwAddr) (((dwAddr) & 0xF0000000) | ( op.target << 2 ))
+#define JumpTarget(op, addr) (((addr) & 0xF0000000) | ( op.target << 2 ))
 
 
-// Check that the function i is located at address dwIndex
-bool Patch_VerifyLocation(PatchSymbol * ps, u32 dwIndex)
+// Check that the function i is located at address index
+bool Patch_VerifyLocation(PatchSymbol * ps, u32 index)
 {
 	// We may have already located this symbol.
 	if (ps->bFound)
 	{
 		// The location must match!
-		return (ps->dwLocation == (dwIndex<<2));
+		return (ps->location == (index<<2));
 	}
 
 	// Fail if index is outside of indexable memory
-	if (dwIndex > gRamSize>>2)
+	if (index > gRamSize>>2)
 		return false;
 
 
 	for (u32 s = 0; s < ps->pSignatures[s].nNumOps; s++)
 	{
-		if (Patch_VerifyLocation_CheckSignature(ps, &ps->pSignatures[s], dwIndex))
+		if (Patch_VerifyLocation_CheckSignature(ps, &ps->pSignatures[s], index))
 		{
 			return true;
 		}
@@ -636,7 +631,7 @@ bool Patch_VerifyLocation(PatchSymbol * ps, u32 dwIndex)
 
 bool Patch_VerifyLocation_CheckSignature(PatchSymbol * ps,
 										 PatchSignature * psig,
-										 u32 dwIndex)
+										 u32 index)
 {
 	OpCode op;
 	PatchCrossRef * pcr = psig->pCrossRefs;
@@ -644,7 +639,7 @@ bool Patch_VerifyLocation_CheckSignature(PatchSymbol * ps,
 	u32 crc;
 	u32 partial_crc;
 
-	if ( ( dwIndex + psig->nNumOps ) * 4 > gRamSize )
+	if ( ( index + psig->nNumOps ) * 4 > gRamSize )
 	{
 		return false;
 	}
@@ -658,26 +653,26 @@ bool Patch_VerifyLocation_CheckSignature(PatchSymbol * ps,
 
 
 
-	u32 dwLastOffset = pcr->dwOffset;
+	u32 last = pcr->offset;
 
 	crc = 0;
 	partial_crc = 0;
 	for (u32 m = 0; m < psig->nNumOps; m++)
 	{
 		// Get the actual opcode at this address, not patched/compiled code
-		op._u32 = code_base[dwIndex+m];
+		op._u32 = code_base[index+m];
 		op = GetCorrectOp( op );
 		// This should be ok - so long as we patch all functions at once.
 
 		// Check if a cross reference is in effect here
-		if (pcr->dwOffset == m)
+		if (pcr->offset == m)
 		{
 			// This is a cross reference.
 			switch (pcr->nType)
 			{
 			case PX_JUMP:
 				{
-					u32 dwTargetIndex = JumpTarget( op, (dwIndex+m)<<2 )>>2;
+					u32 TargetIndex = JumpTarget( op, (index+m)<<2 )>>2;
 
 					// If the opcode at this address is not a Jump/Jal then
 					// this can't match
@@ -686,7 +681,7 @@ bool Patch_VerifyLocation_CheckSignature(PatchSymbol * ps,
 
 					// This is a jump, the jump target must match the
 					// symbol pointed to by this function. Recurse
-					if (!Patch_VerifyLocation(pcr->pSymbol, dwTargetIndex))
+					if (!Patch_VerifyLocation(pcr->pSymbol, TargetIndex))
 						goto fail_find;
 
 					op.target = 0;		// Mask out jump location
@@ -711,7 +706,7 @@ bool Patch_VerifyLocation_CheckSignature(PatchSymbol * ps,
 
 						// If other half has been identified, set the location
 						if (pcr->pVariable->bFoundLo)
-							pcr->pVariable->dwLocation = (pcr->pVariable->wHiPart<<16) + (short)(pcr->pVariable->wLoPart);
+							pcr->pVariable->location = (pcr->pVariable->wHiPart<<16) + (short)(pcr->pVariable->wLoPart);
 					}
 
 					op._u32 &= ~0x0000ffff;		// Mask out low halfword
@@ -736,7 +731,7 @@ bool Patch_VerifyLocation_CheckSignature(PatchSymbol * ps,
 
 						// If other half has been identified, set the location
 						if (pcr->pVariable->bFoundHi)
-							pcr->pVariable->dwLocation = (pcr->pVariable->wHiPart<<16) + (short)(pcr->pVariable->wLoPart);
+							pcr->pVariable->location = (pcr->pVariable->wHiPart<<16) + (short)(pcr->pVariable->wLoPart);
 					}
 
 					op._u32 &= ~0x0000ffff;		// Mask out low halfword
@@ -748,15 +743,15 @@ bool Patch_VerifyLocation_CheckSignature(PatchSymbol * ps,
 			// ready for the next match.
 			pcr++;
 
-			// If pcr->dwOffset == ~0, then there are no more in the array
+			// If pcr->offset == ~0, then there are no more in the array
 			// This is okay, as the comparison with m above will never match
 #ifndef DAEDALUS_SILENT
-			if (pcr->dwOffset < dwLastOffset)
+			if (pcr->offset < last)
 			{
 				DBGConsole_Msg(0, "%s: CrossReference offsets out of order", ps->szName);
 			}
 #endif
-			dwLastOffset = pcr->dwOffset;
+			last = pcr->offset;
 
 		}
 		else
@@ -795,13 +790,13 @@ bool Patch_VerifyLocation_CheckSignature(PatchSymbol * ps,
 
 	// We have located the symbol
 	ps->bFound = true;
-	ps->dwLocation = dwIndex<<2;
+	ps->location = index<<2;
 	ps->pFunction = psig->pFunction;		// Install this function
 
 	if (cross_ref_var_set)
 	{
 		// Loop through symbols, setting variables if both high/low found
-		for (pcr = psig->pCrossRefs; pcr->dwOffset != u32(~0); pcr++)
+		for (pcr = psig->pCrossRefs; pcr->offset != u32(~0); pcr++)
 		{
 			if (pcr->nType == PX_VARIABLE_HI ||
 				pcr->nType == PX_VARIABLE_LO)
@@ -823,7 +818,7 @@ fail_find:
 	// Loop through symbols, clearing variables if they have been set
 	if (cross_ref_var_set)
 	{
-		for (pcr = psig->pCrossRefs; pcr->dwOffset != u32(~0); pcr++)
+		for (pcr = psig->pCrossRefs; pcr->offset != u32(~0); pcr++)
 		{
 			if (pcr->nType == PX_VARIABLE_HI ||
 				pcr->nType == PX_VARIABLE_LO)
@@ -858,7 +853,7 @@ static void Patch_FlushCache()
 		{
 			if (g_PatchSymbols[i]->bFound )
 			{
-				data = g_PatchSymbols[i]->dwLocation;
+				data = g_PatchSymbols[i]->location;
 				fwrite(&data, 1, sizeof(data), fp);
 				for(data = 0; ;data++)
 				{
@@ -881,7 +876,7 @@ static void Patch_FlushCache()
 		{
 			if (g_PatchVariables[i]->bFound )
 			{
-				data = g_PatchVariables[i]->dwLocation;
+				data = g_PatchVariables[i]->location;
 			}
 			else
 			{
@@ -921,7 +916,7 @@ static bool Patch_GetCache()
 			if (data != 0)
 			{
 				g_PatchSymbols[i]->bFound = true;
-				g_PatchSymbols[i]->dwLocation = data;
+				g_PatchSymbols[i]->location = data;
 				fread(&data, 1, sizeof(data), fp);
 				g_PatchSymbols[i]->pFunction = g_PatchSymbols[i]->pSignatures[data].pFunction;
 			}
@@ -935,12 +930,12 @@ static bool Patch_GetCache()
 			if (data != 0)
 			{
 				g_PatchVariables[i]->bFound = true;
-				g_PatchVariables[i]->dwLocation = data;
+				g_PatchVariables[i]->location = data;
 			}
 			else
 			{
 				g_PatchVariables[i]->bFound = false;
-				g_PatchVariables[i]->dwLocation = 0;
+				g_PatchVariables[i]->location = 0;
 			}
 		}
 
@@ -959,7 +954,7 @@ static u32 RET_NOT_PROCESSED(PatchSymbol* ps)
 		DAEDALUS_ERROR("Not Supported.");
 	}
 #endif
-	gCPUState.CurrentPC = PHYS_TO_K0(ps->dwLocation);
+	gCPUState.CurrentPC = PHYS_TO_K0(ps->location);
 	//DBGConsole_Msg(0, "%s RET_NOT_PROCESSED PC=0x%08x RA=0x%08x", ps->szName, gCPUState.TargetPC, gGPR[REG_ra]._u32_0);
 
 	gCPUState.Delay = NO_DELAY;
@@ -976,13 +971,11 @@ static u32 RET_NOT_PROCESSED(PatchSymbol* ps)
 	return 1;
 }
 
-
 static u32 inline RET_JR_RA()
 {
 		gCPUState.TargetPC = gGPR[REG_ra]._u32_0;
 		return 1;
 }
-
 
 static u32 RET_JR_ERET()
 {
@@ -1007,19 +1000,19 @@ static u32 RET_JR_ERET()
 	return 0;
 }
 
-static u32 ConvertToPhysics(u32 dwVAddr)
+static u32 ConvertToPhysics(u32 addr)
 {
-	if (IS_KSEG0(dwVAddr))
+	if (IS_KSEG0(addr))
 	{
-		return K0_TO_PHYS(dwVAddr);
+		return K0_TO_PHYS(addr);
 	}
-	else if (IS_KSEG1(dwVAddr))
+	else if (IS_KSEG1(addr))
 	{
-		return  K1_TO_PHYS(dwVAddr);
+		return  K1_TO_PHYS(addr);
 	}
 	else
 	{
-		return OS_HLE___osProbeTLB(dwVAddr);
+		return OS_HLE___osProbeTLB(addr);
 	}
 }
 
@@ -1029,8 +1022,8 @@ static u32 ConvertToPhysics(u32 dwVAddr)
 
 inline u64 QuickRead64Bits( u8 *p_base, u32 offset )
 {
-	u64 qwData = *(u64 *)(p_base + offset);
-	return (qwData>>32) + (qwData<<32);
+	u64 data = *(u64 *)(p_base + offset);
+	return (data>>32) + (data<<32);
 }
 
 inline u32 QuickRead32Bits( u8 *p_base, u32 offset )
@@ -1049,7 +1042,6 @@ inline void QuickWrite32Bits( u8 *p_base, u32 offset, u32 value )
 	*(u32 *)(p_base + offset) = value;
 }
 
-
 #include "patch_thread_hle.inl"
 #include "patch_cache_hle.inl"
 #include "patch_ai_hle.inl"
@@ -1066,43 +1058,32 @@ inline void QuickWrite32Bits( u8 *p_base, u32 offset, u32 value )
 #include "patch_util_hle.inl"
 #include "patch_vi_hle.inl"
 
-
-
-
-
 /////////////////////////////////////////////////////
-
-
-
-
 u32 Patch_osContInit()
 {
 TEST_DISABLE_FUNCS
 	//s32		osContInit(OSMesgQueue * mq, u8 *, OSContStatus * cs);
 #ifndef DAEDALUS_SILENT
-	u32 dwMQ       = gGPR[REG_a0]._u32_0;
-	u32 dwAttached = gGPR[REG_a1]._u32_0;
-	u32 dwCS       = gGPR[REG_a2]._u32_0;
+	u32 mq       = gGPR[REG_a0]._u32_0;
+	u32 attached = gGPR[REG_a1]._u32_0;
+	u32 cs       = gGPR[REG_a2]._u32_0;
 
 	DBGConsole_Msg(0, "osContInit(0x%08x, 0x%08x, 0x%08x), ra = 0x%08x",
-		dwMQ, dwAttached, dwCS, gGPR[REG_ra]._u32_0);
+		mq, attached, cs, gGPR[REG_ra]._u32_0);
 #endif
 
 	return PATCH_RET_NOT_PROCESSED;
 }
-
-
 
 u32 Patch___osContAddressCrc()
 {
 TEST_DISABLE_FUNCS
 #ifndef DAEDALUS_SILENT
-	u32 dwAddress = gGPR[REG_a0]._u32_0;
-	DBGConsole_Msg(0, "__osContAddressCrc(0x%08x)", dwAddress);
+	u32 address = gGPR[REG_a0]._u32_0;
+	DBGConsole_Msg(0, "__osContAddressCrc(0x%08x)", address);
 #endif
 	return PATCH_RET_NOT_PROCESSED;
 }
-
 
 u32 Patch_osSpTaskYield_Mario()
 {
@@ -1113,8 +1094,6 @@ u32 Patch_osSpTaskYield_Rugrats()
 	return PATCH_RET_NOT_PROCESSED;
 }
 
-
-
 u32 Patch_osSpTaskYielded()
 {
 	return PATCH_RET_NOT_PROCESSED;
@@ -1124,8 +1103,6 @@ u32 Patch___osSpTaskLoadInitTask()
 {
 	return PATCH_RET_NOT_PROCESSED;
 }
-
-
 
 u32 Patch_osMapTLBRdb()
 {
@@ -1161,7 +1138,6 @@ u32 Patch___osContGetInitData()
 {
 	return PATCH_RET_NOT_PROCESSED;
 }
-
 
 u32 Patch_osSetIntMask()
 {

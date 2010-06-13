@@ -51,13 +51,6 @@ UcodeFunc( DLParser_GBI2_MoveWord );
 UcodeFunc( DLParser_GBI2_MoveMem );
 
 //*****************************************************************************
-// New GBI2 ucodes
-//*****************************************************************************
-
-UcodeFunc( DLParser_GBI2_DL_Count );
-UcodeFunc( DLParser_GBI2_0x8 );
-
-//*****************************************************************************
 // Include ucode header files
 //*****************************************************************************
 
@@ -100,17 +93,10 @@ UcodeFunc( DLParser_SetZImg );
 UcodeFunc( DLParser_SetCImg );
 
 //*****************************************************************************
-// RSP Tri Commands
+// RSP Tri Command
 //*****************************************************************************
 
-UcodeFunc( DLParser_TriFill );
-UcodeFunc( DLParser_TriFillZ );
-UcodeFunc( DLParser_TriTxtr );
-UcodeFunc( DLParser_TriTxtrZ );
-UcodeFunc( DLParser_TriShade );
-UcodeFunc( DLParser_TriShadeZ );
-UcodeFunc( DLParser_TriShadeTxtr );
-UcodeFunc( DLParser_TriShadeTxtrZ );
+UcodeFunc( DLParser_TriRSP );
 
 //*****************************************************************************
 //

@@ -79,5 +79,12 @@ UcodeFunc( DLParser_GBI1_Tri1 );
 UcodeFunc( DLParser_GBI1_Tri2 );
 UcodeFunc( DLParser_GBI1_Line3D );
 
+//*****************************************************************************
+// New GBI2 ucodes
+//*****************************************************************************
+UcodeFunc( DLParser_GBI2_DL_Count );
+//UcodeFunc( DLParser_GBI2_0x8 );
+
+
 
 #endif /* GSP_MACROS_H */

@@ -16,6 +16,8 @@ USE_KERNEL_LIBS = 1
 LDFLAGS = -mno-crt0 -nostartfiles
 LIBS = -lpspdve_driver -lpsphprm_driver -lpspge_driver -lpspimpose_driver
 
+PSP_FW_VERSION=500
+
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build.mak
 

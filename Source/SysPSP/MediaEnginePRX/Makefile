@@ -18,6 +18,8 @@ LIBDIR = ../../../SDK/lib
 LDFLAGS = -mno-crt0 -nostartfiles
 LIBS = -lpspkernel
 
+PSP_FW_VERSION=500
+
 
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build.mak

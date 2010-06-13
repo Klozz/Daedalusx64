@@ -133,6 +133,7 @@ DAED_HLEGFX_SRCS =	Source/SysPSP/Plugins/GraphicsPluginPSP.cpp \
 			Source/HLEGraphics/Texture.cpp \
 			Source/HLEGraphics/TextureCache.cpp \
 			Source/HLEGraphics/TextureDescriptor.cpp \
+			Source/HLEGraphics/Ucode.cpp \
 			Source/HLEGraphics/gsp/gspMacros.cpp \
 			Source/HLEGraphics/gsp/gspSprite2D.cpp \
 			Source/HLEGraphics/gsp/gspS2DEX.cpp \

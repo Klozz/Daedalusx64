@@ -68,10 +68,11 @@ UcodeFunc( DLParser_GBI2_Mtx );
 UcodeFunc( DLParser_GBI1_PopMtx );
 UcodeFunc( DLParser_GBI2_PopMtx );
 
+UcodeFunc( DLParser_GBI0_Tri4 );
 UcodeFunc( DLParser_GBI2_Quad );
 UcodeFunc( DLParser_GBI2_Line3D );
 UcodeFunc( DLParser_GBI2_Tri1 );
-UcodeFunc( DLParser_GBI0_Tri2 );
+//UcodeFunc( DLParser_GBI0_Tri2 );
 UcodeFunc( DLParser_GBI2_Tri2 );
 
 UcodeFunc( DLParser_GBI1_Tri1 );

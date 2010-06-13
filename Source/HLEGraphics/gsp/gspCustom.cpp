@@ -21,27 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gspCommon.h"
 
 
-///
-// Conker multiple tri ucodes
-
-// Move these
-#define	TriC0 0x10
-#define	TriC1 0x11
-#define	TriC2 0x12
-#define	TriC3 0x13
-#define	TriC4 0x14
-#define	TriC5 0x15
-#define	TriC6 0x16
-#define	TriC7 0x17
-#define	TriC8 0x18
-#define	TriC9 0x19
-#define	TriCa 0x1a
-#define	TriCb 0x1b
-#define	TriCc 0x1c
-#define	TriCd 0x1d
-#define	TriCe 0x1e
-#define	TriCf 0x1f
-
 u32 ConkerVtxZAddr = 0;
 u32 PDCIAddr = 0;
 
@@ -620,12 +599,12 @@ void DLParser_GBI2_Conker( MicroCodeCommand command )
 
     bool tris_added = false;
 
-    while ( command.inst.cmd == TriC0 || command.inst.cmd == TriC1 || command.inst.cmd == TriC2 ||
-			command.inst.cmd == TriC3 || command.inst.cmd == TriC4 ||	command.inst.cmd == TriC5 ||
-			command.inst.cmd == TriC6 || command.inst.cmd == TriC7 || command.inst.cmd == TriC8 ||
-			command.inst.cmd == TriC9 || command.inst.cmd == TriCa || command.inst.cmd == TriCb ||
-			command.inst.cmd == TriCc || command.inst.cmd == TriCd || command.inst.cmd == TriCe || 
-			command.inst.cmd == TriCf )
+    while ( command.inst.cmd == 0x10 || command.inst.cmd == 0x11 || command.inst.cmd == 0x12 ||
+			command.inst.cmd == 0x13 || command.inst.cmd == 0x14 ||	command.inst.cmd == 0x15 ||
+			command.inst.cmd == 0x16 || command.inst.cmd == 0x17 || command.inst.cmd == 0x18 ||
+			command.inst.cmd == 0x19 || command.inst.cmd == 0x1a || command.inst.cmd == 0x1b ||
+			command.inst.cmd == 0x1c || command.inst.cmd == 0x1d || command.inst.cmd == 0x1e || 
+			command.inst.cmd == 0x1f )
     {
 		u32 idx[12];
 		idx[0] = (command.inst.cmd1   )&0x1F;

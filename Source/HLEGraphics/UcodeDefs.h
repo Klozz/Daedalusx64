@@ -258,9 +258,20 @@ struct GBI1_Tri2
 	unsigned int flag:8;
 };
 
+struct GBI1_Dlist
+{
+	unsigned int	:16;
+	unsigned int	param:8;
+	unsigned int	cmd:8;
+	unsigned int    addr;
+};
+
 union MicroCodeCommand
 {
 	Instruction		inst;
+	GBI0_Vtx		vtx0;
+	GBI1_Vtx		vtx1;
+	GBI2_Vtx		vtx2;
 	GBI1_Matrix		mtx1;
 	GBI2_Matrix		mtx2;
 	GBI1_PopMatrix	popmtx;
@@ -274,6 +285,7 @@ union MicroCodeCommand
 	GBI2_MoveWord	mw2;
 	SetColor		color;
 	SetTImg			img;
+	GBI1_Dlist		dlist;
 
 	u64	force_structure_alignment;
 };

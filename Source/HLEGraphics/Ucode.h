@@ -102,6 +102,6 @@ UcodeFunc( DLParser_TriRSP );
 //
 //*****************************************************************************
 
-extern MicroCodeInstruction gInstructionLookup[13][256];
+extern const MicroCodeInstruction gInstructionLookup[13][256];
 
 #endif

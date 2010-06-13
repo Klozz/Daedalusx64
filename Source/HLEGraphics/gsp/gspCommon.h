@@ -67,8 +67,7 @@ extern u32 gAmbientLightIdx;
 extern Matrix4x4 mat;
 
 extern std::vector< DList > gDisplayListStack;
-//extern MicroCodeInstruction gInstructionLookup[256];
-//extern const char *gInstructionName[256];
+extern const char *gInstructionName[256];
 
 #define RDPSegAddr(seg) 		( (gSegments[((seg)>>24)&0x0F]&0x00ffffff) + ((seg)&0x00FFFFFF) )
 

@@ -173,16 +173,17 @@ CORE_SRCS = $(DAED_MAIN_SRCS) $(DAED_DEBUG_SRCS) $(DAED_CORE_SRCS) $(DAED_INTERF
 ifdef DEBUG
 	CONFIG=Dev #default config in Debug build is "Dev"
 
-	CFLAGS			= -g -O2 -G0 -D_DEBUG -MD \
+	CFLAGS			= -g -O1 -fno-omit-frame-pointer -G0 -D_DEBUG -MD \
 				  -W -Wcast-qual -Wchar-subscripts -Wno-unused -Wpointer-arith\
 				  -Wredundant-decls -Wshadow -Wwrite-strings
 				#-Winline -Wcast-align 
-	LDFLAGS = -g
 
 	SRCS			= $(CORE_SRCS) $(ADDITIONAL_DEBUG_SRCS) $(ADDITIONAL_SYNC_SRCS)
 else 
 	CFLAGS			= -O2 -G0 -DNDEBUG -Wall -MD -ffast-math -fsingle-precision-constant 
 					#-funroll-loops 
+	LDFLAGS 		= "-Wl,-O1"
+
 	SRCS			= $(CORE_SRCS) $(DAED_RELEASE_SRCS)
 endif
 
@@ -206,7 +207,6 @@ ASFLAGS =
 INCDIR = $(PSPDEV)/SDK/include ./SDK/include
 LIBDIR = $(PSPDEV)/SDK/lib ./SDK/lib
 
-LDFLAGS += "-Wl,-O1"
 
 LIBS = -lstdc++ -lpsppower -lpspgu -lpspaudiolib -lpspaudio -lpsprtc -lc -lpng -lz -lm -lpspfpu -lpspvfpu -lpspkubridge
 

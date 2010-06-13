@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../stdafx.h"
 
-MicroCodeInstruction gInstructionLookup[13][256] =
+const MicroCodeInstruction gInstructionLookup[13][256] =
 {
 	// uCode 0 - RSP SW 2.0X
 	// Games: Super Mario 64, Tetrisphere, Demos

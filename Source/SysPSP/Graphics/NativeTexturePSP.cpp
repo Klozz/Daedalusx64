@@ -229,7 +229,7 @@ u32	GetTextureBlockWidth( u32 dimension, ETextureFormat texture_format )
 u32	CorrectDimension( u32 dimension )
 {
 	static const u32 MIN_TEXTURE_DIMENSION = 1;
-	return Max( GetNextPowerOf2( dimension ), MIN_TEXTURE_DIMENSION );
+	return pspFpuMax( GetNextPowerOf2( dimension ), MIN_TEXTURE_DIMENSION );
 }
 
 }

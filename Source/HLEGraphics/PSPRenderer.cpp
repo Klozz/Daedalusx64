@@ -1677,7 +1677,7 @@ void PSPRenderer::TestVFPUVerts( u32 v0, u32 num, const FiddledVtx * verts, cons
 			// Set the alpha
 			f32 value = Clamp< f32 >( fog_coeff, 0.0f, 1.0f );
 
-			if( vfpu_abs( value - mVtxProjected[i].Colour.w ) > 0.01f )
+			if( pspFpuAbs( value - mVtxProjected[i].Colour.w ) > 0.01f )
 			{
 				printf( "Fog wrong: %f != %f\n", mVtxProjected[i].Colour.w, value );
 			}
@@ -1715,8 +1715,8 @@ void PSPRenderer::TestVFPUVerts( u32 v0, u32 num, const FiddledVtx * verts, cons
 				ty = (float)vert.tv * mTnLParams.TextureScaleY;
 			}
 
-			if( vfpu_abs(tx - mVtxProjected[i].Texture.x ) > 0.0001f ||
-				vfpu_abs(ty - mVtxProjected[i].Texture.y ) > 0.0001f )
+			if( pspFpuAbs(tx - mVtxProjected[i].Texture.x ) > 0.0001f ||
+				pspFpuAbs(ty - mVtxProjected[i].Texture.y ) > 0.0001f )
 			{
 				printf( "tx/y wrong : %f,%f != %f,%f (%s)\n", mVtxProjected[i].Texture.x, mVtxProjected[i].Texture.y, tx, ty, env_map ? "env" : "scale" );
 			}

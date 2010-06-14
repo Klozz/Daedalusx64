@@ -183,7 +183,7 @@ v3 Matrix4x4::Transform( const v3 & vec ) const
 			   vec.x * m13 + vec.y * m23 + vec.z * m33 + m43,
 			   vec.x * m14 + vec.y * m24 + vec.z * m34 + m44 );
 
-	if(vfpu_abs(trans.w) > 0.0f)
+	if(pspFpuAbs(trans.w) > 0.0f)
 	{
 		return v3( trans.x / trans.w, trans.y / trans.w, trans.z / trans.w );
 	}

@@ -360,8 +360,8 @@ inline s32 f32_to_s32( f32 x, ERoundingMode mode )	{ pspfpu_set_roundmode( gNati
 
 inline s64 f32_to_s64_trunc( f32 x )				{ return (s64)x; }
 inline s64 f32_to_s64_round( f32 x )				{ return (s64)( x + 0.5f ); }
-inline s64 f32_to_s64_ceil( f32 x )					{ return (s64)ceilf( x ); }
-inline s64 f32_to_s64_floor( f32 x )				{ return (s64)floorf( x ); }
+inline s64 f32_to_s64_ceil( f32 x )					{ return (s64)pspFpuCeil( x ); }
+inline s64 f32_to_s64_floor( f32 x )				{ return (s64)pspFpuFloor( x ); }
 inline s64 f32_to_s64( f32 x, ERoundingMode mode )	{ pspfpu_set_roundmode( gNativeRoundingModes[ mode ] ); return (s64)x; }	// XXXX Need to do a cvt really
 
 inline s32 d64_to_s32_cvt( d64 x )					{ return f32_to_s32_cvt( (f32)x ); }
@@ -373,8 +373,8 @@ inline s32 d64_to_s32( d64 x, ERoundingMode mode )	{ pspfpu_set_roundmode( gNati
 
 inline s64 d64_to_s64_trunc( d64 x )				{ return (s64)x; }
 inline s64 d64_to_s64_round( d64 x )				{ return (s64)( x + 0.5f ); }
-inline s64 d64_to_s64_ceil( d64 x )					{ return (s64)ceilf( x ); }
-inline s64 d64_to_s64_floor( d64 x )				{ return (s64)floorf( x ); }
+inline s64 d64_to_s64_ceil( d64 x )					{ return (s64)pspFpuCeil( x ); }
+inline s64 d64_to_s64_floor( d64 x )				{ return (s64)pspFpuFloor( x ); }
 inline s64 d64_to_s64( d64 x, ERoundingMode mode )	{ pspfpu_set_roundmode( gNativeRoundingModes[ mode ] ); return (s64)x; }	// XXXX Need to do a cvt really
 
 
@@ -2423,7 +2423,7 @@ static void R4300_CALL_TYPE R4300_Cop1_S_SQRT( R4300_CALL_SIGNATURE )
 
 	SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Single( op_code.fd, sqrtf(fX) );
+	StoreFPR_Single( op_code.fd, pspFpuSqrt(fX) );
 }
 
 
@@ -2460,7 +2460,7 @@ static void R4300_CALL_TYPE R4300_Cop1_S_ABS( R4300_CALL_SIGNATURE )
 
 	SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Single( op_code.fd, fabsf(fX) );
+	StoreFPR_Single( op_code.fd, pspFpuAbs(fX) );
 }
 
 
@@ -2748,7 +2748,7 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ABS( R4300
 
 	SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Double< FullLength >( op_code.fd, fabsf(fX) );
+	StoreFPR_Double< FullLength >( op_code.fd, pspFpuAbs(fX) );
 }
 
 template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ADD( R4300_CALL_SIGNATURE )
@@ -2823,7 +2823,7 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_SQRT( R430
 
 	SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Double< FullLength >( op_code.fd, sqrtf(fX) );
+	StoreFPR_Double< FullLength >( op_code.fd, pspFpuSqrt(fX) );
 }
 
 

@@ -154,7 +154,7 @@ u32 Patch_sqrtf()
 {
 TEST_DISABLE_MATH_FUNCS
 	f32 f = ToFloat(gCPUState.FPU[12]);
-	ToFloat(gCPUState.FPU[00]) = sqrtf(f);	// Do not use vfpu, Check math.h !
+	ToFloat(gCPUState.FPU[00]) = pspFpuSqrt(f);	// Do not use vfpu, Check math.h !
 	return PATCH_RET_JR_RA;
 }
 

@@ -35,20 +35,10 @@
 
 */
 
+// Interesting note, if we don't make thse funcs inline, we'll get compiling errors.. weird
+
 #define PI   3.141592653589793f
 
-//Below Function taken from PGE - Phoenix Game Engine - Greets InsertWittyName !
-inline float vfpu_abs(float x) {
-    float result;
-
-	__asm__ volatile (
-		"mtv      %1, S000\n"
-		"vabs.s   S000, S000\n"
-		"mfv      %0, S000\n"
-	: "=r"(result) : "r"(x));
-
-	return result;
-}
 
 inline float vfpu_invSqrt(float x)
 {
@@ -140,6 +130,19 @@ inline float vfpu_powf(float x, float y) {
 }
 /*
 
+//Below Function taken from PGE - Phoenix Game Engine - Greets InsertWittyName !
+inline float vfpu_abs(float x) {
+    float result;
+
+	__asm__ volatile (
+		"mtv      %1, S000\n"
+		"vabs.s   S000, S000\n"
+		"mfv      %0, S000\n"
+	: "=r"(result) : "r"(x));
+
+	return result;
+}
+
 inline float vfpu_sqrtf(float x) {
 	float result;
 	__asm__ volatile (
@@ -150,5 +153,77 @@ inline float vfpu_sqrtf(float x) {
 	return result;
 }
 */
+
+
+//*****************************************************************************
+//FPU Math :D
+//*****************************************************************************
+/*
+sqrtf and fabsf are alot slower on the vfpuv, so let's do em on the fpu.
+Check above notes for cycles/comparison
+*/
+
+inline float pspFpuSqrt(float fs)
+{
+	return (__builtin_allegrex_sqrt_s(fs));
+}
+
+
+inline float pspFpuAbs(float fs)
+{
+	register float fd;
+	asm (
+		"abs.s %0, %1\n"
+		: "=f"(fd)
+		: "f"(fs)
+	);
+	return (fd);
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+// Misc
+
+inline int pspFpuFloor(float fs)
+{
+	return (__builtin_allegrex_floor_w_s(fs));
+}
+
+inline int pspFpuCeil(float fs)
+{
+	return (__builtin_allegrex_ceil_w_s(fs));
+}
+
+inline int pspFpuTrunc(float fs)
+{
+	return (__builtin_allegrex_trunc_w_s(fs));
+}
+
+inline int pspFpuRound(float fs)
+{
+	return (__builtin_allegrex_round_w_s(fs));
+}
+
+// I'm not sure if the vfpu_fmaxf and vfpu_fminf it's slwoer or faster than fpu version
+// Let's do regardless to avoid overhead.
+
+inline float pspFpuMax(float fs1, float fs2)
+{
+	register float fd;
+	fd = (fs1 > fs2) ? fs1 : fs2;
+	return (fd);
+}
+
+inline float pspFpuMin(float fs1, float fs2)
+{
+	register float fd;
+	fd = (fs1 < fs2) ? fs1 : fs2;
+	return (fd);
+}
+
+
+
+
 
 #endif // DAEDMATHS_H__

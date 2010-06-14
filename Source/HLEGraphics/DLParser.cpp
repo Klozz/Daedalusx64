@@ -292,12 +292,6 @@ const char *sc_colcombtypes8[8] =
 // Mask down to 0x003FFFFF?
 #define RDPSegAddr(seg) ( (gSegments[((seg)>>24)&0x0F]&0x00ffffff) + ((seg)&0x00FFFFFF) )
 
-//*****************************************************************************
-//
-//*****************************************************************************
-const char * gInstructionName[256];
-
-//DKR: 00229BA8: 05710080 001E4AF0 CMD G_DMATRI  Triangles 9 at 801E4AF0
 
 //*****************************************************************************
 //
@@ -541,7 +535,10 @@ bool	DLParser_FetchNextCommand( MicroCodeCommand * p_command )
 	entry.addr = pc + 8;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	//DL_PF("[%05d] 0x%08x: %08x %08x %-10s", gCurrentInstructionCount, pc, p_command->cmd0, p_command->cmd1, gInstructionName[ p_command->cmd ]);
+	//use the gInstructionName table for fecthing names.
+	//we use the table as is for GBI0, GBI1 and GBI2
+	//we fallback to GBI0 for custom ucodes (ucode_ver>2)
+	DL_PF("[%05d] 0x%08x: %08x %08x %-10s", gCurrentInstructionCount, pc, p_command->inst.cmd0, p_command->inst.cmd1, gInstructionName[ucode_ver<=2?ucode_ver:0][p_command->inst.cmd ]);
 	gCurrentInstructionCount++;
 
 	if( gInstructionCountLimit != UNLIMITED_INSTRUCTION_COUNT )

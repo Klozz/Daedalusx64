@@ -1055,7 +1055,7 @@ void DLParser_GBI1_RDPHalf_2( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_RDPHalf_1( MicroCodeCommand command )
 {
-	//gRDPHalf1 = u32(command.inst._u64 & 0xffffffff);
+	gRDPHalf1 = u32(command.inst.cmd1);
 }
 
 

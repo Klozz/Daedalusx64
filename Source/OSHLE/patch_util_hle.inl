@@ -53,7 +53,8 @@ TEST_DISABLE_UTIL_FUNCS
 	u32 i;
 	u32 string = gGPR[REG_a0]._u32_0;
 
-	for (i = 0; Read8Bits(string+i) != 0; i++);
+	for (i = 0; Read8Bits(string+i) != 0; i++)
+	{}
 
 	gGPR[REG_v0]._s64 = (s64)(s32)i;
 

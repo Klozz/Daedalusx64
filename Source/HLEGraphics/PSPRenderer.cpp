@@ -631,7 +631,6 @@ PSPRenderer::SBlendStateEntry	PSPRenderer::LookupBlendState( u64 mux, bool two_c
 
 	SBlendStateEntry			entry;
 
-	entry.States = NULL;
 	entry.OverrideFunction = LookupOverrideBlendModeFunction( mux );
 
 	if( entry.OverrideFunction == NULL )
@@ -779,9 +778,9 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	}
 	else
 	{
-		if ( gNeedZBufferUdate ||
-			(gRDPOtherMode._u64 != gLastRDPOtherMode._u64) ||
-			 (m_bZBuffer != gLastUseZBuffer) )
+		if ((gRDPOtherMode._u64 != gLastRDPOtherMode._u64) ||
+				gNeedZBufferUdate ||
+				(m_bZBuffer != gLastUseZBuffer) )
 		{
 			// Only update if ZBuffer is enabled
 			if (m_bZBuffer)

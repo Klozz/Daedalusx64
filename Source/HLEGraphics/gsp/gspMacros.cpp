@@ -476,7 +476,7 @@ void DLParser_GBI1_LoadUCode( MicroCodeCommand command )
 	u32 code_base = (u32)(command.inst.cmd1 & 0x1fffffff);
     u32 code_size = 0x1000; 
     u32 data_base = gRDPHalf1 & 0x1fffffff;         // Preceeding RDP_HALF1 sets this up
-    u32 data_size = u32((command.inst.cmd1>>32) & 0xffff) + 1;
+    u32 data_size = command.inst.cmd0 + 1;
 
 	DLParser_InitMicrocode( code_base, code_size, data_base, data_size ); 
 }

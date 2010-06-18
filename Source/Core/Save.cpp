@@ -67,6 +67,7 @@ void Save::Reset()
 		nSaveSize = 128 * 1024;
 		break;
 	default:
+		ext = "";
 		nSaveSize = 0;
 		break;
 	}

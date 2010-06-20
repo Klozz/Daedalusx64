@@ -71,7 +71,7 @@ void DLParser_GBI0_Vtx( MicroCodeCommand command )
 // lower 16 bits (in a 6:10 split).
 // u32 length    = (command.inst.cmd0)&0xFFFF;
 // u32 num_verts = (length + 1) / 0x210;                        // 528
-// u32 v0_idx    = ((command.inst.cmd0>>16)&0xFF)/VertexStride;      // /5
+// u32 v0_idx    = ((command.inst.cmd0>>16)&0xFF)/gVertexStride;      // /5
 //*****************************************************************************
 void DLParser_GBI1_Vtx( MicroCodeCommand command )
 {
@@ -285,8 +285,8 @@ void DLParser_GBI1_CullDL( MicroCodeCommand command )
 		// Enabling it brakes several Fast3D games, see : AeroGauge and Space Station SV
 		// Need to find out why, most likely we'll have to separate this from GBI1/GBI0?
 
-        u32 first = ((command.inst.cmd0) & 0xFFF) / VertexStride;
-        u32 last  = ((command.inst.cmd1) & 0xFFF) / VertexStride;
+        u32 first = ((command.inst.cmd0) & 0xFFF) / gVertexStride;
+        u32 last  = ((command.inst.cmd1) & 0xFFF) / gVertexStride;
 
         DL_PF("    Culling using verts %d to %d", first, last);
 
@@ -715,12 +715,12 @@ void DLParser_GBI2_SetOtherModeH( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_Texture( MicroCodeCommand command )
 {
-    gTextureLevel = (command.inst.cmd0>>11)&0x07;
-    gTextureTile  = (command.inst.cmd0>>8 )&0x07;
+    gTextureLevel = command.texture.level;
+    gTextureTile  = command.texture.tile;
 
-    bool enable =    ((command.inst.cmd0    )&0xFF) != 0;                        // Seems to use 0x01
-    f32 scale_s = f32((command.inst.cmd1>>16)&0xFFFF) / (65536.0f * 32.0f);
-    f32 scale_t = f32((command.inst.cmd1    )&0xFFFF) / (65536.0f * 32.0f);
+    bool enable = command.texture.enable_gbi0;                        // Seems to use 0x01
+    f32 scale_s = f32(command.texture.scaleS) / (65536.0f * 32.0f);
+    f32 scale_t = f32(command.texture.scaleT) / (65536.0f * 32.0f);
 
     DL_PF("    Level: %d Tile: %d %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
     DL_PF("    ScaleS: %f, ScaleT: %f", scale_s*32.0f, scale_t*32.0f);
@@ -734,12 +734,12 @@ void DLParser_GBI1_Texture( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_Texture( MicroCodeCommand command )
 {
-    gTextureLevel = (command.inst.cmd0>>11)&0x07;
-    gTextureTile  = (command.inst.cmd0>>8 )&0x07;
+    gTextureLevel = command.texture.level;
+    gTextureTile  = command.texture.tile;
 
-    bool enable =    ((command.inst.cmd0    )&0xFF) != 0;                        // Seems to use 0x02
-    f32 scale_s = f32((command.inst.cmd1>>16)&0xFFFF) / (65536.0f * 32.0f);
-    f32 scale_t = f32((command.inst.cmd1    )&0xFFFF) / (65536.0f * 32.0f);
+    bool enable = command.texture.enable_gbi2;                        // Seems to use 0x02
+    f32 scale_s = f32(command.texture.scaleS) / (65536.0f * 32.0f);
+    f32 scale_t = f32(command.texture.scaleT) / (65536.0f * 32.0f);
 
     DL_PF("    Level: %d Tile: %d %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
     DL_PF("    ScaleS: %f, ScaleT: %f", scale_s*32.0f, scale_t*32.0f);
@@ -938,13 +938,13 @@ void DLParser_GBI1_Tri2( MicroCodeCommand command )
     while (command.inst.cmd == G_GBI1_TRI2)
     {
 		// Vertex indices are multiplied by 10 for GBI0, by 2 for GBI1
-		u32 v0_idx = command.gbi1tri2.v0 / VertexStride;
-		u32 v1_idx = command.gbi1tri2.v1 / VertexStride;
-		u32 v2_idx = command.gbi1tri2.v2 / VertexStride;
+		u32 v0_idx = command.gbi1tri2.v0 / gVertexStride;
+		u32 v1_idx = command.gbi1tri2.v1 / gVertexStride;
+		u32 v2_idx = command.gbi1tri2.v2 / gVertexStride;
 
-		u32 v3_idx = command.gbi1tri2.v3 / VertexStride;
-		u32 v4_idx = command.gbi1tri2.v4 / VertexStride;
-		u32 v5_idx = command.gbi1tri2.v5 / VertexStride;
+		u32 v3_idx = command.gbi1tri2.v3 / gVertexStride;
+		u32 v4_idx = command.gbi1tri2.v4 / gVertexStride;
+		u32 v5_idx = command.gbi1tri2.v5 / gVertexStride;
 
 		tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
 		tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
@@ -981,10 +981,10 @@ void DLParser_GBI1_Line3D( MicroCodeCommand command )
 
     while ( command.inst.cmd == G_GBI1_LINE3D )
     {
-        u32 v3_idx   = command.gbi1line3d.v3 / VertexStride;
-        u32 v0_idx   = command.gbi1line3d.v0 / VertexStride;
-        u32 v1_idx   = command.gbi1line3d.v1 / VertexStride;
-        u32 v2_idx   = command.gbi1line3d.v2 / VertexStride;
+        u32 v3_idx   = command.gbi1line3d.v3 / gVertexStride;
+        u32 v0_idx   = command.gbi1line3d.v0 / gVertexStride;
+        u32 v1_idx   = command.gbi1line3d.v1 / gVertexStride;
+        u32 v2_idx   = command.gbi1line3d.v2 / gVertexStride;
 
         tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
         tris_added |= PSPRenderer::Get()->AddTri(v2_idx, v3_idx, v0_idx);
@@ -1016,7 +1016,7 @@ void DLParser_GBI1_Tri1( MicroCodeCommand command )
 {
     DAEDALUS_PROFILE( "DLParser_GBI1_Tri1_T" );
 
-	DAEDALUS_ERROR("vertex : %d",VertexStride);
+	DAEDALUS_ERROR("vertex : %d",gVertexStride);
 
     // While the next command pair is Tri1, add vertices
     u32 pc = gDisplayListStack.back().addr;
@@ -1028,9 +1028,9 @@ void DLParser_GBI1_Tri1( MicroCodeCommand command )
     {
         //u32 flags = (command.inst.cmd1>>24)&0xFF;
         // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
-        u32 v0_idx = command.gbi1tri1.v0 / VertexStride;
-        u32 v1_idx = command.gbi1tri1.v1 / VertexStride;
-        u32 v2_idx = command.gbi1tri1.v2 / VertexStride;
+        u32 v0_idx = command.gbi1tri1.v0 / gVertexStride;
+        u32 v1_idx = command.gbi1tri1.v1 / gVertexStride;
+        u32 v2_idx = command.gbi1tri1.v2 / gVertexStride;
 
         tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
 
@@ -1086,7 +1086,7 @@ void DLParser_GBI0_Tri4( MicroCodeCommand command )
 		pc += 8;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-        if ( command.inst.cmd == G_GBI1_TRI1 )
+        if ( command.inst.cmd == G_GBI1_TRI2 )
         {
 //			DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, gInstructionName[ command.inst.cmd ]);
         }

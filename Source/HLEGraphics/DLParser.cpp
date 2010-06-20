@@ -151,10 +151,8 @@ u32 gRDPHalf1 = 0;
 // This is the multiplier applied to vertex indices. 
 // For GBI0, it is 10.
 // For GBI1/2 it is 2.
-//u32 gVertexStride = 10;
-int VertexStride;
-
-u32 gVertexStride[] =
+//u32 gVertexStride = 10; 
+u32 VertexStride[] =
 {
 	10,		// Super Mario 64, Tetrisphere, Demos
 	2,		// Mario Kart, Star Fox
@@ -170,7 +168,7 @@ u32 gVertexStride[] =
 	2,		// Yoshi's Story, Pokemon Puzzle League
 	2		// Kirby 64
 };
-
+u32 gVertexStride;
 static u32 ucode_ver;
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
@@ -405,41 +403,15 @@ static void DLParser_SetuCode( GBIVersion gbi_version )
 	MicroCodeCommand command;
 
 	// This really important otherwise our ucode detector will pick up lots of junk.
-	// Also this sets apart unhandled ucodes
-	if ( gbi_version == GBI_0 ||
-		 gbi_version == GBI_0_WR ||
-		 gbi_version == GBI_0_GE ||
-		 gbi_version == GBI_0_DKR ||
-		 gbi_version == GBI_0_JFG ||
-		 gbi_version == GBI_0_LL ||
-		 gbi_version == GBI_0_SE ||
-		 gbi_version == GBI_0_CK ||
-		 gbi_version == GBI_0_PD ||
-		 gbi_version == GBI_1 ||
-		 gbi_version == GBI_2 )
-	{
-		// Let our auto ucode detector decide which table to choose from :)
-		ucode_ver = gbi_version;
-	}
+	if( gbi_version > GBI_0_UNK )
+		DBGConsole_Msg(0, "[YWarning] : Tried to load invalid ucode table # [R%d]", gbi_version);
 	else
-	{
-		// Return to romselector if unhandled ucode is loaded ex : Stunt Racer 64
-		if(gbi_version == GBI_0_UNK )
-		{
-			CPU_Halt("Exception in Set uCode");
-			DBGConsole_Msg(0, "[MException within loading unsupported ucode] at [R0x%08x 0x%08x]", command.inst.cmd0, command.inst.cmd1);
-		}
-	}
+		ucode_ver = gbi_version;
 
 	DAEDALUS_ERROR("Switching ucode table to %d", ucode_ver);
-	//
-	// Set up correct vertex stride
-	//
-	VertexStride = gVertexStride[ucode_ver];
-	//
-	//Set up selected ucode table
-	//
-	gInstructionLookup[ucode_ver][command.inst.cmd0>>24](command);
+
+	gVertexStride = VertexStride[ucode_ver]; // Set up correct vertex stride
+	gInstructionLookup[ucode_ver][command.inst.cmd0>>24](command); //Set up selected ucode table
 }
 	
 //*****************************************************************************

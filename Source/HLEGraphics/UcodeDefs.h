@@ -311,6 +311,7 @@ union MicroCodeCommand
 	GBI1_Dlist		dlist;
 	SetScissor		scissor;
 	SetLoadTile		loadtile;
+	GBI_Texture		texture;
 
 	u64	force_structure_alignment;
 };

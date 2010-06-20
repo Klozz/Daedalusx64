@@ -149,7 +149,7 @@ RomEntityEntry RomInitTable[] =
 	{"Audio", InitAudioPlugin, DisposeAudioPlugin },
 	{"Graphics", InitGraphicsPlugin, DisposeGraphicsPlugin},
 	{"FramerateLimiter", FramerateLimiter_Reset, NULL},
-	{"RSP", RSP_Reset, NULL},
+	//{"RSP", RSP_Reset, NULL},
 	{"CPU", CPU_Reset, CPU_Finalise},
 	{"ROM", ROM_ReBoot, ROM_Unload},
 	{"Controller", CController::Reset, CController::RomClose},

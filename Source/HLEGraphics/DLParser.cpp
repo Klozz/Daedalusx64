@@ -400,54 +400,34 @@ static void	DLParser_DumpTaskInfo( const OSTask * pTask )
 //*****************************************************************************
 //
 //*****************************************************************************
-static void DLParser_SetuCode( GBIVersion gbi_version, UCodeVersion ucode_version )
+static void DLParser_SetuCode( GBIVersion gbi_version )
 {
 	MicroCodeCommand command;
 
-	// ToDo : Create a new enum to handle GBI1/2 S2DEX 
-
-	if ( ucode_version == S2DEX )
+	// This really important otherwise our ucode detector will pick up lots of junk.
+	// Also this sets apart unhandled ucodes
+	if ( gbi_version == GBI_0 ||
+		 gbi_version == GBI_0_WR ||
+		 gbi_version == GBI_0_GE ||
+		 gbi_version == GBI_0_DKR ||
+		 gbi_version == GBI_0_JFG ||
+		 gbi_version == GBI_0_LL ||
+		 gbi_version == GBI_0_SE ||
+		 gbi_version == GBI_0_CK ||
+		 gbi_version == GBI_0_PD ||
+		 gbi_version == GBI_1 ||
+		 gbi_version == GBI_2 )
 	{
-		switch( gbi_version )
-		{
-		case GBI_1:
-			ucode_ver = 11;
-			break;
-		case GBI_2:
-			ucode_ver = 12;
-			break;
-		default:
-			DBGConsole_Msg(0, "Trying to set a non GBI1/2 S2DEX ucode??"); // This definitvely can't happen..
-			break;
-		}
+		// Let our auto ucode detector decide which table to choose from :)
+		ucode_ver = gbi_version;
 	}
 	else
 	{
-		// This really important otherwise our ucode detector will pick up lots of junk.
-		// Also this sets apart unhandled ucodes
-		if ( gbi_version == GBI_0 ||
-			 gbi_version == GBI_0_WR ||
-			 gbi_version == GBI_0_GE ||
-			 gbi_version == GBI_0_DKR ||
-			 gbi_version == GBI_0_JFG ||
-			 gbi_version == GBI_0_LL ||
-			 gbi_version == GBI_0_SE ||
-			 gbi_version == GBI_0_CK ||
-			 gbi_version == GBI_0_PD ||
-			 gbi_version == GBI_1 ||
-			 gbi_version == GBI_2 )
+		// Return to romselector if unhandled ucode is loaded ex : Stunt Racer 64
+		if(gbi_version == GBI_0_UNK )
 		{
-			// Let our auto ucode detector decide which table to choose from :)
-			ucode_ver = gbi_version;
-		}
-		else
-		{
-			// Return to romselector if unhandled ucode is loaded ex : Stunt Racer 64
-			if(gbi_version == GBI_0_UNK )
-			{
-				CPU_Halt("Exception in Set uCode");
-				DBGConsole_Msg(0, "[MException within loading unsupported ucode] at [R0x%08x 0x%08x]", command.inst.cmd0, command.inst.cmd1);
-			}
+			CPU_Halt("Exception in Set uCode");
+			DBGConsole_Msg(0, "[MException within loading unsupported ucode] at [R0x%08x 0x%08x]", command.inst.cmd0, command.inst.cmd1);
 		}
 	}
 
@@ -598,7 +578,7 @@ void	DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 da
 	UCodeVersion ucode_version;
 
 	GBIMicrocode_DetectVersion( code_base, code_size, data_base, data_size, &gbi_version, &ucode_version );
-	DLParser_SetuCode( gbi_version, ucode_version );
+	DLParser_SetuCode( gbi_version );
 }
 
 
@@ -634,7 +614,7 @@ static void	DLParser_ProcessDList()
 		CGraphicsContext::CleanScene = false;
 	}
 
-	while (DLParser_FetchNextCommand( &command ))
+	while (DLParser_FetchNextCommand(&command))
 	{
 		PROFILE_DL_CMD( command.inst.cmd );
 		
@@ -1584,11 +1564,11 @@ void DLParser_DumpVtxInfo(u32 address, u32 v0_idx, u32 num_verts)
 void DLParser_SetScissor( MicroCodeCommand command )
 {
 	// The coords are all in 8:2 fixed point
-	u32 x0   = (command.inst.cmd0>>12)&0xFFF;
-	u32 y0   = (command.inst.cmd0>>0 )&0xFFF;
-	u32 mode = (command.inst.cmd1>>24)&0x03;
-	u32 x1   = (command.inst.cmd1>>12)&0xFFF;
-	u32 y1   = (command.inst.cmd1>>0 )&0xFFF;
+	u32 x0   = command.scissor.x0;
+	u32 y0   = command.scissor.y0;
+	u32 mode = command.scissor.mode;
+	u32 x1   = command.scissor.x1;
+	u32 y1   = command.scissor.y1;
 	u32 address  = RDPSegAddr(command.inst.cmd1);
 
 	use(mode);
@@ -1667,14 +1647,13 @@ void DLParser_SetTImg( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_LoadBlock( MicroCodeCommand command )
 {
-	u32 uls			= ((command.inst.cmd0>>12)&0x0FFF)/4;
-	u32 ult			= ((command.inst.cmd0    )&0x0FFF)/4;
-	//u32 pad		=  (command.inst.cmd1>>27)&0x1f;
-	u32 tile_idx	=  (command.inst.cmd1>>24)&0x07;
-	u32 pixels		= ((command.inst.cmd1>>12)&0x0FFF) + 1;		// Number of bytes-1?
-	u32 dxt			=  (command.inst.cmd1    )&0x0FFF;		// 1.11 fixed point
+	u32 uls			= command.loadtile.sl;
+	u32 ult			= command.loadtile.tl;
+	u32 tile_idx	= command.loadtile.tile;
+	u32 lrs			= command.loadtile.sh;		// Number of bytes-1?
+	u32 dxt			= command.loadtile.th;		// 1.11 fixed point
 
-	use(pixels);
+	use(lrs);
 
 	u32		quadwords;
 	bool	swapped;
@@ -1697,7 +1676,7 @@ void DLParser_LoadBlock( MicroCodeCommand command )
 
 	u32		src_offset(g_TI.Address + offset);
 
-	DL_PF("    Tile:%d (%d,%d) %d pixels DXT:0x%04x = %d QWs => %d pixels/line", tile_idx, uls, ult, pixels, dxt, quadwords, width);
+	DL_PF("    Tile:%d (%d,%d - %d) DXT:0x%04x = %d QWs => %d pixels/line", tile_idx, uls, ult, lrs, dxt, quadwords, width);
 	DL_PF("    Offset: 0x%08x", src_offset);
 
 	gRDPStateManager.LoadBlock( tile_idx, src_offset, swapped );
@@ -1732,16 +1711,26 @@ void DLParser_LoadTile( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_LoadTLut( MicroCodeCommand command )
 {
-	u32 uls     = ((command.inst.cmd0 >> 12) & 0xfff)/4;
-	u32 tile_idx= ((command.inst.cmd1 >> 24) & 0x07);
-	u32 lrs     = ((command.inst.cmd1 >> 12) & 0xfff)/4;
-	u32 lrt     = ((command.inst.cmd1      ) & 0xfff)/4;
-	u32 count   = (lrs - uls);
+	u32 uls     = command.loadtile.sl/4;
+	u32 ult		= command.loadtile.tl/4;
+	u32 tile_idx= command.loadtile.tile;
+	u32 lrs     = command.loadtile.sh/4;
 
-	use(tile_idx);
-	use(lrs);
-	use(lrt);
-	use(count);
+	//This corresponds to the number of palette entries (16 or 256)
+	u32 count = (lrs - uls)+1;
+
+	// Format is always 16bpp - RGBA16 or IA16:
+	u32 offset = (uls + ult*g_TI.Width)*2;
+
+	//Copy PAL to the PAL memory
+	u32 tmem = gRDPTiles[ tile_idx ].tmem << 3;
+	u16 * p_source = (u16 *)&g_pu8RamBase[ g_TI.Address + offset ];
+	u16 * p_dest = (u16*)&gTextureMemory[ tmem ];
+
+	for (u32 i=0; i<count; i++)
+	{
+		p_dest[ i ] = p_source[ i ];
+	}
 
 	// Format is always 16bpp - RGBA16 or IA16:
 	// I've no idea why these two are added - seems to work for 007!
@@ -1749,15 +1738,8 @@ void DLParser_LoadTLut( MicroCodeCommand command )
 	//const RDP_Tile &	rdp_tile( gRDPStateManager.GetTile( tile_idx ) );
 	//gPalAddresses[ rdp_tile.tmem ] = g_TI.Address + offset;
 
-	RDP_TileSize tile;
-	tile.cmd0 = command.inst.cmd0;
-	tile.cmd1 = command.inst.cmd1;
-
-	RDP_LoadTLut( tile );
-
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	u32 ult     = ((command.inst.cmd0      ) & 0xfff)/4;
-	u32 offset = (uls + ult)*2;
+	u32 lrt = command.loadtile.th/4;
 
 	if (gDisplayListFile != NULL)
 	{
@@ -1903,17 +1885,9 @@ void DLParser_FillRect( MicroCodeCommand command )
 
 	// TODO - In 1/2cycle mode, skip bottom/right edges!?
 
-/*	// Doesn't work properly anyways...
-	if ((strncmp((char*)g_ROM.rh.Name, "BANJO TOOIE", 11) == 0))
-	{
-		// Skip this
-		return;
-	}
-*/
 	if (g_DI.Address == g_CI.Address)
 	{
 		// Clear the Z Buffer
-		//s_pD3DX->SetClearDepth(depth from set fill color);
 		CGraphicsContext::Get()->Clear( false, true );
 
 		DL_PF("    Clearing ZBuffer");
@@ -1925,40 +1899,25 @@ void DLParser_FillRect( MicroCodeCommand command )
 		// For some reason it draws a large rect over the entire
 		// display, right at the end of the dlist. It sets the primitive
 		// colour just before, so maybe I'm missing something??
+
+		// TODO - Check colour image format to work out how this should be decoded!
+
+		c32		colour;
+		
+		if ( g_CI.Size == G_IM_SIZ_16b )
 		{
+			PixelFormats::N64::Pf5551	c( (u16)gFillColor );
 
-			/*if (((x1+1)-x0) == gViWidth &&
-				((y1+1)-y0) == gViHeight &&
-				gFillColor == 0xFF000000)
-			{
-				DL_PF("  Filling Rectangle (screen clear)");
-				CGraphicsContext::Get()->Clear(true, false);
+			colour = PixelFormats::convertPixelFormat< c32, PixelFormats::N64::Pf5551 >( c );
 
-				//DBGConsole_Msg(0, "DL ColorBuffer = 0x%08x", g_CI.Address);
-			}
-			else*/
-			{
-				// TODO - Check colour image format to work out how this should be decoded!
-
-				c32		colour;
-				
-				if ( g_CI.Size == G_IM_SIZ_16b )
-				{
-					PixelFormats::N64::Pf5551	c( (u16)gFillColor );
-
-					colour = PixelFormats::convertPixelFormat< c32, PixelFormats::N64::Pf5551 >( c );
-
-					//printf( "FillRect: %08x, %04x\n", colour.GetColour(), c.Bits );
-				}
-				else
-				{
-					colour = c32( gFillColor );
-				}
-				DL_PF("    Filling Rectangle");
-				PSPRenderer::Get()->FillRect( xy0, xy1, colour.GetColour() );
-			}
+			//printf( "FillRect: %08x, %04x\n", colour.GetColour(), c.Bits );
 		}
-
+		else
+		{
+			colour = c32( gFillColor );
+		}
+		DL_PF("    Filling Rectangle");
+		PSPRenderer::Get()->FillRect( xy0, xy1, colour.GetColour() );
 	}
 }
 

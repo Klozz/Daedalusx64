@@ -44,8 +44,11 @@ enum GBIVersion
 	GBI_0_GE,
 	GBI_0_CK,
 	GBI_0_PD,
-	GBI_0_UNK // This should always be the last
+	S2DEX_GBI_1,
+	S2DEX_GBI_2,
+	GBI_0_UNK	// This always has to be the last one
 };
+
 
 void	GBIMicrocode_DetectVersion( u32 code_base, u32 code_size, u32 data_base, u32 data_size, GBIVersion * gbi_version, UCodeVersion * ucode_version );
 /*
@@ -74,9 +77,8 @@ struct MicroCodeCommand
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 u32				GBIMicrocode_GetMicrocodeHistoryStringCount();
 const char *	GBIMicrocode_GetMicrocodeHistoryString( u32 i );
-#endif
-
 void			GBIMicrocode_ResetMicrocodeHistory();
+#endif
 
 
 #endif // MICROCODE_H__

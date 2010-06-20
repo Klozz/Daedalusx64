@@ -215,33 +215,43 @@ void	GBIMicrocode_DetectVersion( u32 code_base, u32 code_size,
 
 		if(match)
 		{
-			if( strstr(match, "fifo") || strstr(match, "xbus"))
-				*gbi_version = GBI_2;
+			if( !strncmp(match, "S2DEX", 5))
+			{
+				if( strstr(match, "fifo") || strstr(match, "xbus")){
+					*ucode_version = S2DEX;
+					*gbi_version = S2DEX_GBI_2;
+				}
+				else{
+					*ucode_version = S2DEX;
+					*gbi_version = S2DEX_GBI_1;
+				}
+			}
 			else
-				*gbi_version = GBI_1;
+			{
+				if( strstr(match, "fifo") || strstr(match, "xbus"))
+					*gbi_version = GBI_2;
+				else
+					*gbi_version = GBI_1;
 
-			if( !strncmp(match, "F3DEX", 5))
-			{
-				*ucode_version = F3DEX;
-			}
-			if( !strncmp(match, "F3DZE", 5))
-			{
-				*ucode_version = F3DEX;
-			}
-			else if( !strncmp(match, "F3DLP", 5))
-			{
-				*ucode_version = F3DLP;
-			}
-			else if( !strncmp(match, "F3DLX", 5))
-			{
-				*ucode_version = F3DLX;
-			}
-			else if( !strncmp(match, "S2DEX", 5))
-			{
-				*ucode_version = S2DEX;
-			}
-			else if( !strncmp(match, "L3DEX", 5)){
-				*ucode_version = F3DEX;
+				if( !strncmp(match, "F3DEX", 5))
+				{
+					*ucode_version = F3DEX;
+				}
+				if( !strncmp(match, "F3DZE", 5))
+				{
+					*ucode_version = F3DEX;
+				}
+				else if( !strncmp(match, "F3DLP", 5))
+				{
+					*ucode_version = F3DLP;
+				}
+				else if( !strncmp(match, "F3DLX", 5))
+				{
+					*ucode_version = F3DLX;
+				}
+				else if( !strncmp(match, "L3DEX", 5)){
+					*ucode_version = F3DEX;
+				}
 			}
 		}
 		else
@@ -298,7 +308,6 @@ const char * GBIMicrocode_GetMicrocodeHistoryString( u32 i )
 
 	return NULL;
 }
-#endif
 
 //*****************************************************************************
 //
@@ -307,3 +316,4 @@ void GBIMicrocode_ResetMicrocodeHistory()
 {
 	gMicrocodeHistoryCount = 0;
 }
+#endif

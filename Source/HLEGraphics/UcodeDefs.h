@@ -266,6 +266,29 @@ struct GBI1_Dlist
 	unsigned int    addr;
 };
 
+struct SetScissor
+{
+	unsigned int	y0:12;	    
+	unsigned int	x0:12;	   
+	unsigned int	cmd:8;	    
+	unsigned int	y1:12;	    
+	unsigned int	x1:12;	  
+	unsigned int	mode:2;
+	unsigned int	pad:6;	
+};
+
+struct SetLoadTile
+{
+	unsigned int	tl:12;
+	unsigned int	sl:12;
+	unsigned int	cmd:8;
+
+	unsigned int	th:12;
+	unsigned int	sh:12;
+	unsigned int	tile:3;
+	unsigned int	pad:5;
+};
+
 union MicroCodeCommand
 {
 	Instruction		inst;
@@ -286,6 +309,8 @@ union MicroCodeCommand
 	SetColor		color;
 	SetTImg			img;
 	GBI1_Dlist		dlist;
+	SetScissor		scissor;
+	SetLoadTile		loadtile;
 
 	u64	force_structure_alignment;
 };

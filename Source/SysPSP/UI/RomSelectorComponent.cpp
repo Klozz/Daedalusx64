@@ -215,7 +215,7 @@ static bool SortByGameName( const SRomInfo * a, const SRomInfo * b )
 		return cat_a < cat_b;
 	}
 
-	return a->mSettings.GameName < b->mSettings.GameName;
+	return ( strcmp( a->mSettings.GameName.c_str(), b->mSettings.GameName.c_str() ) < 0 );
 }
 
 //*************************************************************************************

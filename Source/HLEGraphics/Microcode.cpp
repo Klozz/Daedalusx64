@@ -80,9 +80,9 @@ struct MicrocodeCacheEntry
 static const u32				NUM_MICROCODE_CACHE_ENTRIES = 4;
 static MicrocodeCacheEntry		gMicrocodeCache[ NUM_MICROCODE_CACHE_ENTRIES ];
 static u32						gCurrentMicrocodeCacheEntry = 0;
-static u32						gMicrocodeHistoryCount = 0;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
+static u32						gMicrocodeHistoryCount = 0;
 static const u32				MICROCODE_HISTORY_MAX = 10;
 static MicrocodeString			gMicrocodeHistory[ MICROCODE_HISTORY_MAX ];
 #endif

@@ -235,7 +235,10 @@ template< bool FullLength > __forceinline void StoreFPR_Double( u32 reg, d64 val
 	}
 	else
 	{
-		r._f64 = f32( value );	// This fixes Mario Party's draft mini game, of course we use float for speed.
+		if(gSimulateDoubleDisabled)
+		{
+			r._f64 = f32( value );	// This fixes Mario Party's draft mini game.
+		}
 
 		gCPUState.FPU[reg+0]._u32_0 = r._u32_0;
 		gCPUState.FPU[reg+1]._u32_0 = r._u32_1;
@@ -1198,16 +1201,14 @@ static void R4300_CALL_TYPE R4300_SDR( R4300_CALL_SIGNATURE )//CYRUS64
 	default:nNew = nReg; break;			// Aligned
 	}
 	Write64Bits(address & ~0x7, nNew);
-
-
 }
 
-
+/*
 static const char * const gCacheNames[] =
 {
 	"I", "D", "SI", "SD"
 };
-
+*/
 static void R4300_CALL_TYPE R4300_CACHE( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
@@ -2199,10 +2200,10 @@ static void R4300_CALL_TYPE R4300_Cop1_CTC1( R4300_CALL_SIGNATURE ) 		// move Co
 
 		SET_ROUND_MODE( gRoundingMode );
 	}
-	/*else
+	else
 	{
 
-	}*/
+	}
 
 	// Now generate lots of exceptions :-)
 }
@@ -2761,11 +2762,7 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ADD( R4300
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	if (!gSimulateDoubleDisabled)
-	{
-		StoreFPR_Double< FullLength >( op_code.fd, fX + fY );
-	}
-	else
+	if (gSimulateDoubleDisabled)
 	{
 		// Use doubles.. "hack" for Buck Bumble
 		b64 fM = LoadFPR_Double< FullLength >( op_code.fs );
@@ -2773,8 +2770,12 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ADD( R4300
 
 		StoreFPR_Double_2< FullLength >( op_code.fd, fM + fN );
 	}
-}
+	else
+	{
+		StoreFPR_Double< FullLength >( op_code.fd, fX + fY );
 
+	}
+}
 template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_SUB( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );

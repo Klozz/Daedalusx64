@@ -289,8 +289,6 @@ const char *sc_colcombtypes8[8] =
 
 // Mask down to 0x003FFFFF?
 #define RDPSegAddr(seg) ( (gSegments[((seg)>>24)&0x0F]&0x00ffffff) + ((seg)&0x00FFFFFF) )
-
-
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -403,15 +401,21 @@ static void DLParser_SetuCode( GBIVersion gbi_version )
 	MicroCodeCommand command;
 
 	// This really important otherwise our ucode detector will pick up lots of junk.
+	// Also helps to avoid the override of ucode_ver by ProcessDList
 	if( gbi_version > GBI_0_UNK )
+	{
 		DBGConsole_Msg(0, "[YWarning] : Tried to load invalid ucode table # [R%d]", gbi_version);
+	}
 	else
+	{
+		// Would like to get rid off this global but is needed by ProcessDList..errg..
 		ucode_ver = gbi_version;
 
-	DAEDALUS_ERROR("Switching ucode table to %d", ucode_ver);
+		DAEDALUS_ERROR("Switching ucode table to %d", ucode_ver);
 
-	gVertexStride = VertexStride[ucode_ver]; // Set up correct vertex stride
-	gInstructionLookup[ucode_ver][command.inst.cmd0>>24](command); //Set up selected ucode table
+		gVertexStride = VertexStride[ucode_ver]; // Set up correct vertex stride
+		gInstructionLookup[ucode_ver][command.inst.cmd0>>24](command); //Set up selected ucode table
+	}
 }
 	
 //*****************************************************************************
@@ -720,12 +724,13 @@ void DLParser_Process()
 //*****************************************************************************
 void RDP_MoveMemLight(u32 light_idx, u32 address)
 {
+/*
 	if( light_idx >= 16 )
 	{
 		DBGConsole_Msg(0, "Warning: invalid light # = %d", light_idx);
 		return;
 	}
-
+*/
 	s8 * pcBase = g_ps8RamBase + address;
 	u32 * pdwBase = (u32 *)pcBase;
 
@@ -782,12 +787,13 @@ void RDP_MoveMemLight(u32 light_idx, u32 address)
 
 void RDP_MoveMemViewport(u32 address)
 {
+/*
 	if( address+16 >= MAX_RAM_ADDRESS )
 	{
 		DBGConsole_Msg(0, "MoveMem Viewport, invalid memory");
 		return;
 	}
-
+*/
 	s16 scale[4];
 	s16 trans[4];
 
@@ -832,11 +838,8 @@ void DLParser_Nothing( MicroCodeCommand command )
 	DAEDALUS_DL_ERROR( "RDP Command %08x Does not exist...", command.inst.cmd0 );
 
 	// Terminate!
-	{
 	//	DBGConsole_Msg(0, "Warning, DL cut short with unknown command: 0x%08x 0x%08x", command.inst.cmd0, command.inst.cmd1);
-
-		DLParser_PopDL();
-	}
+	DLParser_PopDL();
 
 }
 
@@ -847,6 +850,7 @@ void DLParser_GBI1_SpNoop( MicroCodeCommand command )
 {
 }
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -859,15 +863,17 @@ void DLParser_GBI1_SpNoop( MicroCodeCommand command )
 		shown = true;							\
 	}											\
 }
-
+#endif
 //*****************************************************************************
 //
 //*****************************************************************************
 
 void DLParser_GBI2_DMA_IO( MicroCodeCommand command )
 {
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	DL_PF( "~*Not Implemented (G_DMA_IO in GBI 2)" );
 	DL_UNIMPLEMENTED_ERROR( "G_DMA_IO" );
+#endif
 }
 
 //*****************************************************************************
@@ -896,7 +902,6 @@ void DLParser_GBI1_Reserved( MicroCodeCommand command )
 void DLParser_GBI1_Noop( MicroCodeCommand command )
 {
 }
-
 
 //*****************************************************************************
 //
@@ -1009,7 +1014,6 @@ void DLParser_GBI1_RDPHalf_1( MicroCodeCommand command )
 {
 	gRDPHalf1 = u32(command.inst.cmd1);
 }
-
 
 //*****************************************************************************
 //
@@ -1749,8 +1753,6 @@ void DLParser_LoadTLut( MicroCodeCommand command )
 	}
 #endif
 }
-
-
 
 //*****************************************************************************
 //

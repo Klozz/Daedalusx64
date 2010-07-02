@@ -128,7 +128,7 @@ public:
 	// Vertex stuff	
 	void				SetNewVertexInfoVFPU_No_Light(u32 address, u32 v0, u32 n);	// For conker..	
 	void				SetNewVertexInfoVFPU(u32 address, u32 v0, u32 n);	// Assumes dwAddress has already been checked!	
-	void				ModifyVertexInfo(u32 w, u32 vert, u32 val);
+	void				ModifyVertexInfo(u32 whered, u32 vert, u32 val);
 	void				SetNewVertexInfoDKR(u32 dwAddress, u32 dwV0, u32 dwNum);	// Assumes dwAddress has already been checked!	
 	void				SetVtxColor( u32 vert, c32 color );
 	void				SetVtxTextureCoord( u32 vert, short tu, short tv );

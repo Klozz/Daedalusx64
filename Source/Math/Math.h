@@ -39,6 +39,21 @@
 
 #define PI   3.141592653589793f
 
+inline float vfpu_randf(float min, float max) {
+    float result;
+    __asm__ volatile (
+		"mtv      %1, S000\n"
+        "mtv      %2, S001\n"
+        "vsub.s   S001, S001, S000\n"
+        "vrndf1.s S002\n"
+        "vone.s	  S003\n"
+        "vsub.s   S002, S002, S003\n"
+        "vmul.s   S001, S002, S001\n"
+        "vadd.s   S000, S000, S001\n"
+        "mfv      %0, S000\n"
+        : "=r"(result) : "r"(min), "r"(max));
+    return result;
+}
 
 inline float vfpu_invSqrt(float x)
 {
@@ -221,6 +236,31 @@ inline float pspFpuMin(float fs1, float fs2)
 	fd = (fs1 < fs2) ? fs1 : fs2;
 	return (fd);
 }
+
+inline int pspFpuIsNaN(float f)
+{
+	int v;
+	asm (
+		".set push\n"		
+		".set noreorder\n"	
+		"lui %0, 0x807F\n"		//
+		"mfc1 $8, %1\n"			// t0 = f
+		"ori %0, %0, 0xFFFF\n"		// v  = 0x807FFFFF
+		"sll $9, $8, 1\n"		// t1 = t0<<1
+		"and %0, %0, $8\n"		// v  = v & t0
+		"srl $9, $9, 24\n"		// t1 = t1>>24
+		"sll $8, $8, 9\n"		// t0 = t0<<9
+		"sltiu $9, $9, 0x00FF\n"	// t1 = (t1<0xFF)
+		"movz %0, $0, $8\n"		// v  = (t0==0) ? 0 : v		if (frac==0) is not NaN
+		"movn %0, $0, $9\n"		// v  = (t1!=0) ? 0 : v		if (exp!=0xFF) is not NAN
+		".set pop\n"		
+		: "=r"(v)
+		: "f"(f)
+		: "$8", "$9"
+	);
+	return (v);
+}
+
 
 
 

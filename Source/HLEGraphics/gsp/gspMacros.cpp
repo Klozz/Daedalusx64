@@ -153,29 +153,18 @@ void DLParser_GBI1_ModifyVtx( MicroCodeCommand command )
 {
 	const u32 FACTOR = 2; // This might need a bit of changing for other microcodes
 
-	u32 w =  (command.inst.cmd0 >> 16) & 0xFF;
+	u32 offset =  (command.inst.cmd0 >> 16) & 0xFF;
 	u32 vert   = ((command.inst.cmd0      ) & 0xFFFF) / FACTOR;
 	u32 value  = command.inst.cmd1;
 
+	// Helps to avoid crash after swinging in Mario Golf
 	if( vert > 80 )
 	{
-		DAEDALUS_DL_ERROR("ModifyVtx: Invalid vertex number: %d", vert);
+		DAEDALUS_ERROR("ModifyVtx: Invalid vertex number: %d", vert);
 		return;
 	}
 
-	switch ( w )
-	{
-	case G_MWO_POINT_RGBA:
-	case G_MWO_POINT_ST:
-	case G_MWO_POINT_XYSCREEN:
-	case G_MWO_POINT_ZSCREEN:
-		PSPRenderer::Get()->ModifyVertexInfo(w, vert, value);
-		break;
-	default:
-		DBGConsole_Msg( 0, "ModifyVtx - Setting vert data 0x%02x, 0x%08x", w, value );
-		DL_PF( "      Setting unknown value: 0x%02x, 0x%08x", w, value );
-		break;
-	}
+	PSPRenderer::Get()->ModifyVertexInfo(offset, vert, value);
 }
 
 //*****************************************************************************
@@ -280,37 +269,37 @@ void DLParser_GBI2_PopMtx( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_CullDL( MicroCodeCommand command )
 {
-		return;
-		// Broken we need to fix it !
-		// Enabling it brakes several Fast3D games, see : AeroGauge and Space Station SV
-		// Need to find out why, most likely we'll have to separate this from GBI1/GBI0?
+	return;
+	// Broken we need to fix it !
+	// Enabling it brakes several Fast3D games, see : AeroGauge and Space Station SV
+	// Need to find out why, most likely we'll have to separate this from GBI1/GBI0?
 
-        u32 first = ((command.inst.cmd0) & 0xFFF) / gVertexStride;
-        u32 last  = ((command.inst.cmd1) & 0xFFF) / gVertexStride;
+	u32 first = ((command.inst.cmd0) & 0xFFF) / gVertexStride;
+	u32 last  = ((command.inst.cmd1) & 0xFFF) / gVertexStride;
 
-        DL_PF("    Culling using verts %d to %d", first, last);
+	DL_PF("    Culling using verts %d to %d", first, last);
 
-        // Mask into range
-        first &= 0x1f;
-        last &= 0x1f;
+	// Mask into range
+	first &= 0x1f;
+	last &= 0x1f;
 
-		if( last < first )	return;
-		for (u32 i=first; i<=last; i++)
-        {
-                if (PSPRenderer::Get()->GetVtxFlags( i ) == 0)
-                {
-                        DL_PF("    Vertex %d is visible, continuing with display list processing", i);
-                        return;
-                }
-        }
+	if( last < first )	return;
+	for (u32 i=first; i<=last; i++)
+	{
+		if (PSPRenderer::Get()->GetVtxFlags( i ) == 0)
+		{
+			DL_PF("    Vertex %d is visible, continuing with display list processing", i);
+			return;
+		}
+	}
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-        gNumDListsCulled++;
-#endif
+	#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+	gNumDListsCulled++;
+	#endif
 
-        DL_PF("    No vertices were visible, culling rest of display list");
+	DL_PF("    No vertices were visible, culling rest of display list");
 
-        DLParser_PopDL();
+	DLParser_PopDL();
 
 }
 
@@ -320,26 +309,26 @@ void DLParser_GBI1_CullDL( MicroCodeCommand command )
 void DLParser_GBI2_CullDL( MicroCodeCommand command )
 {
 
-        u32 first = ((command.inst.cmd0) & 0xfff) / 2;
-        u32 last  = ((command.inst.cmd1) & 0xfff) / 2;
+	u32 first = ((command.inst.cmd0) & 0xfff) / 2;
+	u32 last  = ((command.inst.cmd1) & 0xfff) / 2;
 
-		if( last < first )	return;		// Fixes Aidyn Chronicles
+	if( last < first )	return;		// Fixes Aidyn Chronicles
 
-        DL_PF("    Culling using verts %d to %d", first, last);
+	DL_PF("    Culling using verts %d to %d", first, last);
 
-        if ( PSPRenderer::Get()->TestVerts( first, last ) )
-        {
-                DL_PF( "    Display list is visible, returning" );
-        }
-        else
-        {
+	if ( PSPRenderer::Get()->TestVerts( first, last ) )
+	{
+		DL_PF( "    Display list is visible, returning" );
+	}
+	else
+	{
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-                gNumDListsCulled++;
+		gNumDListsCulled++;
 #endif
-                DL_PF("    Display list is invisible, culling");
+		DL_PF("    Display list is invisible, culling");
 
-                DLParser_PopDL();
-        }
+		DLParser_PopDL();
+	}
 }
 
 //*****************************************************************************
@@ -414,12 +403,11 @@ void DLParser_GBI2_DL_Count( MicroCodeCommand command )
 
 	// This cmd is likely to execute number of ucode at the given address
 	u32 address  = RDPSegAddr(command.inst.cmd1);
-	{
-		DList dl;
-		dl.addr = address;
-		dl.limit = ((command.inst.cmd0)&0xFFFF);
-		gDisplayListStack.push_back(dl);
-	}
+
+	DList dl;
+	dl.addr = address;
+	dl.limit = ((command.inst.cmd0)&0xFFFF);
+	gDisplayListStack.push_back(dl);
 }
 
 //*****************************************************************************
@@ -444,26 +432,26 @@ void DLParser_GBI2_0x8( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_BranchZ( MicroCodeCommand command )
 {
-		u32 vtx = (command.inst.cmd0 & 0xFFF) >> 1;
+	u32 vtx = (command.inst.cmd0 & 0xFFF) >> 1;
 
-		f32 vtxdepth = PSPRenderer::Get()->GetTransformedVtxPos(vtx).z/PSPRenderer::Get()->GetTransformedVtxPos(vtx).w;
+	f32 vtxdepth = PSPRenderer::Get()->GetTransformedVtxPos(vtx).z/PSPRenderer::Get()->GetTransformedVtxPos(vtx).w;
 
-		//if( vtxdepth <= (command.inst.cmd1) )
-		if( vtxdepth <= (s32)(command.inst.cmd1) || gNeedHackforZelda )		// For some reasons we sometimes fail the branch depth on OOT and MM....so we force the gNeedHackforZelda true.
-        {																// See OOT : Death Mountain and MM : Outside of Clock Town.
-                u32 pc = gDisplayListStack.back().addr;					// This points to the next instruction
-                u32 dl = *(u32 *)(g_pu8RamBase + pc-12);
-                u32 address = RDPSegAddr(dl);
+	// See OOT : Death Mountain and MM : Outside of Clock Town.
+	if( vtxdepth <= (s32)(command.inst.cmd1) || gNeedHackforZelda )		// For some reasons we sometimes fail the branch depth on OOT and MM....so we force gNeedHackforZelda true.
+	{																
+		u32 pc = gDisplayListStack.back().addr;	// This points to the next instruction
+		u32 dl = *(u32 *)(g_pu8RamBase + pc-12);
+		u32 address = RDPSegAddr(dl);
 
-				//address = RDPSegAddr(dl);; // Is this necessary?
+		//address = RDPSegAddr(dl);; // Is this necessary?
 
-                DL_PF("BranchZ to DisplayList 0x%08x", address);
+		DL_PF("BranchZ to DisplayList 0x%08x", address);
 
-                DList Dl;
-                Dl.addr = address;
-                Dl.limit = ~0;
-                gDisplayListStack.push_back(Dl);
-        }
+		DList Dl;
+		Dl.addr = address;
+		Dl.limit = ~0;
+		gDisplayListStack.push_back(Dl);
+	}
 }
 
 //***************************************************************************** 
@@ -486,32 +474,32 @@ void DLParser_GBI1_LoadUCode( MicroCodeCommand command )
 //*****************************************************************************
 static void DLParser_InitGeometryMode()
 {
-        bool bCullFront         = (gGeometryMode & G_CULL_FRONT)		? true : false;
-        bool bCullBack          = (gGeometryMode & G_CULL_BACK)			? true : false;
-		if( bCullFront && bCullBack )
-		{
-			DAEDALUS_ERROR(" Warning : Both front and back are culled ");
-			bCullFront = false; // should never cull front
-		}
-		PSPRenderer::Get()->SetCullMode(bCullFront, bCullBack);
+	bool bCullFront         = (gGeometryMode & G_CULL_FRONT)		? true : false;
+	bool bCullBack          = (gGeometryMode & G_CULL_BACK)			? true : false;
+	if( bCullFront && bCullBack )
+	{
+		DAEDALUS_ERROR(" Warning : Both front and back are culled ");
+		bCullFront = false; // should never cull front
+	}
+	PSPRenderer::Get()->SetCullMode(bCullFront, bCullBack);
 
-        bool bShade				= (gGeometryMode & G_SHADE)				? true : false;
-        bool bShadeSmooth       = (gGeometryMode & G_SHADING_SMOOTH)	? true : false;
+	bool bShade				= (gGeometryMode & G_SHADE)				? true : false;
+	bool bShadeSmooth       = (gGeometryMode & G_SHADING_SMOOTH)	? true : false;
 
-        bool bFog				= (gGeometryMode & G_FOG)				? true : false;
-        bool bTextureGen        = (gGeometryMode & G_TEXTURE_GEN)		? true : false;
+	bool bFog				= (gGeometryMode & G_FOG)				? true : false;
+	bool bTextureGen        = (gGeometryMode & G_TEXTURE_GEN)		? true : false;
 
-        bool bLighting			= (gGeometryMode & G_LIGHTING)			? true : false;
-        bool bZBuffer           = (gGeometryMode & G_ZBUFFER)			? true : false;
+	bool bLighting			= (gGeometryMode & G_LIGHTING)			? true : false;
+	bool bZBuffer           = (gGeometryMode & G_ZBUFFER)			? true : false;
 
-        PSPRenderer::Get()->SetSmooth( bShade );
-        PSPRenderer::Get()->SetSmoothShade( bShadeSmooth );
+	PSPRenderer::Get()->SetSmooth( bShade );
+	PSPRenderer::Get()->SetSmoothShade( bShadeSmooth );
 
-        PSPRenderer::Get()->SetFogEnable( bFog );
-        PSPRenderer::Get()->SetTextureGen(bTextureGen);
+	PSPRenderer::Get()->SetFogEnable( bFog );
+	PSPRenderer::Get()->SetTextureGen(bTextureGen);
 
-        PSPRenderer::Get()->SetLighting( bLighting );
-        PSPRenderer::Get()->ZBufferEnable( bZBuffer );
+	PSPRenderer::Get()->SetLighting( bLighting );
+	PSPRenderer::Get()->ZBufferEnable( bZBuffer );
 }
 
 
@@ -649,15 +637,15 @@ void DLParser_GBI2_GeometryMode( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_SetOtherModeL( MicroCodeCommand command )
 {
-        u32 shift  = (command.inst.cmd0>>8)&0xFF;
-        u32 length = (command.inst.cmd0   )&0xFF;
-        u32 data   =  command.inst.cmd1;
+    u32 shift  = (command.inst.cmd0>>8)&0xFF;
+    u32 length = (command.inst.cmd0   )&0xFF;
+    u32 data   =  command.inst.cmd1;
 
-        u32 mask = ((1<<length)-1)<<shift;
+    u32 mask = ((1<<length)-1)<<shift;
 
-        gOtherModeL = (gOtherModeL&(~mask)) | data;
+    gOtherModeL = (gOtherModeL&(~mask)) | data;
 
-        RDP_SetOtherMode( gOtherModeH, gOtherModeL );
+    RDP_SetOtherMode( gOtherModeH, gOtherModeL );
 }
 
 //*****************************************************************************
@@ -665,15 +653,15 @@ void DLParser_GBI1_SetOtherModeL( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_SetOtherModeH( MicroCodeCommand command )
 {
-        u32 shift  = (command.inst.cmd0>>8)&0xFF;
-        u32 length = (command.inst.cmd0   )&0xFF;
-        u32 data   =  command.inst.cmd1;
+    u32 shift  = (command.inst.cmd0>>8)&0xFF;
+    u32 length = (command.inst.cmd0   )&0xFF;
+    u32 data   =  command.inst.cmd1;
 
-        u32 mask = ((1<<length)-1)<<shift;
+    u32 mask = ((1<<length)-1)<<shift;
 
-        gOtherModeH = (gOtherModeH&(~mask)) | data;
+    gOtherModeH = (gOtherModeH&(~mask)) | data;
 
-        RDP_SetOtherMode( gOtherModeH, gOtherModeL );
+    RDP_SetOtherMode( gOtherModeH, gOtherModeL );
 }
 
 //*****************************************************************************
@@ -681,16 +669,16 @@ void DLParser_GBI1_SetOtherModeH( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_SetOtherModeL( MicroCodeCommand command )
 {
-        u32 shift  = (command.inst.cmd0>>8)&0xFF;
-        u32 length = (command.inst.cmd0   )&0xFF;
-        u32 data   =  command.inst.cmd1;
+	u32 shift  = (command.inst.cmd0>>8)&0xFF;
+	u32 length = (command.inst.cmd0   )&0xFF;
+	u32 data   =  command.inst.cmd1;
 
-        // Mask is constructed slightly differently
-        u32 mask = (u32)((s32)(0x80000000)>>length)>>shift;
+	// Mask is constructed slightly differently
+	u32 mask = (u32)((s32)(0x80000000)>>length)>>shift;
 
-        gOtherModeL = (gOtherModeL&(~mask)) | data;
+	gOtherModeL = (gOtherModeL&(~mask)) | data;
 
-        RDP_SetOtherMode( gOtherModeH, gOtherModeL );
+	RDP_SetOtherMode( gOtherModeH, gOtherModeL );
 }
 
 //*****************************************************************************
@@ -698,16 +686,16 @@ void DLParser_GBI2_SetOtherModeL( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_SetOtherModeH( MicroCodeCommand command )
 {
-        u32 shift  = (command.inst.cmd0>>8)&0xFF;
-        u32 length = (command.inst.cmd0   )&0xFF;
-        u32 data   =  command.inst.cmd1;
+    u32 shift  = (command.inst.cmd0>>8)&0xFF;
+    u32 length = (command.inst.cmd0   )&0xFF;
+    u32 data   =  command.inst.cmd1;
 
-        // Mask is constructed slightly differently
-        u32 mask = (u32)((s32)(0x80000000)>>length)>>shift;
+    // Mask is constructed slightly differently
+    u32 mask = (u32)((s32)(0x80000000)>>length)>>shift;
 
-        gOtherModeH = (gOtherModeH&(~mask)) | data;
+    gOtherModeH = (gOtherModeH&(~mask)) | data;
 
-        RDP_SetOtherMode( gOtherModeH, gOtherModeL );
+    RDP_SetOtherMode( gOtherModeH, gOtherModeL );
 }
 
 //*****************************************************************************
@@ -979,34 +967,42 @@ void DLParser_GBI1_Line3D( MicroCodeCommand command )
 
     bool tris_added = false;
 
-    while ( command.inst.cmd == G_GBI1_LINE3D )
-    {
-        u32 v3_idx   = command.gbi1line3d.v3 / gVertexStride;
-        u32 v0_idx   = command.gbi1line3d.v0 / gVertexStride;
-        u32 v1_idx   = command.gbi1line3d.v1 / gVertexStride;
-        u32 v2_idx   = command.gbi1line3d.v2 / gVertexStride;
+	if( command.gbi1line3d.v3 == 0 )
+	{
+		// This removes the tris that cover the screen in Flying Dragon
+		// Actually this wrong, we should support line3D properly here..
+		DAEDALUS_ERROR("Flying Dragon Hack -- Skipping Line3D");
+		return;
+	}
 
-        tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
-        tris_added |= PSPRenderer::Get()->AddTri(v2_idx, v3_idx, v0_idx);
+	while ( command.inst.cmd == G_GBI1_LINE3D )
+	{
+		u32 v3_idx   = command.gbi1line3d.v3 / gVertexStride;
+		u32 v0_idx   = command.gbi1line3d.v0 / gVertexStride;
+		u32 v1_idx   = command.gbi1line3d.v1 / gVertexStride;
+		u32 v2_idx   = command.gbi1line3d.v2 / gVertexStride;
 
-        command.inst.cmd0 = *pCmdBase++;
-        command.inst.cmd1 = *pCmdBase++;
-        pc += 8;
+		tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+		tris_added |= PSPRenderer::Get()->AddTri(v2_idx, v3_idx, v0_idx);
+
+		command.inst.cmd0 = *pCmdBase++;
+		command.inst.cmd1 = *pCmdBase++;
+		pc += 8;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-        if ( command.inst.cmd == G_GBI1_LINE3D )
-        {
+		if ( command.inst.cmd == G_GBI1_LINE3D )
+		{
 //			DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, gInstructionName[ command.inst.cmd ]);
-        }
+		}
 #endif
-    }
+	}
 
-    gDisplayListStack.back().addr = pc-8;
+	gDisplayListStack.back().addr = pc-8;
 
-    if (tris_added)
-    {
-            PSPRenderer::Get()->FlushTris();
-    }
+	if (tris_added)
+	{
+			PSPRenderer::Get()->FlushTris();
+	}
 }
 
 //*****************************************************************************
@@ -1099,4 +1095,12 @@ void DLParser_GBI0_Tri4( MicroCodeCommand command )
     {
 		PSPRenderer::Get()->FlushTris();
 	}
+}
+
+//*****************************************************************************
+// Actually line3d, not supported I think - From Glide
+//*****************************************************************************
+void DLParser_GBI0_Quad( MicroCodeCommand command ) 
+{
+	DAEDALUS_ERROR("GBI0_Quad : Line3D not supported in ucode0 ? ( Ignored )");
 }

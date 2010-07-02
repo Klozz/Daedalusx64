@@ -1133,12 +1133,12 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 	case G_MW_POINTS:	// Used in FIFA 98
 		{
 			u32 vtx = command.mw1.offset/40;
-			u32 w	= command.mw1.offset - vtx*40;
+			u32 offset = command.mw1.offset - vtx*40;
 			u32 val = command.mw1.value;
 
 			DL_PF("    G_MW_POINTS");
 
-			PSPRenderer::Get()->ModifyVertexInfo(w, vtx, val);
+			PSPRenderer::Get()->ModifyVertexInfo(offset, vtx, val);
 		}
  		break;
 	case G_MW_PERSPNORM:

@@ -214,6 +214,12 @@ const TextureInfo & CRDPStateManager::GetTextureDescriptor( u32 idx ) const
 		ti.SetTmemAddress( rdp_tile.tmem );
 		ti.SetTLutIndex( rdp_tile.palette );
 
+		// Quick hack to fix "black textures" in several games for ex: Majora's Mask, hopefully won't mess out anything
+		// This isn't quiet right for most games like Majora's Mask or Animal Crossing...but it works quiet well in games like Flying Dragon
+		// Maybe multiple is wrong, or we're missing something else?
+		if( ti.GetSize() == G_IM_SIZ_4b )
+			ti.SetTLutIndex( 16  * 2 * rdp_tile.palette );
+
 		ti.SetLoadAddress( address );
 		ti.SetFormat( rdp_tile.format );
 		ti.SetSize( rdp_tile.size );

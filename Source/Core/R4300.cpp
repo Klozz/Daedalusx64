@@ -70,11 +70,11 @@ enum ERoundingMode
 	RM_NUM_MODES,
 };
 static ERoundingMode	gRoundingMode( RM_ROUND );
-
+/*
 #ifndef _MSC_VER
 #define _isnan isnan
 #endif
-
+*/
 // If the hardware doesn't support doubles in hardware - use 32 bits floats and accept the loss in precision
 typedef f32 d64;
 
@@ -1840,6 +1840,8 @@ static void R4300_CALL_TYPE R4300_Cop0_MFC0( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	u32 wired = gCPUState.CPUControl[C0_WIRED]._u32_0 & 0x1F;
+
 #ifdef DAEDALUS_ENABLE_ASSERTS
 	if ( op_code.fs == C0_CAUSE )
 	{
@@ -1850,18 +1852,23 @@ static void R4300_CALL_TYPE R4300_Cop0_MFC0( R4300_CALL_SIGNATURE )
 	}
 #endif
 
-	// Copy from FS to RT
-	if ( op_code.fs == C0_RAND )
+	switch( op_code.fs )
 	{
-		u32 dwWired = gCPUState.CPUControl[C0_WIRED]._u32_0 & 0x1F;
+	case C0_RAND:	// Copy from FS to RT
 
-		// Select a value between dwWired and 31
+		// Select a value between wired and 31.
 		// We should use TLB least-recently used here too?
-		gGPR[ op_code.rt ]._s64 = (rand()%(32-dwWired)) + dwWired;
-	}
-	else
-	{
+		gGPR[ op_code.rt ]._s64 = vfpu_randf(wired, 32);
+		//gGPR[ op_code.rt ]._s64 = (rand()%(32-wired)) + wired;
+		DBGConsole_Msg(0, "[MWarning reading MFC0 random register]");
+		break;
+
+		// Should we handle C0_COUNT??
+
+	default:
+		// No specific handling needs for reads to these registers.
 		gGPR[ op_code.rt ]._s64 = (s64)gCPUState.CPUControl[ op_code.fs ]._s32_0;
+		break;
 	}
 }
 
@@ -1999,13 +2006,14 @@ static void R4300_CALL_TYPE R4300_TLB_TLBWR( R4300_CALL_SIGNATURE )
 	R4300_CALL_MAKE_OP( op_code );
 
 	u32 i;
+	u32 wired = gCPUState.CPUControl[C0_WIRED]._u32_0 & 0x1F;
 
-	// Select a value for index between dwWired and 31
-	u32 dwWired = gCPUState.CPUControl[C0_WIRED]._u32_0 & 0x1F;
-	i = (rand()%(32-dwWired)) + dwWired;
-	//i =  (gCPUState.CPUControl[C0_COUNT]._u32_0 % ( 32 - dwWired )) + dwWired;
+	// Select a value for index between wired and 31
+	i = vfpu_randf(wired, 32);
+	
+	//i = (rand()%(32-wired)) + wired;
 
-	DPF( DEBUG_TLB, "TLBWR: INDEX: 0x%04x. ", i );
+	DAEDALUS_ERROR("TLBWR: INDEX: 0x%04x. ", i );
 
 	g_TLBs[i].UpdateValue(gCPUState.CPUControl[C0_PAGEMASK]._u32_0,
 						gCPUState.CPUControl[C0_ENTRYHI ]._u32_0,
@@ -2624,7 +2632,7 @@ static void R4300_CALL_TYPE R4300_Cop1_C_S_Generic( R4300_CALL_SIGNATURE )
 	f32 fX = LoadFPR_Single( op_code.fs );
 	f32 fY = LoadFPR_Single( op_code.ft );
 
-	if (_isnan(fX) || _isnan(fY))
+	if (pspFpuIsNaN(fX) || pspFpuIsNaN(fY))
 	{
 		//DBGConsole_Msg(0, "is nan");
 		less = false;
@@ -2674,7 +2682,7 @@ static void R4300_CALL_TYPE R4300_Cop1_S_NGE( R4300_CALL_SIGNATURE )
 	f32 fX = LoadFPR_Single( op_code.fs );
 	f32 fY = LoadFPR_Single( op_code.ft );
 
-	if (_isnan(fX) || _isnan(fY))
+	if (pspFpuIsNaN(fX) || pspFpuIsNaN(fY))
 	{
 		less = false;
 		unordered = true;
@@ -2975,7 +2983,7 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_C_D_Generic(
 	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
 	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
 
-	if (_isnan(fX) || _isnan(fY))
+	if (pspFpuIsNaN(fX) || pspFpuIsNaN(fY))
 	{
 		//DBGConsole_Msg(0, "is nan");
 		less = false;

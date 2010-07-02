@@ -2075,9 +2075,9 @@ void PSPRenderer::SetNewVertexInfoCPU(u32 dwAddress, u32 dwV0, u32 dwNum)
 //*****************************************************************************
 //
 //*****************************************************************************
-void PSPRenderer::ModifyVertexInfo(u32 w, u32 vert, u32 val)
+void PSPRenderer::ModifyVertexInfo(u32 whered, u32 vert, u32 val)
 {
-	switch ( w )
+	switch ( whered )
 	{
 		case G_MWO_POINT_RGBA:
 			{
@@ -2097,15 +2097,8 @@ void PSPRenderer::ModifyVertexInfo(u32 w, u32 vert, u32 val)
 
 		case G_MWO_POINT_XYSCREEN:
 			{
-				
-				u16 nX = (u16)(val>>16);
-				s16 x = *((s16*)&nX);
-				x /= 4;
-
-				u16 nY = u16(val&0xFFFF);
-				s16 y = *((s16*)&nY);
-				y /= 4;
-
+				u16 x = (u16)(val>>16) / 4.0f;
+				u16 y = (u16)(val & 0xFFFF) / 4.0f;
 				DL_PF("		Modify vert %d: x=%d, y=%d", vert, x, y);
 
 				u32 current_scale = Memory_VI_GetRegister(VI_X_SCALE_REG);
@@ -2126,6 +2119,11 @@ void PSPRenderer::ModifyVertexInfo(u32 w, u32 vert, u32 val)
 			{
 				DL_PF( "      Setting ZScreen to 0x%08x", val );
 			}
+			break;
+
+		default:
+			DBGConsole_Msg( 0, "ModifyVtx - Setting vert data 0x%02x, 0x%08x", whered, val );
+			DL_PF( "      Setting unknown value: 0x%02x, 0x%08x", whered, val );
 			break;
 	}
 }

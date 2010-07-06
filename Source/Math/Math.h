@@ -55,12 +55,67 @@ inline float vfpu_randf(float min, float max) {
     return result;
 }
 
-inline float vfpu_invSqrt(float x)
+//VFPU 4D Dot product //Corn
+inline float vfpu_dot_4Dvec(const float x, const float y, const float z, const float w, const float a, const float b, const float c, const float d)
 {
 	float result;
-	
-	// return 1.0f/sqrtf(x);
-	
+	__asm__ volatile (
+       "mtv   %1, S000\n"
+       "mtv   %2, S001\n"
+       "mtv   %3, S002\n"
+       "mtv   %4, S003\n"
+       "mtv   %5, S010\n"
+       "mtv   %6, S011\n"
+       "mtv   %7, S012\n"
+       "mtv   %8, S013\n"
+       "vdot.q S020, C000, C010\n"
+       "mfv   %0, S020\n"
+	   : "=r"(result)
+	   : "r"(x), "r"(y), "r"(z), "r"(w),
+	     "r"(a), "r"(b), "r"(c), "r"(d));
+	return result;
+}
+
+inline float vfpu_dot_3Dvec(const float x, const float y, const float z, const float a, const float b, const float c)
+{
+	float result;
+	__asm__ volatile (
+       "mtv   %1, S000\n"
+       "mtv   %2, S001\n"
+       "mtv   %3, S002\n"
+       "mtv   %4, S010\n"
+       "mtv   %5, S011\n"
+       "mtv   %6, S012\n"
+       "vdot.t S020, C000, C010\n"
+       "mfv   %0, S020\n"
+	   : "=r"(result)
+	   : "r"(x), "r"(y), "r"(z),
+	     "r"(a), "r"(b), "r"(c));
+	return result;
+}
+
+//VFPU 3D Normalize vector //Corn
+inline void vfpu_norm_3Dvec(float *x, float *y, float *z)
+{
+   __asm__ volatile (
+       "mtv   %0, S000\n"
+       "mtv   %1, S001\n"
+       "mtv   %2, S002\n"
+       "vdot.t S010, C000, C000\n"
+       "vrsq.s S010, S010\n"
+       "vscl.t C000, C000, S010\n"
+       "mfv   %0, S000\n"
+       "mfv   %1, S001\n"
+       "mfv   %2, S002\n"
+       : "+r"(*x), "+r"(*y), "+r"(*z));
+}
+
+#if 1	//0=fast, 1=original //Corn
+inline float vfpu_invSqrt(float x)
+{
+//	return 1.0f/sqrtf(x);
+
+	float result;
 	__asm__ volatile (
 		"mtv		%0, S000\n"
 		"vrsq.s		S000, S000\n"
@@ -68,6 +123,19 @@ inline float vfpu_invSqrt(float x)
 	: "=r"(result): "r"(x));
 	return result;
 }
+#else
+inline float vfpu_invSqrt(float x)	//Trick using int/float to get 1/SQRT() fast on FPU/CPU //Corn
+{
+ 	union
+		{
+		int itg;
+		float flt;
+		} c;
+	c.flt = x;
+	c.itg = 0x5f375a86 - (c.itg >> 1);
+	return 0.5f * c.flt *(3.0f - x * c.flt * c.flt );
+}
+#endif
 
 inline float vfpu_cosf(float rad) {
     float result;
@@ -107,7 +175,7 @@ inline float vfpu_round(float x)
 	
 	return result;
 }
-
+/*
 inline float vfpu_fmaxf(float x, float y) {
 	float result;
 	__asm__ volatile (
@@ -129,7 +197,7 @@ inline float vfpu_fminf(float x, float y) {
 	: "=r"(result) : "r"(x), "r"(y));
 	return result;
 }
-
+*/
 inline float vfpu_powf(float x, float y) {
 	float result;
 	// result = exp2f(y * log2f(x));
@@ -178,12 +246,26 @@ sqrtf and fabsf are alot slower on the vfpuv, so let's do em on the fpu.
 Check above notes for cycles/comparison
 */
 
+#if 1	//0=fast, 1=original
 inline float pspFpuSqrt(float fs)
 {
 	return (__builtin_allegrex_sqrt_s(fs));
 }
+#else
+inline float pspFpuSqrt(float fs)
+{
+	union
+        {
+        int tmp;
+        float fpv;
+        } uni;
+	uni.fpv = fs;
+	uni.tmp = (1<<29) + (uni.tmp >> 1) - (1<<22) - 311296;
+	return(uni.fpv);
+}
+#endif
 
-
+#if 1	//0=fast, 1=original //Corn
 inline float pspFpuAbs(float fs)
 {
 	register float fd;
@@ -194,6 +276,19 @@ inline float pspFpuAbs(float fs)
 	);
 	return (fd);
 }
+#else
+inline float pspFpuAbs(float fs)
+{
+	union		//This could be slower than the real deal absf() due to mem access?
+        {
+        int tmp;
+        float fpv;
+        } uni;
+	uni.fpv = fs;
+	uni.tmp = uni.tmp & 0x7FFFFFFF;
+	return(uni.fpv);
+}
+#endif
 
 //*****************************************************************************
 //

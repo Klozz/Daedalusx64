@@ -13,7 +13,19 @@
 
 //ToDo: Move to Math.h?
 
-void vsincosf(float angle, v4* result)
+//Do SIN/COS in one go on VFPU //Corn
+inline void vfpu_sincos(float r, float *s, float *c) {
+	__asm__ volatile (
+		"mtv      %2, S002\n"
+		"vcst.s   S003, VFPU_2_PI\n"
+		"vmul.s   S002, S002, S003\n"
+		"vrot.p   C000, S002, [s, c]\n"
+		"mfv      %0, S000\n"
+		"mfv      %1, S001\n"
+	: "=r"(*s), "=r"(*c): "r"(r));
+}
+
+inline void vsincosf(float angle, v4* result)
 {
 	__asm__ volatile (
 		"mtv %1, S000\n"
@@ -21,6 +33,7 @@ void vsincosf(float angle, v4* result)
 		"usv.q C010, 0 + %0\n"
 	: "+m"(*result) : "r"(angle));
 }
+
 void matrixMultiplyUnaligned(Matrix4x4 * m_out, const Matrix4x4 *mat_a, const Matrix4x4 *mat_b)
 {
 	__asm__ volatile (
@@ -120,8 +133,11 @@ Matrix4x4 & Matrix4x4::SetScaling( float scale )
 
 Matrix4x4 & Matrix4x4::SetRotateX( float angle )
 {
-	float	s( vfpu_sinf( angle ) );
-	float	c( vfpu_cosf( angle ) );
+//	float	s( vfpu_sinf( angle ) );
+//	float	c( vfpu_cosf( angle ) );
+	float	s;
+	float	c;
+	vfpu_sincos(angle, &s, &c);
 
 	m11 = 1;	m12 = 0;	m13 = 0;	m14 = 0;
 	m21 = 0;	m22 = c;	m23 = -s;	m24 = 0;
@@ -132,8 +148,11 @@ Matrix4x4 & Matrix4x4::SetRotateX( float angle )
 
 Matrix4x4 & Matrix4x4::SetRotateY( float angle )
 {
-	float	s( vfpu_sinf( angle ) );
-	float	c( vfpu_cosf( angle ) );
+//	float	s( vfpu_sinf( angle ) );
+//	float	c( vfpu_cosf( angle ) );
+	float	s;
+	float	c;
+	vfpu_sincos(angle, &s, &c);
 
 	m11 = c;	m12 = 0;	m13 = s;	m14 = 0;
 	m21 = 0;	m22 = 1;	m23 = 0;	m24 = 0;
@@ -144,8 +163,11 @@ Matrix4x4 & Matrix4x4::SetRotateY( float angle )
 
 Matrix4x4 & Matrix4x4::SetRotateZ( float angle )
 {
-	float	s( vfpu_sinf( angle ) );
-	float	c( vfpu_cosf( angle ) );
+//	float	s( vfpu_sinf( angle ) );
+//	float	c( vfpu_cosf( angle ) );
+	float	s;
+	float	c;
+	vfpu_sincos(angle, &s, &c);
 
 	m11 = c;	m12 = -s;	m13 = 0;	m14 = 0;
 	m21 = s;	m22 = c;	m23 = 0;	m24 = 0;

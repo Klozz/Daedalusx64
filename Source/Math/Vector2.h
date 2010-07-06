@@ -61,7 +61,7 @@ public:
 
 	float Length() const
 	{
-		return 1.0f / vfpu_invSqrt( (x*x)+(y*y) );
+		return pspFpuSqrt( (x*x)+(y*y) );
 	}
 
 	float LengthSq() const

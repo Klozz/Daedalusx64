@@ -62,6 +62,7 @@ public:
 		return *this;
 	}
 
+#if 0	//0=fast, 1=original //Corn
 	void Normalise()
 	{
 		float	len_sq( LengthSq() );
@@ -73,10 +74,16 @@ public:
 			z *= r;
 		}
 	}
+#else
+	void Normalise()
+	{
+		vfpu_norm_3Dvec(&x, &y, &z);
+	}
+#endif
 
 	float Length() const
 	{
-		return 1.0f / vfpu_invSqrt( (x*x)+(y*y)+(z*z) );
+		return pspFpuSqrt( (x*x)+(y*y)+(z*z) );
 	}
 
 	float LengthSq() const
@@ -100,10 +107,17 @@ public:
 		}
 	}
 
+#if 0	//0=fast, 1=original //Corn
 	float Dot( const v3 & rhs ) const
 	{
 		return (x*rhs.x) + (y*rhs.y) + (z*rhs.z);
 	}
+#else
+	float Dot( const v3 & rhs ) const
+	{
+		return vfpu_dot_3Dvec(x,y,z,rhs.x,rhs.y,rhs.z);
+	}
+#endif
 
 
 	float x, y, z;

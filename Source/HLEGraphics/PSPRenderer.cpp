@@ -370,7 +370,7 @@ void PSPRenderer::SetVIScales()
 	else
 	{
 		if( width > 0x300 )			//This sets the correct height in various games
-			sViHeight *= 2;			//ex : Megaman 64
+			sViHeight *= 2.0f;		//ex : Megaman 64
 	}
 
 	if( sViHeight<100 || sViWidth<100 )
@@ -491,8 +491,8 @@ void PSPRenderer::BeginScene()
 
 	SetPSPViewport( display_x, display_y, display_width, display_height );
 
-	v3 scale( 640/4.0f, 480/4.0f, 511/4.0f );
-	v3 trans( 640/4.0f, 480/4.0f, 511/4.0f );
+	v3 scale( 640*0.25f, 480*0.25f, 511*0.25f );
+	v3 trans( 640*0.25f, 480*0.25f, 511*0.25f );
 
 	SetN64Viewport( scale, trans );
 }
@@ -594,8 +594,12 @@ v2	PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
 	// We round these value here, so that when we scale up the coords to our screen
 	// coords we don't get any gaps.
 	//
-	psp_coords.x = vfpu_round( vfpu_round( n64_coords.x ) * mN64ToPSPScale.x + mN64ToPSPTranslate.x );
-	psp_coords.y = vfpu_round( vfpu_round( n64_coords.y ) * mN64ToPSPScale.y + mN64ToPSPTranslate.y );
+
+	// rounding twice really needed? //Corn
+	//	psp_coords.x = vfpu_round( vfpu_round( n64_coords.x ) * mN64ToPSPScale.x + mN64ToPSPTranslate.x );
+	//	psp_coords.y = vfpu_round( vfpu_round( n64_coords.y ) * mN64ToPSPScale.y + mN64ToPSPTranslate.y );
+	psp_coords.x = vfpu_round( n64_coords.x * mN64ToPSPScale.x + mN64ToPSPTranslate.x );
+	psp_coords.y = vfpu_round( n64_coords.y * mN64ToPSPScale.y + mN64ToPSPTranslate.y );
 
 	return psp_coords;
 }
@@ -1012,7 +1016,7 @@ namespace
 {
 	v2	GetEdgeForCycleMode( u32 cycle_type )
 	{
-		v2 edge( 0, 0 );
+		v2 edge( 0.f, 0.f );
 
 		//
 		// In Fill/Copy mode the coordinates are inclusive (i.e. add 1.0f to the w/h)
@@ -1153,10 +1157,10 @@ bool PSPRenderer::FillRect( const v2 & xy0, const v2 & xy1, u32 color )
 	};
 	v2	tex_coords[ 4 ] =
 	{
-		v2( 0, 0 ),
-		v2( 1, 0 ),
-		v2( 1, 1 ),
-		v2( 0, 1 ),
+		v2( 0.f, 0.f ),
+		v2( 1.f, 0.f ),
+		v2( 1.f, 1.f ),
+		v2( 0.f, 1.f ),
 	};
 
 	trv[0] = DaedalusVtx( positions[ 1 ], color, tex_coords[ 1 ] );
@@ -1247,10 +1251,12 @@ v4 PSPRenderer::LightVert( const v3 & norm ) const
 		}
 	}
 
-	if( result.x > 1.0f ) result.x = 1.0f;
+	//Clip to 1.0 seems to work fine without it //Corn
+
+	/*if( result.x > 1.0f ) result.x = 1.0f;
 	if( result.y > 1.0f ) result.y = 1.0f;
 	if( result.z > 1.0f ) result.z = 1.0f;
-	if( result.w > 1.0f ) result.w = 1.0f;
+	if( result.w > 1.0f ) result.w = 1.0f;*/
 
 	return result;
 }
@@ -1272,6 +1278,11 @@ static const v4 NDCPlane[6] =
 	v4(  0.f, -1.f,  0.f, -1.f )	// top
 };
 
+// Ununsed... we might remove this, or keep it for check-in
+#ifdef DAEDALUS_IS_LEGACY
+//*****************************************************************************
+//
+//*****************************************************************************
 static u32 clipToHyperPlane( DaedalusVtx4 * dest, const DaedalusVtx4 * source, u32 inCount, const v4 &plane )
 {
 	u32 outCount = 0;
@@ -1345,7 +1356,11 @@ u32 clip_tri_to_frustum( DaedalusVtx4 * v0, DaedalusVtx4 * v1 )
 
 	return vOut;
 }
+#endif	//DAEDALUS_IS_LEGACY
 
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 clip_tri_to_frustum_vfpu( DaedalusVtx4 * v0, DaedalusVtx4 * v1 )
 {
 	u32 vOut( 3 );
@@ -1359,7 +1374,6 @@ u32 clip_tri_to_frustum_vfpu( DaedalusVtx4 * v0, DaedalusVtx4 * v1 )
 
 	return vOut;
 }
-
 
 //*****************************************************************************
 //
@@ -1640,6 +1654,8 @@ bool	PSPRenderer::RenderTriangleList( const DaedalusVtx * p_verts, u32 num_verts
 	return true;
 }
 
+// Ununsed... we might remove this, or keep it for check-in
+#ifdef DAEDALUS_IS_LEGACY
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -1794,7 +1810,7 @@ void PSPRenderer::ProcessVerts( u32 v0, u32 num, const FiddledVtx * verts, const
 		mVtxProjected[i].ClipFlags = CalcClipFlags( projected );
 	}
 }
-
+#endif	//DAEDALUS_IS_LEGACY
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -1994,13 +2010,12 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 dwAddress, u32 dwV0, u32 dwNum)
 
 }
 
-//*****************************************************************************
-//
-//*****************************************************************************
-/*
-//
 // Ununsed... we might remove this, or keep it for check-in
+#ifdef DAEDALUS_IS_LEGACY
+//*****************************************************************************
 //
+//*****************************************************************************
+
 void PSPRenderer::SetNewVertexInfoCPU(u32 dwAddress, u32 dwV0, u32 dwNum)
 {
 	//DBGConsole_Msg(0, "In SetNewVertexInfo");
@@ -2071,7 +2086,7 @@ void PSPRenderer::SetNewVertexInfoCPU(u32 dwAddress, u32 dwV0, u32 dwNum)
 		break;
 	}
 }
-*/
+#endif	//DAEDALUS_IS_LEGACY
 //*****************************************************************************
 //
 //*****************************************************************************

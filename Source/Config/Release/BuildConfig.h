@@ -45,6 +45,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #undef	DAEDALUS_DEBUG_MEMORY
 #undef	ALLOW_TRACES_WHICH_EXCEPT
 #define DAEDALUS_SILENT						// Undef to enable debug messages 
+#undef  DAEDALUS_IS_LEGACY					// Old code, unused etc.. Kept for reference, undef to save space on the elf. Will remove soon.
+
 // Define this to turn off various debugging features for public release.
 #define DAEDALUS_PUBLIC_RELEASE
 

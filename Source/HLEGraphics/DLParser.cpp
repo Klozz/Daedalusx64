@@ -67,10 +67,10 @@ const char *	gDisplayListDumpPathFormat = "dl%04d.txt";
 #define N64COL_GETB( col )		(u8((col) >>  8))
 #define N64COL_GETA( col )		(u8((col)      ))
 
-#define N64COL_GETR_F( col )	(N64COL_GETR(col) / 255.0f)
-#define N64COL_GETG_F( col )	(N64COL_GETG(col) / 255.0f)
-#define N64COL_GETB_F( col )	(N64COL_GETB(col) / 255.0f)
-#define N64COL_GETA_F( col )	(N64COL_GETA(col) / 255.0f)
+#define N64COL_GETR_F( col )	(N64COL_GETR(col) * (1.0f/255.0f))
+#define N64COL_GETG_F( col )	(N64COL_GETG(col) * (1.0f/255.0f))
+#define N64COL_GETB_F( col )	(N64COL_GETB(col) * (1.0f/255.0f))
+#define N64COL_GETA_F( col )	(N64COL_GETA(col) * (1.0f/255.0f))
 
 
 
@@ -93,7 +93,7 @@ void MatrixFromN64FixedPoint( u32 address )
 			int hi = *(s16 *)(base + ((address+(i<<3)+(j<<1)     )^0x2));
 			u16 lo = *(u16 *)(base + ((address+(i<<3)+(j<<1) + 32)^0x2));
 
-			mat.m[i][j] = (f32)((hi<<16) | (lo))/ 65536.0f;
+			mat.m[i][j] = (f32)((hi<<16) | (lo)) * (1.0f / 65536.0f);
 		}
 	}
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
@@ -812,8 +812,8 @@ void RDP_MoveMemViewport(u32 address)
 	// we truncated them to 0. This happens a lot, as things
 	// seem to specify the scale as the screen w/2 h/2
 
-	v3 vec_scale( scale[0] / 4.0f, scale[1] / 4.0f, scale[2] / 4.0f );
-	v3 vec_trans( trans[0] / 4.0f, trans[1] / 4.0f, trans[2] / 4.0f );
+	v3 vec_scale( scale[0] * 0.25f, scale[1] * 0.25f, scale[2] * 0.25f );
+	v3 vec_trans( trans[0] * 0.25f, trans[1] * 0.25f, trans[2] * 0.25f );
 
 	PSPRenderer::Get()->SetN64Viewport( vec_scale, vec_trans );
 
@@ -1087,8 +1087,8 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 			u16 wMult = u16(command.mw1.value >> 16);
 			u16 wOff  = u16(command.mw1.value      );
 
-			f32 fMult = ((f32)(s16)wMult) / 65536.0f;
-			f32 fOff  = ((f32)(s16)wOff)  / 65536.0f;
+			f32 fMult = ((f32)(s16)wMult) * (1.0f / 65536.0f);
+			f32 fOff  = ((f32)(s16)wOff)  * (1.0f / 65536.0f);
 
 			DL_PF("     G_MW_FOG. Mult = 0x%04x (%f), Off = 0x%04x (%f)", wMult, 255.0f * fMult, wOff, 255.0f * fOff );
 
@@ -1213,8 +1213,8 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 			u16 wMult = u16(command.mw2.value >> 16);
 			u16 wOff  = u16(command.mw2.value      );
 
-			f32 fMult = ((f32)(s16)wMult) / 65536.0f;
-			f32 fOff  = ((f32)(s16)wOff)  / 65536.0f;
+			f32 fMult = ((f32)(s16)wMult) * (1.0f / 65536.0f);
+			f32 fOff  = ((f32)(s16)wOff)  * (1.0f / 65536.0f);
 
 			DL_PF("     G_MW_FOG. Mult = 0x%04x (%f), Off = 0x%04x (%f)", wMult, 255.0f * fMult, wOff, 255.0f * fOff );
 
@@ -1519,8 +1519,8 @@ void DLParser_DumpVtxInfo(u32 address, u32 v0_idx, u32 num_verts)
 			s16 nTU = psSrc[4^0x1];
 			s16 nTV = psSrc[5^0x1];
 
-			f32 tu = f32(nTU) / 32.0f;
-			f32 tv = f32(nTV) / 32.0f;
+			f32 tu = f32(nTU) * (1.0f / 32.0f);
+			f32 tv = f32(nTV) * (1.0f / 32.0f);
 
 			const v4 & t = PSPRenderer::Get()->GetTransformedVtxPos( idx );
 
@@ -1775,15 +1775,15 @@ void DLParser_TexRect( MicroCodeCommand command )
 	tex_rect.cmd2 = command2.inst.cmd1;
 	tex_rect.cmd3 = command3.inst.cmd1;
 
-	v2 d( tex_rect.dsdx / 1024.0f, tex_rect.dtdy / 1024.0f );
-	v2 xy0( tex_rect.x0 / 4.0f, tex_rect.y0 / 4.0f );
-	v2 xy1( tex_rect.x1 / 4.0f, tex_rect.y1 / 4.0f );
-	v2 uv0( tex_rect.s / 32.0f, tex_rect.t / 32.0f );
+	v2 d( tex_rect.dsdx * (1.0f / 1024.0f), tex_rect.dtdy * (1.0f / 1024.0f) );
+	v2 xy0( tex_rect.x0 * (1.0f / 4.0f), tex_rect.y0 * (1.0f / 4.0f) );
+	v2 xy1( tex_rect.x1 * (1.0f / 4.0f), tex_rect.y1 * (1.0f / 4.0f) );
+	v2 uv0( tex_rect.s * (1.0f / 32.0f), tex_rect.t * (1.0f / 32.0f) );
 	v2 uv1;
 
 	if ((gOtherModeH & G_CYC_COPY) == G_CYC_COPY)
 	{
-		d.x /= 4.0f;	// In copy mode 4 pixels are copied at once.
+		d.x *= 0.25f;	// In copy mode 4 pixels are copied at once.
 	}
 
 	uv1.x = uv0.x + d.x * ( xy1.x - xy0.x );
@@ -1818,15 +1818,15 @@ void DLParser_TexRectFlip( MicroCodeCommand command )
 	tex_rect.cmd2 = command2.inst.cmd1;
 	tex_rect.cmd3 = command3.inst.cmd1;
 
-	v2 d( tex_rect.dsdx / 1024.0f, tex_rect.dtdy / 1024.0f );
-	v2 xy0( tex_rect.x0 / 4.0f, tex_rect.y0 / 4.0f );
-	v2 xy1( tex_rect.x1 / 4.0f, tex_rect.y1 / 4.0f );
-	v2 uv0( tex_rect.s / 32.0f, tex_rect.t / 32.0f );
+	v2 d( tex_rect.dsdx * (1.0f / 1024.0f), tex_rect.dtdy * (1.0f / 1024.0f) );
+	v2 xy0( tex_rect.x0 * (1.0f / 4.0f), tex_rect.y0 * (1.0f / 4.0f) );
+	v2 xy1( tex_rect.x1 * (1.0f / 4.0f), tex_rect.y1 * (1.0f / 4.0f) );
+	v2 uv0( tex_rect.s * (1.0f / 32.0f), tex_rect.t * (1.0f / 32.0f) );
 	v2 uv1;
 
 	if ((gOtherModeH & G_CYC_COPY) == G_CYC_COPY)
 	{
-		d.x /= 4.0f;	// In copy mode 4 pixels are copied at once.
+		d.x *= 0.25f;	// In copy mode 4 pixels are copied at once.
 	}
 
 	uv1.x = uv0.x + d.x * ( xy1.y - xy0.y );		// Flip - use y
@@ -1850,8 +1850,8 @@ void DLParser_FillRect( MicroCodeCommand command )
 	u32 x1   = (command.inst.cmd0>>12)&0xFFF;
 	u32 y1   = (command.inst.cmd0>>0 )&0xFFF;
 
-	v2 xy0( x0 / 4.0f, y0 / 4.0f );
-	v2 xy1( x1 / 4.0f, y1 / 4.0f );
+	v2 xy0( x0 * 0.25f, y0 * 0.25f );
+	v2 xy1( x1 * 0.25f, y1 * 0.25f );
 
 	// Note, in some modes, the right/bottom lines aren't drawn
 

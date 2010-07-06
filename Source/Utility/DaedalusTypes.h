@@ -71,10 +71,11 @@ union REG64
 	u64		_u64;
 
 	// Legacy - removing soon, left in to make committing less painful
+#ifdef DAEDALUS_IS_LEGACY
 	f32		_f32[2];
 	s32		_s32[2];
 	u32		_u32[2];
-	
+#endif	
 	struct { u32 _f64_unused; f32 _f64_sim;};	
 
 	struct { f32 _f32_0, _f32_1; };

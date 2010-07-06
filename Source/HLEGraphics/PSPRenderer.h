@@ -195,14 +195,15 @@ private:
 
 	void				RenderUsingRenderSettings( const CBlendStates * states, DaedalusVtx * p_vertices, u32 num_vertices, u32 render_flags );
 	void				RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num_vertices, ERenderMode mode, bool disable_zbuffer );
-
+// Old code, kept for reference
+#ifdef DAEDALUS_IS_LEGACY
 	void 				TestVFPUVerts( u32 v0, u32 num, const FiddledVtx * verts, const Matrix4x4 & mat_world );
 
 	template< bool FogEnable, int TextureMode >
 	void ProcessVerts( u32 v0, u32 num, const FiddledVtx * verts, const Matrix4x4 & mat_world );
 
-	//void				SetNewVertexInfoCPU(u32 dwAddress, u32 dwV0, u32 dwNum);	// Assumes dwAddress has already been checked!	
-
+	void				SetNewVertexInfoCPU(u32 dwAddress, u32 dwV0, u32 dwNum);	// Assumes dwAddress has already been checked!	
+#endif
 
 	void				PrepareTrisClipped( DaedalusVtx ** p_p_vertices, u32 * p_num_vertices ) const;
 	void				PrepareTrisUnclipped( DaedalusVtx ** p_p_vertices, u32 * p_num_vertices ) const;

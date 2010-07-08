@@ -163,6 +163,7 @@ const TextureInfo & CRDPStateManager::GetTextureDescriptor( u32 idx ) const
 
 		LoadDetailsMap::const_iterator it( mLoadMap.find( tmem_address ) );
 
+		u32		palette( 0 );
 		u32		address( 0 );
 		u32		pitch( 0 );
 		bool	swapped( false );
@@ -209,16 +210,19 @@ const TextureInfo & CRDPStateManager::GetTextureDescriptor( u32 idx ) const
 		u32		num_bytes( pixels2bytes( num_pixels, rdp_tile.size ) );
 		DAEDALUS_DL_ASSERT( num_bytes <= 4096, "Suspiciously large texture load: %d bytes (%dx%d, %dbpp)", num_bytes, tile_width, tile_height, (1<<(rdp_tile.size+2)) );
 #endif
+		// Quick hack to fix "black textures" in several games for ex: Majora's Mask, hopefully won't mess out anything
+		// This isn't quiet right for most games like Majora's Mask or Animal Crossing...but it works quiet well in games like Flying Dragon and HM64
+		// Maybe multiple is wrong, or we're missing something else?
+
+		switch (rdp_tile.size)
+		{
+			case G_IM_SIZ_4b: palette = 16  * 2 * rdp_tile.palette; break;
+			case G_IM_SIZ_8b: palette = 0; break;	// Fixes Harvest Moon's bad texturing and main menu logo
+		}
 
 
 		ti.SetTmemAddress( rdp_tile.tmem );
-		ti.SetTLutIndex( rdp_tile.palette );
-
-		// Quick hack to fix "black textures" in several games for ex: Majora's Mask, hopefully won't mess out anything
-		// This isn't quiet right for most games like Majora's Mask or Animal Crossing...but it works quiet well in games like Flying Dragon
-		// Maybe multiple is wrong, or we're missing something else?
-		if( ti.GetSize() == G_IM_SIZ_4b )
-			ti.SetTLutIndex( 16  * 2 * rdp_tile.palette );
+		ti.SetTLutIndex( palette );
 
 		ti.SetLoadAddress( address );
 		ti.SetFormat( rdp_tile.format );

@@ -1151,6 +1151,20 @@ void BlendMode_0x0011fe052ffd73f8LL (BLEND_MODE_ARGS)
   #K
 */ 
 
+// Killer Instinct - Background and Ground
+//case 0x00127e2455fdf8fcLL:
+//aRGB0: (Texel0       - Env         ) * Shade        + Primitive
+//aA0  : (0            - 0           ) * 0            + Shade
+//aRGB1: (Texel0       - Env         ) * Shade        + Primitive
+//aA1  : (0            - 0           ) * 0            + Shade
+void BlendMode_0x00127e2455fdf8fcLL (BLEND_MODE_ARGS)
+{
+	
+	details.ColourAdjuster.SetRGB( details.EnvColour );
+	details.ColourAdjuster.SetAOpaque();
+	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);	
+}
+
 //Kirby 64 - Ground
 //case 0x0030fe045ffefdf8LL:
 //aRGB0: (Primitive    - Env         ) * Texel0       + Env
@@ -4431,6 +4445,7 @@ OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 		BLEND_MODE (0x00ffe7ffffcf9fcfLL);
 		BLEND_MODE (0x00ffedffffd996cbLL);
 		BLEND_MODE (0x00ffffffff09f63fLL);
+		BLEND_MODE (0x00127e2455fdf8fcLL);
 			
 #undef BLEND_MODE
 	}

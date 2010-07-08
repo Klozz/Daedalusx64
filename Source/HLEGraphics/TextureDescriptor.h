@@ -53,8 +53,10 @@ public:
 	// Compute a hash of the contents of the texture data. Not to be confused with GetHashCode()!
 	u32						GenerateHashValue() const;
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	const char *			GetFormatName() const;
 	u32						GetSizeInBits() const;
+#endif
 
 	u32						GetWidthInBytes() const;
 

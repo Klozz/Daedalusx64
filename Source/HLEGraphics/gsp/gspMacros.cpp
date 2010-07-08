@@ -269,40 +269,33 @@ void DLParser_GBI2_PopMtx( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_CullDL( MicroCodeCommand command )
 {
-	return;
-	// Broken we need to fix it !
-	// Enabling it brakes several Fast3D games, see : AeroGauge and Space Station SV
-	// Need to find out why, most likely we'll have to separate this from GBI1/GBI0?
 
-	u32 first = ((command.inst.cmd0) & 0xFFF) / gVertexStride;
-	u32 last  = ((command.inst.cmd1) & 0xFFF) / gVertexStride;
+	u32 first = command.inst.cmd0 / gVertexStride;
+	u32 last = command.inst.cmd1 / gVertexStride;
 
-	DL_PF("    Culling using verts %d to %d", first, last);
+	DL_PF(" Culling using verts %d to %d", first, last);
 
 	// Mask into range
-	first &= 0x1f;
-	last &= 0x1f;
+	first &= 0xF; //Max 15 Verts -> 0 < = vO < vn = 15 (manual)
+	last &= 0xF; //Max 15 Verts -> 0 < = vO < vn = 15 (manual)
 
-	if( last < first )	return;
-	for (u32 i=first; i<=last; i++)
+	if( last < first ) return;
+
+	if ( PSPRenderer::Get()->TestVerts( first, last ) )
 	{
-		if (PSPRenderer::Get()->GetVtxFlags( i ) == 0)
-		{
-			DL_PF("    Vertex %d is visible, continuing with display list processing", i);
-			return;
-		}
+		DL_PF(" Display list is visible, returning (GBI1)");
+		return;
 	}
 
-	#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	gNumDListsCulled++;
-	#endif
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+	++gNumDListsCulled;
+#endif
 
-	DL_PF("    No vertices were visible, culling rest of display list");
+	DL_PF(" No vertices were visible, culling rest of display list");
 
 	DLParser_PopDL();
 
 }
-
 //*****************************************************************************
 //
 //*****************************************************************************

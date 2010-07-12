@@ -63,7 +63,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ConfigOptions.h"
 
 //#define DAEDALUS_KERNEL_MODE
-//#define DAEDALUS_CALLBACKS
+#define DAEDALUS_CALLBACKS
 
 char						gDaedalusExePath[MAX_PATH+1] = DAEDALUS_PSP_PATH( "" );
 
@@ -94,6 +94,7 @@ int Get_Kernel_Buttons;
 
 
 bool PSP_IS_SLIM = false;
+bool PSP_NO_KBUTTONS = false;
 //*************************************************************************************
 //Set up our initial eviroment settings for the PSP
 //*************************************************************************************
@@ -176,7 +177,7 @@ static void DaedalusFWCheck()
 		pspDebugScreenPrintf( "\n" );
 		pspDebugScreenPrintf( "--------------------------------------------------------------------\n" );
 		pspDebugScreenPrintf( "\n" );
-		pspDebugScreenPrintf( "	Unsuported Firmware Detected : %d\n", ver );
+		pspDebugScreenPrintf( "	Unsupported Firmware Detected : 0x%08X\n", ver );
 		pspDebugScreenPrintf( "\n" );
 		pspDebugScreenPrintf( "	Daedalus requires atleast 4.01 M33 Custom Firmware\n" );
 		pspDebugScreenPrintf( "\n" );
@@ -263,11 +264,6 @@ static bool	Initialize()
 
 	_DisableFPUExceptions();
 
-	// We have to kill our Callbacks to hook succesfully "home" button...
-#ifdef DAEDALUS_CALLBACKS
-	//Set up callback for our thread
-	SetupCallbacks();
-#endif
 	// Set up our Kernel Buttons : Home, Vol- +, etc
 	Get_Kernel_Buttons = pspSdkLoadStartModule("kernelbuttons.prx", PSP_MEMORY_PARTITION_KERNEL);
 	if (Get_Kernel_Buttons >= 0)
@@ -277,6 +273,16 @@ static bool	Initialize()
 	else
 	{
 		printf( "Couldn't load kernelbuttons.prx: %08X\n", Get_Kernel_Buttons );
+		PSP_NO_KBUTTONS = true;
+	}
+
+	// We have to kill our Callbacks if we hook succesfully "home" button...
+	if( PSP_NO_KBUTTONS )
+	{
+#ifdef DAEDALUS_CALLBACKS
+		//Set up callback for our thread
+		SetupCallbacks();
+#endif
 	}
 
 	//Set up the DveMgr (TV Display) and Detect PSP Slim
@@ -469,13 +475,31 @@ void HandleEndOfFrame()
 	//
 	//	Enter the debug menu as soon as select is newly pressed
 	//
-
-	// Init our kernel buttons, ex HOME button
-	KernelButtons = getbuttons();
-
-	if(KernelButtons & PSP_CTRL_HOME)
+	// If kernelbuttons.prx couldn't be loaded, allow select button to be used instead
+	// Errg we should make this more pretty :p
+	//
+	if( PSP_NO_KBUTTONS )
 	{
-		activate_pause_menu = true;
+		SceCtrlData pad;
+
+		static u32 oldButtons = 0;
+
+		sceCtrlPeekBufferPositive(&pad, 1);
+		if(oldButtons != pad.Buttons)
+		{
+			if( pad.Buttons & PSP_CTRL_SELECT)
+				activate_pause_menu = true;
+		}
+		oldButtons = pad.Buttons;
+
+	}
+	else 
+	{
+		// Init our kernel buttons, ex HOME button
+		KernelButtons = getbuttons();
+
+		if(KernelButtons & PSP_CTRL_HOME )
+			activate_pause_menu = true;
 	}
 
 	if(activate_pause_menu)

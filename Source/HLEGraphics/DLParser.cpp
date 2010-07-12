@@ -72,10 +72,6 @@ const char *	gDisplayListDumpPathFormat = "dl%04d.txt";
 #define N64COL_GETB_F( col )	(N64COL_GETB(col) * (1.0f/255.0f))
 #define N64COL_GETA_F( col )	(N64COL_GETA(col) * (1.0f/255.0f))
 
-
-
-void	RDP_GFX_Force_Matrix(u32 address);
-
 Matrix4x4 mat;
 //*************************************************************************************
 // 
@@ -110,6 +106,24 @@ void MatrixFromN64FixedPoint( u32 address )
                     mat.m[3][0], mat.m[3][1], mat.m[3][2], mat.m[3][3]);
     }
 #endif
+}
+
+//*************************************************************************************
+//
+//*************************************************************************************
+static void RDP_GFX_Force_Matrix(u32 address)
+{
+	// Fix me !
+	/*
+	if (address + 64 > MAX_RAM_ADDRESS)
+	{
+		DBGConsole_Msg(0, "ForceMtx: Address invalid (0x%08x)", address);
+		return;
+	}
+
+	MatrixFromN64FixedPoint(address);
+	PSPRenderer::Get()->SetProjection(mat, true, PSPRenderer::MATRIX_LOAD);	// Arrrg this isn't right, fix me !
+	*/
 }
 
 //*************************************************************************************
@@ -391,32 +405,6 @@ static void	DLParser_DumpTaskInfo( const OSTask * pTask )
 	DL_PF( "YieldDataSize:%08x",      pTask->t.yield_data_size );
 }
 #endif
-
-
-//*****************************************************************************
-//
-//*****************************************************************************
-static void DLParser_SetuCode( GBIVersion gbi_version )
-{
-	MicroCodeCommand command;
-
-	// This really important otherwise our ucode detector will pick up lots of junk.
-	// Also helps to avoid the override of ucode_ver by ProcessDList
-	if( gbi_version > GBI_0_UNK )
-	{
-		DBGConsole_Msg(0, "[YWarning] : Tried to load invalid ucode table # [R%d]", gbi_version);
-	}
-	else
-	{
-		// Would like to get rid off this global but is needed by ProcessDList..errg..
-		ucode_ver = gbi_version;
-
-		DAEDALUS_ERROR("Switching ucode table to %d", ucode_ver);
-
-		gVertexStride = VertexStride[ucode_ver]; // Set up correct vertex stride
-		gInstructionLookup[ucode_ver][command.inst.cmd0>>24](command); //Set up selected ucode table
-	}
-}
 	
 //*****************************************************************************
 //
@@ -554,7 +542,14 @@ void	DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 da
 	UCodeVersion ucode_version;
 
 	GBIMicrocode_DetectVersion( code_base, code_size, data_base, data_size, &gbi_version, &ucode_version );
-	DLParser_SetuCode( gbi_version );
+
+	// This really important otherwise our ucode detector will pick up lots of junk.
+	// Also helps to avoid the override of ucode_ver, see Golden Eye for example.
+	//
+	if( gbi_version > GBI_0_UNK )
+		DBGConsole_Msg(0, "[YWarning: Tried to load invalid ucode table # %d]", gbi_version);
+	else
+		ucode_ver = gbi_version;
 }
 
 
@@ -594,8 +589,10 @@ static void	DLParser_ProcessDList()
 	{
 		PROFILE_DL_CMD( command.inst.cmd );
 		
-		// Mm what do to here? This feels akward, should we set up our ucode tables here??
-		gInstructionLookup[ ucode_ver ][ command.inst.cmd ]( command );
+		DAEDALUS_ERROR("Switching ucode table to %d", ucode_ver);
+
+		gVertexStride = VertexStride[ucode_ver]; // Set up correct vertex stride
+		gInstructionLookup[ucode_ver][command.inst.cmd0>>24](command); //Set up selected ucode table
 
 		// Check limit
 		if (!gDisplayListStack.empty())
@@ -1383,20 +1380,6 @@ ZeldaMoveMem: 0xdc080008 0x8010e3c0 Type: 08 Len: 08 Off: 4000
 
 */
 
-void RDP_GFX_Force_Matrix(u32 address)
-{
-	// Fix me !
-	/*
-	if (address + 64 > MAX_RAM_ADDRESS)
-	{
-		DBGConsole_Msg(0, "ForceMtx: Address invalid (0x%08x)", address);
-		return;
-	}
-
-	MatrixFromN64FixedPoint(address);
-	PSPRenderer::Get()->SetProjection(mat, true, PSPRenderer::MATRIX_LOAD);	// Arrrg this isn't right, fix me !
-	*/
-}
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -1683,7 +1666,7 @@ void DLParser_LoadTile( MicroCodeCommand command )
 }
 
 //*****************************************************************************
-//
+// Load data into the tlut
 //*****************************************************************************
 void DLParser_LoadTLut( MicroCodeCommand command )
 {

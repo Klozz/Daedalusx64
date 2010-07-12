@@ -42,6 +42,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <pspkernel.h>
 
+
+/* This sets default frequency what is used if rom doesn't want to change it.
+   Probably only game that needs this is Zelda: Ocarina Of Time Master Quest 
+   *NOTICE* We should try to find out why Demos' frequencies are always wrong
+   They tend to rely on a default frequency, apparently, never the same one ;)*/
+
+#define DEFAULT_FREQUENCY 33600	// Taken from Mupen64 : )
+
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -113,26 +121,23 @@ void	CAudioPluginPsp::StopEmulation()
 //*****************************************************************************
 void	CAudioPluginPsp::DacrateChanged( ESystemType system_type )
 {
+	if( gAudioPluginEnabled == APM_DISABLED ) return;
+
 #ifndef DAEDALUS_SILENT
 	printf( "DacrateChanged( %d )\n", system_type );
 #endif
-	if (mLastDACRate != Memory_AI_GetRegister(AI_DACRATE_REG))
-	{
-		mLastDACRate = Memory_AI_GetRegister(AI_DACRATE_REG);
 
-		u32		frequency;
-		switch (system_type)
-		{
-			case ST_NTSC: frequency = VI_NTSC_CLOCK / (mLastDACRate + 1); break;
-			case ST_PAL:  frequency = VI_PAL_CLOCK  / (mLastDACRate + 1); break;
-			case ST_MPAL: frequency = VI_MPAL_CLOCK / (mLastDACRate + 1); break;
-			default:
-				DAEDALUS_ERROR( "Unrecognised system type" );
-				frequency = 48681812 / (mLastDACRate + 1);
-				break;
-		}
-		mAudioCode->SetFrequency( frequency );
+	mLastDACRate = Memory_AI_GetRegister(AI_DACRATE_REG);
+
+	u32	frequency = DEFAULT_FREQUENCY; // Is this correct? - Salvy
+	switch (system_type)
+	{
+		case ST_NTSC: frequency = VI_NTSC_CLOCK / (mLastDACRate + 1); break;
+		case ST_PAL:  frequency = VI_PAL_CLOCK  / (mLastDACRate + 1); break;
+		case ST_MPAL: frequency = VI_MPAL_CLOCK / (mLastDACRate + 1); break;
 	}
+
+	mAudioCode->SetFrequency( frequency );
 
 }
 

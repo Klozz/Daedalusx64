@@ -61,7 +61,6 @@ bool gAdaptFrequency( false );
 //*****************************************************************************
 CAudioPluginPsp::CAudioPluginPsp()
 :	mAudioCode( new AudioCode )
-,	mLastDACRate( 0 )
 {
 	mAudioCode->SetAdaptFrequency( gAdaptFrequency );
 	//gAudioPluginEnabled = APM_ENABLED_SYNC; // for testing
@@ -121,20 +120,20 @@ void	CAudioPluginPsp::StopEmulation()
 //*****************************************************************************
 void	CAudioPluginPsp::DacrateChanged( ESystemType system_type )
 {
-	if( gAudioPluginEnabled == APM_DISABLED ) return;
+	//if( gAudioPluginEnabled == APM_DISABLED ) return;
 
 #ifndef DAEDALUS_SILENT
 	printf( "DacrateChanged( %d )\n", system_type );
 #endif
 
-	mLastDACRate = Memory_AI_GetRegister(AI_DACRATE_REG);
+	u32 dacrate = Memory_AI_GetRegister(AI_DACRATE_REG);
 
 	u32	frequency = DEFAULT_FREQUENCY; // Is this correct? - Salvy
 	switch (system_type)
 	{
-		case ST_NTSC: frequency = VI_NTSC_CLOCK / (mLastDACRate + 1); break;
-		case ST_PAL:  frequency = VI_PAL_CLOCK  / (mLastDACRate + 1); break;
-		case ST_MPAL: frequency = VI_MPAL_CLOCK / (mLastDACRate + 1); break;
+		case ST_NTSC: frequency = VI_NTSC_CLOCK / (dacrate + 1); break;
+		case ST_PAL:  frequency = VI_PAL_CLOCK  / (dacrate + 1); break;
+		case ST_MPAL: frequency = VI_MPAL_CLOCK / (dacrate + 1); break;
 	}
 
 	mAudioCode->SetFrequency( frequency );
@@ -150,13 +149,11 @@ void	CAudioPluginPsp::LenChanged()
 	{
 		mAudioCode->SetAdaptFrequency( gAdaptFrequency );
 
-		u32		address( Memory_AI_GetRegister(AI_DRAM_ADDR_REG) & 0x00FFFFF8 );
-		u32		length( Memory_AI_GetRegister(AI_LEN_REG) & 0x3FFF8 );
+		u32		address( Memory_AI_GetRegister(AI_DRAM_ADDR_REG) & 0xFFFFFF );
+		u32		length(Memory_AI_GetRegister(AI_LEN_REG));
 
 		u32		result( mAudioCode->AddBuffer( g_pu8RamBase + address, length ) );
-		//if (result & SND_IS_FULL)
-		//	Memory_AI_GetRegister(AI_STATUS_REG) |= AI_STATUS_FIFO_FULL;
-		//Memory_AI_GetRegister(AI_STATUS_REG) |= AI_STATUS_DMA_BUSY;
+
 		use(result);
 	}
 	else
@@ -170,11 +167,7 @@ void	CAudioPluginPsp::LenChanged()
 //*****************************************************************************
 u32		CAudioPluginPsp::ReadLength()
 {
-	u32		length( mAudioCode->GetReadStatus() );
-
-	//Memory_AI_SetRegister( AI_LEN_REG, length );
-
-	return length;
+	return 0;
 }
 
 //*****************************************************************************
@@ -257,7 +250,6 @@ void	CAudioPluginPsp::RomClosed()
 {
 	ChangeABI(0);
 	mAudioCode->StopAudio();
-	mLastDACRate = 0;
 }
 
 //*****************************************************************************

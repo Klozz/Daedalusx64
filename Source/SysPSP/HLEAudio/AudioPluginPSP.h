@@ -47,7 +47,6 @@ public:
 
 private:
 	AudioCode *			mAudioCode;
-	u32					mLastDACRate;
 };
 
 

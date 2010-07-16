@@ -133,8 +133,8 @@ extern u32 SCR_HEIGHT;
 #define FRAME_SIZE (BUF_WIDTH * SCR_HEIGHT * PIXEL_SIZE)
 #define DEPTH_SIZE (BUF_WIDTH * SCR_HEIGHT * 2)
 
-static u32 sViWidth = 320;
-static u32 sViHeight = 240;
+static f32 sViWidth = 320.0f;
+static f32 sViHeight = 240.0f;
 
 static const float gFillRectDepth( 0.0f );
 static const float gTexRectDepth( 0.0f );
@@ -534,8 +534,8 @@ void	PSPRenderer::SelectPlaceholderTexture( EPlaceholderTextureType type )
 //*****************************************************************************
 void PSPRenderer::SetPSPViewport( s32 x, s32 y, u32 w, u32 h )
 {
-	mN64ToPSPScale.x = f32( w ) / f32(sViWidth);
-	mN64ToPSPScale.y = f32( h ) / f32(sViHeight);
+	mN64ToPSPScale.x = f32( w ) / sViWidth;
+	mN64ToPSPScale.y = f32( h ) / sViHeight;
 
 	mN64ToPSPTranslate.x  = f32( x );
 	mN64ToPSPTranslate.y  = f32( y );
@@ -596,8 +596,8 @@ v2	PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
 	//
 
 	// rounding twice really needed? //Corn
-	//	psp_coords.x = vfpu_round( vfpu_round( n64_coords.x ) * mN64ToPSPScale.x + mN64ToPSPTranslate.x );
-	//	psp_coords.y = vfpu_round( vfpu_round( n64_coords.y ) * mN64ToPSPScale.y + mN64ToPSPTranslate.y );
+//	psp_coords.x = vfpu_round( vfpu_round( n64_coords.x ) * mN64ToPSPScale.x + mN64ToPSPTranslate.x );
+//	psp_coords.y = vfpu_round( vfpu_round( n64_coords.y ) * mN64ToPSPScale.y + mN64ToPSPTranslate.y );
 	psp_coords.x = vfpu_round( n64_coords.x * mN64ToPSPScale.x + mN64ToPSPTranslate.x );
 	psp_coords.y = vfpu_round( n64_coords.y * mN64ToPSPScale.y + mN64ToPSPTranslate.y );
 
@@ -1190,7 +1190,7 @@ bool PSPRenderer::AddTri(u32 v0, u32 v1, u32 v2)
 		DL_PF("   Tri: %d,%d,%d (clipped)", v0, v1, v2);
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-		m_dwNumTrisClipped++;
+		++m_dwNumTrisClipped;
 #endif
 		return false;
 
@@ -1199,18 +1199,16 @@ bool PSPRenderer::AddTri(u32 v0, u32 v1, u32 v2)
 	{
 		DL_PF("   Tri: %d,%d,%d", v0, v1, v2);
 
-		m_swIndexBuffer[ m_dwNumIndices + 0 ] = (u16)v0;
-		m_swIndexBuffer[ m_dwNumIndices + 1 ] = (u16)v1;
-		m_swIndexBuffer[ m_dwNumIndices + 2 ] = (u16)v2;
+		m_swIndexBuffer[   m_dwNumIndices ] = (u16)v0;
+		m_swIndexBuffer[ ++m_dwNumIndices ] = (u16)v1;
+		m_swIndexBuffer[ ++m_dwNumIndices ] = (u16)v2;
+		
+		++m_dwNumIndices;
 
-		m_dwNumIndices += 3;
-
-		mVtxClipFlagsUnion |= f0;
-		mVtxClipFlagsUnion |= f1;
-		mVtxClipFlagsUnion |= f2;
+		mVtxClipFlagsUnion |= f0 | f1 | f2;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-		m_dwNumTrisRendered++;
+		++m_dwNumTrisRendered;
 #endif
 		return true;
 	}
@@ -1223,7 +1221,9 @@ bool PSPRenderer::TestVerts( u32 v0, u32 vn ) const
 {
 	u32 flags = mVtxProjected[v0].ClipFlags;
 
-	for ( u32 i = v0+1; i <= vn && i < MAX_VERTS; i++ )
+//v0 and Vn already clipped to maximum 15 //Corn 
+//	for ( u32 i = v0+1; i <= vn && i < MAX_VERTS; i++ )
+	for ( u32 i = v0+1; i <= vn; i++ )
 	{
 		flags &= mVtxProjected[i].ClipFlags;
 	}
@@ -1242,7 +1242,7 @@ v4 PSPRenderer::LightVert( const v3 & norm ) const
 	for ( s32 l = 0; l < m_dwNumLights; l++ )
 	{
 		f32 fCosT = norm.Dot( mLights[l].Direction );
-		if (fCosT > 0)
+		if (fCosT > 0.0f)
 		{
 			result.x += mLights[l].Colour.x * fCosT;
 			result.y += mLights[l].Colour.y * fCosT;
@@ -1396,6 +1396,16 @@ bool PSPRenderer::FlushTris()
 		PrepareTrisUnclipped( &p_vertices, &num_vertices );
 	}
 
+	// Hack for Conker BFD || no vertices to render? //Corn
+	extern bool bConkerHideShadow;
+	if( (gFlushTrisHack && bConkerHideShadow) || num_vertices == 0)
+	{
+		DAEDALUS_ERROR("Warning: Hack for Conker shadow || No Vtx to render" );
+		m_dwNumIndices = 0;
+		mVtxClipFlagsUnion = 0;
+		return true;
+	}
+
 	// Hack for Pilotwings 64
 	static bool skipNext=false;
 	if( gFlushTrisHack )
@@ -1417,15 +1427,6 @@ bool PSPRenderer::FlushTris()
 		}	
 	}
 	
-	// Hack for Conker BFD
-	extern bool bConkerHideShadow;
-	if( gFlushTrisHack && bConkerHideShadow )
-	{
-		DAEDALUS_ERROR("Warning: using Flushtris to hide Conker shadow" );
-		m_dwNumIndices = 0;
-		mVtxClipFlagsUnion = 0;
-		return true;
-	}
 	//
 	// Process the software vertex buffer to apply a couple of
 	// necessary changes to the texture coords (this is required
@@ -1517,8 +1518,8 @@ bool PSPRenderer::FlushTris()
 //*****************************************************************************
 namespace
 {
-	DaedalusVtx4		temp_a[ 10 ];
-	DaedalusVtx4		temp_b[ 10 ];
+	DaedalusVtx4		temp_a[ 8 ];
+	DaedalusVtx4		temp_b[ 8 ];
 
 	const u32			MAX_CLIPPED_VERTS = 1024;	// Probably excessively large...
 	DaedalusVtx4		clipped_vertices[MAX_CLIPPED_VERTS];
@@ -1543,11 +1544,13 @@ void PSPRenderer::PrepareTrisClipped( DaedalusVtx ** p_p_vertices, u32 * p_num_v
 	//
 	u32 num_vertices = 0;
 
-	for(u32 i = 0; i+2 < m_dwNumIndices; i+=3)
+	for(u32 i = 0; i < (m_dwNumIndices - 2);)
 	{
-		u32 idx0 = m_swIndexBuffer[ i + 0 ];
-		u32 idx1 = m_swIndexBuffer[ i + 1 ];
-		u32 idx2 = m_swIndexBuffer[ i + 2 ];
+		u32 idx0 = m_swIndexBuffer[   i ];
+		u32 idx1 = m_swIndexBuffer[ ++i ];
+		u32 idx2 = m_swIndexBuffer[ ++i ];
+
+		++i;
 
 		if(mVtxProjected[idx0].ClipFlags | mVtxProjected[idx1].ClipFlags | mVtxProjected[idx2].ClipFlags)
 		{
@@ -1555,9 +1558,9 @@ void PSPRenderer::PrepareTrisClipped( DaedalusVtx ** p_p_vertices, u32 * p_num_v
 			temp_a[ 1 ] = mVtxProjected[ idx1 ];
 			temp_a[ 2 ] = mVtxProjected[ idx2 ];
 
-			DL_PF( "i%d: %f,%f,%f,%f", i+0, temp_a[0].ProjectedPos.x, temp_a[0].ProjectedPos.y, temp_a[0].ProjectedPos.z, temp_a[0].ProjectedPos.w );
-			DL_PF( "i%d: %f,%f,%f,%f", i+1, temp_a[1].ProjectedPos.x, temp_a[1].ProjectedPos.y, temp_a[1].ProjectedPos.z, temp_a[1].ProjectedPos.w );
-			DL_PF( "i%d: %f,%f,%f,%f", i+2, temp_a[2].ProjectedPos.x, temp_a[2].ProjectedPos.y, temp_a[2].ProjectedPos.z, temp_a[2].ProjectedPos.w );
+			DL_PF( "i%d: %f,%f,%f,%f", i-3, temp_a[0].ProjectedPos.x, temp_a[0].ProjectedPos.y, temp_a[0].ProjectedPos.z, temp_a[0].ProjectedPos.w );
+			DL_PF( "i%d: %f,%f,%f,%f", i-2, temp_a[1].ProjectedPos.x, temp_a[1].ProjectedPos.y, temp_a[1].ProjectedPos.z, temp_a[1].ProjectedPos.w );
+			DL_PF( "i%d: %f,%f,%f,%f", i-1, temp_a[2].ProjectedPos.x, temp_a[2].ProjectedPos.y, temp_a[2].ProjectedPos.z, temp_a[2].ProjectedPos.w );
 
 			u32 out = clip_tri_to_frustum_vfpu( temp_a, temp_b );
 			if( out < 3 )
@@ -1570,28 +1573,28 @@ void PSPRenderer::PrepareTrisClipped( DaedalusVtx ** p_p_vertices, u32 * p_num_v
 				DAEDALUS_ERROR( "Too many clipped verts: %d", new_num_vertices );
 				break;
 			}
-			for( u32 j = 0; j <= out - 3; ++j )
+			for( u32 j = 0; j <= out - 3; ++j)
 			{
-				clipped_vertices[ num_vertices + 0 ] = temp_a[ 0 ];
-				clipped_vertices[ num_vertices + 1 ] = temp_a[ j + 1 ];
-				clipped_vertices[ num_vertices + 2 ] = temp_a[ j + 2 ];
+				clipped_vertices[   num_vertices ] = temp_a[ 0 ];
+				clipped_vertices[ ++num_vertices ] = temp_a[ j + 1 ];
+				clipped_vertices[ ++num_vertices ] = temp_a[ j + 2 ];
 
-				num_vertices += 3;
+				++num_vertices;
 			}
 		}
 		else
 		{
-			if( num_vertices + 3 > MAX_CLIPPED_VERTS )
+			if( num_vertices > (MAX_CLIPPED_VERTS - 3) )
 			{
 				DAEDALUS_ERROR( "Too many clipped verts: %d", num_vertices + 3 );
 				break;
 			}
 
-			clipped_vertices[ num_vertices + 0 ] = mVtxProjected[ idx0 ];
-			clipped_vertices[ num_vertices + 1 ] = mVtxProjected[ idx1 ];
-			clipped_vertices[ num_vertices + 2 ] = mVtxProjected[ idx2 ];
+			clipped_vertices[   num_vertices ] = mVtxProjected[ idx0 ];
+			clipped_vertices[ ++num_vertices ] = mVtxProjected[ idx1 ];
+			clipped_vertices[ ++num_vertices ] = mVtxProjected[ idx2 ];
 
-			num_vertices += 3;
+			++num_vertices;
 		}
 	}
 
@@ -1920,9 +1923,9 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 dwAddress, u32 dwV0, u32 dwNum)
 		v4 w;
 		u32 dwFlags;
 
-		w.x = (float)pVtxBase[(nOff + 0) ^ 1];
-		w.y = (float)pVtxBase[(nOff + 1) ^ 1];
-		w.z = (float)pVtxBase[(nOff + 2) ^ 1];
+		w.x = (float)pVtxBase[(  nOff) ^ 1];
+		w.y = (float)pVtxBase[(++nOff) ^ 1];
+		w.z = (float)pVtxBase[(++nOff) ^ 1];
 		w.w = 1.0f;
 
 		v4 & projected( mVtxProjected[i].ProjectedPos );
@@ -1943,8 +1946,8 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 dwAddress, u32 dwV0, u32 dwNum)
 		// Clip
 		mVtxProjected[i].ClipFlags = dwFlags;
 
-		s16 wA = pVtxBase[(nOff + 3) ^ 1];
-		s16 wB = pVtxBase[(nOff + 4) ^ 1];
+		s16 wA = pVtxBase[(++nOff) ^ 1];
+		s16 wB = pVtxBase[(++nOff) ^ 1];
 
 		s8 r = (s8)(wA >> 8);
 		s8 g = (s8)(wA);
@@ -1967,11 +1970,11 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 dwAddress, u32 dwV0, u32 dwNum)
 			vecTransformedNormal.Normalise();
 
 			colour = LightVert(vecTransformedNormal);
-			colour.w = a / 255.0f;
+			colour.w = a * (1.0f / 255.0f);
 		}
 		else
 		{
-			colour = v4( r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f );
+			colour = v4( r * (1.0f / 255.0f), g * (1.0f / 255.0f), b * (1.0f / 255.0f), a * (1.0f / 255.0f) );
 		}
 
 		// Assign true vert colour after lighting/fogging
@@ -2005,7 +2008,7 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 dwAddress, u32 dwV0, u32 dwNum)
 			}
 		}*/
 
-		nOff += 5;
+		++nOff;
 	}
 
 }
@@ -2052,7 +2055,7 @@ void PSPRenderer::SetNewVertexInfoCPU(u32 dwAddress, u32 dwV0, u32 dwNum)
 		}
 		else
 		{
-			mVtxProjected[i].Colour = v4( vert.rgba_r / 255.0f, vert.rgba_g / 255.0f, vert.rgba_b / 255.0f, vert.rgba_a / 255.0f );
+			mVtxProjected[i].Colour = v4( vert.rgba_r * (1.0f / 255.0f), vert.rgba_g * (1.0f / 255.0f), vert.rgba_b * (1.0f / 255.0f), vert.rgba_a * (1.0f / 255.0f) );
 		}
 	}
 
@@ -2112,20 +2115,20 @@ void PSPRenderer::ModifyVertexInfo(u32 whered, u32 vert, u32 val)
 
 		case G_MWO_POINT_XYSCREEN:
 			{
-				u16 x = (u16)(val>>16) / 4.0f;
-				u16 y = (u16)(val & 0xFFFF) / 4.0f;
+				u16 x = (u16)(val>>16) >> 2;
+				u16 y = (u16)(val & 0xFFFF) >> 2;
 				DL_PF("		Modify vert %d: x=%d, y=%d", vert, x, y);
 
 				u32 current_scale = Memory_VI_GetRegister(VI_X_SCALE_REG);
 				if((current_scale&0xF) != 0 )
 				{
 					// Tarzan... I don't know why is so different...
-					SetVtxXY( vert, x/sViWidth , y/sViHeight );
+					SetVtxXY( vert, x / sViWidth , y / sViHeight );
 				}
 				else
 				{	
 					// Megaman and other games
-					SetVtxXY( vert, x*2/sViWidth , y*2/sViHeight );
+					SetVtxXY( vert, (x<<1) / sViWidth , (y<<1) / sViHeight );
 				}
 			}
 			break;
@@ -2161,8 +2164,8 @@ void PSPRenderer::SetVtxTextureCoord( u32 vert, short tu, short tv )
 {
 	//if ( vert < MAX_VERTS )
 	//{
-	mVtxProjected[vert].Texture.x = (f32)tu / 32.0f;
-	mVtxProjected[vert].Texture.y = (f32)tv / 32.0f;
+	mVtxProjected[vert].Texture.x = (f32)tu * (1.0f / 32.0f);
+	mVtxProjected[vert].Texture.y = (f32)tv * (1.0f / 32.0f);
 	//}
 }
 
@@ -2185,9 +2188,9 @@ void PSPRenderer::SetVtxXY( u32 vert, float x, float y )
 //*****************************************************************************
 void PSPRenderer::SetLightCol(u32 light, u32 colour)
 {
-	mLights[light].Colour.x = (f32)((colour >> 24)&0xFF) / 255.0f;
-	mLights[light].Colour.y = (f32)((colour >> 16)&0xFF) / 255.0f;
-	mLights[light].Colour.z = (f32)((colour >>  8)&0xFF) / 255.0f;
+	mLights[light].Colour.x = (f32)((colour >> 24)&0xFF) * (1.0f / 255.0f);
+	mLights[light].Colour.y = (f32)((colour >> 16)&0xFF) * (1.0f / 255.0f);
+	mLights[light].Colour.z = (f32)((colour >>  8)&0xFF) * (1.0f / 255.0f);
 	mLights[light].Colour.w = 1.0f;	// Ignore light alpha
 }
 
@@ -2292,7 +2295,7 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 	sceGuTexWrap( mode_u, mode_v );
 
 	// XXXX Double check this
-	mTileTopLeft[ index ] = v2( f32( tile_size.left)/4.0f, f32(tile_size.top)/4.0f );
+	mTileTopLeft[ index ] = v2( f32( tile_size.left) * (1.0f / 4.0f), f32(tile_size.top)* (1.0f / 4.0f) );
 
 	DL_PF( "     *Performing texture map load:" );
 	DL_PF( "     *  Address: 0x%08x, Pitch: %d, Format: %s, Size: %dbpp, %dx%d",
@@ -2369,7 +2372,7 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace
 		if (mProjectionTop >= (MATRIX_STACK_SIZE-1))
 			DBGConsole_Msg(0, "Pushing past proj stack limits! %d/%d", mProjectionTop, MATRIX_STACK_SIZE);
 		else
-			mProjectionTop++;
+			++mProjectionTop;
 
 		if (bReplace)
 			// Load projection matrix
@@ -2401,7 +2404,7 @@ void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace)
 		if (mModelViewTop >= (MATRIX_STACK_SIZE-1))
 			DBGConsole_Msg(0, "Pushing past modelview stack limits! %d/%d", mModelViewTop, MATRIX_STACK_SIZE);
 		else
-			mModelViewTop++;
+			++mModelViewTop;
 
 		// We should store the current projection matrix...
 		if (bReplace)
@@ -2437,7 +2440,7 @@ void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace)
 void PSPRenderer::PopProjection()
 {
 	if (mProjectionTop > 0)
-		mProjectionTop--;
+		--mProjectionTop;
 
 	mWorldProjectValid = false;
 }
@@ -2448,7 +2451,7 @@ void PSPRenderer::PopProjection()
 void PSPRenderer::PopWorldView()
 {
 	if (mModelViewTop > 0)
-		mModelViewTop--;
+		--mModelViewTop;
 
 	mWorldProjectValid = false;
 }

@@ -1404,7 +1404,6 @@ void BlendMode_0x001114a3f0fff638LL (BLEND_MODE_ARGS)
 
 
 void BlendMode_0x0015fe042ffd79fcLL (BLEND_MODE_ARGS)
-
 {
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGB);
@@ -1432,7 +1431,6 @@ void BlendMode_0x00117e80f5fff438LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined    
 void BlendMode_0x00127e0af3fff238LL (BLEND_MODE_ARGS)
 {
-        
 	details.ColourAdjuster.SetRGBA( details.EnvColour );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
 }
@@ -1645,6 +1643,7 @@ void BlendMode_0x0010a2c3f00fd23fLL (BLEND_MODE_ARGS)
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	
 }
+
 //Paper Mario - Main Screen where SaveGames are. <== Needs work
 //case 0x00317fff5ffef438LL:
 //aRGB0: (Primitive    - Env         ) * Texel1       + Env         
@@ -1653,6 +1652,7 @@ void BlendMode_0x0010a2c3f00fd23fLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined    
 void BlendMode_0x00317fff5ffef438LL (BLEND_MODE_ARGS)
 {
+	// This blend is broken for some reasons, but nobody seems to bother to find out why.. - Salvy
 	c32		blend( details.EnvColour.Interpolate( details.PrimColour, details.EnvColour ) );
 	
 	if( num_cycles == 1 )
@@ -1675,6 +1675,8 @@ void BlendMode_0x00127ffffffdfe3fLL (BLEND_MODE_ARGS)
 {
 	// Do not install, it brakes the bases on most stages
 	// 
+	details.InstallTexture = false;
+
 	if( num_cycles == 1 )
 	{
 	//	details.ColourAdjuster.SetRGB( c32::White );
@@ -2629,7 +2631,6 @@ void BlendMode_0x00541aa83335feffLL (BLEND_MODE_ARGS)
 
 void BlendMode_0x001114a7f3fffef8LL (BLEND_MODE_ARGS)
 {
-	
 	details.ColourAdjuster.ModulateRGB( details.EnvColour);
 	details.ColourAdjuster.SetAOpaque();
 	//sceGuTexEnvColor( details.PrimColour.GetColour() );
@@ -2821,7 +2822,6 @@ void BlendMode_0x0022ffff1ffcfa38LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined
 void BlendMode_0x0021a6ac10fc9238LL (BLEND_MODE_ARGS)
 {
-	
 	details.ColourAdjuster.SetRGB( details.EnvColour );
 	details.ColourAdjuster.SetAOpaque();
 	sceGuTexEnvColor( details.PrimColour.GetColour() );
@@ -2835,9 +2835,8 @@ void BlendMode_0x0021a6ac10fc9238LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Texel0
 void BlendMode_0x00567eac11fcf279LL (BLEND_MODE_ARGS)
 {
-
 	details.ColourAdjuster.SetRGB(details.EnvColour);
-		sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
+	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
 }
 // Wetrix
 //case 0x0011ffff2ffd7c38LL:
@@ -4211,7 +4210,10 @@ OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 	switch(mux)
 	{
 #define BLEND_MODE( x )		case (x):	return BlendMode_##x;
-			
+
+		BLEND_MODE (0x001114a7f3fffef8LL);
+		BLEND_MODE (0x0022ffff1ffcfa38LL);
+		BLEND_MODE (0x0026a0041ffc93e0LL);
 		BLEND_MODE (0x0010a2c3f00fd23fLL);
 		BLEND_MODE (0x0010e5e0230b1d52LL);
 		BLEND_MODE (0x0010fe043ffdfdfeLL);

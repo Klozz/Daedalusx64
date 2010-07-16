@@ -117,7 +117,7 @@ void DLParser_GBI2_Vtx( MicroCodeCommand command )
 {
     u32 address = RDPSegAddr(command.vtx2.addr);
 
-    u32 vend   = command.vtx2.vend/2;
+    u32 vend   = command.vtx2.vend >> 1;
     u32 n      = command.vtx2.n;
     u32 v0	   = vend - n;
 
@@ -151,10 +151,10 @@ void DLParser_GBI2_Vtx( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_ModifyVtx( MicroCodeCommand command )
 {
-	const u32 FACTOR = 2; // This might need a bit of changing for other microcodes
+	const u32 FACTOR = 1; // This might need a bit of changing for other microcodes
 
 	u32 offset =  (command.inst.cmd0 >> 16) & 0xFF;
-	u32 vert   = ((command.inst.cmd0      ) & 0xFFFF) / FACTOR;
+	u32 vert   = ((command.inst.cmd0      ) & 0xFFFF) >> FACTOR;
 	u32 value  = command.inst.cmd1;
 
 	// Helps to avoid crash after swinging in Mario Golf
@@ -269,7 +269,6 @@ void DLParser_GBI2_PopMtx( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_CullDL( MicroCodeCommand command )
 {
-
 	u32 first = command.inst.cmd0 / gVertexStride;
 	u32 last = command.inst.cmd1 / gVertexStride;
 
@@ -280,6 +279,7 @@ void DLParser_GBI1_CullDL( MicroCodeCommand command )
 	last &= 0xF; //Max 15 Verts -> 0 < = vO < vn = 15 (manual)
 
 	if( last < first ) return;
+	if( ucode_ver == GBI_0_WR ) return; // Quick hack, cull dl brakes wave racer
 
 	if ( PSPRenderer::Get()->TestVerts( first, last ) )
 	{
@@ -302,9 +302,15 @@ void DLParser_GBI1_CullDL( MicroCodeCommand command )
 void DLParser_GBI2_CullDL( MicroCodeCommand command )
 {
 
+#if 0	//1-> old way, 0-> new way //Corn
 	u32 first = ((command.inst.cmd0) & 0xfff) / 2;
 	u32 last  = ((command.inst.cmd1) & 0xfff) / 2;
-
+#else
+	// Mask into range
+	//Max 15 Verts -> 0 < = vO < vn = 15 (manual) //Corn
+	u32 first = ((command.inst.cmd0) & 0x1F) >> 1;
+	u32 last  = ((command.inst.cmd1) & 0x1F) >> 1;
+#endif
 	if( last < first )	return;		// Fixes Aidyn Chronicles
 
 	DL_PF("    Culling using verts %d to %d", first, last);
@@ -430,7 +436,7 @@ void DLParser_GBI1_BranchZ( MicroCodeCommand command )
 	f32 vtxdepth = PSPRenderer::Get()->GetTransformedVtxPos(vtx).z/PSPRenderer::Get()->GetTransformedVtxPos(vtx).w;
 
 	// See OOT : Death Mountain and MM : Outside of Clock Town.
-	if( vtxdepth <= (s32)(command.inst.cmd1) || gNeedHackforZelda )		// For some reasons we sometimes fail the branch depth on OOT and MM....so we force gNeedHackforZelda true.
+	if( vtxdepth <= (s32)(command.inst.cmd1) * gVertexStride) // Corn FIX.
 	{																
 		u32 pc = gDisplayListStack.back().addr;	// This points to the next instruction
 		u32 dl = *(u32 *)(g_pu8RamBase + pc-12);
@@ -501,28 +507,28 @@ static void DLParser_InitGeometryMode()
 //*****************************************************************************
 void DLParser_GBI1_ClearGeometryMode( MicroCodeCommand command )
 {
-        u32 mask = (command.inst.cmd1);
-        
-        gGeometryMode &= ~mask;
+    u32 mask = (command.inst.cmd1);
+    
+    gGeometryMode &= ~mask;
 
-        DLParser_InitGeometryMode();
+    DLParser_InitGeometryMode();
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-        if (gDisplayListFile != NULL)
-        {
-                DL_PF("    Mask=0x%08x", mask);
-                if (mask & G_ZBUFFER)                           DL_PF("  Disabling ZBuffer");
-                if (mask & G_TEXTURE_ENABLE)                    DL_PF("  Disabling Texture");
-                if (mask & G_SHADE)                             DL_PF("  Disabling Shade");
-                if (mask & G_SHADING_SMOOTH)                    DL_PF("  Disabling Smooth Shading");
-                if (mask & G_CULL_FRONT)                        DL_PF("  Disabling Front Culling");
-                if (mask & G_CULL_BACK)                         DL_PF("  Disabling Back Culling");
-                if (mask & G_FOG)                               DL_PF("  Disabling Fog");
-                if (mask & G_LIGHTING)                          DL_PF("  Disabling Lighting");
-                if (mask & G_TEXTURE_GEN)                       DL_PF("  Disabling Texture Gen");
-                if (mask & G_TEXTURE_GEN_LINEAR)                DL_PF("  Disabling Texture Gen Linear");
-                if (mask & G_LOD)                               DL_PF("  Disabling LOD (no impl)");
-        }
+    if (gDisplayListFile != NULL)
+    {
+            DL_PF("    Mask=0x%08x", mask);
+            if (mask & G_ZBUFFER)                           DL_PF("  Disabling ZBuffer");
+            if (mask & G_TEXTURE_ENABLE)                    DL_PF("  Disabling Texture");
+            if (mask & G_SHADE)                             DL_PF("  Disabling Shade");
+            if (mask & G_SHADING_SMOOTH)                    DL_PF("  Disabling Smooth Shading");
+            if (mask & G_CULL_FRONT)                        DL_PF("  Disabling Front Culling");
+            if (mask & G_CULL_BACK)                         DL_PF("  Disabling Back Culling");
+            if (mask & G_FOG)                               DL_PF("  Disabling Fog");
+            if (mask & G_LIGHTING)                          DL_PF("  Disabling Lighting");
+            if (mask & G_TEXTURE_GEN)                       DL_PF("  Disabling Texture Gen");
+            if (mask & G_TEXTURE_GEN_LINEAR)                DL_PF("  Disabling Texture Gen Linear");
+            if (mask & G_LOD)                               DL_PF("  Disabling LOD (no impl)");
+    }
 #endif
 }
 
@@ -630,11 +636,11 @@ void DLParser_GBI2_GeometryMode( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_SetOtherModeL( MicroCodeCommand command )
 {
-    u32 shift  = (command.inst.cmd0>>8)&0xFF;
-    u32 length = (command.inst.cmd0   )&0xFF;
+    u32 shift  = (command.inst.cmd0 >> 8) & 0xFF;
+    u32 length = (command.inst.cmd0     ) & 0xFF;
     u32 data   =  command.inst.cmd1;
 
-    u32 mask = ((1<<length)-1)<<shift;
+    u32 mask = ((1 << length) - 1) << shift;
 
     gOtherModeL = (gOtherModeL&(~mask)) | data;
 
@@ -646,11 +652,11 @@ void DLParser_GBI1_SetOtherModeL( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_SetOtherModeH( MicroCodeCommand command )
 {
-    u32 shift  = (command.inst.cmd0>>8)&0xFF;
-    u32 length = (command.inst.cmd0   )&0xFF;
+    u32 shift  = (command.inst.cmd0 >> 8) & 0xFF;
+    u32 length = (command.inst.cmd0     ) & 0xFF;
     u32 data   =  command.inst.cmd1;
 
-    u32 mask = ((1<<length)-1)<<shift;
+    u32 mask = ((1 << length) - 1) << shift;
 
     gOtherModeH = (gOtherModeH&(~mask)) | data;
 
@@ -662,12 +668,12 @@ void DLParser_GBI1_SetOtherModeH( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_SetOtherModeL( MicroCodeCommand command )
 {
-	u32 shift  = (command.inst.cmd0>>8)&0xFF;
-	u32 length = (command.inst.cmd0   )&0xFF;
+	u32 shift  = (command.inst.cmd0 >> 8) & 0xFF;
+	u32 length = (command.inst.cmd0     ) & 0xFF;
 	u32 data   =  command.inst.cmd1;
 
 	// Mask is constructed slightly differently
-	u32 mask = (u32)((s32)(0x80000000)>>length)>>shift;
+	u32 mask = (u32)((s32)(0x80000000) >> length) >> shift;
 
 	gOtherModeL = (gOtherModeL&(~mask)) | data;
 
@@ -679,12 +685,12 @@ void DLParser_GBI2_SetOtherModeL( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_SetOtherModeH( MicroCodeCommand command )
 {
-    u32 shift  = (command.inst.cmd0>>8)&0xFF;
-    u32 length = (command.inst.cmd0   )&0xFF;
+    u32 shift  = (command.inst.cmd0 >> 8) & 0xFF;
+    u32 length = (command.inst.cmd0     ) & 0xFF;
     u32 data   =  command.inst.cmd1;
 
     // Mask is constructed slightly differently
-    u32 mask = (u32)((s32)(0x80000000)>>length)>>shift;
+    u32 mask = (u32)((s32)(0x80000000) >> length) >> shift;
 
     gOtherModeH = (gOtherModeH&(~mask)) | data;
 
@@ -700,8 +706,8 @@ void DLParser_GBI1_Texture( MicroCodeCommand command )
     gTextureTile  = command.texture.tile;
 
     bool enable = command.texture.enable_gbi0;                        // Seems to use 0x01
-    f32 scale_s = f32(command.texture.scaleS) / (65536.0f * 32.0f);
-    f32 scale_t = f32(command.texture.scaleT) / (65536.0f * 32.0f);
+    f32 scale_s = f32(command.texture.scaleS) * (1.0f / (65536.0f * 32.0f));
+    f32 scale_t = f32(command.texture.scaleT) * (1.0f / (65536.0f * 32.0f));
 
     DL_PF("    Level: %d Tile: %d %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
     DL_PF("    ScaleS: %f, ScaleT: %f", scale_s*32.0f, scale_t*32.0f);
@@ -719,8 +725,8 @@ void DLParser_GBI2_Texture( MicroCodeCommand command )
     gTextureTile  = command.texture.tile;
 
     bool enable = command.texture.enable_gbi2;                        // Seems to use 0x02
-    f32 scale_s = f32(command.texture.scaleS) / (65536.0f * 32.0f);
-    f32 scale_t = f32(command.texture.scaleT) / (65536.0f * 32.0f);
+    f32 scale_s = f32(command.texture.scaleS) * (1.0f / (65536.0f * 32.0f));
+    f32 scale_t = f32(command.texture.scaleT) * (1.0f / (65536.0f * 32.0f));
 
     DL_PF("    Level: %d Tile: %d %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
     DL_PF("    ScaleS: %f, ScaleT: %f", scale_s*32.0f, scale_t*32.0f);
@@ -745,18 +751,19 @@ void DLParser_GBI2_Quad( MicroCodeCommand command )
 
     bool tris_added = false;
 
-    while ( command.inst.cmd == G_GBI2_QUAD )
+	while ( command.inst.cmd == G_GBI2_QUAD )
     {
-        // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
-        u32 v2_idx = command.gbi2line3d.v2/2;
-        u32 v1_idx = command.gbi2line3d.v1/2;
-        u32 v0_idx = command.gbi2line3d.v0/2;
-
-        u32 v5_idx = command.gbi2line3d.v5/2;
-        u32 v4_idx = command.gbi2line3d.v4/2;
-        u32 v3_idx = command.gbi2line3d.v3/2;
+        // Vertex indices are multiplied by 2
+        u32 v0_idx = command.gbi2line3d.v0 >> 1;
+        u32 v1_idx = command.gbi2line3d.v1 >> 1;
+        u32 v2_idx = command.gbi2line3d.v2 >> 1;
 
         tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+
+        u32 v3_idx = command.gbi2line3d.v3 >> 1;
+        u32 v4_idx = command.gbi2line3d.v4 >> 1;
+		u32 v5_idx = command.gbi2line3d.v5 >> 1;
+
         tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
 
         command.inst.cmd0 = *pCmdBase++;
@@ -783,25 +790,26 @@ void DLParser_GBI2_Quad( MicroCodeCommand command )
 //*****************************************************************************
 // XXX SpiderMan uses this command.
 void DLParser_GBI2_Line3D( MicroCodeCommand command )
-{	
-    // While the next command pair is Tri2, add vertices
+{
+	// While the next command pair is Tri2, add vertices
     u32 pc = gDisplayListStack.back().addr;
     u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
 
     bool tris_added = false;
 
-    while ( command.inst.cmd == G_GBI2_LINE3D )
+	while ( command.inst.cmd == G_GBI2_LINE3D )
     {
         // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
-        u32 v2_idx = command.gbi2line3d.v2/2;
-        u32 v1_idx = command.gbi2line3d.v1/2;
-        u32 v0_idx = command.gbi2line3d.v0/2;
-
-        u32 v5_idx = command.gbi2line3d.v5/2;
-        u32 v4_idx = command.gbi2line3d.v4/2;
-        u32 v3_idx = command.gbi2line3d.v3/2;
+        u32 v0_idx = command.gbi2line3d.v0 >> 1;
+        u32 v1_idx = command.gbi2line3d.v1 >> 1;
+        u32 v2_idx = command.gbi2line3d.v2 >> 1;
 
         tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+
+        u32 v3_idx = command.gbi2line3d.v3 >> 1;
+        u32 v4_idx = command.gbi2line3d.v4 >> 1;
+		u32 v5_idx = command.gbi2line3d.v5 >> 1;
+
         tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
 
         command.inst.cmd0 = *pCmdBase++;
@@ -837,9 +845,9 @@ void DLParser_GBI2_Tri1( MicroCodeCommand command )
     while ( command.inst.cmd == G_GBI2_TRI1 )
     {
         //u32 flags = (command.inst.cmd1>>24)&0xFF;
-		u32 v2_idx = command.gbi2tri1.v2/2;
-		u32 v1_idx = command.gbi2tri1.v1/2;
-        u32 v0_idx = command.gbi2tri1.v0/2;
+        u32 v0_idx = command.gbi2tri1.v0 >> 1;
+		u32 v1_idx = command.gbi2tri1.v1 >> 1;
+		u32 v2_idx = command.gbi2tri1.v2 >> 1;
 
         tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
 
@@ -875,15 +883,16 @@ void DLParser_GBI2_Tri2( MicroCodeCommand command )
     while ( command.inst.cmd == G_GBI2_TRI2 )
     {
 		// Vertex indices are exact !
-        u32 v2_idx = command.gbi2tri2.v2;
-        u32 v1_idx = command.gbi2tri2.v1;
         u32 v0_idx = command.gbi2tri2.v0;
-
-        u32 v5_idx = command.gbi2tri2.v5;
-        u32 v4_idx = command.gbi2tri2.v4;
-        u32 v3_idx = command.gbi2tri2.v3;
+        u32 v1_idx = command.gbi2tri2.v1;
+        u32 v2_idx = command.gbi2tri2.v2;
 
         tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+
+		u32 v3_idx = command.gbi2tri2.v3;
+        u32 v4_idx = command.gbi2tri2.v4;
+        u32 v5_idx = command.gbi2tri2.v5;
+
         tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
 
         command.inst.cmd0 = *pCmdBase++;
@@ -923,11 +932,12 @@ void DLParser_GBI1_Tri2( MicroCodeCommand command )
 		u32 v1_idx = command.gbi1tri2.v1 / gVertexStride;
 		u32 v2_idx = command.gbi1tri2.v2 / gVertexStride;
 
+		tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+
 		u32 v3_idx = command.gbi1tri2.v3 / gVertexStride;
 		u32 v4_idx = command.gbi1tri2.v4 / gVertexStride;
 		u32 v5_idx = command.gbi1tri2.v5 / gVertexStride;
 
-		tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
 		tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
 
 		command.inst.cmd0= *pCmdBase++;
@@ -970,10 +980,10 @@ void DLParser_GBI1_Line3D( MicroCodeCommand command )
 
 	while ( command.inst.cmd == G_GBI1_LINE3D )
 	{
-		u32 v3_idx   = command.gbi1line3d.v3 / gVertexStride;
 		u32 v0_idx   = command.gbi1line3d.v0 / gVertexStride;
 		u32 v1_idx   = command.gbi1line3d.v1 / gVertexStride;
 		u32 v2_idx   = command.gbi1line3d.v2 / gVertexStride;
+		u32 v3_idx   = command.gbi1line3d.v3 / gVertexStride;
 
 		tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
 		tris_added |= PSPRenderer::Get()->AddTri(v2_idx, v3_idx, v0_idx);
@@ -1058,18 +1068,47 @@ void DLParser_GBI0_Tri4( MicroCodeCommand command )
     while (command.inst.cmd == G_GBI1_TRI2)
     {
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-        u32 flags = (command.inst.cmd0>>16)&0xFF;
+        u32 flags = (command.inst.cmd0 >> 16) & 0xFF;
 		DL_PF("    GBI1 Tri4: 0x%08x 0x%08x Flag: 0x%02x", command.inst.cmd0, command.inst.cmd1, flags);
 #endif
+#if 0 //0->new way, 1-> old way //Corn
 		for( int i=0; i<4; i++)
 		{
-			u32 v0 = (command.inst.cmd1>>(4+(i<<3))) & 0xF;
-			u32 v1 = (command.inst.cmd1>>(  (i<<3))) & 0xF;
-			u32 v2 = (command.inst.cmd0>>(  (i<<2))) & 0xF;
+			u32 v0 = (command.inst.cmd1 >> (4+(i<<3))) & 0xF;
+			u32 v1 = (command.inst.cmd1 >> (  (i<<3))) & 0xF;
+			u32 v2 = (command.inst.cmd0 >> (  (i<<2))) & 0xF;
 
 			tris_added |= PSPRenderer::Get()->AddTri(v0, v2, v1);
 		}
+#else
+		//Tri #1
+		u32 v0 = (command.inst.cmd1 >> 4 ) & 0xF;
+		u32 v1 = (command.inst.cmd1      ) & 0xF;
+		u32 v2 = (command.inst.cmd0      ) & 0xF;
 
+		tris_added |= PSPRenderer::Get()->AddTri(v0, v2, v1);
+
+		//Tri #2
+			v0 = (command.inst.cmd1 >> 12) & 0xF;
+			v1 = (command.inst.cmd1 >> 8 ) & 0xF;
+			v2 = (command.inst.cmd0 >> 4 ) & 0xF;
+
+		tris_added |= PSPRenderer::Get()->AddTri(v0, v2, v1);
+
+		//Tri #3
+			v0 = (command.inst.cmd1 >> 20) & 0xF;
+			v1 = (command.inst.cmd1 >> 16) & 0xF;
+			v2 = (command.inst.cmd0 >> 8 ) & 0xF;
+
+		tris_added |= PSPRenderer::Get()->AddTri(v0, v2, v1);
+
+		//Tri #4
+			v0 = (command.inst.cmd1 >> 28) & 0xF;
+			v1 = (command.inst.cmd1 >> 24) & 0xF;
+			v2 = (command.inst.cmd0 >> 12) & 0xF;
+
+		tris_added |= PSPRenderer::Get()->AddTri(v0, v2, v1);
+#endif
 		command.inst.cmd0			= *(u32 *)(g_pu8RamBase + pc+0);
 		command.inst.cmd1			= *(u32 *)(g_pu8RamBase + pc+4);
 		pc += 8;

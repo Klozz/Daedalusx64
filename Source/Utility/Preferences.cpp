@@ -214,10 +214,6 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		{
 			preferences.DynarecLoopOptimisation = property->GetBooleanValue( true );
 		}
-		if( section->FindProperty( "TLBHackEnabled", &property ) )
-		{
-			preferences.TLBHackEnabled = property->GetBooleanValue( false );
-		}
 		if( section->FindProperty( "DoubleDisplayEnabled", &property ) )
 		{
 			preferences.DoubleDisplayEnabled = property->GetBooleanValue( false );
@@ -226,25 +222,9 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		{
 			preferences.SimulateDoubleDisabled = property->GetBooleanValue( false );
 		}
-		if( section->FindProperty( "ViewPortHackEnabled", &property ) )
-		{
-			preferences.ViewPortHackEnabled = property->GetBooleanValue( false );
-		}
-		if( section->FindProperty( "FlatShadeDisabled", &property ) )
-		{
-			preferences.FlatShadeDisabled = property->GetBooleanValue( false );
-		}
 		if( section->FindProperty( "CleanSceneEnabled", &property ) )
 		{
 			preferences.CleanSceneEnabled = property->GetBooleanValue( false );
-		}
-		if( section->FindProperty( "NeedHackforZelda", &property ) )
-		{
-			preferences.NeedHackforZelda = property->GetBooleanValue( false );
-		}
-		if( section->FindProperty( "FlushTrisHack", &property ) )
-		{
-			preferences.FlushTrisHack = property->GetBooleanValue( false );
 		}
 		if( section->FindProperty( "IncreaseVI_Event", &property ) )
 		{
@@ -254,9 +234,9 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		{
 			preferences.CheckN64FPUsageDisable = property->GetBooleanValue( false );
 		}
-		if( section->FindProperty( "MemoryAccessOptimisation", &property ) ) 	 
+		if( section->FindProperty( "TMEMemulation", &property ) ) 	 
 		{ 	 
-            preferences.MemoryAccessOptimisation = property->GetBooleanValue( false ); 	 
+            preferences.TMEMemulation = property->GetBooleanValue( false ); 	 
 		}
 		if( section->FindProperty( "CheckTextureHashFrequency", &property ) )
 		{
@@ -308,17 +288,12 @@ void IPreferences::OutputSectionDetails( const RomID & id, const SRomPreferences
 	fprintf(fh, "DynarecEnabled=%d\n",preferences.DynarecEnabled);
 	fprintf(fh, "DynarecStackOptimisation=%d\n",preferences.DynarecStackOptimisation);
 	fprintf(fh, "DynarecLoopOptimisation=%d\n",preferences.DynarecLoopOptimisation);
-	fprintf(fh, "TLBHackEnabled=%d\n",preferences.TLBHackEnabled);
 	fprintf(fh, "DoubleDisplayEnabled=%d\n",preferences.DoubleDisplayEnabled);
 	fprintf(fh, "SimulateDoubleDisabled=%d\n",preferences.SimulateDoubleDisabled);
-	fprintf(fh, "ViewPortHackEnabled=%d\n",preferences.ViewPortHackEnabled);
-	fprintf(fh, "FlatShadeDisabled=%d\n",preferences.FlatShadeDisabled);
 	fprintf(fh, "CleanSceneEnabled=%d\n",preferences.CleanSceneEnabled);
-	fprintf(fh, "NeedHackforZelda=%d\n",preferences.NeedHackforZelda);
-	fprintf(fh, "FlushTrisHack=%d\n",preferences.FlushTrisHack);
 	fprintf(fh, "IncreaseVI_Event=%d\n",preferences.IncreaseVI_Event);
 	fprintf(fh, "CheckN64FPUsageDisable=%d\n",preferences.CheckN64FPUsageDisable);
-	fprintf(fh, "MemoryAccessOptimisation=%d\n",preferences.MemoryAccessOptimisation);
+	fprintf(fh, "TMEMemulation=%d\n",preferences.TMEMemulation);
 	fprintf(fh, "CheckTextureHashFrequency=%d\n", ROM_GetTexureHashFrequencyAsFrames( preferences.CheckTextureHashFrequency ) );
 	fprintf(fh, "Frameskip=%d\n", ROM_GetFrameskipValueAsInt( preferences.Frameskip ) );
 	fprintf(fh, "AudioEnabled=%d\n", preferences.AudioEnabled);
@@ -441,17 +416,12 @@ SRomPreferences::SRomPreferences()
 	,	DynarecEnabled( true )
 	,	DynarecStackOptimisation( true )
 	,	DynarecLoopOptimisation( true )
-	,	TLBHackEnabled( false )
 	,	DoubleDisplayEnabled( false )
 	,	SimulateDoubleDisabled( false )
-	,	ViewPortHackEnabled( false )
-	,	FlatShadeDisabled( false )
 	,	CleanSceneEnabled( false )
-	,	NeedHackforZelda( false )
-	,	FlushTrisHack( false )
 	,	IncreaseVI_Event( false )
 	,	CheckN64FPUsageDisable( false )
-	,   MemoryAccessOptimisation( false )
+	,   TMEMemulation( false )
 	,	CheckTextureHashFrequency( THF_DISABLED )
 	,	Frameskip( FV_DISABLED )
 	,	AudioEnabled( APM_DISABLED )
@@ -470,17 +440,12 @@ void SRomPreferences::Reset()
 	DynarecEnabled = true;
 	DynarecStackOptimisation = true;
 	DynarecLoopOptimisation = true;
-	TLBHackEnabled = false;
 	DoubleDisplayEnabled =false;
 	SimulateDoubleDisabled = false;
-	ViewPortHackEnabled = false;
-	FlatShadeDisabled = false;
 	CleanSceneEnabled = false;
-	NeedHackforZelda = false;
-	FlushTrisHack = false;
 	IncreaseVI_Event = false;
 	CheckN64FPUsageDisable = false;
-	MemoryAccessOptimisation = false;
+	TMEMemulation = false;
 	CheckTextureHashFrequency = THF_DISABLED;
 	Frameskip = FV_DISABLED;
 	AudioEnabled = APM_DISABLED;
@@ -498,17 +463,12 @@ void	SRomPreferences::Apply() const
 	gDynarecEnabled		= g_ROM.settings.DynarecSupported && DynarecEnabled;
 	gDynarecStackOptimisation	= g_ROM.settings.DynarecStackOptimisation && DynarecStackOptimisation;
 	gDynarecLoopOptimisation	= g_ROM.settings.DynarecLoopOptimisation && DynarecLoopOptimisation;
-	gTLBHackEnabled = g_ROM.settings.TLBHackEnabled || TLBHackEnabled;
 	gDoubleDisplayEnabled = g_ROM.settings.DoubleDisplayEnabled || DoubleDisplayEnabled;
 	gSimulateDoubleDisabled = g_ROM.settings.SimulateDoubleDisabled || SimulateDoubleDisabled;
-	gViewPortHackEnabled = g_ROM.settings.ViewPortHackEnabled || ViewPortHackEnabled;
-	gFlatShadeDisabled = g_ROM.settings.FlatShadeDisabled || FlatShadeDisabled;
 	gCleanSceneEnabled = g_ROM.settings.CleanSceneEnabled || CleanSceneEnabled;
-	gNeedHackforZelda = g_ROM.settings.NeedHackforZelda || NeedHackforZelda;
-	gFlushTrisHack = g_ROM.settings.FlushTrisHack || FlushTrisHack;
 	gIncreaseVI_Event = g_ROM.settings.IncreaseVI_Event || IncreaseVI_Event;
 	gCheckN64FPUsageDisable = g_ROM.settings.CheckN64FPUsageDisable || CheckN64FPUsageDisable;
-	gMemoryAccessOptimisation = g_ROM.settings.MemoryAccessOptimisation || MemoryAccessOptimisation;
+	gTMEMemulation = g_ROM.settings.TMEMemulation || TMEMemulation;
 	gCheckTextureHashFrequency = ROM_GetTexureHashFrequencyAsFrames( CheckTextureHashFrequency );
 	gFrameskipValue = Frameskip;
 

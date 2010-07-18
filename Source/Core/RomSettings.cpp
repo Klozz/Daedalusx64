@@ -288,10 +288,6 @@ bool IRomSettingsDB::OpenSettingsFile( const char * filename )
 		{
 			settings.DynarecLoopOptimisation = p_property->GetBooleanValue( true );
 		}
-		if( p_section->FindProperty( "TLBHackEnabled", &p_property ) )
-		{
-			settings.TLBHackEnabled = p_property->GetBooleanValue( false );
-		}
 		if( p_section->FindProperty( "DoubleDisplayEnabled", &p_property ) )
 		{
 			settings.DoubleDisplayEnabled = p_property->GetBooleanValue( false );
@@ -300,25 +296,9 @@ bool IRomSettingsDB::OpenSettingsFile( const char * filename )
 		{
 			settings.SimulateDoubleDisabled = p_property->GetBooleanValue( false );
 		}
-		if( p_section->FindProperty( "ViewPortHackEnabled", &p_property ) )
-		{
-			settings.ViewPortHackEnabled = p_property->GetBooleanValue( false );
-		}
-		if( p_section->FindProperty( "FlatShadeDisabled", &p_property ) )
-		{
-			settings.FlatShadeDisabled = p_property->GetBooleanValue( false );
-		}
 		if( p_section->FindProperty( "CleanSceneEnabled", &p_property ) )
 		{
 			settings.CleanSceneEnabled = p_property->GetBooleanValue( false );
-		}
-		if( p_section->FindProperty( "NeedHackforZelda", &p_property ) )
-		{
-			settings.NeedHackforZelda = p_property->GetBooleanValue( true );
-		}
-		if( p_section->FindProperty( "FlushTrisHack", &p_property ) )
-		{
-			settings.FlushTrisHack = p_property->GetBooleanValue( false );
 		}
 		if( p_section->FindProperty( "IncreaseVI_Event", &p_property ) )
 		{
@@ -328,9 +308,9 @@ bool IRomSettingsDB::OpenSettingsFile( const char * filename )
 		{
 			settings.CheckN64FPUsageDisable = p_property->GetBooleanValue( false );
 		}                 
-		if( p_section->FindProperty( "MemoryAccessOptimisation", &p_property ) ) 	 
+		if( p_section->FindProperty( "TMEMemulation", &p_property ) ) 	 
 		{ 	 
-			settings.MemoryAccessOptimisation = p_property->GetBooleanValue( false ); 	 
+			settings.TMEMemulation = p_property->GetBooleanValue( false ); 	 
 		}
 
 		SetSettings( id, settings );
@@ -448,17 +428,12 @@ void IRomSettingsDB::OutputSectionDetails( const RomID & id, const RomSettings &
 	if( !settings.DynarecSupported )			fprintf(fh, "DynarecSupported=no\n");
 	if( !settings.DynarecStackOptimisation )	fprintf(fh, "DynarecStackOptimisation=no\n");
 	if( !settings.DynarecLoopOptimisation )		fprintf(fh, "DynarecLoopOptimisation=no\n");
-	if( settings.TLBHackEnabled )				fprintf(fh, "TLBHackEnabled=yes\n");
 	if( settings.DoubleDisplayEnabled )			fprintf(fh, "DoubleDisplayEnabled=yes\n");
 	if( settings.SimulateDoubleDisabled )		fprintf(fh, "SimulateDoubleDisabled=yes\n");
-	if( settings.ViewPortHackEnabled )			fprintf(fh, "ViewPortHackEnabled=yes\n");
-	if( settings.FlatShadeDisabled )			fprintf(fh, "FlatShadeDisabled=yes\n");
 	if( settings.CleanSceneEnabled )			fprintf(fh, "CleanSceneEnabled=yes\n");
-	if( settings.NeedHackforZelda )				fprintf(fh, "NeedHackforZelda=yes\n");
-	if( settings.FlushTrisHack )				fprintf(fh, "FlushTrisHack=yes\n");
 	if( settings.IncreaseVI_Event )				fprintf(fh, "IncreaseVI_Event=yes\n");
 	if( settings.CheckN64FPUsageDisable )		fprintf(fh, "CheckN64FPUsageDisable=yes\n");
-	if( settings.MemoryAccessOptimisation )		fprintf(fh, "MemoryAccessOptimisation=yes\n"); 	 
+	if( settings.TMEMemulation )		fprintf(fh, "TMEMemulation=yes\n"); 	 
 
 	if ( settings.ExpansionPakUsage != PAK_STATUS_UNKNOWN )	fprintf(fh, "ExpansionPakUsage=%s\n", ROM_GetExpansionPakUsageName( settings.ExpansionPakUsage ) );
 	if ( settings.SaveType != SAVE_TYPE_UNKNOWN )			fprintf(fh, "SaveType=%s\n", ROM_GetSaveTypeName( settings.SaveType ) );
@@ -513,17 +488,12 @@ RomSettings::RomSettings()
 ,	DynarecSupported( true )
 ,	DynarecStackOptimisation( true )
 ,	DynarecLoopOptimisation( true )
-,	TLBHackEnabled( false )
 ,	DoubleDisplayEnabled( false )
 ,	SimulateDoubleDisabled( false )
-,	ViewPortHackEnabled( false )
-,	FlatShadeDisabled( false )
 ,	CleanSceneEnabled( false )
-,	NeedHackforZelda( false )
-,	FlushTrisHack( false )
 ,	IncreaseVI_Event( false )
 ,	CheckN64FPUsageDisable( false )
-,   MemoryAccessOptimisation( false )
+,   TMEMemulation( false )
 ,	RescanCount(0)
 {
 }
@@ -550,16 +520,11 @@ void	RomSettings::Reset()
 	DynarecSupported = true;
 	DynarecStackOptimisation = true;
 	DynarecLoopOptimisation = true;
-	TLBHackEnabled = false;
 	DoubleDisplayEnabled = false;
 	SimulateDoubleDisabled = false;
-	ViewPortHackEnabled = false;
-	FlatShadeDisabled = false;
 	CleanSceneEnabled = false;
-	NeedHackforZelda = false;
-	FlushTrisHack = false;
 	IncreaseVI_Event = false;
 	CheckN64FPUsageDisable = false;
-	MemoryAccessOptimisation = false;
+	TMEMemulation = false;
 	RescanCount = 0;
 }

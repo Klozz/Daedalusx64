@@ -318,8 +318,6 @@ void	RDP_SetTile( RDP_Tile tile );
 void	RDP_SetTileSize( RDP_TileSize tile_tile );
 void	RDP_LoadBlock( RDP_TileSize command );
 void	RDP_LoadTile( RDP_TileSize tile_size  );
-void	RDP_LoadTLut( RDP_TileSize load_tlut);
-
 //*****************************************************************************
 //
 //*****************************************************************************

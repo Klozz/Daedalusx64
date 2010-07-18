@@ -69,11 +69,10 @@ static void DumpInformation(PspDebugRegBlock * regs)
 
 	fprintf(fp, "\nSettings:\n");
 	{
-//		fprintf(fp, "\tDoubleDisplayEnabled:          %01d\n", gDoubleDisplayEnabled);
+		fprintf(fp, "\tDoubleDisplayEnabled:          %01d\n", gDoubleDisplayEnabled);
 		fprintf(fp, "\tDynarecEnabled:                %01d\n", gDynarecEnabled);
 		fprintf(fp, "\tDynarecStackOptimisation:      %01d\n", gDynarecStackOptimisation);
-		fprintf(fp, "\tDynarecLoopOptimisation:       %01d\n", gDynarecLoopOptimisation);
-		fprintf(fp, "\tMemoryAccessOptimisation:      %01d\n", gMemoryAccessOptimisation); 	
+		fprintf(fp, "\tDynarecLoopOptimisation:       %01d\n", gDynarecLoopOptimisation);	
 		fprintf(fp, "\tOSHooksEnabled:                %01d\n", gOSHooksEnabled);
 		fprintf(fp, "\tCheckN64FPUsageDisable:        %01d\n", gCheckN64FPUsageDisable);
 	}

@@ -98,7 +98,9 @@ u32 Patch_osRecvMesg()
 {
 TEST_DISABLE_MESG_FUNCS
 
-	if( gNeedHackforZelda )	// osRecvMesg brakes OOT's in-game menu
+	// osRecvMesg brakes OOT's in-game menu
+	//
+	if( g_ROM.GameHacks == ZELDA_OOT ) 
 	{
 		return PATCH_RET_NOT_PROCESSED0(osRecvMesg);
 	}
@@ -210,7 +212,9 @@ u32 Patch_osSendMesg()
 {
 TEST_DISABLE_MESG_FUNCS
 
-	if( gNeedHackforZelda ) // osSendMesg brakes OOT's in-game menu
+	// osSendMesg brakes OOT's in-game menu
+	//
+	if( g_ROM.GameHacks == ZELDA_OOT )
 	{
 		return PATCH_RET_NOT_PROCESSED0(osSendMesg);
 	}

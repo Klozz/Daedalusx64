@@ -279,7 +279,7 @@ void DLParser_GBI1_CullDL( MicroCodeCommand command )
 	last &= 0xF; //Max 15 Verts -> 0 < = vO < vn = 15 (manual)
 
 	if( last < first ) return;
-	if( ucode_ver == GBI_0_WR ) return; // Quick hack, cull dl brakes wave racer
+	if( g_ROM.GameHacks = WAVE_RACER ) return; // Quick hack, cull dl brakes wave racer
 
 	if ( PSPRenderer::Get()->TestVerts( first, last ) )
 	{
@@ -608,7 +608,7 @@ void DLParser_GBI2_GeometryMode( MicroCodeCommand command )
 //  bool bShade				= (gGeometryMode & G_SHADE)						? true : false;
 //  bool bFlatShade         = (gGeometryMode & G_ZELDA_SHADING_SMOOTH)		? true : false;
 	bool bFlatShade         = (gGeometryMode & G_ZELDA_TEXTURE_GEN_LINEAR)	? true : false;
-    if (gFlatShadeDisabled)
+    if (g_ROM.GameHacks == TIGERS_HONEY_HUNT)
 		bFlatShade			= false;	// Hack for Tiger Honey Hunt
 
     bool bFog				= (gGeometryMode & G_ZELDA_FOG)					? true : false;

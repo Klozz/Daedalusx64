@@ -241,7 +241,7 @@ void DLParser_S2DEX_ObjMoveMem( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_S2DEX_Bg1cyc( MicroCodeCommand command )
 {
-	if( gNeedHackforZelda )
+	if( g_ROM.GameHacks == ZELDA_MM )
 		return;
 
 	uObjScaleBg *objBg = (uObjScaleBg *)(g_pu8RamBase + RDPSegAddr(command.inst.cmd1));

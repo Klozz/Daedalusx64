@@ -95,6 +95,21 @@ class RomID
 
 struct SRomPreferences;
 
+//*****************************************************************************
+//	Hacks for games etc.
+//*****************************************************************************
+enum EGameHacks
+{
+	NO_GAME_HACK = 0,
+	GOLDEN_EYE,
+	SUPER_BOWLING,
+	CONKER,
+	PILOT_WINGS,
+	WAVE_RACER,
+	ZELDA_OOT,
+	ZELDA_MM,
+	TIGERS_HONEY_HUNT,
+};
 
 //*****************************************************************************
 //
@@ -108,6 +123,7 @@ struct RomInfo
 	RomSettings settings;				// Settings for this rom
 	u32			TvType;					// OS_TV_NTSC etc
 	ECicType	cic_chip;				// CIC boot chip type
+	EGameHacks	GameHacks;				// Hacks for specific games
 };
 
 //*****************************************************************************

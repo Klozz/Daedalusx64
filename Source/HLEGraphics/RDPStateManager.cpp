@@ -216,7 +216,7 @@ const TextureInfo & CRDPStateManager::GetTextureDescriptor( u32 idx ) const
 
 		switch (rdp_tile.size)
 		{
-			case G_IM_SIZ_4b: palette = 16  * 2 * rdp_tile.palette; break;
+			case G_IM_SIZ_4b: palette = 16  * 2 * rdp_tile.palette; break;	// Should we disable this hack if gTMEMemulation is enabled?
 			case G_IM_SIZ_8b: palette = 0; break;	// Fixes Harvest Moon's bad texturing and main menu logo
 		}
 

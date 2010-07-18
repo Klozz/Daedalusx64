@@ -65,17 +65,12 @@ struct RomSettings
 	bool				DynarecSupported;
 	bool				DynarecStackOptimisation;
 	bool				DynarecLoopOptimisation;
-	bool				TLBHackEnabled;
 	bool				DoubleDisplayEnabled;
 	bool				SimulateDoubleDisabled;
-	bool				ViewPortHackEnabled;
-	bool				FlatShadeDisabled;
 	bool				CleanSceneEnabled;
-	bool				NeedHackforZelda;
-	bool				FlushTrisHack;
 	bool				IncreaseVI_Event;
 	bool				CheckN64FPUsageDisable;
-	bool				MemoryAccessOptimisation;
+	bool				TMEMemulation;
 
 	u32					RescanCount;
 	

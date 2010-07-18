@@ -54,18 +54,13 @@ extern bool gDynarecStackOptimisation;	// Enable the dynarec stack optmisation
 extern bool gDynarecLoopOptimisation;	// Enable the dynarec loop optmisation
 extern bool gOSHooksEnabled;			// Apply os-hooks
 extern bool	gSpeedSyncEnabled;
-extern bool gTLBHackEnabled;
 extern bool gDoubleDisplayEnabled;
 extern bool gSimulateDoubleDisabled;
 extern bool	gIncreaseVI_Event;
 extern bool gCheckN64FPUsageDisable;
-extern bool gMemoryAccessOptimisation;
+extern bool gTMEMemulation;
 //ToDo: Needs moving to Graphics plugin config
-extern bool gViewPortHackEnabled;
-extern bool gFlatShadeDisabled;
 extern bool	gCleanSceneEnabled;
-extern bool gNeedHackforZelda;
-extern bool	gFlushTrisHack;
 extern u32	gCheckTextureHashFrequency;
 //ToDo: Needs moving to Input plugin config
 extern u32	gControllerIndex;	

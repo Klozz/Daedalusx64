@@ -1398,7 +1398,7 @@ bool PSPRenderer::FlushTris()
 
 	// Hack for Conker BFD || no vertices to render? //Corn
 	extern bool bConkerHideShadow;
-	if( (gFlushTrisHack && bConkerHideShadow) || num_vertices == 0)
+	if( (g_ROM.GameHacks == CONKER && bConkerHideShadow) || num_vertices == 0)
 	{
 		DAEDALUS_ERROR("Warning: Hack for Conker shadow || No Vtx to render" );
 		m_dwNumIndices = 0;
@@ -1408,7 +1408,7 @@ bool PSPRenderer::FlushTris()
 
 	// Hack for Pilotwings 64
 	static bool skipNext=false;
-	if( gFlushTrisHack )
+	if( g_ROM.GameHacks == PILOT_WINGS )
 	{
 		if ( (g_DI.Address == g_CI.Address) && gRDPOtherMode.z_cmp+gRDPOtherMode.z_upd > 0 )
 		{

@@ -639,7 +639,7 @@ void CFragment::Assemble( CCodeBufferManager * p_manager,
 
 		CJumpLocation	branch_jump( NULL );
 
-		CJumpLocation	exception_handler_jump( p_generator->GenerateOpCode( ti, ti.BranchDelaySlot, p_branch, &branch_jump, ti.Usage.Memory) );
+		CJumpLocation	exception_handler_jump( p_generator->GenerateOpCode( ti, ti.BranchDelaySlot, p_branch, &branch_jump) );
 
 		if( exception_handler_jump.IsSet() )
 		{
@@ -703,7 +703,7 @@ void CFragment::Assemble( CCodeBufferManager * p_manager,
 			}
 
 
-			CJumpLocation	exception_handler_jump( p_generator->GenerateOpCode( ti, true, NULL, NULL, ti.Usage.Memory) );
+			CJumpLocation	exception_handler_jump( p_generator->GenerateOpCode( ti, true, NULL, NULL) );
 
 			if( exception_handler_jump.IsSet() )
 			{

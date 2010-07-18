@@ -633,9 +633,9 @@ void Memory_InitTables()
 	}
 
 	// Hack the TLB Map per game
-	if (gTLBHackEnabled) 
+	if (g_ROM.GameHacks == GOLDEN_EYE) 
 	{
-		Memory_Tlb_Hack(); //Enabled for GoldenEye via roms.ini
+		Memory_Tlb_Hack();
 	}
 }
 

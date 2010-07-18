@@ -183,7 +183,7 @@ u32 VertexStride[] =
 	2		// Kirby 64
 };
 u32 gVertexStride;
-u32 ucode_ver;
+static u32 ucode_ver;
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
 //                      Dumping                         //
@@ -1528,17 +1528,17 @@ void DLParser_SetScissor( MicroCodeCommand command )
 	u32 mode = command.scissor.mode;
 	u32 x1   = command.scissor.x1;
 	u32 y1   = command.scissor.y1;
-	u32 address  = RDPSegAddr(command.inst.cmd1);
+	u32 addr = RDPSegAddr(command.inst.cmd1);
 
 	use(mode);
 
-	if (gViewPortHackEnabled && g_CI.Address%0x100 != 0 )
+	if ( g_ROM.GameHacks == SUPER_BOWLING && g_CI.Address%0x100 != 0 )
 	{
 		// right half screen
-		RDP_MoveMemViewport( address );
+		RDP_MoveMemViewport( addr );
 	}
 
-	DL_PF("    x0=%d y0=%d x1=%d y1=%d mode=%d", x0/4, y0/4, x1/4, y1/4, mode);
+	DL_PF("    x0=%d y0=%d x1=%d y1=%d mode=%d addr=%08X", x0/4, y0/4, x1/4, y1/4, mode, addr);
 
 	// Set the cliprect now...
 	if ( x0 < x1 && y0 < y1 )
@@ -1640,12 +1640,13 @@ void DLParser_LoadBlock( MicroCodeCommand command )
 
 	gRDPStateManager.LoadBlock( tile_idx, src_offset, swapped );
 
-#if RDP_EMULATE_TMEM
-	RDP_TileSize tile;
-	tile.cmd0 = command.inst.cmd0;
-	tile.cmd1 = command.inst.cmd1;
-	RDP_LoadBlock( tile );
-#endif
+	if( gTMEMemulation )
+	{
+		RDP_TileSize tile;
+		tile.cmd0 = command.inst.cmd0;
+		tile.cmd1 = command.inst.cmd1;
+		RDP_LoadBlock( tile );
+	}
 }
 
 //*****************************************************************************
@@ -1932,16 +1933,12 @@ void DLParser_SetCombine( MicroCodeCommand command )
 
 	u64 mux = (((u64)mux0) << 32) | (u64)mux1;
 
-	if(gFlushTrisHack)
+	if( g_ROM.GameHacks == CONKER )
 	{
 		if( mux1 == 0xffd21f0f && mux0 == 0x00ffe9ff )
-		{
 			bConkerHideShadow = true;
-		}
 		else
-		{
 			bConkerHideShadow = false;
-		}
 	}
 
 	RDP_SetMux( mux );

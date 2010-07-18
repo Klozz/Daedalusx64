@@ -413,7 +413,58 @@ void ROM_Unload()
 
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
+void SpecificGameHacks( const ROMHeader & id )
+{
+	// Match cartID to determine if to appply XX hack to XX rom (I'm not 100% sure if cartID is unique per game though)
+	// What I know is that cartID is the same even if countryID is different ex: E,J,U
+	// I'm not sure if my assumption is correct, if it isn't we can switch to a different method.
+	// Easiest method but slowest should be using strncmp, but I like to avoid it in all causes..
+	// Another method I like could be calculate CRC1 and CRC2.
 
+	switch(id.CartID)
+	{
+	case 0x4547:
+		DBGConsole_Msg(0, "[YGolden Eye TLB Hack Found]");
+		g_ROM.GameHacks = GOLDEN_EYE;
+		break;
+	case 0x5742:
+		DBGConsole_Msg(0, "[YViewport Hack Found]");
+		g_ROM.GameHacks = SUPER_BOWLING;
+		break;
+	case 0x5546:
+		DBGConsole_Msg(0, "[YConker's Flushtris Hack Found]");
+		g_ROM.GameHacks = CONKER;
+		break;
+	case 0x5750:
+		DBGConsole_Msg(0, "[YPilot Wing's Flushtris Hack Found]");
+		g_ROM.GameHacks = PILOT_WINGS;
+		break;
+	case 0x5257:
+		DBGConsole_Msg(0, "[YWave Racer CullDl Hack Found]");
+		g_ROM.GameHacks = WAVE_RACER;
+		break;
+	case 0x4c5a:
+		DBGConsole_Msg(0, "[YZelda OOT Hacks Found]");
+		g_ROM.GameHacks = ZELDA_OOT;
+		break;
+	case 0x535a:
+		DBGConsole_Msg(0, "[YZelda MM Hacks Found]");
+		g_ROM.GameHacks = ZELDA_MM;
+		break;
+	case 0x3954:
+		DBGConsole_Msg(0, "[YFlat Shade Hack Found]");
+		g_ROM.GameHacks = TIGERS_HONEY_HUNT;
+		break;
+	default:
+		DBGConsole_Msg(0, "[YNo Game Specific Hack Was Found]");
+		g_ROM.GameHacks = NO_GAME_HACK;
+		break;
+
+	}
+}
 
 //*****************************************************************************
 // Copy across text, null terminate, and strip spaces
@@ -492,7 +543,6 @@ bool ROM_LoadFile(const RomID & rom_id, const RomSettings & settings, const SRom
 	g_ROM.TvType = ROM_GetTvTypeFromID( g_ROM.rh.CountryID );
 
 	DumpROMInfo( g_ROM.rh );
-
 	//
 	//
 	//
@@ -505,6 +555,8 @@ bool ROM_LoadFile(const RomID & rom_id, const RomSettings & settings, const SRom
 	DBGConsole_Msg(0, "Check Texture Hash Freq: [G%d]", gCheckTextureHashFrequency);
 	DBGConsole_Msg(0, "SpeedSync: [G%s]", gSpeedSyncEnabled ? "on" : "off");
 	DBGConsole_Msg(0, "DynaRec: [G%s]", gDynarecEnabled ? "on" : "off");
+
+	SpecificGameHacks( g_ROM.rh );
 
 	//Patch_ApplyPatches();
 

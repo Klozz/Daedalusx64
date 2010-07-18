@@ -56,7 +56,6 @@ struct DList
     u32 limit;
 };
 
-extern u32 ucode_ver;
 extern u32 gSegments[16];
 const  u32 MAX_RAM_ADDRESS = (8*1024*1024);
 extern u32 gVertexStride;

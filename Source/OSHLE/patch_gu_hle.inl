@@ -404,6 +404,14 @@ TEST_DISABLE_GU_FUNCS
 u32 Patch_guNormalize_Mario()
 {
 TEST_DISABLE_GU_FUNCS
+
+	// Disable guNormalize_Mario for Mario Kart, since it brakes the flag in main screen
+	// and in-game pause menu.
+	if( g_ROM.GameHacks == MARIO_KART ) 
+	{
+		return PATCH_RET_NOT_PROCESSED0(guNormalize);
+	}
+
 	u32 sX = gGPR[REG_a0]._u32_0;
 	u32 sY = gGPR[REG_a1]._u32_0;
 	u32 sZ = gGPR[REG_a2]._u32_0;
@@ -435,7 +443,6 @@ TEST_DISABLE_GU_FUNCS
 	memcpy(&y, &fY, sizeof(u32));
 	memcpy(&z, &fZ, sizeof(u32));
 
-
 /*	g_dwNumNormalize++;
 	if ((g_dwNumNormalize % 1000) == 0)
 	{
@@ -445,8 +452,6 @@ TEST_DISABLE_GU_FUNCS
 	Write32Bits(sX, x);
 	Write32Bits(sY, y);
 	Write32Bits(sZ, z);
-
-
 
 	return PATCH_RET_JR_RA;
 }

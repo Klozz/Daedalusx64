@@ -109,6 +109,9 @@ enum EGameHacks
 	ZELDA_OOT,
 	ZELDA_MM,
 	TIGERS_HONEY_HUNT,
+	MARIO_KART,
+	BATMAN,
+	NASCAR
 };
 
 //*****************************************************************************

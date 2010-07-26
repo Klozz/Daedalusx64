@@ -48,6 +48,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "ConfigOptions.h"
 
+#ifndef DAEDALUS_SILENT
+//*****************************************************************************
+//
+//*****************************************************************************
+const char *gGameHackNames[12] = 
+{
+	"No Game Specific Hack",
+	"TLB Hack", 
+	"Viewport Hack", 
+	"Conker's Flushtris Hack", 
+	"Pilot Wings' Flushtris Hack",
+	"GBI0 CullDl Disabled Hack",
+	"Zelda MM Hacks", 
+	"Zelda OOT Hacks",
+	"Flat Shade Disabled Hack",
+	"Patch guNormalize Mario Disabled Hack",
+	"Z-Fighting Hack",
+	"Depth Hack"
+};
+#endif
+
 //*****************************************************************************
 // This isn't really the most appropriate place. Need to check with
 // the graphics plugin really
@@ -57,12 +78,10 @@ u32 g_dwNumFrames = 0;
 //*****************************************************************************
 //
 //*****************************************************************************
-static void ROM_GetRomNameFromHeader( std::string & rom_name, const ROMHeader & header );
-
 RomInfo g_ROM;
 
-static void DumpROMInfo( const ROMHeader & header );
 
+#ifndef DAEDALUS_SILENT
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -86,7 +105,7 @@ void DumpROMInfo( const ROMHeader & header )
 	DBGConsole_Msg(0, "CountryID:       0x%02x - '%c'", header.CountryID, (char)header.CountryID);
 	DBGConsole_Msg(0, "Unknown5:        0x%02x", header.Unknown5);
 }
-
+#endif
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -424,45 +443,25 @@ void SpecificGameHacks( const ROMHeader & id )
 	// Easiest method but slowest should be using strncmp, but I like to avoid it in all causes..
 	// Another method I like could be calculate CRC1 and CRC2.
 
-	switch(id.CartID)
+	switch( id.CartID )
 	{
-	case 0x4547:
-		DBGConsole_Msg(0, "[YGolden Eye TLB Hack Found]");
-		g_ROM.GameHacks = GOLDEN_EYE;
-		break;
-	case 0x5742:
-		DBGConsole_Msg(0, "[YViewport Hack Found]");
-		g_ROM.GameHacks = SUPER_BOWLING;
-		break;
-	case 0x5546:
-		DBGConsole_Msg(0, "[YConker's Flushtris Hack Found]");
-		g_ROM.GameHacks = CONKER;
-		break;
-	case 0x5750:
-		DBGConsole_Msg(0, "[YPilot Wing's Flushtris Hack Found]");
-		g_ROM.GameHacks = PILOT_WINGS;
-		break;
-	case 0x5257:
-		DBGConsole_Msg(0, "[YWave Racer CullDl Hack Found]");
-		g_ROM.GameHacks = WAVE_RACER;
-		break;
-	case 0x4c5a:
-		DBGConsole_Msg(0, "[YZelda OOT Hacks Found]");
-		g_ROM.GameHacks = ZELDA_OOT;
-		break;
-	case 0x535a:
-		DBGConsole_Msg(0, "[YZelda MM Hacks Found]");
-		g_ROM.GameHacks = ZELDA_MM;
-		break;
-	case 0x3954:
-		DBGConsole_Msg(0, "[YFlat Shade Hack Found]");
-		g_ROM.GameHacks = TIGERS_HONEY_HUNT;
+	case 0x4547: g_ROM.GameHacks = GOLDEN_EYE; break;
+	case 0x5742: g_ROM.GameHacks = SUPER_BOWLING; break;
+	case 0x5546: g_ROM.GameHacks = CONKER; break;
+	case 0x5750: g_ROM.GameHacks = PILOT_WINGS; break;
+	case 0x5257: g_ROM.GameHacks = WAVE_RACER; break;
+	case 0x4c5a: g_ROM.GameHacks = ZELDA_OOT; break;
+	case 0x535a: g_ROM.GameHacks = ZELDA_MM; break;
+	case 0x3954: g_ROM.GameHacks = TIGERS_HONEY_HUNT; break;
+	case 0x544b: g_ROM.GameHacks = MARIO_KART; break;
+	case 0x514a: g_ROM.GameHacks = BATMAN; break;
+	case 0x324e: 
+	case 0x4339:
+		g_ROM.GameHacks = NASCAR;
 		break;
 	default:
-		DBGConsole_Msg(0, "[YNo Game Specific Hack Was Found]");
 		g_ROM.GameHacks = NO_GAME_HACK;
 		break;
-
 	}
 }
 
@@ -542,11 +541,16 @@ bool ROM_LoadFile(const RomID & rom_id, const RomSettings & settings, const SRom
 	g_ROM.settings = settings;
 	g_ROM.TvType = ROM_GetTvTypeFromID( g_ROM.rh.CountryID );
 
+#ifndef DAEDALUS_SILENT
 	DumpROMInfo( g_ROM.rh );
+#endif
 	//
 	//
 	//
 	preferences.Apply();
+
+	// Game specific hacks..
+	SpecificGameHacks( g_ROM.rh );
 
 	DBGConsole_Msg(0, "[G%s]", g_ROM.settings.GameName.c_str());
 	DBGConsole_Msg(0, "This game has been certified as [G%s] (%s)", g_ROM.settings.Comment.c_str(), g_ROM.settings.Info.c_str());
@@ -555,8 +559,7 @@ bool ROM_LoadFile(const RomID & rom_id, const RomSettings & settings, const SRom
 	DBGConsole_Msg(0, "Check Texture Hash Freq: [G%d]", gCheckTextureHashFrequency);
 	DBGConsole_Msg(0, "SpeedSync: [G%s]", gSpeedSyncEnabled ? "on" : "off");
 	DBGConsole_Msg(0, "DynaRec: [G%s]", gDynarecEnabled ? "on" : "off");
-
-	SpecificGameHacks( g_ROM.rh );
+	DBGConsole_Msg(0, "Aplying: [G%s]", gGameHackNames[g_ROM.GameHacks]);
 
 	//Patch_ApplyPatches();
 

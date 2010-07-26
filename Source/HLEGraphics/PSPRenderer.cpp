@@ -775,7 +775,10 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 {
 	DAEDALUS_PROFILE( "PSPRenderer::RenderUsingCurrentBlendMode" );
 
-	if ( disable_zbuffer )
+	// Hack for nascar games and road rash..to be honest I don't know why these games are so different...might be tricky to have a proper fix..
+	// Hack for batman... PSP hardware doesn't support proper to get rid off zfighting... hack to point ZMODE_DEC..
+	// Needs more work, it's too aggressive in Zelda and makes some text in Batman invisible.
+	if ( disable_zbuffer || g_ROM.GameHacks == NASCAR && gRDPOtherMode.depth_source || g_ROM.GameHacks == BATMAN && IsZModeDecal() )
 	{
 		sceGuDisable(GU_DEPTH_TEST);
 		sceGuDepthMask( GL_TRUE );	// GL_TRUE to disable z-writes

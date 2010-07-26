@@ -1768,7 +1768,7 @@ PATCH_SYMBOL_FUNCTION(guMtxIdent)
 //                   guNormalize
 ////////////////////////////////////////////////////////////
 BEGIN_PATCH_XREFS(guNormalize_Mario)
-//  PATCH_XREF_FUNCTION(12, sqrtf)
+	PATCH_XREF_FUNCTION(12, sqrtf)
 END_PATCH_XREFS()
 BEGIN_PATCH_XREFS(guNormalize_Rugrats)
 END_PATCH_XREFS()

@@ -1,6 +1,6 @@
 #define TEST_DISABLE_GU_FUNCS DAEDALUS_PROFILE(__FUNCTION__);
 
-static const u32 s_IdentMatrixF[16] = 
+const u32 s_IdentMatrixF[16] = 
 {
 	0x3f800000,	0x00000000, 0x00000000,	0x00000000,
 	0x00000000,	0x3f800000, 0x00000000,	0x00000000,
@@ -8,17 +8,28 @@ static const u32 s_IdentMatrixF[16] =
 	0x00000000, 0x00000000, 0x00000000,	0x3f800000
 };
 
-static const u32 s_IdentMatrixL[16] = 
+const u32 s_IdentMatrixL[16] = 
 {
-	0x00010000,	0x00000000,
-	0x00000001,	0x00000000,
-	0x00000000,	0x00010000,
-	0x00000000,	0x00000001,
+	0x00010000,	0x00000000,	0x00000001,	0x00000000,
+	0x00000000,	0x00010000,	0x00000000,	0x00000001,
+	0x00000000, 0x00000000,	0x00000000,	0x00000000,
+	0x00000000, 0x00000000,	0x00000000,	0x00000000
+};
 
-	0x00000000, 0x00000000,
-	0x00000000,	0x00000000,
-	0x00000000, 0x00000000,
-	0x00000000,	0x00000000
+u32 s_ScaleMatrixF[16] = 
+{
+	0x3f800000,	0x00000000, 0x00000000,	0x00000000,
+	0x00000000,	0x3f800000, 0x00000000,	0x00000000,
+	0x00000000, 0x00000000, 0x3f800000,	0x00000000,
+	0x00000000, 0x00000000, 0x00000000,	0x3f800000
+};
+
+u32 s_TransMatrixF[16] = 
+{
+	0x3f800000,	0x00000000, 0x00000000,	0x00000000,
+	0x00000000,	0x3f800000, 0x00000000,	0x00000000,
+	0x00000000, 0x00000000, 0x3f800000,	0x00000000,
+	0x00000000, 0x00000000, 0x00000000,	0x3f800000
 };
 
 u32 Patch_guMtxIdentF()
@@ -30,13 +41,13 @@ TEST_DISABLE_GU_FUNCS
 
 	u8 * pMtxBase = (u8 *)ReadAddress(address);
 
+	QuickWrite512Bits(pMtxBase, (u8 *)s_IdentMatrixF);
+
+//	memcpy(pMtxBase, s_IdentMatrixF, sizeof(s_IdentMatrixF));
 
 	// 0x00000000 is 0.0 in IEEE fp
 	// 0x3f800000 is 1.0 in IEEE fp
-	memcpy(pMtxBase, s_IdentMatrixF, sizeof(s_IdentMatrixF));
-
-	/*
-	QuickWrite32Bits(pMtxBase, 0x00, 0x3f800000);
+/*	QuickWrite32Bits(pMtxBase, 0x00, 0x3f800000);
 	QuickWrite32Bits(pMtxBase, 0x04, 0);
 	QuickWrite32Bits(pMtxBase, 0x08, 0);
 	QuickWrite32Bits(pMtxBase, 0x0c, 0);
@@ -63,7 +74,6 @@ TEST_DISABLE_GU_FUNCS
 		DBGConsole_Msg(0, "%d guMtxIdentF calls intercepted", g_dwNumMtxIdent);
 	}*/
 
-
 	return PATCH_RET_JR_RA;
 }
 
@@ -80,7 +90,10 @@ TEST_DISABLE_GU_FUNCS
 
 	// This is a lot faster than the real method, which calls
 	// glMtxIdentF followed by guMtxF2L
-	memcpy(pMtxBase, s_IdentMatrixL, sizeof(s_IdentMatrixL));
+
+	QuickWrite512Bits(pMtxBase, (u8 *)s_IdentMatrixL);
+//	memcpy(pMtxBase, s_IdentMatrixL, sizeof(s_IdentMatrixL));
+
 /*	QuickWrite32Bits(pMtxBase, 0x00, 0x00010000);
 	QuickWrite32Bits(pMtxBase, 0x04, 0x00000000);
 	QuickWrite32Bits(pMtxBase, 0x08, 0x00000001);
@@ -111,24 +124,27 @@ TEST_DISABLE_GU_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
-
-
 u32 Patch_guTranslateF()
 {
 TEST_DISABLE_GU_FUNCS
 	u32 address = gGPR[REG_a0]._u32_0;
-	u32 sX = gGPR[REG_a1]._u32_0;
-	u32 sY = gGPR[REG_a2]._u32_0;
-	u32 sZ = gGPR[REG_a3]._u32_0;
+//	u32 sX = gGPR[REG_a1]._u32_0;
+//	u32 sY = gGPR[REG_a2]._u32_0;
+//	u32 sZ = gGPR[REG_a3]._u32_0;
+
+	s_TransMatrixF[12] = gGPR[REG_a1]._u32_0;
+	s_TransMatrixF[13] = gGPR[REG_a2]._u32_0;
+	s_TransMatrixF[14] = gGPR[REG_a3]._u32_0;
 
 	//DBGConsole_Msg(0, "guTranslateF(0x%08x, %f, %f, %f)", address, sX, sY, sZ);
 
 	u8 * pMtxBase = (u8 *)ReadAddress(address);
 
+	QuickWrite512Bits(pMtxBase, (u8 *)s_TransMatrixF);
 
 	// 0x00000000 is 0.0 in IEEE fp
 	// 0x3f800000 is 1.0 in IEEE fp
-	QuickWrite32Bits(pMtxBase, 0x00, 0x3f800000);
+/*	QuickWrite32Bits(pMtxBase, 0x00, 0x3f800000);
 	QuickWrite32Bits(pMtxBase, 0x04, 0);
 	QuickWrite32Bits(pMtxBase, 0x08, 0);
 	QuickWrite32Bits(pMtxBase, 0x0c, 0);
@@ -141,18 +157,19 @@ TEST_DISABLE_GU_FUNCS
 	QuickWrite32Bits(pMtxBase, 0x20, 0);
 	QuickWrite32Bits(pMtxBase, 0x24, 0);
 	QuickWrite32Bits(pMtxBase, 0x28, 0x3f800000);
-	QuickWrite32Bits(pMtxBase, 0x2c, 0);
+	QuickWrite32Bits(pMtxBase, 0x2c, 0);	
 
 	QuickWrite32Bits(pMtxBase, 0x30, sX);
 	QuickWrite32Bits(pMtxBase, 0x34, sY);
 	QuickWrite32Bits(pMtxBase, 0x38, sZ);
-	QuickWrite32Bits(pMtxBase, 0x3c, 0x3f800000);
+	QuickWrite32Bits(pMtxBase, 0x3c, 0x3f800000);	*/
 
 /*	g_dwNumMtxTranslate++;
 	if ((g_dwNumMtxTranslate % 10000) == 0)
 	{
 		DBGConsole_Msg(0, "%d guMtxTranslate calls intercepted", g_dwNumMtxTranslate);
 	}*/
+
 	return PATCH_RET_JR_RA;
 }
 
@@ -170,7 +187,6 @@ TEST_DISABLE_GU_FUNCS
 	memcpy(&sY, &gGPR[REG_a2]._u32_0, sizeof(f32));
 	memcpy(&sZ, &gGPR[REG_a3]._u32_0, sizeof(f32));
 
-
 	//DBGConsole_Msg(0, "guTranslate(0x%08x, %f, %f, %f) ra:0x%08x",
 	//	address, ToFloat(sX), ToFloat(sY), ToFloat(sZ), (u32)g_qwGPR[REG_ra]);
 
@@ -187,7 +203,6 @@ TEST_DISABLE_GU_FUNCS
 
 	u32 z1hibits = (z & 0xFFFF0000) | (one >> 16);
 	u32 z1lobits = (z << 16) | (one & 0x0000FFFF);
-
 
 	// 0x00000000 is 0.0 in IEEE fp
 	// 0x3f800000 is 1.0 in IEEE fp
@@ -224,17 +239,25 @@ u32 Patch_guScaleF()
 {
 TEST_DISABLE_GU_FUNCS
 	u32 address = gGPR[REG_a0]._u32_0;
-	u32 sX = gGPR[REG_a1]._u32_0;
-	u32 sY = gGPR[REG_a2]._u32_0;
-	u32 sZ = gGPR[REG_a3]._u32_0;
+//	u32 sX = gGPR[REG_a1]._u32_0;
+//	u32 sY = gGPR[REG_a2]._u32_0;
+//	u32 sZ = gGPR[REG_a3]._u32_0;
+
+	s_ScaleMatrixF[ 0] = gGPR[REG_a1]._u32_0;
+	s_ScaleMatrixF[ 5] = gGPR[REG_a2]._u32_0;
+	s_ScaleMatrixF[10] = gGPR[REG_a3]._u32_0;
 
 	//DBGConsole_Msg(0, "guScaleF(0x%08x, %f, %f, %f)", address, sX, sY, sZ);
 
 	u8 * pMtxBase = (u8 *)ReadAddress(address);
 
+	QuickWrite512Bits(pMtxBase, (u8 *)s_ScaleMatrixF);
+
+//	memcpy(pMtxBase, s_ScaleMatrixF, sizeof(s_ScaleMatrixF));
+
 	// 0x00000000 is 0.0 in IEEE fp
 	// 0x3f800000 is 1.0 in IEEE fp
-	QuickWrite32Bits(pMtxBase, 0x00, sX);
+/*	QuickWrite32Bits(pMtxBase, 0x00, sX);
 	QuickWrite32Bits(pMtxBase, 0x04, 0);
 	QuickWrite32Bits(pMtxBase, 0x08, 0);
 	QuickWrite32Bits(pMtxBase, 0x0c, 0);
@@ -252,7 +275,7 @@ TEST_DISABLE_GU_FUNCS
 	QuickWrite32Bits(pMtxBase, 0x30, 0);
 	QuickWrite32Bits(pMtxBase, 0x34, 0);
 	QuickWrite32Bits(pMtxBase, 0x38, 0);
-	QuickWrite32Bits(pMtxBase, 0x3c, 0x3f800000);
+	QuickWrite32Bits(pMtxBase, 0x3c, 0x3f800000); */
 
 /*	g_dwNumMtxScale++;
 	if ((g_dwNumMtxScale % 10000) == 0)
@@ -280,7 +303,6 @@ TEST_DISABLE_GU_FUNCS
 	//DBGConsole_Msg(0, "guScale(0x%08x, %f, %f, %f)", address, sX, sY, sZ);
 
 	u8 * pMtxBase = (u8 *)ReadAddress(address);
-
 
 	u32 x = (u32)(sX * fScale);
 	u32 y = (u32)(sY * fScale);
@@ -373,7 +395,6 @@ TEST_DISABLE_GU_FUNCS
 		memcpy(&FA, &FA_tmp, sizeof(f32));
 		memcpy(&FB, &FB_tmp, sizeof(f32));
 
-		
 		// Should be TRUNC
 		a = (u32)(FA * fScale);
 		b = (u32)(FB * fScale);
@@ -383,16 +404,13 @@ TEST_DISABLE_GU_FUNCS
 
 		QuickWrite32Bits(pMtxLBaseHiBits, row*8 + 4, hibits);
 		QuickWrite32Bits(pMtxLBaseLoBits, row*8 + 4, lobits);
-
 	}
-
 
 /*	g_dwNumMtxF2L++;
 	if ((g_dwNumMtxF2L % 10000) == 0)
 	{
 		DBGConsole_Msg(0, "%d guMtxF2L calls intercepted", g_dwNumMtxF2L);
 	}*/
-
 
 	return PATCH_RET_JR_RA;
 }
@@ -543,9 +561,9 @@ TEST_DISABLE_GU_FUNCS
 	f32 fTpB = fT + fB;
 	f32 fFpN = fF + fN;
 
-	f32 sx = (2 * scale)/fRmL;
-	f32 sy = (2 * scale)/fTmB;
-	f32 sz = (-2 * scale)/fFmN;
+	f32 sx =  2.0f * scale / fRmL;
+	f32 sy =  2.0f * scale / fTmB;
+	f32 sz = -2.0f * scale / fFmN;
 
 	f32 tx = -fRpL * scale / fRmL;
 	f32 ty = -fTpB * scale / fTmB;
@@ -568,25 +586,25 @@ TEST_DISABLE_GU_FUNCS
 	3 -(l+r)/(r-l) -(t+b)/(t-b) -(f+n)/(f-n)     1*/
 
 	// 0x3f800000 is 1.0 in IEEE fp
-	QuickWrite32Bits(pMtxBase, 0x00, L );
+	QuickWrite32Bits(pMtxBase, 0x00, L);
 	QuickWrite32Bits(pMtxBase, 0x04, 0);
 	QuickWrite32Bits(pMtxBase, 0x08, 0);
 	QuickWrite32Bits(pMtxBase, 0x0c, 0);
 
 	QuickWrite32Bits(pMtxBase, 0x10, 0);
-	QuickWrite32Bits(pMtxBase, 0x14, R  );
+	QuickWrite32Bits(pMtxBase, 0x14, R);
 	QuickWrite32Bits(pMtxBase, 0x18, 0);
 	QuickWrite32Bits(pMtxBase, 0x1c, 0);
 
 	QuickWrite32Bits(pMtxBase, 0x20, 0);
 	QuickWrite32Bits(pMtxBase, 0x24, 0);
-	QuickWrite32Bits(pMtxBase, 0x28, B  );
+	QuickWrite32Bits(pMtxBase, 0x28, B);
 	QuickWrite32Bits(pMtxBase, 0x2c, 0);
 
-	QuickWrite32Bits(pMtxBase, 0x30, T  );
-	QuickWrite32Bits(pMtxBase, 0x34, N  );
-	QuickWrite32Bits(pMtxBase, 0x38, F  );
-	QuickWrite32Bits(pMtxBase, 0x3c, S  );
+	QuickWrite32Bits(pMtxBase, 0x30, T);
+	QuickWrite32Bits(pMtxBase, 0x34, N);
+	QuickWrite32Bits(pMtxBase, 0x38, F);
+	QuickWrite32Bits(pMtxBase, 0x3c, S);
 
 	return PATCH_RET_JR_RA;
 }

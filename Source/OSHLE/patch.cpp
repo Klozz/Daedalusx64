@@ -1042,6 +1042,13 @@ inline void QuickWrite32Bits( u8 *p_base, u32 offset, u32 value )
 	*(u32 *)(p_base + offset) = value;
 }
 
+typedef struct { u32 value[8]; } u256;
+inline void QuickWrite512Bits( u8 *p_base, u8 *p_source )
+{
+	*(u256 *)(p_base     ) = *(u256 *)(p_source     );
+	*(u256 *)(p_base + 32) = *(u256 *)(p_source + 32);
+}
+
 #include "patch_thread_hle.inl"
 #include "patch_cache_hle.inl"
 #include "patch_ai_hle.inl"

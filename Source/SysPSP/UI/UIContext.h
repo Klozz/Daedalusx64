@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Graphics/ColourValue.h"
 #include "UIAlignment.h"
+#include "Utility/Preferences.h"
 
 class CNativeTexture;
 class v2;
@@ -50,10 +51,27 @@ class CUIContext
 
 		virtual void				RenderTexture( const CNativeTexture * texture, const v2 & tl, const v2 & wh, c32 colour ) = 0;
 		virtual void				RenderTexture( const CNativeTexture * texture, s32 x, s32 y, c32 colour ) = 0;
-				void				ClearBackground()		{ ClearBackground( c32::Black ); }
+				//void				ClearBackground()		{ ClearBackground( c32::Black ); }
 		virtual void				ClearBackground( c32 colour ) = 0;
 		virtual void				DrawRect( s32 x, s32 y, u32 w, u32 h, c32 colour ) = 0;
 		virtual void				DrawLine( s32 x0, s32 y0, s32 x1, s32 y1, c32 colour ) = 0;
+
+		// ToDo : Move this out of here..
+		void ClearBackground()
+		{ 
+			c32		BACKGROUND_COLOUR = c32::Black;	// default color
+
+			switch( gGlobalPreferences.GuiColor )
+			{
+			case BLACK:		BACKGROUND_COLOUR = c32::Black;		break;
+			case RED:		BACKGROUND_COLOUR = c32::Red;		break;
+			case GREEN:		BACKGROUND_COLOUR = c32::Green;		break;
+			case MAGENTA:	BACKGROUND_COLOUR = c32::Magenta;	break;
+			case BLUE:		BACKGROUND_COLOUR = c32::Blue;		break;
+			}
+			ClearBackground( BACKGROUND_COLOUR ); 
+		}
+
 
 		enum EFontStyle
 		{

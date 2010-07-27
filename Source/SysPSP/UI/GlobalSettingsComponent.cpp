@@ -180,6 +180,32 @@ namespace
 		}
 	};
 
+	class CColorSetting : public CUISetting
+	{
+	public:
+		CColorSetting(  const char * name, const char * description )
+			:	CUISetting( name, description )
+		{
+		}
+
+		virtual	void		OnNext()		{ gGlobalPreferences.GuiColor = EGuiColor( (gGlobalPreferences.GuiColor+1) % NUM_COLOR_TYPES ); }
+		virtual	void		OnPrevious()	{ gGlobalPreferences.GuiColor = EGuiColor( (gGlobalPreferences.GuiColor + NUM_COLOR_TYPES - 1) % NUM_COLOR_TYPES ); }
+
+		virtual const char *	GetSettingName() const
+		{
+			switch ( gGlobalPreferences.GuiColor )
+			{
+				case BLACK:		return "Black ( Default )";
+				case RED:		return "Red";
+				case GREEN:		return "Green";
+				case MAGENTA:	return "Magenta";
+				case BLUE:		return "Blue";
+			}
+			DAEDALUS_ERROR( "Unknown Color" );
+			return "?";
+		}
+	};
+
 }
 
 //*************************************************************************************
@@ -240,7 +266,7 @@ IGlobalSettingsComponent::IGlobalSettingsComponent( CUIContext * p_context )
 	}
 	else
 		gGlobalPreferences.TVEnable = false;
-
+	mElements.Add( new CColorSetting( "GUI Color", "Change GUI Color" ) );
 	mElements.Add( new CFilterSetting( "Texture Filter", "N64 Filtering Type: Default( Fast, Average Quality), Nearest Filter (Faster, Low Quality), Linear Filter (Slower, Best Quality)" ) );
 	mElements.Add( new CAdjustDeadzoneSetting( mpContext, "Stick Deadzone", "Adjust the size of the deadzone applied to the PSP stick while playing. Press Start/X to edit." ) );
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.SoftwareClipping, "Software Clipping",	"Enable software clipping of vertices. Disable this for a small speedup, at the expense of image quality.", "Enabled", "Disabled" ) );

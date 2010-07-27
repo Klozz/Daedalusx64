@@ -329,9 +329,6 @@ TEST_DISABLE_GU_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
-
-
-
 u32 Patch_guMtxF2L()
 {
 TEST_DISABLE_GU_FUNCS
@@ -400,109 +397,101 @@ TEST_DISABLE_GU_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
-
-u32 Patch_guNormalize_Mario()
+u32 Patch_guNormalize_Mario() //Using VFPU and no memcpy (works without hack?) //Corn
 {
 TEST_DISABLE_GU_FUNCS
-
-	// Disable guNormalize_Mario for Mario Kart, since it brakes the flag in main screen
-	// and in-game pause menu.
-	if( g_ROM.GameHacks == MARIO_KART ) 
-	{
-		return PATCH_RET_NOT_PROCESSED0(guNormalize);
-	}
 
 	u32 sX = gGPR[REG_a0]._u32_0;
 	u32 sY = gGPR[REG_a1]._u32_0;
 	u32 sZ = gGPR[REG_a2]._u32_0;
 
-	u32 x = Read32Bits(sX);
-	u32 y = Read32Bits(sY);
-	u32 z = Read32Bits(sZ);
+	union
+	{
+		u32 x;
+		f32 fX;
+	}uX;
 
-	f32 fX, fY, fZ;
+	union
+	{
+		u32 y;
+		f32 fY;
+	}uY;
 
-/*	f32 fX = *(f32*)&x;
-	f32 fY = *(f32*)&y;
-	f32 fZ = *(f32*)&z;
-*/
-	memcpy(&fX, &x, sizeof(f32));
-	memcpy(&fY, &y, sizeof(f32));
-	memcpy(&fZ, &z, sizeof(f32));
+	union
+	{
+		u32 z;
+		f32 fZ;
+	}uZ;
+
+	uX.x = Read32Bits(sX);
+	uY.y = Read32Bits(sY);
+	uZ.z = Read32Bits(sZ);
 
 	//DBGConsole_Msg(0, "guNormalize(0x%08x %f, 0x%08x %f, 0x%08x %f)",
-	//	sX, fX, sY, fY, sZ, fZ);
+	// sX, uX.fX, sY, uY.fY, sZ, uZ.fZ);
 
-	f32 fLenRecip = 1.0f / pspFpuSqrt((fX * fX) + (fY * fY) + (fZ * fZ));
+	vfpu_norm_3Dvec(&uX.fX, &uY.fY, &uZ.fZ);
 
-	fX *= fLenRecip;
-	fY *= fLenRecip;
-	fZ *= fLenRecip;
-
-	memcpy(&x, &fX, sizeof(u32));
-	memcpy(&y, &fY, sizeof(u32));
-	memcpy(&z, &fZ, sizeof(u32));
-
-/*	g_dwNumNormalize++;
+	/* g_dwNumNormalize++;
 	if ((g_dwNumNormalize % 1000) == 0)
 	{
-		DBGConsole_Msg(0, "%d guNormalize calls intercepted", g_dwNumNormalize);
+	DBGConsole_Msg(0, "%d guNormalize calls intercepted", g_dwNumNormalize);
 	}*/
 
-	Write32Bits(sX, x);
-	Write32Bits(sY, y);
-	Write32Bits(sZ, z);
+	Write32Bits(sX, uX.x);
+	Write32Bits(sY, uY.y);
+	Write32Bits(sZ, uZ.z);
 
 	return PATCH_RET_JR_RA;
 }
 
 // NOT the same function as guNormalise_Mario
 // This take one pointer, not 3
-u32 Patch_guNormalize_Rugrats()
+u32 Patch_guNormalize_Rugrats() //Using VFPU and no memcpy //Corn
 {
 TEST_DISABLE_GU_FUNCS
 	u32 sX = gGPR[REG_a0]._u32_0;
 	u32 sY = sX + 4;
 	u32 sZ = sX + 8;
 
-	u32 x = Read32Bits(sX);
-	u32 y = Read32Bits(sY);
-	u32 z = Read32Bits(sZ);
+	DBGConsole_Msg(0, "Rugrats");
 
-	f32 fX, fY, fZ;
+	union
+	{
+		u32 x;
+		f32 fX;
+	}uX;
 
-	/*	f32 fX = *(f32*)&x;
-		f32 fY = *(f32*)&y;
-		f32 fZ = *(f32*)&z;
-	*/
-	memcpy(&fX, &x, sizeof(f32));
-	memcpy(&fY, &y, sizeof(f32));
-	memcpy(&fZ, &z, sizeof(f32));
+	union
+	{
+		u32 y;
+		f32 fY;
+	}uY;
+
+	union
+	{
+		u32 z;
+		f32 fZ;
+	}uZ;
+
+	uX.x = Read32Bits(sX);
+	uY.y = Read32Bits(sY);
+	uZ.z = Read32Bits(sZ);
 
 	//DBGConsole_Msg(0, "guNormalize(0x%08x %f, 0x%08x %f, 0x%08x %f)",
-	//	sX, fX, sY, fY, sZ, fZ);
+	// sX, fX, sY, fY, sZ, fZ);
 
-	f32 fLenRecip = 1.0f / ((fX * fX) + (fY * fY) + (fZ * fZ));
+	vfpu_norm_3Dvec(&uX.fX, &uY.fY, &uZ.fZ);
 
-	fX *= fLenRecip;
-	fY *= fLenRecip;
-	fZ *= fLenRecip;
-
-	memcpy(&x, &fX, sizeof(u32));
-	memcpy(&y, &fY, sizeof(u32));
-	memcpy(&z, &fZ, sizeof(u32));
-
-/*	g_dwNumNormalize++;
+	/* g_dwNumNormalize++;
 	if ((g_dwNumNormalize % 1000) == 0)
 	{
-		DBGConsole_Msg(0, "%d guNormalize calls intercepted", g_dwNumNormalize);
+	DBGConsole_Msg(0, "%d guNormalize calls intercepted", g_dwNumNormalize);
 	}*/
 
-	Write32Bits(sX, x);
-	Write32Bits(sY, y);
-	Write32Bits(sZ, z);
-
-
+	Write32Bits(sX, uX.x);
+	Write32Bits(sY, uY.y);
+	Write32Bits(sZ, uZ.z);
 
 	return PATCH_RET_JR_RA;
 }

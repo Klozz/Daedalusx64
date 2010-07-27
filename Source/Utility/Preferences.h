@@ -61,6 +61,16 @@ enum EFrameskipValue
 	NUM_FRAMESKIP_VALUES,
 };
 
+enum EGuiColor
+{
+	BLACK=0, // Default..
+	RED,
+	GREEN,
+	MAGENTA,
+	BLUE,
+};
+const u32 NUM_COLOR_TYPES = BLUE+1;
+
 enum EForceTextureFilter
 {
 	FORCE_DEFAULT_FILTER = 0,
@@ -93,6 +103,7 @@ struct SGlobalPreferences
 	bool						LogMicrocodes;
 	bool						LargeROMBuffer;
 	EForceTextureFilter			ForceTextureFilter;
+	EGuiColor					GuiColor;
 
 	float						StickMinDeadzone;
 	float						StickMaxDeadzone;

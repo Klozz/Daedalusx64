@@ -157,6 +157,15 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		FLOAT_SETTING( gGlobalPreferences, StickMinDeadzone, defaults );
 		FLOAT_SETTING( gGlobalPreferences, StickMaxDeadzone, defaults );
 
+		if( section->FindProperty( "GuiColor", &property ) )
+		{
+			u32 value( property->GetIntValue(defaults.GuiColor) );
+			if( value < NUM_COLOR_TYPES ) //value >= 0 && not needed as it's always True
+			{
+				gGlobalPreferences.GuiColor = EGuiColor( value );
+			}
+		}
+
 		if( section->FindProperty( "ForceTextureFilter", &property ) )
 		{
 			u32 value( property->GetIntValue(defaults.ForceTextureFilter) );
@@ -322,6 +331,7 @@ void IPreferences::Commit()
 		OUTPUT_BOOL( gGlobalPreferences, BatteryWarning, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, LogMicrocodes, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, LargeROMBuffer, defaults );
+		OUTPUT_INT( gGlobalPreferences, GuiColor, defaults )
 		OUTPUT_INT( gGlobalPreferences, ForceTextureFilter, defaults );
 		OUTPUT_FLOAT( gGlobalPreferences, StickMinDeadzone, defaults );
 		OUTPUT_FLOAT( gGlobalPreferences, StickMaxDeadzone, defaults );
@@ -389,6 +399,7 @@ SGlobalPreferences::SGlobalPreferences()
 ,	BatteryWarning( false )
 ,	LogMicrocodes( false )
 ,	LargeROMBuffer( true )
+,	GuiColor( BLACK )
 ,	ForceTextureFilter( FORCE_DEFAULT_FILTER )
 ,	StickMinDeadzone( 0.28f )
 ,	StickMaxDeadzone( 1.0f )

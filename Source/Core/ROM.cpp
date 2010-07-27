@@ -63,8 +63,8 @@ const char *gGameHackNames[12] =
 	"Zelda MM Hacks", 
 	"Zelda OOT Hacks",
 	"Flat Shade Disabled Hack",
-	"Patch guNormalize Mario Disabled Hack",
-	"Z-Fighting Hack",
+	"Rumble Pak Disabled Hack",
+	"No Z-Fighting Hack",
 	"Depth Hack"
 };
 #endif
@@ -437,24 +437,18 @@ void ROM_Unload()
 //*****************************************************************************
 void SpecificGameHacks( const ROMHeader & id )
 {
-	// Match cartID to determine if to appply XX hack to XX rom (I'm not 100% sure if cartID is unique per game though)
-	// What I know is that cartID is the same even if countryID is different ex: E,J,U
-	// I'm not sure if my assumption is correct, if it isn't we can switch to a different method.
-	// Easiest method but slowest should be using strncmp, but I like to avoid it in all causes..
-	// Another method I like could be calculate CRC1 and CRC2.
-
 	switch( id.CartID )
 	{
-	case 0x4547: g_ROM.GameHacks = GOLDEN_EYE; break;
-	case 0x5742: g_ROM.GameHacks = SUPER_BOWLING; break;
-	case 0x5546: g_ROM.GameHacks = CONKER; break;
-	case 0x5750: g_ROM.GameHacks = PILOT_WINGS; break;
-	case 0x5257: g_ROM.GameHacks = WAVE_RACER; break;
-	case 0x4c5a: g_ROM.GameHacks = ZELDA_OOT; break;
-	case 0x535a: g_ROM.GameHacks = ZELDA_MM; break;
-	case 0x3954: g_ROM.GameHacks = TIGERS_HONEY_HUNT; break;
-	case 0x544b: g_ROM.GameHacks = MARIO_KART; break;
-	case 0x514a: g_ROM.GameHacks = BATMAN; break;
+	case 0x4547: g_ROM.GameHacks = GOLDEN_EYE;			break;
+	case 0x5742: g_ROM.GameHacks = SUPER_BOWLING;		break;
+	case 0x5546: g_ROM.GameHacks = CONKER;				break;
+	case 0x5750: g_ROM.GameHacks = PILOT_WINGS;			break;
+	case 0x5257: g_ROM.GameHacks = WAVE_RACER;			break;
+	case 0x4c5a: g_ROM.GameHacks = ZELDA_OOT;			break;
+	case 0x535a: g_ROM.GameHacks = ZELDA_MM;			break;
+	case 0x3954: g_ROM.GameHacks = TIGERS_HONEY_HUNT;	break;
+	case 0x5443: g_ROM.GameHacks = CHAMELEON_TWIST;		break;
+	case 0x514a: g_ROM.GameHacks = BATMAN;				break;
 	case 0x324e: 
 	case 0x4339:
 		g_ROM.GameHacks = NASCAR;

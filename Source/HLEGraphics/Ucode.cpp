@@ -18,8 +18,7 @@
 */
 
 #include "Ucode.h"
-
-#include "../stdafx.h"
+#include "stdafx.h"
 
 const MicroCodeInstruction gInstructionLookup[13][256] =
 {
@@ -524,57 +523,65 @@ const MicroCodeInstruction gInstructionLookup[13][256] =
 			//g0
 	},
 
-
 	// uCode 1 - F3DEX Last Legion
 	// 00-3f
-	// games: Last Legion, Toukon, Toukon 2 
+	// Games: Last Legion, Toukon, Toukon 2 
 	{
-		DLParser_GBI1_SpNoop, DLParser_GBI1_Mtx, DLParser_GBI1_Reserved, DLParser_GBI1_MoveMem,
+		DLParser_RSP_Last_Legion_0x00, DLParser_GBI1_Mtx, DLParser_GBI1_Reserved, DLParser_GBI1_MoveMem,
 		DLParser_GBI1_Vtx, DLParser_GBI1_Reserved, DLParser_GBI1_DL, DLParser_GBI1_Reserved,
 		DLParser_GBI1_Reserved, DLParser_GBI1_Sprite2DBase, DLParser_Nothing, DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
+		//10
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
+		//20
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
+		//30
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
-		// 40-7f: unused
+		//40-7f: unused
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
+		//50
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
+		//60
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
-		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		//70		
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		// 80-bf: Immediate commands
+		DLParser_RSP_Last_Legion_0x80, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
+		//90		
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
+		//a0
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
-		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
-		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
-		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
-		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
-		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_GBI1_LoadUCode, 
+		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_GBI1_LoadUCode,
+		//b0		
 		DLParser_GBI1_BranchZ, DLParser_GBI1_Tri2, DLParser_GBI1_ModifyVtx, DLParser_GBI1_RDPHalf_2,
 		DLParser_GBI1_RDPHalf_1, DLParser_GBI1_Line3D, DLParser_GBI1_ClearGeometryMode, DLParser_GBI1_SetGeometryMode,
 		DLParser_GBI1_EndDL, DLParser_GBI1_SetOtherModeL, DLParser_GBI1_SetOtherModeH, DLParser_GBI1_Texture,
@@ -584,14 +591,17 @@ const MicroCodeInstruction gInstructionLookup[13][256] =
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_TriRSP, DLParser_TriRSP, DLParser_TriRSP, DLParser_TriRSP,
 		DLParser_TriRSP, DLParser_TriRSP, DLParser_TriRSP, DLParser_TriRSP,
+		//d0
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
+		//e0
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, 
 		DLParser_TexRect_Last_Legion, DLParser_TexRectFlip, DLParser_RDPLoadSync, DLParser_RDPPipeSync,
 		DLParser_RDPTileSync, DLParser_RDPFullSync, DLParser_SetKeyGB, DLParser_SetKeyR,
 		DLParser_SetConvert, DLParser_SetScissor, DLParser_SetPrimDepth, DLParser_RDPSetOtherMode,
+		//f0
 		DLParser_LoadTLut, DLParser_Nothing, DLParser_SetTileSize, DLParser_LoadBlock, 
 		DLParser_LoadTile, DLParser_SetTile, DLParser_FillRect, DLParser_SetFillColor,
 		DLParser_SetFogColor, DLParser_SetBlendColor, DLParser_SetPrimColor, DLParser_SetEnvColor,

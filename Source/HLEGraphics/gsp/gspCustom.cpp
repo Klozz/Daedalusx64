@@ -90,14 +90,14 @@ void DLParser_DumpVtxInfoDKR(u32 address, u32 v0_idx, u32 num_verts)
 
 void DLParser_GBI0_Vtx_Gemini( MicroCodeCommand command )
 {
-	u32 address = RDPSegAddr((command.inst.cmd1));
-	u32 v0_idx =  (((command.inst.cmd0)>>9)&0x1F);
-	u32 num_verts  = (((command.inst.cmd0) >>19 )&0x1F);
+	u32 address = RDPSegAddr(command.inst.cmd1);
+	u32 v0_idx =  ((command.inst.cmd0>>9)&0x1F);
+	u32 num_verts  = ((command.inst.cmd0>>19)&0x1F);
 
 
 	DL_PF("    Address 0x%08x, v0: %d, Num: %d", address, v0_idx, num_verts);
 
-	if (v0_idx >= 32)
+	if(v0_idx >= 32)
 		v0_idx = 31;
 
 	if ((v0_idx + num_verts) > 32)
@@ -105,12 +105,6 @@ void DLParser_GBI0_Vtx_Gemini( MicroCodeCommand command )
 		DBGConsole_Msg(0, "Warning, attempting to load into invalid vertex positions");
 		num_verts = 32 - v0_idx;
 	}
-
-
-	//if( dwAddr == 0 || dwAddr < 0x2000)
-	//{
-	//	address = (command.inst.cmd1)+RDPSegAddr(dwDKRVtxAddr);
-	//}
 
 	// Check that address is valid...
 	if ((address + (num_verts*16)) > MAX_RAM_ADDRESS)
@@ -131,38 +125,36 @@ void DLParser_GBI0_Vtx_Gemini( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-// MOVE!
 void DLParser_GBI0_Vtx_ShadowOfEmpire( MicroCodeCommand command )
 {
-      u32 address = RDPSegAddr((command.inst.cmd1));
-      u32 len = ((command.inst.cmd0))&0xffff;
+	u32 address = RDPSegAddr(command.inst.cmd1);
+	u32 len = (command.inst.cmd0)&0xffff;
+	u32 n= ((command.inst.cmd0 >> 4) & 0xfff) / 33 + 1;
+	u32 v0 = 0;
 
-      u32 n= (((command.inst.cmd0) >> 4) & 0xfff) / 33 + 1;
-      u32 v0 = 0;
+	use(len);
 
-      use(len);
+	DL_PF("    Address 0x%08x, v0: %d, Num: %d, Length: 0x%04x", address, v0, n, len);
 
-      DL_PF("    Address 0x%08x, v0: %d, Num: %d, Length: 0x%04x", address, v0, n, len);
+	if(v0 >= 32)
+	v0 = 31;
 
-      if (v0 >= 32)
-              v0 = 31;
-      
-      if ((v0 + n) > 32)
-      {
-              DBGConsole_Msg(0, "Warning, attempting to load into invalid vertex positions");
-              n = 32 - v0;
-      }
+	if ((v0 + n) > 32)
+	{
+		DBGConsole_Msg(0, "Warning, attempting to load into invalid vertex positions");
+		n = 32 - v0;
+	}
 
-      PSPRenderer::Get()->SetNewVertexInfoVFPU( address, v0, n );
+	PSPRenderer::Get()->SetNewVertexInfoVFPU( address, v0, n );
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-      gNumVertices += n;
-      DLParser_DumpVtxInfo( address, v0, n );
+	gNumVertices += n;
+	DLParser_DumpVtxInfo( address, v0, n );
 #endif
 }
 
 //*****************************************************************************
-// MOVE
+// 
 //*****************************************************************************
 // BB2k
 // DKR
@@ -455,49 +447,50 @@ void DLParser_RSP_Last_Legion_0x80( MicroCodeCommand command )
 void DLParser_RSP_Last_Legion_0x00( MicroCodeCommand command )
 {
 
-      gDisplayListStack.back().addr += 16;
-	  DL_PF("DLParser_RSP_Last_Legion_0x00");
+	gDisplayListStack.back().addr += 16;
+	DL_PF("DLParser_RSP_Last_Legion_0x00");
 
-      if( (command.inst.cmd0) == 0 && (command.inst.cmd1) )
-      {
-              u32 newaddr = RDPSegAddr((command.inst.cmd1));
-              if( newaddr >= MAX_RAM_ADDRESS )
-              {
-                      DLParser_PopDL();
-                      return;
-              }
+	if( (command.inst.cmd0) == 0 && (command.inst.cmd1) )
+	{
+		u32 newaddr = RDPSegAddr((command.inst.cmd1));
+		if( newaddr >= MAX_RAM_ADDRESS )
+		{
+			DLParser_PopDL();
+			return;
+		}
 
-              u32 pc1 = *(u32 *)(g_pu8RamBase + newaddr+8*1+4);
-              u32 pc2 = *(u32 *)(g_pu8RamBase + newaddr+8*4+4);
-              pc1 = RDPSegAddr(pc1);
-              pc2 = RDPSegAddr(pc2);
+		u32 pc1 = *(u32 *)(g_pu8RamBase + newaddr+8*1+4);
+		u32 pc2 = *(u32 *)(g_pu8RamBase + newaddr+8*4+4);
+		pc1 = RDPSegAddr(pc1);
+		pc2 = RDPSegAddr(pc2);
 
-              if( pc1 && pc1 != 0xffffff && pc1 < MAX_RAM_ADDRESS)
-              {
-                      // Need to call both DL
-                      DList dl;
-                      dl.addr = pc1;
-                      dl.limit = ~0;
-                      gDisplayListStack.push_back(dl);
-              }
+		if( pc1 && pc1 != 0xffffff && pc1 < MAX_RAM_ADDRESS)
+		{
+			// Need to call both DL
+			DList dl;
+			dl.addr = pc1;
+			dl.limit = ~0;
+			gDisplayListStack.push_back(dl);
+		}
 
-              if( pc2 && pc2 != 0xffffff && pc2 < MAX_RAM_ADDRESS )
-              {
-                      DList dl;
-                      dl.addr = pc2;
-                      dl.limit = ~0;
-                      gDisplayListStack.push_back(dl);
-              }
-      }
-      else if( (command.inst.cmd1) == 0 )
-      {
-              DLParser_PopDL();
-      }
-      else
-      {
-              DLParser_Nothing( command );
-              DLParser_PopDL();
-      }
+		if( pc2 && pc2 != 0xffffff && pc2 < MAX_RAM_ADDRESS )
+		{
+			// Need to call both DL
+			DList dl;
+			dl.addr = pc2;
+			dl.limit = ~0;
+			gDisplayListStack.push_back(dl);
+		}
+	}
+	else if( (command.inst.cmd1) == 0 )
+	{
+		DLParser_PopDL();
+	}
+	else
+	{
+		DLParser_Nothing( command );
+		DLParser_PopDL();
+	}
 }
 
 //*****************************************************************************

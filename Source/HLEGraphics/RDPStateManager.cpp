@@ -213,13 +213,18 @@ const TextureInfo & CRDPStateManager::GetTextureDescriptor( u32 idx ) const
 		// Quick hack to fix "black textures" in several games for ex: Majora's Mask, hopefully won't mess out anything
 		// This isn't quiet right for most games like Majora's Mask or Animal Crossing...but it works quiet well in games like Flying Dragon and HM64
 		// Maybe multiple is wrong, or we're missing something else?
+		// Brakes Aerogauge, anyways basic tmem option is enough to fix the black textures..
 
 		switch (rdp_tile.size)
 		{
-			case G_IM_SIZ_4b: palette = 16  * 2 * rdp_tile.palette; break;	// Should we disable this hack if gTMEMemulation is enabled?
-			case G_IM_SIZ_8b: palette = 0; break;	// Fixes Harvest Moon's bad texturing and main menu logo
+			//case G_IM_SIZ_4b: palette = 16  * 2 * rdp_tile.palette; break;	// Should we disable this hack if gTMEMemulation is enabled?
+			case G_IM_SIZ_8b: 
+				palette = 0; 
+				break;	// Fixes Harvest Moon's bad texturing and main menu logo
+			default:
+				palette = rdp_tile.palette;
+				break;
 		}
-
 
 		ti.SetTmemAddress( rdp_tile.tmem );
 		ti.SetTLutIndex( palette );

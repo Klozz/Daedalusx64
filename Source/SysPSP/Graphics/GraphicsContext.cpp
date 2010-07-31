@@ -239,7 +239,7 @@ void IGraphicsContext::BeginFrame()
 	}
 	else
 	{
-		sceGuStart(GU_DIRECT,list);
+		sceGuStart(GU_DIRECT,list[0]);
 	}
 }
 

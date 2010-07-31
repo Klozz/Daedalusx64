@@ -284,10 +284,10 @@ bool Memory_Init()
 
 			// Necessary?
 			//memset(g_pMemoryBuffers[m], 0, region_size);
-			if (region_size < 0x100) // dirty, check if this is a I/O range
+			/*if (region_size < 0x100) // dirty, check if this is a I/O range
 			{
 				g_pMemoryBuffers[m] = MAKE_UNCACHED_PTR(g_pMemoryBuffers[m]);
-			}
+			}*/
 		}
 	}
 
@@ -384,33 +384,27 @@ static void Memory_Tlb_Hack()
 {
 	if(RomBuffer::IsRomLoaded() && RomBuffer::IsRomAddressFixed())
 	{
-		   u32 tlbOffset = 0;
-		   switch(g_ROM.rh.CountryID)
-		   {
-		   case 0x45:
-				   tlbOffset = 0x34b30;
-				   break;
-		   case 0x4A:
-				   tlbOffset = 0x34b70;
-				   break;
-		   case 0x50:
-				   tlbOffset = 0x329f0;
-				   break;
-		   default:
-				   // we can not handle
-				   return;
-		   }
+	   u32 tlbOffset = 0;
+	   switch(g_ROM.rh.CountryID)
+	   {
+	   case 0x45: tlbOffset = 0x34b30; break;
+	   case 0x4A: tlbOffset = 0x34b70; break;
+	   case 0x50: tlbOffset = 0x329f0; break;
+	   default:
+		   DAEDALUS_ERROR(" GE TLB out of bound !");	// we can not handle
+		   return;
+	   }
 
-		   u32 start_addr = 0x7F000000 >> 18;
-		   u32 end_addr   = 0x7FFFFFFF >> 18;
-		   const void *    p_rom_address( RomBuffer::GetFixedRomBaseAddress() );
+	   u32 start_addr = 0x7F000000 >> 18;
+	   u32 end_addr   = 0x7FFFFFFF >> 18;
+	   const void *    p_rom_address( RomBuffer::GetFixedRomBaseAddress() );
 
-		   void *pointerLookupTableEntry = (void*)(reinterpret_cast< u32 >( p_rom_address) + tlbOffset - (start_addr << 18));
+	   void *pointerLookupTableEntry = (void*)(reinterpret_cast< u32 >( p_rom_address) + tlbOffset - (start_addr << 18));
 
-		   for (u32 i = start_addr; i <= end_addr; i++)
-		   {
-				g_ReadAddressPointerLookupTable[i] = pointerLookupTableEntry;
-		   }
+	   for (u32 i = start_addr; i <= end_addr; i++)
+	   {
+			g_ReadAddressPointerLookupTable[i] = pointerLookupTableEntry;
+	   }
 	}
 
 	g_ReadAddressPointerLookupTable[0x70000000 >> 18] = (void*)(reinterpret_cast< u32 >( g_pMemoryBuffers[MEM_RD_RAM]) - 0x70000000);
@@ -934,7 +928,7 @@ void MemoryUpdateDP( u32 flags )
 void MemoryUpdateMI( u32 value )
 {
 	u32 mi_intr_mask_reg = Memory_MI_GetRegister(MI_INTR_MASK_REG);
-	u32 mi_intr_reg		 = Memory_MI_GetRegister(MI_INTR_REG);
+	//u32 mi_intr_reg		 = Memory_MI_GetRegister(MI_INTR_REG);
 
 	//bool interrupts_live_before((mi_intr_mask_reg & mi_intr_reg) != 0);
 
@@ -957,7 +951,7 @@ void MemoryUpdateMI( u32 value )
     else if((value & MI_INTR_MASK_CLR_DP)) mi_intr_mask_reg &= ~MI_INTR_MASK_DP;
 
 	// Looks suspicious
-	Memory_MI_SetRegister( MI_INTR_REG, mi_intr_reg );	
+	//Memory_MI_SetRegister( MI_INTR_REG, mi_intr_reg );	
 	Memory_MI_SetRegister( MI_INTR_MASK_REG, mi_intr_mask_reg );
 
 	R4300_Interrupt_UpdateCause3();

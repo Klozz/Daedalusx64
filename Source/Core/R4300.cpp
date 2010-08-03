@@ -42,22 +42,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define		R4300_CALL_MAKE_OP( var )	OpCode	var;	var._u32 = op_code_bits
 
-/*
-#ifdef _DEBUG
-inline void CHECK_R0() {}
-inline void CHECK_R0()
-{
-	if (gGPR[0]._u64 != 0)
-	{
-		DBGConsole_Msg(0, "Warning: Attempted write to r0!");
-		gGPR[0]._u64 = 0;			// Ensure r0 is always zero (easier than trapping writes?)
-	}
-}
+#ifndef DAEDALUS_SILENT
 
-#else
-inline void CHECK_R0() {}
+#define CATCH_NAN_EXCEPTION(valX, valY) \
+	if(pspFpuIsNaN(valX) || pspFpuIsNaN(valY)) \
+	{ \
+		DBGConsole_Msg( 0, "[MShould throw fp nan exception?]" ); \
+		return; \
+	}
+
 #endif
-*/
+
 //
 //	Abstract away the different rounding modes between targets
 //
@@ -2619,11 +2614,7 @@ static void R4300_CALL_TYPE R4300_Cop1_S_NGE( R4300_CALL_SIGNATURE )
 	f32 fY = LoadFPR_Single( op_code.ft );
 
 #ifndef DAEDALUS_SILENT
-	if (pspFpuIsNaN(fX + fY))
-	{
-		DBGConsole_Msg( 0, "[MShould throw fp nan exception S_NGE?]" );
-		//return;
-	}
+	CATCH_NAN_EXCEPTION( fX, fY );
 #endif
 
 	if(fX < fY)
@@ -2642,11 +2633,7 @@ static void R4300_CALL_TYPE R4300_Cop1_S_LE( R4300_CALL_SIGNATURE ) 				// Compa
 	f32 fY = LoadFPR_Single( op_code.ft );
 
 #ifndef DAEDALUS_SILENT
-	if(pspFpuIsNaN(fX + fY))
-	{
-		DBGConsole_Msg( 0, "[MShould throw fp nan exception S_LE?]" );
-		//return;
-	}
+	CATCH_NAN_EXCEPTION( fX, fY );
 #endif
 
 	if ( fX <= fY )
@@ -2664,11 +2651,7 @@ static void R4300_CALL_TYPE R4300_Cop1_S_SEQ( R4300_CALL_SIGNATURE )
 	f32 fY = LoadFPR_Single( op_code.ft );
 
 #ifndef DAEDALUS_SILENT
-	if (pspFpuIsNaN(fX + fY))
-	{
-		DBGConsole_Msg( 0, "[MShould throw fp nan exception S_SEQ?]" );
-		//return;
-	}
+	CATCH_NAN_EXCEPTION( fX, fY );
 #endif
 
 	if(fX == fY)
@@ -2701,12 +2684,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_NGLE( R4300_CALL_SIGNATURE )
 	use( fY );
 
 #ifndef DAEDALUS_SILENT
-	if(pspFpuIsNaN(fX + fY))
-	{
-		DBGConsole_Msg( 0, "[MShould throw fp nan exception S_NGLE?]" );
-		//return;
-	}
+	CATCH_NAN_EXCEPTION( fX, fY );
 #endif
+
 	gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
 }
 
@@ -2765,12 +2745,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_NGT( R4300_CALL_SIGNATURE )
 	f32 fY = LoadFPR_Single( op_code.ft );
 
 #ifndef DAEDALUS_SILENT
-	if( pspFpuIsNaN(fX + fY) )
-	{
-		DBGConsole_Msg( 0, "[MShould throw fp nan exception S_NGT?]" );
-		//return;
-	}
+	CATCH_NAN_EXCEPTION( fX, fY );
 #endif
+
 	if ( fX <= fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
 	else
@@ -2801,12 +2778,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_SF( R4300_CALL_SIGNATURE )
 	use( fY );
 
 #ifndef DAEDALUS_SILENT
-	if(pspFpuIsNaN(fX + fY))
-	{
-		DBGConsole_Msg( 0, "[MShould throw fp nan exception S_SF?]" );
-		//return;
-	}
+	CATCH_NAN_EXCEPTION( fX, fY );
 #endif
+
 	gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
 }
 
@@ -2818,12 +2792,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_NGL( R4300_CALL_SIGNATURE )
 	f32 fY = LoadFPR_Single( op_code.ft );
 
 #ifndef DAEDALUS_SILENT
-	if(pspFpuIsNaN(fX) || pspFpuIsNaN(fY))
-	{
-		DBGConsole_Msg( 0, "[MShould throw fp nan exception S_NGL?]" );
-		//return;
-	}
+	CATCH_NAN_EXCEPTION( fX, fY );
 #endif
+
 	if ( fX == fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
 	else
@@ -3133,7 +3104,7 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_UN( R4300_
 	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
 	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
 
-	if( pspFpuIsNaN(fX) || pspFpuIsNaN(fY) )
+	if( pspFpuIsNaN(fX + fY) )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
 	else
 		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
@@ -3146,7 +3117,7 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_UEQ( R4300
 	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
 	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
 
-	if( pspFpuIsNaN(fX) || pspFpuIsNaN(fY) || fX == fY )
+	if( pspFpuIsNaN(fX + fY) || fX == fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
 	else
 		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
@@ -3159,7 +3130,7 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_OLT( R4300
 	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
 	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
 
-	if( !pspFpuIsNaN(fX) && !pspFpuIsNaN(fY) && fX < fY )
+	if( !pspFpuIsNaN(fX + fY) && fX < fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
 	else
 		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
@@ -3172,7 +3143,7 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ULT( R4300
 	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
 	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
 
-	if( pspFpuIsNaN(fX) || pspFpuIsNaN(fY) || fX < fY )
+	if( pspFpuIsNaN(fX + fY) || fX < fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
 	else
 		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
@@ -3185,7 +3156,7 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_OLE( R4300
 	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
 	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
 
-	if( !pspFpuIsNaN(fX) && !pspFpuIsNaN(fY) && fX <= fY )
+	if( !pspFpuIsNaN(fX + fY) && fX <= fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
 	else
 		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
@@ -3198,7 +3169,7 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ULE( R4300
 	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
 	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
 
-	if( pspFpuIsNaN(fX) || pspFpuIsNaN(fY) || fX <= fY )
+	if( pspFpuIsNaN(fX + fY) || fX <= fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
 	else
 		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
@@ -3211,13 +3182,13 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_SF( R4300_
 	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
 	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
 
+	use( fX );
+	use( fY );
+
 #ifndef DAEDALUS_SILENT
-	if(pspFpuIsNaN(fX + fY))
-	{
-		DBGConsole_Msg( 0, "[MShould throw fp nan exception D_SF?]" );
-		//return;
-	}
+	CATCH_NAN_EXCEPTION( fX, fY );
 #endif
+
 	gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
 }
 
@@ -3229,13 +3200,13 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_NGLE( R430
 	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
 	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
 
+	use( fX );
+	use( fY );
+
 #ifndef DAEDALUS_SILENT
-	if(pspFpuIsNaN(fX + fY))
-	{
-		DBGConsole_Msg( 0, "[MShould throw fp nan exception D_NGLE?]" );
-		//return;
-	}
+	CATCH_NAN_EXCEPTION( fX, fY );
 #endif
+
 	gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
 }
 
@@ -3247,12 +3218,9 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_SEQ( R4300
 	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
 
 #ifndef DAEDALUS_SILENT
-	if(pspFpuIsNaN(fX + fY))
-	{
-		DBGConsole_Msg( 0, "[MShould throw fp nan exception D_SEQ?]" );
-		//return;
-	}
+	CATCH_NAN_EXCEPTION( fX, fY );
 #endif
+
 	if( fX == fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
 	else
@@ -3268,12 +3236,9 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_NGL( R4300
 	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
 
 #ifndef DAEDALUS_SILENT
-	if(pspFpuIsNaN(fX + fY))
-	{
-		DBGConsole_Msg( 0, "[MShould throw fp nan exception D_NGL?]" );
-		//return;
-	}
+	CATCH_NAN_EXCEPTION( fX, fY );
 #endif
+
 	if( fX == fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
 	else
@@ -3288,12 +3253,9 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_NGE( R4300
 	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
 
 #ifndef DAEDALUS_SILENT
-	if(pspFpuIsNaN(fX + fY))
-	{
-		DBGConsole_Msg( 0, "[MShould throw fp nan exception D_NGE?]" );
-		//return;
-	}
+	CATCH_NAN_EXCEPTION( fX, fY );
 #endif
+
 	if( fX < fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
 	else
@@ -3308,11 +3270,7 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_NGT( R4300
 	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
 
 #ifndef DAEDALUS_SILENT
-	if(pspFpuIsNaN(fX + fY))
-	{
-		DBGConsole_Msg( 0, "[MShould throw fp nan exception D_NGT?]" );
-		//return;
-	}
+	CATCH_NAN_EXCEPTION( fX, fY );
 #endif
 	if( fX <= fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;

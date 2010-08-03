@@ -60,11 +60,11 @@ const char *gGameHackNames[12] =
 	"Conker's Flushtris Hack", 
 	"Pilot Wings' Flushtris Hack",
 	"GBI0 CullDl Disabled Hack",
-	"Zelda MM Hacks", 
-	"Zelda OOT Hacks",
+	"Zelda OOT Hacks", 
+	"Zelda MM Hacks",
 	"Flat Shade Disabled Hack",
 	"Rumble Pak Disabled Hack",
-	"No Z-Fighting Hack",
+	" 1/2 ZBuffer Hack",
 	"Depth Hack"
 };
 #endif
@@ -448,7 +448,7 @@ void SpecificGameHacks( const ROMHeader & id )
 	case 0x535a: g_ROM.GameHacks = ZELDA_MM;			break;
 	case 0x3954: g_ROM.GameHacks = TIGERS_HONEY_HUNT;	break;
 	case 0x5443: g_ROM.GameHacks = CHAMELEON_TWIST;		break;
-	case 0x514a: g_ROM.GameHacks = BATMAN;				break;
+	case 0x4f52: g_ROM.GameHacks = ROAD_RASH;			break;
 	case 0x324e: 
 	case 0x4339:
 		g_ROM.GameHacks = NASCAR;

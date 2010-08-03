@@ -201,61 +201,53 @@ void DebugBlender()
 void InitBlenderMode()					// Set Alpha Blender mode
 {
 	u32 blendmode = u32( gRDPOtherMode._u64 & 0xffff0000 );
-	u32 cycletype = gRDPOtherMode.cycle_type;
 
 	int		blend_op  = GU_ADD;
 	int		blend_src = GU_SRC_ALPHA;
 	int		blend_dst = GU_ONE_MINUS_SRC_ALPHA;
 	bool	enable_blend( false );
 
-	if ( cycletype == G_CYC_FILL )
+	switch( blendmode )
 	{
+	case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_PASS2 ):
+	case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_OPA2 ):
+	case MAKE_BLEND_MODE( BLEND_OPA1, BLEND_OPA2 ):
+	case MAKE_BLEND_MODE( BLEND_OPA1, BLEND_NOOP2 ):
+	case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_OPA2 ):
+	case MAKE_BLEND_MODE( BLEND_MEM1, BLEND_MEM2 ):
+	case MAKE_BLEND_MODE( BLEND_NOOP4, BLEND_NOOP2 ):		// cc08 || 0000 - SSV - TV window
+	case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_PASS3 ): // c800 || 3200 - F-Zero - Tracks
+	case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_PASS2 ): // c800 || 0302 - Hey You Pikachu - Body and Face
+	case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_NOOP1 ): // c800 || 0000 - F-Zero - Cars
+	case MAKE_BLEND_MODE( BLEND_FOG_3, BLEND_PASS2 ):		// c000 || 0302 - ISS64 - Ground
+	case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_NOOP1 ):		// 0c08 || 0000 - 1080 - Sky
+	case MAKE_BLEND_MODE( BLEND_FOG_APRIM1, BLEND_PASS2 ):	// c400 || 0302 - Donald Duck - Sky
+	case MAKE_BLEND_MODE( BLEND_FOG_APRIM1, BLEND_OPA2 ):	// c400 || 0011 - Donald Duck and GoldenEye - Items and Truck spots.
+	case MAKE_BLEND_MODE( BLEND_FOG_MEM_FOG_MEM, BLEND_PASS2 ):// 04c0 - :In * AFog + Fog * 1-A || 0302 - :In * 0 + In * 1 - Conker's face and body
 		enable_blend = false;
-	}
-	else
-	{
-		switch( blendmode )
-		{
-		case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_PASS2 ):
-		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_OPA2 ):
-		case MAKE_BLEND_MODE( BLEND_OPA1, BLEND_OPA2 ):
-		case MAKE_BLEND_MODE( BLEND_OPA1, BLEND_NOOP2 ):
-		case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_OPA2 ):
-		case MAKE_BLEND_MODE( BLEND_MEM1, BLEND_MEM2 ):
-		case MAKE_BLEND_MODE( BLEND_NOOP4, BLEND_NOOP2 ):		// cc08 || 0000 - SSV - TV window
-		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_PASS3 ): // c800 || 3200 - F-Zero - Tracks
-		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_PASS2 ): // c800 || 0302 - Hey You Pikachu - Body and Face
-		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_NOOP1 ): // c800 || 0000 - F-Zero - Cars
-		case MAKE_BLEND_MODE( BLEND_FOG_3, BLEND_PASS2 ):		// c000 || 0302 - ISS64 - Ground
-		case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_NOOP1 ):		// 0c08 || 0000 - 1080 - Sky
-		case MAKE_BLEND_MODE( BLEND_FOG_APRIM1, BLEND_PASS2 ):	// c400 || 0302 - Donald Duck - Sky
-		case MAKE_BLEND_MODE( BLEND_FOG_APRIM1, BLEND_OPA2 ):	// c400 || 0011 - Donald Duck and GoldenEye - Items and Truck spots.
-		case MAKE_BLEND_MODE( BLEND_FOG_MEM_FOG_MEM, BLEND_PASS2 ):// 04c0 - :In * AFog + Fog * 1-A || 0302 - :In * 0 + In * 1 - Conker's face and body
-			enable_blend = false;
-			break;
-		case MAKE_BLEND_MODE( BLEND_NOOP1, BLEND_XLU2 ):		// 0000 || 0010 - Hey You Pikachu - Shade
-		case MAKE_BLEND_MODE( BLEND_NOOP1, BLEND_NOOP2 ):
-		case MAKE_BLEND_MODE( BLEND_XLU1, BLEND_XLU2 ):
-		case MAKE_BLEND_MODE( BLEND_XLU1, BLEND_NOOP2 ):
-		case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_XLU2 ):
-		case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_XLU2 ):
-			blend_op = GU_ADD; blend_src = GU_SRC_ALPHA; blend_dst = GU_ONE_MINUS_SRC_ALPHA;
-			enable_blend = true;
-			break;
-		case MAKE_BLEND_MODE( BLEND_XLU1, BLEND_ADD2 ):			
-			blend_op = GU_ADD; blend_src = GU_SRC_COLOR; blend_dst = GU_DST_COLOR;	// Transparency
-			enable_blend = true;
-			break;
-		default:
+		break;
+	case MAKE_BLEND_MODE( BLEND_NOOP1, BLEND_XLU2 ):		// 0000 || 0010 - Hey You Pikachu - Shade
+	case MAKE_BLEND_MODE( BLEND_NOOP1, BLEND_NOOP2 ):
+	case MAKE_BLEND_MODE( BLEND_XLU1, BLEND_XLU2 ):
+	case MAKE_BLEND_MODE( BLEND_XLU1, BLEND_NOOP2 ):
+	case MAKE_BLEND_MODE( BLEND_PASS1, BLEND_XLU2 ):
+	case MAKE_BLEND_MODE( BLEND_FOG_ASHADE1, BLEND_XLU2 ):
+		blend_op = GU_ADD; blend_src = GU_SRC_ALPHA; blend_dst = GU_ONE_MINUS_SRC_ALPHA;
+		enable_blend = true;
+		break;
+	case MAKE_BLEND_MODE( BLEND_XLU1, BLEND_ADD2 ):			
+		blend_op = GU_ADD; blend_src = GU_SRC_COLOR; blend_dst = GU_DST_COLOR;	// Transparency
+		enable_blend = true;
+		break;
+	default:
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-			DebugBlender();
+		DebugBlender();
 #endif
-			DL_PF( "		 Blend: SRCALPHA/INVSRCALPHA (default: 0x%04x)", gRDPOtherMode.blender );
-			blend_op = GU_ADD; blend_src = GU_SRC_ALPHA; blend_dst = GU_ONE_MINUS_SRC_ALPHA;
-			enable_blend = true;
-			break;
-		}	
-	}
+		DL_PF( "		 Blend: SRCALPHA/INVSRCALPHA (default: 0x%04x)", gRDPOtherMode.blender );
+		blend_op = GU_ADD; blend_src = GU_SRC_ALPHA; blend_dst = GU_ONE_MINUS_SRC_ALPHA;
+		enable_blend = true;
+		break;
+	}	
 
 	if( enable_blend )
 	{

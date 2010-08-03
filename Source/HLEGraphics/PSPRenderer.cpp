@@ -775,10 +775,9 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 {
 	DAEDALUS_PROFILE( "PSPRenderer::RenderUsingCurrentBlendMode" );
 
-	// Hack for nascar games and road rash..to be honest I don't know why these games are so different...might be tricky to have a proper fix..
-	// Hack for batman... PSP hardware doesn't support proper to get rid off zfighting... hack to point ZMODE_DEC..
-	// Needs more work, it's too aggressive in Zelda and makes some text in Batman invisible.
-	if ( disable_zbuffer || g_ROM.GameHacks == NASCAR && gRDPOtherMode.depth_source || g_ROM.GameHacks == BATMAN && IsZModeDecal() )
+	// Hack for nascar games..to be honest I don't know why these games are so different...might be tricky to have a proper fix..
+	// Hack accuracy : works 100%
+	if ( disable_zbuffer || g_ROM.GameHacks == NASCAR && gRDPOtherMode.depth_source )
 	{
 		sceGuDisable(GU_DEPTH_TEST);
 		sceGuDepthMask( GL_TRUE );	// GL_TRUE to disable z-writes
@@ -793,9 +792,21 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 			if (m_bZBuffer)
 			{
 				if(gRDPOtherMode.z_cmp)
+				{
 					sceGuEnable(GU_DEPTH_TEST);
+					
+					// Fixes Zfighting issues we have on the PSP.
+					// Might need abit of tweaking though.
+					//
+					if( IsZModeDecal() )
+						sceGuDepthOffset(50.0f);	// We need atleast 40.0f to fix Mario 64's z-fighting issues.
+					else
+						sceGuDepthOffset(0);	// errg brakes Starfox and Nascar.. ToDo : Fix me !
+ 				}
 				else
+				{
 					sceGuDisable(GU_DEPTH_TEST);
+				}
 
 				sceGuDepthMask( gRDPOtherMode.z_upd ? GL_FALSE : GL_TRUE );	// GL_TRUE to disable z-writes
 			}
@@ -840,7 +851,11 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	//
 	// Initiate Blender
 	//
-	InitBlenderMode();
+	// Only update if 1CYCLE is enabled.
+	if( gRDPOtherMode.cycle_type == CYCLE_1CYCLE )
+	{
+		InitBlenderMode();
+	}
 	//
 	//
 	// I can't think why the hand in mario's menu screen is rendered with an opaque rendermode,
@@ -1052,6 +1067,9 @@ bool PSPRenderer::TexRect( u32 tile_idx, const v2 & xy0, const v2 & xy1, const v
 	//DL_PF( "      Screen:  %f,%f -> %f,%f", screen0.x, screen0.y, screen1.x, screen1.y );
 	//DL_PF( "      Texture: %f,%f -> %f,%f", tex_uv0.x, tex_uv0.y, tex_uv1.x, tex_uv1.y );
 
+	// Weird Road Rash...*sigh*
+	// Fixes 1/2 sky covering the screen issue in RR..
+	bool bIsZBuffer = (g_ROM.GameHacks == ROAD_RASH) ? false : true;
 
 	DaedalusVtx trv[ 6 ];
 
@@ -1078,7 +1096,7 @@ bool PSPRenderer::TexRect( u32 tile_idx, const v2 & xy0, const v2 & xy1, const v
 	trv[4] = DaedalusVtx( positions[ 0 ], 0xffffffff, tex_coords[ 0 ] );
 	trv[5] = DaedalusVtx( positions[ 3 ], 0xffffffff, tex_coords[ 3 ] );
 
-	return RenderTriangleList( trv, 6, true );
+	return RenderTriangleList( trv, 6, bIsZBuffer );
 }
 
 //*****************************************************************************

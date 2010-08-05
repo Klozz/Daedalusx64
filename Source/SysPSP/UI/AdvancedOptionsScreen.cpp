@@ -126,6 +126,7 @@ IAdvancedOptionsScreen::IAdvancedOptionsScreen( CUIContext * p_context, const Ro
 	mElements.Add( new CBoolSetting( &mRomPreferences.DoubleDisplayEnabled, "Double Display Lists", "Whether or not Double Display Lists are enabled", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.CheckN64FPUsageDisable, "Disable N64 FP Usage Check", "Disabling it can cause many bad side effects, on the other hand sometimes it can fix or improve some games",  "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.TMEMemulation, "Basic TMEM Emulation", "Whether partial emulation of the N64 texture memory area is enabled (This can slow down the emulator)", "Enabled", "Disabled" ) );
+	mElements.Add( new CBoolSetting( &mRomPreferences.RemoveZFighting, "Remove Z-Fighting ", "Whether to remove Z fighting or any flicker/artifacts cause by it", "Enabled", "Disabled" ) );
 	//	mElements.Add( new CUISpacer( 16 ) );
 #ifndef DAEDALUS_PUBLIC_RELEASE	// Below option is irrelevant to end user or game especific, we force this option on roms.ini
 	mElements.Add( new CBoolSetting( &mRomPreferences.SimulateDoubleDisabled, "Disable Simulate Double", "Whether Simulate Double is Disabled", "Yes", "No" ) );

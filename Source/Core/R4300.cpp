@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef DAEDALUS_SILENT
 
 #define CATCH_NAN_EXCEPTION(valX, valY) \
-	if(pspFpuIsNaN(valX) || pspFpuIsNaN(valY)) \
+	if(pspFpuIsNaN(valX + valY)) \
 	{ \
 		DBGConsole_Msg( 0, "[MShould throw fp nan exception?]" ); \
 		return; \

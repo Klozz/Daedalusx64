@@ -41,6 +41,7 @@ bool	gCleanSceneEnabled			= false;	// Clean our Scenes, it gets rid of many glit
 bool	gIncreaseVI_Event			= false;	// Cures flicker on Paper Mario
 bool	gCheckN64FPUsageDisable		= false;	// This fixes several games, check R4300.cpp > R4300_SetSR : 511
 bool    gTMEMemulation				= false;    // Enable for partial tmem emulation
+bool    gRemoveZFighting			= false;    // Gets rid of zfighting.
 u32		gControllerIndex			= 0;		// Which controller config to set
 
 DaedalusConfig g_DaedalusConfig =
@@ -56,9 +57,6 @@ DaedalusConfig g_DaedalusConfig =
 											// plugin, cpu thread and graphics processing to
 											// be handled nicely. I turn this off for 
 											// development to see when things mess up
-#ifndef DAEDALUS_PUBLIC_RELEASE
-	true,			// ShowDebug;			// Show the debug console?
-#endif
 	0,				// nNumRomsDirs
 	// szRomsDir
 	// szSaveDir

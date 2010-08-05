@@ -64,7 +64,7 @@ const char *gGameHackNames[12] =
 	"Zelda MM Hacks",
 	"Flat Shade Disabled Hack",
 	"Rumble Pak Disabled Hack",
-	" 1/2 ZBuffer Hack",
+	"1/2 ZBuffer Hack",
 	"Depth Hack"
 };
 #endif

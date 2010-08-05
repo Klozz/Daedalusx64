@@ -32,9 +32,6 @@ struct DaedalusConfig
 	bool		WarnMemoryErrors;
 	bool		RunAutomatically;
 	bool		TrapExceptions;		
-#ifndef DAEDALUS_PUBLIC_RELEASE
-	bool		ShowDebug;
-#endif
 
 	// Urgh - will make this a vector at some point!!
 	enum { MAX_ROMS_DIRS = 100 };
@@ -59,6 +56,7 @@ extern bool gSimulateDoubleDisabled;
 extern bool	gIncreaseVI_Event;
 extern bool gCheckN64FPUsageDisable;
 extern bool gTMEMemulation;
+extern bool gRemoveZFighting;
 //ToDo: Needs moving to Graphics plugin config
 extern bool	gCleanSceneEnabled;
 extern u32	gCheckTextureHashFrequency;

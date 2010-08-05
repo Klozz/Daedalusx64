@@ -247,6 +247,10 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		{ 	 
             preferences.TMEMemulation = property->GetBooleanValue( false ); 	 
 		}
+		if( section->FindProperty( "RemoveZFighting", &property ) ) 	 
+		{ 	 
+            preferences.RemoveZFighting = property->GetBooleanValue( false ); 	 
+		}
 		if( section->FindProperty( "CheckTextureHashFrequency", &property ) )
 		{
 			preferences.CheckTextureHashFrequency = ROM_GetTextureHashFrequencyFromFrames( atoi( property->GetValue() ) );
@@ -303,6 +307,7 @@ void IPreferences::OutputSectionDetails( const RomID & id, const SRomPreferences
 	fprintf(fh, "IncreaseVI_Event=%d\n",preferences.IncreaseVI_Event);
 	fprintf(fh, "CheckN64FPUsageDisable=%d\n",preferences.CheckN64FPUsageDisable);
 	fprintf(fh, "TMEMemulation=%d\n",preferences.TMEMemulation);
+	fprintf(fh, "RemoveZFighting=%d\n",preferences.RemoveZFighting);
 	fprintf(fh, "CheckTextureHashFrequency=%d\n", ROM_GetTexureHashFrequencyAsFrames( preferences.CheckTextureHashFrequency ) );
 	fprintf(fh, "Frameskip=%d\n", ROM_GetFrameskipValueAsInt( preferences.Frameskip ) );
 	fprintf(fh, "AudioEnabled=%d\n", preferences.AudioEnabled);
@@ -433,6 +438,7 @@ SRomPreferences::SRomPreferences()
 	,	IncreaseVI_Event( false )
 	,	CheckN64FPUsageDisable( false )
 	,   TMEMemulation( false )
+	,   RemoveZFighting( false )
 	,	CheckTextureHashFrequency( THF_DISABLED )
 	,	Frameskip( FV_DISABLED )
 	,	AudioEnabled( APM_DISABLED )
@@ -457,6 +463,7 @@ void SRomPreferences::Reset()
 	IncreaseVI_Event = false;
 	CheckN64FPUsageDisable = false;
 	TMEMemulation = false;
+	RemoveZFighting = false;
 	CheckTextureHashFrequency = THF_DISABLED;
 	Frameskip = FV_DISABLED;
 	AudioEnabled = APM_DISABLED;
@@ -480,6 +487,7 @@ void	SRomPreferences::Apply() const
 	gIncreaseVI_Event = g_ROM.settings.IncreaseVI_Event || IncreaseVI_Event;
 	gCheckN64FPUsageDisable = g_ROM.settings.CheckN64FPUsageDisable || CheckN64FPUsageDisable;
 	gTMEMemulation = g_ROM.settings.TMEMemulation || TMEMemulation;
+	gRemoveZFighting = g_ROM.settings.RemoveZFighting || RemoveZFighting;
 	gCheckTextureHashFrequency = ROM_GetTexureHashFrequencyAsFrames( CheckTextureHashFrequency );
 	gFrameskipValue = Frameskip;
 

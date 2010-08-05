@@ -312,6 +312,10 @@ bool IRomSettingsDB::OpenSettingsFile( const char * filename )
 		{ 	 
 			settings.TMEMemulation = p_property->GetBooleanValue( false ); 	 
 		}
+		if( p_section->FindProperty( "RemoveZFighting", &p_property ) ) 	 
+		{ 	 
+			settings.RemoveZFighting = p_property->GetBooleanValue( false ); 	 
+		}
 
 		SetSettings( id, settings );
 	}
@@ -433,7 +437,8 @@ void IRomSettingsDB::OutputSectionDetails( const RomID & id, const RomSettings &
 	if( settings.CleanSceneEnabled )			fprintf(fh, "CleanSceneEnabled=yes\n");
 	if( settings.IncreaseVI_Event )				fprintf(fh, "IncreaseVI_Event=yes\n");
 	if( settings.CheckN64FPUsageDisable )		fprintf(fh, "CheckN64FPUsageDisable=yes\n");
-	if( settings.TMEMemulation )		fprintf(fh, "TMEMemulation=yes\n"); 	 
+	if( settings.TMEMemulation )				fprintf(fh, "TMEMemulation=yes\n"); 	 
+	if( settings.RemoveZFighting )				fprintf(fh, "RemoveZFighting=yes\n"); 	 
 
 	if ( settings.ExpansionPakUsage != PAK_STATUS_UNKNOWN )	fprintf(fh, "ExpansionPakUsage=%s\n", ROM_GetExpansionPakUsageName( settings.ExpansionPakUsage ) );
 	if ( settings.SaveType != SAVE_TYPE_UNKNOWN )			fprintf(fh, "SaveType=%s\n", ROM_GetSaveTypeName( settings.SaveType ) );
@@ -494,6 +499,7 @@ RomSettings::RomSettings()
 ,	IncreaseVI_Event( false )
 ,	CheckN64FPUsageDisable( false )
 ,   TMEMemulation( false )
+,	RemoveZFighting( false )
 ,	RescanCount(0)
 {
 }
@@ -526,5 +532,6 @@ void	RomSettings::Reset()
 	IncreaseVI_Event = false;
 	CheckN64FPUsageDisable = false;
 	TMEMemulation = false;
+	RemoveZFighting = false;
 	RescanCount = 0;
 }

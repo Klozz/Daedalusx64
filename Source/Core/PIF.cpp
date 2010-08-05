@@ -673,7 +673,7 @@ bool	IController::ProcessCommand(u32 i, u32 iError, u32 channel, u32 ucWrite, u3
 		if ( channel < NUM_CONTROLLERS )
 		{
 			DPF_PIF("Controller: Command is READ_MEMPACK");
-			if (mContPresent[channel])
+			if (mContPresent[channel] && g_ROM.GameHacks != CHAMELEON_TWIST)
 			{
 				DPF_PIF( "Mempack present" );
 				success = CommandReadMemPack(i, iError, channel, ucWrite, ucRead);
@@ -696,14 +696,7 @@ bool	IController::ProcessCommand(u32 i, u32 iError, u32 channel, u32 ucWrite, u3
 			DPF_PIF("Controller: Command is WRITE_MEMPACK");
 			if (mContPresent[channel])
 			{
-				// Hack for Chameleon Twist...Negate Mempak write aka disrupt rumble pak check !
-				// Hackish as hell, but should do it until proper fix or rumble emulation is implemented.
-				// Error we get : "Rumble pak malfunction controller pak not supported by Chameleon Twist"
-				//
-				if( g_ROM.GameHacks == CHAMELEON_TWIST )
-					DBGConsole_Msg( 0, "Warning: MemPak write disrupted" );
-				else
-					success = CommandWriteMemPack(i, iError, channel, ucWrite, ucRead);
+				success = CommandWriteMemPack(i, iError, channel, ucWrite, ucRead);
 			}
 			else
 			{

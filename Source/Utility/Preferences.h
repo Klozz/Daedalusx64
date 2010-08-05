@@ -135,6 +135,7 @@ struct SRomPreferences
 	bool						IncreaseVI_Event;
 	bool						CheckN64FPUsageDisable;
 	bool                        TMEMemulation;
+	bool						RemoveZFighting;
 
 	ETextureHashFrequency		CheckTextureHashFrequency;
 	EFrameskipValue				Frameskip;

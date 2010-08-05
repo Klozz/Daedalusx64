@@ -777,7 +777,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 
 	// Hack for nascar games..to be honest I don't know why these games are so different...might be tricky to have a proper fix..
 	// Hack accuracy : works 100%
-	if ( disable_zbuffer || g_ROM.GameHacks == NASCAR && gRDPOtherMode.depth_source )
+	if ( disable_zbuffer || (g_ROM.GameHacks == NASCAR && gRDPOtherMode.depth_source) )
 	{
 		sceGuDisable(GU_DEPTH_TEST);
 		sceGuDepthMask( GL_TRUE );	// GL_TRUE to disable z-writes
@@ -797,11 +797,15 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 					
 					// Fixes Zfighting issues we have on the PSP.
 					// Might need abit of tweaking though.
+					// Brakes Starfox...
 					//
-					if( IsZModeDecal() )
-						sceGuDepthOffset(50.0f);	// We need atleast 40.0f to fix Mario 64's z-fighting issues.
-					else
-						sceGuDepthOffset(0);	// errg brakes Starfox and Nascar.. ToDo : Fix me !
+					if( gRemoveZFighting )
+					{
+						if( IsZModeDecal() )
+							sceGuDepthOffset(50);	// We need atleast 40.0f to fix Mario 64's z-fighting issues.
+						else
+							sceGuDepthOffset(0);
+					}
  				}
 				else
 				{
@@ -851,8 +855,8 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	//
 	// Initiate Blender
 	//
-	// Only update if 1CYCLE is enabled.
-	if( gRDPOtherMode.cycle_type == CYCLE_1CYCLE )
+	// Only update if 1/2CYCLE is enabled.
+	if( gRDPOtherMode.cycle_type < CYCLE_COPY )
 	{
 		InitBlenderMode();
 	}

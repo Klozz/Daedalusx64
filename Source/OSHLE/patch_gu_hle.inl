@@ -1,14 +1,7 @@
 #define TEST_DISABLE_GU_FUNCS DAEDALUS_PROFILE(__FUNCTION__);
 
-const u32 s_IdentMatrixF[16] = 
-{
-	0x3f800000,	0x00000000, 0x00000000,	0x00000000,
-	0x00000000,	0x3f800000, 0x00000000,	0x00000000,
-	0x00000000, 0x00000000, 0x3f800000,	0x00000000,
-	0x00000000, 0x00000000, 0x00000000,	0x3f800000
-};
-
-const u32 s_IdentMatrixL[16] = 
+//Fixed point matrix
+static const u32 s_IdentMatrixL[16] = 
 {
 	0x00010000,	0x00000000,
 	0x00000001,	0x00000000,
@@ -20,7 +13,8 @@ const u32 s_IdentMatrixL[16] =
 	0x00000000,	0x00000000
 };
 
-u32 s_ScaleMatrixF[16] = 
+/*
+static const u32 s_IdentMatrixF[16] = 
 {
 	0x3f800000,	0x00000000, 0x00000000,	0x00000000,
 	0x00000000,	0x3f800000, 0x00000000,	0x00000000,
@@ -28,13 +22,22 @@ u32 s_ScaleMatrixF[16] =
 	0x00000000, 0x00000000, 0x00000000,	0x3f800000
 };
 
-u32 s_TransMatrixF[16] = 
+static u32 s_ScaleMatrixF[16] = 
 {
 	0x3f800000,	0x00000000, 0x00000000,	0x00000000,
 	0x00000000,	0x3f800000, 0x00000000,	0x00000000,
 	0x00000000, 0x00000000, 0x3f800000,	0x00000000,
 	0x00000000, 0x00000000, 0x00000000,	0x3f800000
 };
+
+static u32 s_TransMatrixF[16] = 
+{
+	0x3f800000,	0x00000000, 0x00000000,	0x00000000,
+	0x00000000,	0x3f800000, 0x00000000,	0x00000000,
+	0x00000000, 0x00000000, 0x3f800000,	0x00000000,
+	0x00000000, 0x00000000, 0x00000000,	0x3f800000
+};
+*/
 
 //Use VFPU to save a IDENTITY matrix //Corn
 inline void vfpu_matrix_IdentF(u8 *m) {
@@ -76,7 +79,8 @@ inline void vfpu_matrix_ScaleF(u8 *m, float X, float Y, float Z) {
 }
 
 //Taken from Mr.Mr libpspmath and added scale to the EQ. (Scale usually is 1.0f tho) //Corn
-inline void vfpu_matrix_OrthoF(u8 *m, float left, float right, float bottom, float top, float near, float far, float scale) {
+inline void vfpu_matrix_OrthoF(u8 *m, float left, float right, float bottom, float top, float near, float far, float scale)
+{
 	__asm__ volatile (
 		"vmidt.q M100\n"						// set M100 to identity
 		"mtv     %2, S000\n"					// C000 = [right, ?,      ?,  ]
@@ -102,6 +106,38 @@ inline void vfpu_matrix_OrthoF(u8 *m, float left, float right, float bottom, flo
 	:"=m"(*m) : "r"(left), "r"(right), "r"(bottom), "r"(top), "r"(near), "r"(far), "r"(scale));
 }
 
+//Taken from Mr.Mr libpspmath and added scale and output to fixed point //Corn
+inline void vfpu_matrix_Ortho(u8 *m, float left, float right, float bottom, float top, float near, float far, float scale)
+{
+	__asm__ volatile (
+		"vmidt.q M100\n"						// set M100 to identity
+		"mtv     %2, S000\n"					// C000 = [right, ?,      ?,  ]
+		"mtv     %4, S001\n"					// C000 = [right, top,    ?,  ]
+		"mtv     %6, S002\n"					// C000 = [right, top,    far ]
+		"mtv     %1, S010\n"					// C010 = [left,  ?,      ?,  ]
+		"mtv     %3, S011\n"					// C010 = [left,  bottom, ?,  ]
+		"mtv     %5, S012\n"                	// C010 = [left,  bottom, near]
+		"mtv     %7, S133\n"                	// C110 = [0, 0, 0, scale]
+		"vsub.t  C020, C000, C010\n"			// C020 = [  dx,   dy,   dz]
+		"vrcp.t  C020, C020\n"              	// C020 = [1/dx, 1/dy, 1/dz]
+		"vscl.t	 C020, C020, S133\n"			// C020 = [scale/dx, scale/dy, scale/dz]
+		"vmul.s  S100, S100[2], S020\n"     	// S100 = m->x.x = 2.0 / dx
+		"vmul.s  S111, S111[2], S021\n"     	// S110 = m->y.y = 2.0 / dy
+		"vmul.s  S122, S122[2], S022[-x]\n"		// S122 = m->z.z = -2.0 / dz
+		"vsub.t  C130, C000[-x,-y,-z], C010\n"	// C130 = m->w[x, y, z] = [-(right+left), -(top+bottom), -(far+near)]
+												// we do vsub here since -(a+b) => (-1*a) + (-1*b) => -a - b
+		"vmul.t  C130, C130, C020\n"			// C130 = [-(right+left)/dx, -(top+bottom)/dy, -(far+near)/dz]
+		"vf2iz.q  C100, C100, 16\n"			// scale values to fixed point
+		"usv.q    C100, 0  + %0\n"
+		"vf2iz.q  C110, C110, 16\n"			// scale values to fixed point
+		"usv.q    C110, 16 + %0\n"
+		"vf2iz.q  C120, C120, 16\n"			// scale values to fixed point
+		"usv.q    C120, 32 + %0\n"
+		"vf2iz.q  C130, C130, 16\n"			// scale values to fixed point
+		"usv.q    C130, 48 + %0\n"
+	:"=m"(*m) : "r"(left), "r"(right), "r"(bottom), "r"(top), "r"(near), "r"(far), "r"(scale));
+}
+
 u32 Patch_guMtxIdentF()
 {
 TEST_DISABLE_GU_FUNCS
@@ -111,15 +147,19 @@ TEST_DISABLE_GU_FUNCS
 
 	u8 * pMtxBase = (u8 *)ReadAddress(address);
 
+//Keep for reference
 //VFPU way
 	vfpu_matrix_IdentF(pMtxBase);
 
+//Keep for reference
 //Fast CPU
 //	QuickWrite512Bits(pMtxBase, (u8 *)s_IdentMatrixF);
 
+//Keep for reference
 //Memcopy way
 //	memcpy(pMtxBase, s_IdentMatrixF, sizeof(s_IdentMatrixF));
 
+//Keep for reference
 //Old way
 	// 0x00000000 is 0.0 in IEEE fp
 	// 0x3f800000 is 1.0 in IEEE fp
@@ -168,28 +208,8 @@ TEST_DISABLE_GU_FUNCS
 	// glMtxIdentF followed by guMtxF2L
 
 	QuickWrite512Bits(pMtxBase, (u8 *)s_IdentMatrixL);
+
 //	memcpy(pMtxBase, s_IdentMatrixL, sizeof(s_IdentMatrixL));
-
-/*	QuickWrite32Bits(pMtxBase, 0x00, 0x00010000);
-	QuickWrite32Bits(pMtxBase, 0x04, 0x00000000);
-	QuickWrite32Bits(pMtxBase, 0x08, 0x00000001);
-	QuickWrite32Bits(pMtxBase, 0x0c, 0x00000000);
-
-	QuickWrite32Bits(pMtxBase, 0x10, 0x00000000);
-	QuickWrite32Bits(pMtxBase, 0x14, 0x00010000);
-	QuickWrite32Bits(pMtxBase, 0x18, 0x00000000);
-	QuickWrite32Bits(pMtxBase, 0x1c, 0x00000001);
-
-	QuickWrite32Bits(pMtxBase, 0x20, 0x00000000);
-	QuickWrite32Bits(pMtxBase, 0x24, 0x00000000);
-	QuickWrite32Bits(pMtxBase, 0x28, 0x00000000);
-	QuickWrite32Bits(pMtxBase, 0x2c, 0x00000000);
-
-	QuickWrite32Bits(pMtxBase, 0x30, 0x00000000);
-	QuickWrite32Bits(pMtxBase, 0x34, 0x00000000);
-	QuickWrite32Bits(pMtxBase, 0x38, 0x00000000);
-	QuickWrite32Bits(pMtxBase, 0x3c, 0x00000000);
-*/
 
 /*	g_dwNumMtxIdent++;
 	if ((g_dwNumMtxIdent % 10000) == 0)
@@ -240,28 +260,6 @@ TEST_DISABLE_GU_FUNCS
 
 	QuickWrite512Bits(pMtxBase, (u8 *)s_TransMatrixF);
 
-	// 0x00000000 is 0.0 in IEEE fp
-	// 0x3f800000 is 1.0 in IEEE fp
-/*	QuickWrite32Bits(pMtxBase, 0x00, 0x3f800000);
-	QuickWrite32Bits(pMtxBase, 0x04, 0);
-	QuickWrite32Bits(pMtxBase, 0x08, 0);
-	QuickWrite32Bits(pMtxBase, 0x0c, 0);
-
-	QuickWrite32Bits(pMtxBase, 0x10, 0);
-	QuickWrite32Bits(pMtxBase, 0x14, 0x3f800000);
-	QuickWrite32Bits(pMtxBase, 0x18, 0);
-	QuickWrite32Bits(pMtxBase, 0x1c, 0);
-
-	QuickWrite32Bits(pMtxBase, 0x20, 0);
-	QuickWrite32Bits(pMtxBase, 0x24, 0);
-	QuickWrite32Bits(pMtxBase, 0x28, 0x3f800000);
-	QuickWrite32Bits(pMtxBase, 0x2c, 0);	
-
-	QuickWrite32Bits(pMtxBase, 0x30, sX);
-	QuickWrite32Bits(pMtxBase, 0x34, sY);
-	QuickWrite32Bits(pMtxBase, 0x38, sZ);
-	QuickWrite32Bits(pMtxBase, 0x3c, 0x3f800000);	*/
-
 /*	g_dwNumMtxTranslate++;
 	if ((g_dwNumMtxTranslate % 10000) == 0)
 	{
@@ -275,25 +273,39 @@ TEST_DISABLE_GU_FUNCS
 u32 Patch_guTranslate()
 {
 TEST_DISABLE_GU_FUNCS
-	u32 address = gGPR[REG_a0]._u32_0;
-	/*u32 sX = gGPR[REG_a1]._u32_0;
-	u32 sY = gGPR[REG_a2]._u32_0;
-	u32 sZ = gGPR[REG_a3]._u32_0;*/
-	f32 sX, sY, sZ;
+		union
+	{
+		u32 x;
+		f32 fX;
+	}uX;
+
+	union
+	{
+		u32 y;
+		f32 fY;
+	}uY;
+
+	union
+	{
+		u32 z;
+		f32 fZ;
+	}uZ;
+
 	const f32 fScale = 65536.0f;
 
-	memcpy(&sX, &gGPR[REG_a1]._u32_0, sizeof(f32));
-	memcpy(&sY, &gGPR[REG_a2]._u32_0, sizeof(f32));
-	memcpy(&sZ, &gGPR[REG_a3]._u32_0, sizeof(f32));
-
-	//DBGConsole_Msg(0, "guTranslate(0x%08x, %f, %f, %f) ra:0x%08x",
-	//	address, ToFloat(sX), ToFloat(sY), ToFloat(sZ), (u32)g_qwGPR[REG_ra]);
-
+	u32 address = gGPR[REG_a0]._u32_0;
 	u8 * pMtxBase = (u8 *)ReadAddress(address);
 
-	u32 x = (u32)(sX * fScale);
-	u32 y = (u32)(sY * fScale);
-	u32 z = (u32)(sZ * fScale);
+	uX.x = gGPR[REG_a1]._u32_0;
+	uY.y = gGPR[REG_a2]._u32_0;
+	uZ.z = gGPR[REG_a3]._u32_0;
+
+	//DBGConsole_Msg(0, "guTranslate(0x%08x, %f, %f, %f)", address, uX.fX, uY.fY, uZ.fZ);
+//	printf("guTranslate(0x%08x, %f, %f, %f\n)", address, uX.fX, uY.fY, uZ.fZ);
+
+	u32 x = (u32)(uX.fX * fScale);
+	u32 y = (u32)(uY.fY * fScale);
+	u32 z = (u32)(uZ.fZ * fScale);
 
 	u32 one = (u32)(1.0f * fScale);
 
@@ -370,33 +382,11 @@ TEST_DISABLE_GU_FUNCS
 	s_ScaleMatrixF[ 5] = gGPR[REG_a2]._u32_0;
 	s_ScaleMatrixF[10] = gGPR[REG_a3]._u32_0;
 
-	//DBGConsole_Msg(0, "guScaleF(0x%08x, %f, %f, %f)", address, sX, sY, sZ);
+	//DBGConsole_Msg(0, "guScaleF(0x%08x, %f, %f, %f\n)", address, sX, sY, sZ);
 
 	QuickWrite512Bits(pMtxBase, (u8 *)s_ScaleMatrixF);
 
 //	memcpy(pMtxBase, s_ScaleMatrixF, sizeof(s_ScaleMatrixF));
-
-	// 0x00000000 is 0.0 in IEEE fp
-	// 0x3f800000 is 1.0 in IEEE fp
-/*	QuickWrite32Bits(pMtxBase, 0x00, sX);
-	QuickWrite32Bits(pMtxBase, 0x04, 0);
-	QuickWrite32Bits(pMtxBase, 0x08, 0);
-	QuickWrite32Bits(pMtxBase, 0x0c, 0);
-
-	QuickWrite32Bits(pMtxBase, 0x10, 0);
-	QuickWrite32Bits(pMtxBase, 0x14, sY);
-	QuickWrite32Bits(pMtxBase, 0x18, 0);
-	QuickWrite32Bits(pMtxBase, 0x1c, 0);
-
-	QuickWrite32Bits(pMtxBase, 0x20, 0);
-	QuickWrite32Bits(pMtxBase, 0x24, 0);
-	QuickWrite32Bits(pMtxBase, 0x28, sZ);
-	QuickWrite32Bits(pMtxBase, 0x2c, 0);
-
-	QuickWrite32Bits(pMtxBase, 0x30, 0);
-	QuickWrite32Bits(pMtxBase, 0x34, 0);
-	QuickWrite32Bits(pMtxBase, 0x38, 0);
-	QuickWrite32Bits(pMtxBase, 0x3c, 0x3f800000); */
 
 /*	g_dwNumMtxScale++;
 	if ((g_dwNumMtxScale % 10000) == 0)
@@ -411,24 +401,40 @@ TEST_DISABLE_GU_FUNCS
 u32 Patch_guScale()
 {
 TEST_DISABLE_GU_FUNCS
-	u32 address = gGPR[REG_a0]._u32_0;
-	/*u32 sX = gGPR[REG_a1]._u32_0;
-	u32 sY = gGPR[REG_a2]._u32_0;
-	u32 sZ = gGPR[REG_a3]._u32_0;*/
-	f32 sX, sY, sZ;
+		union
+	{
+		u32 x;
+		f32 fX;
+	}uX;
+
+	union
+	{
+		u32 y;
+		f32 fY;
+	}uY;
+
+	union
+	{
+		u32 z;
+		f32 fZ;
+	}uZ;
+
 	const f32 fScale = 65536.0f;
 
-	memcpy(&sX, &gGPR[REG_a1]._u32_0, sizeof(f32));
-	memcpy(&sY, &gGPR[REG_a2]._u32_0, sizeof(f32));
-	memcpy(&sZ, &gGPR[REG_a3]._u32_0, sizeof(f32));
-
-	//DBGConsole_Msg(0, "guScale(0x%08x, %f, %f, %f)", address, sX, sY, sZ);
-
+	u32 address = gGPR[REG_a0]._u32_0;
 	u8 * pMtxBase = (u8 *)ReadAddress(address);
 
-	u32 x = (u32)(sX * fScale);
-	u32 y = (u32)(sY * fScale);
-	u32 z = (u32)(sZ * fScale);
+	uX.x = gGPR[REG_a1]._u32_0;
+	uY.y = gGPR[REG_a2]._u32_0;
+	uZ.z = gGPR[REG_a3]._u32_0;
+
+	//DBGConsole_Msg(0, "guScale(0x%08x, %f, %f, %f)", address, uX.fX, uY.fY, uZ.fZ);
+//	printf("guScale(0x%08x, %f, %f, %f)", address, uX.fX, uY.fY, uZ.fZ);
+
+	u32 x = (u32)(uX.fX * fScale);
+	u32 y = (u32)(uY.fY * fScale);
+	u32 z = (u32)(uZ.fZ * fScale);
+
 	u32 zer = (u32)(0.0f);
 
 	u32 xzhibits = (x & 0xFFFF0000) | (zer >> 16);
@@ -440,8 +446,6 @@ TEST_DISABLE_GU_FUNCS
 	u32 zzhibits = (z & 0xFFFF0000) | (zer >> 16);
 	u32 zzlobits = (z << 16) | (zer & 0x0000FFFF);
 
-	// 0x00000000 is 0.0 in IEEE fp
-	// 0x3f800000 is 1.0 in IEEE fp
 	QuickWrite32Bits(pMtxBase, 0x00, xzhibits);
 	QuickWrite32Bits(pMtxBase, 0x04, 0x00000000);
 	QuickWrite32Bits(pMtxBase, 0x08, zyhibits);
@@ -467,8 +471,6 @@ TEST_DISABLE_GU_FUNCS
 	{
 		DBGConsole_Msg(0, "%d guMtxScale calls intercepted", g_dwNumMtxScale);
 	}*/
-
-
 
 	return PATCH_RET_JR_RA;
 }
@@ -541,7 +543,8 @@ TEST_DISABLE_GU_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
-u32 Patch_guNormalize_Mario() //Using VFPU and no memcpy (works without hack?) //Corn
+//Using VFPU and no memcpy (works without hack?) //Corn
+u32 Patch_guNormalize_Mario()
 {
 TEST_DISABLE_GU_FUNCS
 
@@ -752,12 +755,111 @@ TEST_DISABLE_GU_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
+//Do the float version on a temporary matrix and convert to fixed point in VFPU & CPU //Corn
 u32 Patch_guOrtho()
 {
 TEST_DISABLE_GU_FUNCS
-	//DBGConsole_Msg(0, "guOrtho");
-	return PATCH_RET_NOT_PROCESSED;
 
+u32 s_TempMatrix[16] = 
+{
+	0x00000000,	0x00000000, 0x00000000,	0x00000000,
+	0x00000000,	0x00000000, 0x00000000,	0x00000000,
+	0x00000000, 0x00000000, 0x00000000,	0x00000000,
+	0x00000000, 0x00000000, 0x00000000,	0x00000000
+};
+
+	union
+	{
+		u32 L;
+		f32 fL;
+	}uL;
+
+	union
+	{
+		u32 R;
+		f32 fR;
+	}uR;
+
+	union
+	{
+		u32 B;
+		f32 fB;
+	}uB;
+
+	union
+	{
+		u32 T;
+		f32 fT;
+	}uT;
+
+	union
+	{
+		u32 N;
+		f32 fN;
+	}uN;
+
+	union
+	{
+		u32 F;
+		f32 fF;
+	}uF;
+
+	union
+	{
+		u32 S;
+		f32 fS;
+	}uS;
+
+	u8 * fixedMtx = (u8 *)ReadAddress(gGPR[REG_a0]._u32_0);	//Fixed point Base address
+	uL.L = gGPR[REG_a1]._u32_0;	//Left
+	uR.R = gGPR[REG_a2]._u32_0;	//Right
+	uB.B = gGPR[REG_a3]._u32_0;	//Bottom
+	uT.T = Read32Bits(gGPR[REG_sp]._u32_0 + 0x10);	//Top
+	uN.N = Read32Bits(gGPR[REG_sp]._u32_0 + 0x14);	//Near
+	uF.F = Read32Bits(gGPR[REG_sp]._u32_0 + 0x18);	//Far
+	uS.S = Read32Bits(gGPR[REG_sp]._u32_0 + 0x1c);	//Scale
+
+//	printf("%f %f %f %f\n",uR.fR, uL.fL, uT.fT, uB.fB);
+
+	//DBGConsole_Msg(0, "guOrtho(0x%08x, %f, %f", pMtxBase, uL.fL, uR.fR);
+	//DBGConsole_Msg(0, "                     %f, %f", uB.fB, uT.fT);
+	//DBGConsole_Msg(0, "                     %f, %f", uN.fN, uF.fF);
+	//DBGConsole_Msg(0, "                     %f)", uS.fS);
+
+	vfpu_matrix_Ortho((u8 *)s_TempMatrix, uL.fL, uR.fR, uB.fB, uT.fT, uN.fN, uF.fF, uS.fS);
+
+//Convert to proper N64 fixed point matrix
+	u8 * pMtxLBaseHiBits = (u8 *)(fixedMtx + 0x00);
+	u8 * pMtxLBaseLoBits = (u8 *)(fixedMtx + 0x20);
+
+	u32 a, b;
+	u32 hibits,lobits;
+	u32 row, indx=0;
+
+	for (row = 0; row < 4; row++)
+	{
+		a = s_TempMatrix[indx++];
+		b = s_TempMatrix[indx++];
+
+		hibits = (a & 0xFFFF0000) | (b >> 16);
+		QuickWrite32Bits(pMtxLBaseHiBits, (row << 3) , hibits);
+
+		lobits = (a << 16) | (b & 0x0000FFFF);
+		QuickWrite32Bits(pMtxLBaseLoBits, (row << 3) , lobits);
+		
+		/////
+		a = s_TempMatrix[indx++];
+		b = s_TempMatrix[indx++];
+
+		hibits = (a & 0xFFFF0000) | (b >> 16);
+		QuickWrite32Bits(pMtxLBaseHiBits, (row << 3) + 4, hibits);
+
+		lobits = (a << 16) | (b & 0x0000FFFF);
+		QuickWrite32Bits(pMtxLBaseLoBits, (row << 3) + 4, lobits);
+	}
+
+	return PATCH_RET_JR_RA;
+//	return PATCH_RET_NOT_PROCESSED;
 }
 
 //RotateF //Corn
@@ -807,7 +909,7 @@ TEST_DISABLE_GU_FUNCS
 
 	vfpu_sincos(uA.fA*(PI/180.0f), &s, &c);
 
-//According to the manual the vector should be normalized in this function (Seems to work fine without it but a risky)
+//According to the manual the vector should be normalized in this function (Seems to work fine without it but risky)
 //	vfpu_norm_3Dvec(&uX.fX, &uY.fY, &uZ.fZ);
 
 //Row #1

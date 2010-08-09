@@ -1,5 +1,5 @@
 #define TEST_DISABLE_GU_FUNCS DAEDALUS_PROFILE(__FUNCTION__);
-
+/*
 //Fixed point matrix
 static const u32 s_IdentMatrixL[16] = 
 {
@@ -13,7 +13,6 @@ static const u32 s_IdentMatrixL[16] =
 	0x00000000,	0x00000000
 };
 
-/*
 static const u32 s_IdentMatrixF[16] = 
 {
 	0x3f800000,	0x00000000, 0x00000000,	0x00000000,
@@ -148,19 +147,19 @@ TEST_DISABLE_GU_FUNCS
 	u8 * pMtxBase = (u8 *)ReadAddress(address);
 
 //Keep for reference
-//VFPU way
+//VFPU way (#1 Fastest)
 	vfpu_matrix_IdentF(pMtxBase);
 
 //Keep for reference
-//Fast CPU
+//Fast CPU (#3)
 //	QuickWrite512Bits(pMtxBase, (u8 *)s_IdentMatrixF);
 
 //Keep for reference
-//Memcopy way
+//Memcopy way (#3)
 //	memcpy(pMtxBase, s_IdentMatrixF, sizeof(s_IdentMatrixF));
 
 //Keep for reference
-//Old way
+//Old way (#2 Fastest)
 	// 0x00000000 is 0.0 in IEEE fp
 	// 0x3f800000 is 1.0 in IEEE fp
 /*	QuickWrite32Bits(pMtxBase, 0x00, 0x3f800000);
@@ -207,11 +206,31 @@ TEST_DISABLE_GU_FUNCS
 	// This is a lot faster than the real method, which calls
 	// glMtxIdentF followed by guMtxF2L
 
-	QuickWrite512Bits(pMtxBase, (u8 *)s_IdentMatrixL);
+//	QuickWrite512Bits(pMtxBase, (u8 *)s_IdentMatrixL);
 
 //	memcpy(pMtxBase, s_IdentMatrixL, sizeof(s_IdentMatrixL));
 
-/*	g_dwNumMtxIdent++;
+	QuickWrite32Bits(pMtxBase, 0x00, 0x00010000);
+	QuickWrite32Bits(pMtxBase, 0x04, 0x00000000);
+	QuickWrite32Bits(pMtxBase, 0x08, 0x00000001);
+	QuickWrite32Bits(pMtxBase, 0x0c, 0x00000000);
+
+	QuickWrite32Bits(pMtxBase, 0x10, 0x00000000);
+	QuickWrite32Bits(pMtxBase, 0x14, 0x00010000);
+	QuickWrite32Bits(pMtxBase, 0x18, 0x00000000);
+	QuickWrite32Bits(pMtxBase, 0x1c, 0x00000001);
+
+	QuickWrite32Bits(pMtxBase, 0x20, 0x00000000);
+	QuickWrite32Bits(pMtxBase, 0x24, 0x00000000);
+	QuickWrite32Bits(pMtxBase, 0x28, 0x00000000);
+	QuickWrite32Bits(pMtxBase, 0x2c, 0x00000000);
+
+	QuickWrite32Bits(pMtxBase, 0x30, 0x00000000);
+	QuickWrite32Bits(pMtxBase, 0x34, 0x00000000);
+	QuickWrite32Bits(pMtxBase, 0x38, 0x00000000);
+	QuickWrite32Bits(pMtxBase, 0x3c, 0x00000000);
+
+	/*	g_dwNumMtxIdent++;
 	if ((g_dwNumMtxIdent % 10000) == 0)
 	{
 		DBGConsole_Msg(0, "%d guMtxIdent calls intercepted", g_dwNumMtxIdent);

@@ -40,7 +40,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <float.h>
 
-#define		R4300_CALL_MAKE_OP( var )	OpCode	var;	var._u32 = op_code_bits
+#define	R4300_CALL_MAKE_OP( var )	OpCode	var;	var._u32 = op_code_bits
+
+#define INSTR_TARGET ( (gCPUState.CurrentPC & 0xF0000000) | (op_code.target<<2) )
+
+// Cheat to avoid int long long, let's see how it goes..
+#define STORE_LINK(X)	{ gGPR[X]._s32_0 = (s32)(gCPUState.CurrentPC + 8 ); } 
 
 #ifndef DAEDALUS_SILENT
 
@@ -652,10 +657,11 @@ static void R4300_CALL_TYPE R4300_JAL( R4300_CALL_SIGNATURE ) 				// Jump And Li
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	gGPR[REG_ra]._s64 = (s64)(s32)(gCPUState.CurrentPC + 8);		// Store return address
-	u32	new_pc( (gCPUState.CurrentPC & 0xF0000000) | (op_code.target<<2) );
+	// Store return address
+	STORE_LINK(REG_ra);
 
-	CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+	gCPUState.TargetPC = INSTR_TARGET;
+	gCPUState.Delay  = DO_DELAY;
 }
 
 static void R4300_CALL_TYPE R4300_BEQ( R4300_CALL_SIGNATURE ) 		// Branch on Equal
@@ -1352,7 +1358,9 @@ static void R4300_CALL_TYPE R4300_Special_JALR( R4300_CALL_SIGNATURE ) 		// Jump
 
 	// Jump And Link
 	u32	new_pc( gGPR[ op_code.rs ]._u32_0 );
-	gGPR[ op_code.rd ]._s64 = (s64)(s32)(gCPUState.CurrentPC + 8);		// Store return address
+
+	// Store return address
+	STORE_LINK( op_code.rd );
 
 	CPU_TakeBranch( new_pc, CPU_BRANCH_INDIRECT );
 }
@@ -1754,7 +1762,10 @@ static void R4300_CALL_TYPE R4300_RegImm_BLTZAL( R4300_CALL_SIGNATURE ) 		// Bra
 
 	//branch if rs >= 0
 	// Store the return address even if branch not taken
-	gGPR[REG_ra]._s64 = (s64)(s32)(gCPUState.CurrentPC + 8);		// Store return address
+
+	// Store return address
+	STORE_LINK( REG_ra );
+
 	if ( gGPR[ op_code.rs ]._s64 < 0 )
 	{
 		u32	new_pc( gCPUState.CurrentPC + ((s32)(s16)op_code.immediate<<2) + 4 );
@@ -1804,7 +1815,10 @@ static void R4300_CALL_TYPE R4300_RegImm_BGEZAL( R4300_CALL_SIGNATURE ) 		// Bra
 
 	//branch if rs >= 0
 	// This always happens, even if branch not taken
-	gGPR[REG_ra]._s64 = (s64)(s32)(gCPUState.CurrentPC + 8);		// Store return address
+
+	// Store return address
+	STORE_LINK( REG_ra );
+
 	if ( gGPR[ op_code.rs ]._s64 >= 0 )
 	{
 		u32	new_pc( gCPUState.CurrentPC + ((s32)(s16)op_code.immediate<<2) + 4 );

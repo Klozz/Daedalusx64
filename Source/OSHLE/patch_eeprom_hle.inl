@@ -32,19 +32,26 @@ TEST_DISABLE_EEPROM_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
-
+// Used in Mario Kart
+// Why cast to u64/s64?
 u32 Patch_osEepromProbe()
 {
 TEST_DISABLE_EEPROM_FUNCS
 	// Returns 1 on EEPROM detected, 0 on error/no eeprom
-	//DBGConsole_Msg(0, "osEepromProbe(), ra = 0x%08x", (u32)g_qwGPR[REG_ra]);
-	
-	if ( g_ROM.settings.SaveType == SAVE_TYPE_EEP4K )
+	DBGConsole_Msg(0, "osEepromProbe(), ra = 0x%08x", (u32)gGPR[REG_ra]._s64);
+
+	switch( g_ROM.settings.SaveType )
+	{
+	case SAVE_TYPE_EEP4K:
 		gGPR[REG_v0]._u64 = EEPROM_TYPE_4K;
-	else if ( g_ROM.settings.SaveType == SAVE_TYPE_EEP16K )
+		break;
+	case SAVE_TYPE_EEP16K:
 		gGPR[REG_v0]._u64 = EEPROM_TYPE_16K;
-	else
+		break;
+	default:			// No Eeprom, SRAM, FlashRam etc. or error..
 		gGPR[REG_v0]._u64 = 0;
+		break;
+	}
 
 	// Side effect From osEepStatus
 	//Write32Bits(VAR_ADDRESS(osEepPifThingamy2), 5);

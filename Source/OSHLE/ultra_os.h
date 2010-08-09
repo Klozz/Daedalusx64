@@ -39,7 +39,7 @@ typedef
 			f32 f_odd;
 			f32 f_even;
 		} f;
-		d64 d;
+		f64 d;
 	}
 __OSfp;
 

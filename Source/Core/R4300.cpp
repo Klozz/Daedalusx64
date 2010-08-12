@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Interrupt.h"
 #include "DynaRec/TraceRecorder.h"
 
-#include "OSHLE/patch.h"				// For g_PatchSymbols
 #include "OSHLE/ultra_R4300.h"
 
 #include "Math/Math.h"	// VFPU Math
@@ -38,14 +37,52 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <pspfpu.h>
 
-#include <float.h>
-
 #define	R4300_CALL_MAKE_OP( var )	OpCode	var;	var._u32 = op_code_bits
 
-#define INSTR_TARGET ( (gCPUState.CurrentPC & 0xF0000000) | (op_code.target<<2) )
+#define INSTR_TARGET		( (gCPUState.CurrentPC & 0xF0000000) | (op_code.target<<2) )
+#define OFFSET_IMMEDIATE	((s16)(op_code.immediate))
 
 // Cheat to avoid int long long, let's see how it goes..
 #define STORE_LINK(X)	{ gGPR[X]._s32_0 = (s32)(gCPUState.CurrentPC + 8 ); } 
+
+//*************************************************************************************
+//
+//*************************************************************************************
+#define gRT_s64						gGPR[op_code.rt]._s64
+#define gRS_s64						gGPR[op_code.rs]._s64
+#define gRD_s64						gGPR[op_code.rd]._s64
+
+#define gRT_u64						gGPR[op_code.rt]._u64
+#define gRS_u64						gGPR[op_code.rs]._u64
+#define gRD_u64						gGPR[op_code.rd]._u64
+
+#define gRT_s32						gGPR[op_code.rt]._s32_0
+#define gRD_s32						gGPR[op_code.rd]._s32_0
+#define gRS_s32						gGPR[op_code.rs]._s32_0
+
+#define gRT_u32						gGPR[op_code.rt]._u32_0
+#define gRD_u32						gGPR[op_code.rd]._u32_0
+#define gRS_u32						gGPR[op_code.rs]._u32_0
+//*************************************************************************************
+//
+//*************************************************************************************
+// Some of these macros were borrowed from 1964 :)
+// Will remove most of these soon, since we avoid most masks/casts anyways..
+#define uLOGIC(Sum, Operand1, OPERATOR, Operand2)	Sum = (s32) ((u32) Operand1 OPERATOR Operand2)
+#define sLOGIC(Sum, Operand1, OPERATOR, Operand2)	Sum = (Operand1 OPERATOR Operand2)
+#define sDLOGIC(Sum, Operand1, OPERATOR, Operand2)	Sum = (Operand1 OPERATOR Operand2)
+#define uDLOGIC(Sum, Operand1, OPERATOR, Operand2)	Sum = (Operand1 OPERATOR Operand2)
+
+//*************************************************************************************
+//
+//*************************************************************************************
+#define sLOGICAL(OPERATOR)							sLOGIC(gRD_s64, gRS_s32, OPERATOR, gRT_s32)		//untested..//
+#define sDLOGICAL(OPERATOR)							sDLOGIC(gRD_s32, gRS_s32, OPERATOR, gRT_s32)	// Not tested really, but generates same asm as old code, we should be safe..
+#define uDLOGICAL(OPERATOR)							uDLOGIC(gRD_u64, gRS_u64, OPERATOR, gRT_u64)	// u64 a must here// Need to test !
+#define sDLOGICAL_WITH_IMM(OPERATOR)				sDLOGIC(gRT_s32, gRS_s32, OPERATOR, (s16) OFFSET_IMMEDIATE)	// s64 not a must:0 atleast M64 and SSV didn't complain, saved around 6 inst :) //
+#define uDLOGICAL_WITH_IMM(OPERATOR)				uDLOGIC(gRT_u64, gRS_u64, OPERATOR, (u16) OFFSET_IMMEDIATE) // u64 a must here//
+#define sLOGICAL_WITH_IMM(OPERATOR)					sLOGIC(gRT_s64, gRS_s32, OPERATOR, (s16) OFFSET_IMMEDIATE) // s64 a must here//
+#define uLOGICAL_SHIFT(OPERATOR, ShiftAmount)		uLOGIC(gRD_u64, gRT_u32, OPERATOR, (ShiftAmount))	// u64 a must here//
 
 #ifndef DAEDALUS_SILENT
 
@@ -759,7 +796,8 @@ static void R4300_CALL_TYPE R4300_DADDI( R4300_CALL_SIGNATURE ) 			// Doubleword
 	// Reserved Instruction exception
 
 	//rt = rs + immediate
-	gGPR[op_code.rt]._s64 = gGPR[op_code.rs]._s64 + (s32)(s16)op_code.immediate;
+	//gGPR[op_code.rt]._s64 = gGPR[op_code.rs]._s64 + (s32)(s16)op_code.immediate;
+	sDLOGICAL_WITH_IMM(+);
 }
 
 static void R4300_CALL_TYPE R4300_DADDIU( R4300_CALL_SIGNATURE ) 			// Doubleword ADD Immediate Unsigned
@@ -769,7 +807,8 @@ static void R4300_CALL_TYPE R4300_DADDIU( R4300_CALL_SIGNATURE ) 			// Doublewor
 	// Reserved Instruction exception
 
 	//rt = rs + immediate
-	gGPR[op_code.rt]._s64 = gGPR[op_code.rs]._s64 + (s32)(s16)op_code.immediate;
+	//gGPR[op_code.rt]._s64 = gGPR[op_code.rs]._s64 + (s32)(s16)op_code.immediate;
+	sDLOGICAL_WITH_IMM(+);
 }
 
 static void R4300_CALL_TYPE R4300_ADDI( R4300_CALL_SIGNATURE )
@@ -779,7 +818,8 @@ static void R4300_CALL_TYPE R4300_ADDI( R4300_CALL_SIGNATURE )
 	// Generates overflow exception
 
 	//rt = rs + immediate
-	gGPR[op_code.rt]._s64 = (s64)(s32)(gGPR[op_code.rs]._s32_0 + (s32)(s16)op_code.immediate);
+	//gGPR[op_code.rt]._s64 = (s64)(s32)(gGPR[op_code.rs]._s32_0 + (s32)(s16)op_code.immediate);
+	sLOGICAL_WITH_IMM(+);
 }
 
 static void R4300_CALL_TYPE R4300_ADDIU( R4300_CALL_SIGNATURE ) 		// Add Immediate Unsigned
@@ -787,7 +827,8 @@ static void R4300_CALL_TYPE R4300_ADDIU( R4300_CALL_SIGNATURE ) 		// Add Immedia
 	R4300_CALL_MAKE_OP( op_code );
 
 	//rt = rs + immediate
-	gGPR[op_code.rt]._s64 = (s64)(s32)(gGPR[op_code.rs]._s32_0 + (s32)(s16)op_code.immediate);
+	//gGPR[op_code.rt]._s64 = (s64)(s32)(gGPR[op_code.rs]._s32_0 + (s32)(s16)op_code.immediate);
+	sLOGICAL_WITH_IMM(+);
 }
 
 static void R4300_CALL_TYPE R4300_SLTI( R4300_CALL_SIGNATURE ) 			// Set on Less Than Immediate
@@ -826,7 +867,8 @@ static void R4300_CALL_TYPE R4300_ANDI( R4300_CALL_SIGNATURE ) 				// AND Immedi
 	R4300_CALL_MAKE_OP( op_code );
 
 	//rt = rs & immediate
-	gGPR[op_code.rt]._u64 = gGPR[op_code.rs]._u64 & (u64)(u16)op_code.immediate;
+	//gGPR[op_code.rt]._u64 = gGPR[op_code.rs]._u64 & (u64)(u16)op_code.immediate;
+	uDLOGICAL_WITH_IMM( & );
 }
 
 
@@ -835,7 +877,8 @@ static void R4300_CALL_TYPE R4300_ORI( R4300_CALL_SIGNATURE ) 				// OR Immediat
 	R4300_CALL_MAKE_OP( op_code );
 
 	//rt = rs | immediate
-	gGPR[op_code.rt]._u64 = gGPR[op_code.rs]._u64 | (u64)(u16)op_code.immediate;
+	//gGPR[op_code.rt]._u64 = gGPR[op_code.rs]._u64 | (u64)(u16)op_code.immediate;
+	uDLOGICAL_WITH_IMM( | );
 }
 
 static void R4300_CALL_TYPE R4300_XORI( R4300_CALL_SIGNATURE ) 				// XOR Immediate
@@ -843,7 +886,8 @@ static void R4300_CALL_TYPE R4300_XORI( R4300_CALL_SIGNATURE ) 				// XOR Immedi
 	R4300_CALL_MAKE_OP( op_code );
 
 	//rt = rs ^ immediate
-	gGPR[op_code.rt]._u64 = gGPR[op_code.rs]._u64 ^ (u64)(u16)op_code.immediate;
+	//gGPR[op_code.rt]._u64 = gGPR[op_code.rs]._u64 ^ (u64)(u16)op_code.immediate;
+	uDLOGICAL_WITH_IMM( ^ );
 }
 
 static void R4300_CALL_TYPE R4300_LUI( R4300_CALL_SIGNATURE ) 				// Load Upper Immediate
@@ -1325,7 +1369,8 @@ static void R4300_CALL_TYPE R4300_Special_SLLV( R4300_CALL_SIGNATURE ) 		// Shif
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	gGPR[ op_code.rd ]._s64 = (s64)(s32)( (gGPR[ op_code.rt ]._u32_0 << ( gGPR[ op_code.rs ]._u32_0 & 0x1F ) ) & 0xFFFFFFFF );
+	//gGPR[ op_code.rd ]._s64 = (s64)(s32)( (gGPR[ op_code.rt ]._u32_0 << ( gGPR[ op_code.rs ]._u32_0 & 0x1F ) ) & 0xFFFFFFFF );
+	uLOGICAL_SHIFT( << , (gGPR[ op_code.rs ]._u32_0 & 0x1F));
 }
 
 static void R4300_CALL_TYPE R4300_Special_SRLV( R4300_CALL_SIGNATURE ) 		// Shift word Right Logical Variable
@@ -1559,7 +1604,8 @@ static void R4300_CALL_TYPE R4300_Special_SUB( R4300_CALL_SIGNATURE ) 			// SUB 
 	R4300_CALL_MAKE_OP( op_code );
 
 	// Can generate overflow exception
-	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rs ]._s32_0 - gGPR[ op_code.rt ]._s32_0 );
+	//gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rs ]._s32_0 - gGPR[ op_code.rt ]._s32_0 );
+	sLOGICAL(-);
 }
 
 
@@ -1567,29 +1613,32 @@ static void R4300_CALL_TYPE R4300_Special_SUBU( R4300_CALL_SIGNATURE ) 			// SUB
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rs ]._s32_0 - gGPR[ op_code.rt ]._s32_0 );
+	//gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rs ]._s32_0 - gGPR[ op_code.rt ]._s32_0 );
+	sLOGICAL(-);
 }
 
 static void R4300_CALL_TYPE R4300_Special_AND( R4300_CALL_SIGNATURE ) 				// logical AND
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 & gGPR[ op_code.rt ]._u64;
+	//gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 & gGPR[ op_code.rt ]._u64;
+	uDLOGICAL( & );
 }
 
 static void R4300_CALL_TYPE R4300_Special_OR( R4300_CALL_SIGNATURE ) 				// logical OR
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 | gGPR[ op_code.rt ]._u64;
+	//gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 | gGPR[ op_code.rt ]._u64;
+	uDLOGICAL( | );
 }
 
 static void R4300_CALL_TYPE R4300_Special_XOR( R4300_CALL_SIGNATURE ) 				// logical XOR
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-
-	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 ^ gGPR[ op_code.rt ]._u64;
+	//gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 ^ gGPR[ op_code.rt ]._u64;
+	uDLOGICAL( ^ );
 }
 
 static void R4300_CALL_TYPE R4300_Special_NOR( R4300_CALL_SIGNATURE ) 				// logical Not OR
@@ -1635,28 +1684,32 @@ static void R4300_CALL_TYPE R4300_Special_DADD( R4300_CALL_SIGNATURE )//CYRUS64
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 + gGPR[ op_code.rs ]._u64;
+	//gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 + gGPR[ op_code.rs ]._u64;
+	sDLOGICAL(+);
 }
 
 static void R4300_CALL_TYPE R4300_Special_DADDU( R4300_CALL_SIGNATURE )//CYRUS64
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 + gGPR[ op_code.rs ]._u64;
+	//gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 + gGPR[ op_code.rs ]._u64;
+	sDLOGICAL(+);
 }
 
 static void R4300_CALL_TYPE R4300_Special_DSUB( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 - gGPR[ op_code.rs ]._u64;
+	//gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 - gGPR[ op_code.rs ]._u64;
+	sDLOGICAL(-);
 }
 
 static void R4300_CALL_TYPE R4300_Special_DSUBU( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 - gGPR[ op_code.rs ]._u64;
+	//gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 - gGPR[ op_code.rs ]._u64;
+	sDLOGICAL(-);
 }
 
 static void R4300_CALL_TYPE R4300_Special_DSLL( R4300_CALL_SIGNATURE )

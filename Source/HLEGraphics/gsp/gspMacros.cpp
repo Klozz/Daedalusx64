@@ -431,18 +431,14 @@ void DLParser_GBI2_0x8( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_BranchZ( MicroCodeCommand command )
 {
-	u32 vtx = (command.inst.cmd0 & 0xFFF) >> 1;
-
-	f32 vtxdepth = PSPRenderer::Get()->GetTransformedVtxPos(vtx).z/PSPRenderer::Get()->GetTransformedVtxPos(vtx).w;
-
 	// See OOT : Death Mountain and MM : Outside of Clock Town.
-	if( vtxdepth <= (s32)(command.inst.cmd1) * gVertexStride) // Corn FIX.
+	u32 vtx = (command.inst.cmd0 & 0xFFF) >> 1;
+	f32 vtxdepth = PSPRenderer::Get()->GetTransformedVtxPos(vtx).z/PSPRenderer::Get()->GetTransformedVtxPos(vtx).w;
+	if( vtxdepth <= (s32)(command.inst.cmd1 * 2) )
 	{																
 		u32 pc = gDisplayListStack.back().addr;	// This points to the next instruction
 		u32 dl = *(u32 *)(g_pu8RamBase + pc-12);
 		u32 address = RDPSegAddr(dl);
-
-		//address = RDPSegAddr(dl);; // Is this necessary?
 
 		DL_PF("BranchZ to DisplayList 0x%08x", address);
 
@@ -464,6 +460,15 @@ void DLParser_GBI1_LoadUCode( MicroCodeCommand command )
     u32 code_size = 0x1000; 
     u32 data_base = gRDPHalf1 & 0x1fffffff;         // Preceeding RDP_HALF1 sets this up
     u32 data_size = command.inst.cmd0 + 1;
+
+	// For SSSV, needs more testing
+	/*
+	if (((code_base + 4096) > MAX_RAM_ADDRESS) || ((data_base + data_size) > MAX_RAM_ADDRESS))
+	{
+		DBGConsole_Msg(0, "[YLoading invalid LoadUCode] : 0x%08X, 0x%08X ", code_base, data_base );
+		return;
+	}*/
+
 
 	DLParser_InitMicrocode( code_base, code_size, data_base, data_size ); 
 }

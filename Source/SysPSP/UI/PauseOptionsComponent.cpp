@@ -87,6 +87,7 @@ class IPauseOptionsComponent : public CPauseOptionsComponent
 				void				SaveState();
 				void				LoadState();
 				void				TakeScreenshot();
+				void				ExitConfirmation();
 
 				void				OnSaveStateSlotSelected( const char * filename );
 				void				OnLoadStateSlotSelected( const char * filename );
@@ -101,6 +102,8 @@ class IPauseOptionsComponent : public CPauseOptionsComponent
 	private:
 		CFunctor *					mOnResume;
 		CFunctor *					mOnReset;
+		
+		bool						mExitConfirmation;
 
 		CUIElementBag				mElements;
 };
@@ -135,6 +138,7 @@ IPauseOptionsComponent::IPauseOptionsComponent( CUIContext * p_context, CFunctor
 :	CPauseOptionsComponent( p_context )
 ,	mOnResume( on_resume )
 ,	mOnReset( on_reset )
+,	mExitConfirmation(false)
 {
 	mElements.Add( new CUICommandImpl( new CMemberFunctor< IPauseOptionsComponent >( this, &IPauseOptionsComponent::EditPreferences ), "Edit Preferences", "Edit various preferences for this rom." ) );
 	mElements.Add( new CUICommandImpl( new CMemberFunctor< IPauseOptionsComponent >( this, &IPauseOptionsComponent::AdvancedOptions ), "Advanced Options", "Edit advanced options for this rom." ) );
@@ -169,7 +173,7 @@ IPauseOptionsComponent::IPauseOptionsComponent( CUIContext * p_context, CFunctor
 	mElements.Add( new CUISpacer( 16 ) );
 
 	mElements.Add( new CUICommandImpl( new CMemberFunctor< IPauseOptionsComponent >( this, &IPauseOptionsComponent::OnResume ), "Resume Emulation", "Resume emulation." ) );
-	mElements.Add( new CUICommandImpl( new CMemberFunctor< IPauseOptionsComponent >( this, &IPauseOptionsComponent::OnReset ), "Return to Main Menu", "Return to the main menu." ) );
+	mElements.Add( new CUICommandImpl( new CMemberFunctor< IPauseOptionsComponent >( this, &IPauseOptionsComponent::ExitConfirmation ), "Return to Main Menu", "Return to the main menu." ) );
 }
 
 //*************************************************************************************
@@ -184,31 +188,47 @@ IPauseOptionsComponent::~IPauseOptionsComponent()
 //*************************************************************************************
 void	IPauseOptionsComponent::Update( float elapsed_time, const v2 & stick, u32 old_buttons, u32 new_buttons )
 {
-	if(old_buttons != new_buttons)
+	if( mExitConfirmation )
 	{
-		if( new_buttons & PSP_CTRL_UP )
+		if(new_buttons & PSP_CTRL_TRIANGLE)
 		{
-			mElements.SelectPrevious();
+			(*mOnReset)();
 		}
-		if( new_buttons & PSP_CTRL_DOWN )
+		else if(new_buttons & PSP_CTRL_SQUARE)
 		{
-			mElements.SelectNext();
+			mExitConfirmation=false;
+			return;
 		}
-
-		CUIElement *	element( mElements.GetSelectedElement() );
-		if( element != NULL )
+	}
+	else
+	{
+		if(old_buttons != new_buttons)
 		{
-			if( new_buttons & PSP_CTRL_LEFT )
+			if( new_buttons & PSP_CTRL_UP )
 			{
-				element->OnPrevious();
+				mElements.SelectPrevious();
 			}
-			if( new_buttons & PSP_CTRL_RIGHT )
+			if( new_buttons & PSP_CTRL_DOWN )
 			{
-				element->OnNext();
+				mElements.SelectNext();
 			}
-			if( new_buttons & (PSP_CTRL_CROSS|PSP_CTRL_START) )
+				
+			
+			CUIElement *	element( mElements.GetSelectedElement() );
+			if( element != NULL )
 			{
-				element->OnSelected();
+				if( new_buttons & PSP_CTRL_LEFT )
+				{
+					element->OnPrevious();
+				}
+				if( new_buttons & PSP_CTRL_RIGHT )
+				{
+					element->OnNext();
+				}
+				if( new_buttons & (PSP_CTRL_CROSS|PSP_CTRL_START) )
+				{
+					element->OnSelected();
+				}
 			}
 		}
 	}
@@ -219,10 +239,23 @@ void	IPauseOptionsComponent::Update( float elapsed_time, const v2 & stick, u32 o
 //*************************************************************************************
 void	IPauseOptionsComponent::Render()
 {
-	mElements.Draw( mpContext, TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_CENTRE, TEXT_AREA_TOP );
+	if( mExitConfirmation)
+	{
+		mpContext->DrawTextAlign(0,480,AT_CENTRE,105,"Any unsaved progress will be lost",
+			       	DrawTextUtilities::TextRed);
+		mpContext->DrawTextAlign(0,480,AT_CENTRE,120,"Are you sure you want to return to the main menu?",
+			       	DrawTextUtilities::TextRed);
+		mpContext->DrawTextAlign(0,480,AT_CENTRE,135,"Press Triangle to confirm",
+			       	DrawTextUtilities::TextRed);
+		mpContext->DrawTextAlign(0,480,AT_CENTRE,150,"Press Square to cancel",
+			       	DrawTextUtilities::TextRed);
+	}
+	else
+		mElements.Draw( mpContext, TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_CENTRE, TEXT_AREA_TOP );
 
-	CUIElement *	element( mElements.GetSelectedElement() );
+		CUIElement *	element( mElements.GetSelectedElement() );
 	if( element != NULL )
+	
 	{
 		const char *		p_description( element->GetDescription() );
 
@@ -235,6 +268,13 @@ void	IPauseOptionsComponent::Render()
 								 VA_BOTTOM );
 
 	}
+}
+//*************************************************************************************
+//
+//*************************************************************************************
+void IPauseOptionsComponent::ExitConfirmation()
+{
+	mExitConfirmation=true;
 }
 
 //*************************************************************************************

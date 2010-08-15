@@ -580,12 +580,6 @@ void	PSPRenderer::UpdateViewport()
 //*****************************************************************************
 //
 //*****************************************************************************
-/*
-inline f32 round( f32 x )
-{
-	return (f32)(s32)( x + 0.5f );
-}
-*/
 v2	PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
 {
 	v2	psp_coords;
@@ -596,10 +590,12 @@ v2	PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
 	//
 
 	// rounding twice really needed? //Corn
-//	psp_coords.x = vfpu_round( vfpu_round( n64_coords.x ) * mN64ToPSPScale.x + mN64ToPSPTranslate.x );
-//	psp_coords.y = vfpu_round( vfpu_round( n64_coords.y ) * mN64ToPSPScale.y + mN64ToPSPTranslate.y );
-	psp_coords.x = vfpu_round( n64_coords.x * mN64ToPSPScale.x + mN64ToPSPTranslate.x );
-	psp_coords.y = vfpu_round( n64_coords.y * mN64ToPSPScale.y + mN64ToPSPTranslate.y );
+	// Is needed otherwise the it brakes the main menu in GoldenEye
+	//
+	psp_coords.x = vfpu_round( vfpu_round( n64_coords.x ) * mN64ToPSPScale.x + mN64ToPSPTranslate.x );
+	psp_coords.y = vfpu_round( vfpu_round( n64_coords.y ) * mN64ToPSPScale.y + mN64ToPSPTranslate.y );
+	//psp_coords.x = vfpu_round( n64_coords.x * mN64ToPSPScale.x + mN64ToPSPTranslate.x );
+	//psp_coords.y = vfpu_round( n64_coords.y * mN64ToPSPScale.y + mN64ToPSPTranslate.y );
 
 	return psp_coords;
 }

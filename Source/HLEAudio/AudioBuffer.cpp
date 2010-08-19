@@ -28,14 +28,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ConfigOptions.h"
 
 //*****************************************************************************
-//
+// rewritten to integer mode (faster & less ASM) //Corn
 //*****************************************************************************
-Sample	Interpolate( const Sample & a, const Sample & b, float r )
+inline Sample	Interpolate( const Sample & a, const Sample & b, s32 r )
 {
 	Sample out;
 
-	out.L = a.L + s16( ( b.L - a.L ) * r );
-	out.R = a.R + s16( ( b.R - a.R ) * r );
+	out.L = a.L + ((( b.L - a.L ) * r ) >> 12 );
+	out.R = a.R + ((( b.R - a.R ) * r ) >> 12 );
 
 	return out;
 }
@@ -102,32 +102,32 @@ void	CAudioBuffer::AddSamples( const Sample * samples, u32 num_samples, u32 freq
 	//	We increment it by 'r' for each output sample we generate.
 	//	When it reaches 1.0, we know we've hit the next sample, so we increment in_idx
 	//	and reduce s by 1.0 (to keep it in the range 0.0 .. 1.0)
-	//
-	const float	r( float( frequency ) / float( output_freq ) );
-	float		s( 0.0f );
-	u32			in_idx( 0 );
+	//	Principle is the same but rewritten to integer mode (faster & less ASM) //Corn
 
-	u32			output_samples( ( (num_samples-1) * output_freq ) / frequency );
+	const s32 r( (frequency << 12)  / output_freq );
+	s32		  s( 0 );
+	u32		  in_idx( 0 );
+	u32		  output_samples( ( (num_samples-1) * output_freq ) / frequency );
+
 	for( u32 i = 0; i < output_samples; ++i )
 	{
 		DAEDALUS_ASSERT( in_idx + 1 < num_samples, "Input index out of range - %d / %d", in_idx+1, num_samples );
 
-#if 0 // Sine tone
+#if 0 // 1->Sine tone, 0->Normal
 		//static float c= 0.0f;
 		//c += 100.0f / 44100.0f;
 		//if( c >= 1.0f )
 		//  c-=1.f;
 		//s16 v( s16( SHRT_MAX * sinf( c * 3.141f*2 ) ) );
 		Sample	out;
-
 		s16 v = WriteCounter++;
 		if( WriteCounter >= MAX_COUNTER )
 		{
 			printf( "Loop write\n" );
 			WriteCounter = 0;
 		}
-
 		out.L = out.R = v;
+
 #else
 		const Sample &	in_a( samples[ in_idx + 0 ] );
 		const Sample &	in_b( samples[ in_idx + 1 ] );
@@ -135,13 +135,13 @@ void	CAudioBuffer::AddSamples( const Sample * samples, u32 num_samples, u32 freq
 		Sample	out( Interpolate( in_a, in_b, s ) );
 
 		s += r;
-		if( s > 1.0f )
+		if( s > 4096 )
 		{
-			s -= 1.0f;
-			in_idx++;
+			s -= 4096;
+			++in_idx;
 		}
 
-		DAEDALUS_ASSERT( s >= 0.0f && s < 1.0f, "s out of range" );
+		DAEDALUS_ASSERT( s >= 0 && s < 4096, "s out of range" );
 #endif
 
 		Sample *	next( write_ptr + 1 );
@@ -160,7 +160,8 @@ void	CAudioBuffer::AddSamples( const Sample * samples, u32 num_samples, u32 freq
 		//	ThreadSleepMs(1);
 		// ToDo: Why PSP only? //Only needed for ME?
 			if ( gAudioPluginEnabled == APM_ENABLED_SYNC )
-				ThreadYield(); // make time for other threads
+				ThreadSleepMs( 15 );	// make time for other threads //Corn
+//				ThreadYield(); // make time for other threads
 			read_ptr = mReadPtr;
 		}
 

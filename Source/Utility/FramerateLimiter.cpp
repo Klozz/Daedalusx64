@@ -155,6 +155,7 @@ void FramerateLimiter_Limit()
 					{
 						//printf( "Delay ticks: %d, ms: %d, sleep: %d\n", u32( delay_ticks ), u32( delay_ms ), sleep_ms );
 						ThreadSleepMs( sleep_ms );
+						return;	//Return early //Corn
 					}
 				}
 

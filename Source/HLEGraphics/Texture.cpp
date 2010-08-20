@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility/Profiler.h"
 
 #include "Math/MathUtil.h"
+#include "Math/Math.h"
 #include "Utility/IO.h"
 
 #include "ConfigOptions.h"
@@ -482,7 +483,7 @@ bool CTexture::Initialise()
 
 		if(gCheckTextureHashFrequency > 0)
 		{
-			mFrameLastUpToDate += rand() % gCheckTextureHashFrequency;
+			mFrameLastUpToDate += pspFastRand() % gCheckTextureHashFrequency;
 		}
 		UpdateTexture( mTextureInfo, mpTexture, false, c32::White );
 	}

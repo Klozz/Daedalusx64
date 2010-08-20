@@ -49,8 +49,8 @@ static void * Read_Noise( u32 address )
 		bWarned = true;
 	}
 #endif
-	*(u32*)((u8 *)g_pMemoryBuffers[MEM_UNUSED] + 0) = rand();
-	*(u32*)((u8 *)g_pMemoryBuffers[MEM_UNUSED] + 4) = rand();
+	*(u32*)((u8 *)g_pMemoryBuffers[MEM_UNUSED] + 0) = pspFastRand();
+	*(u32*)((u8 *)g_pMemoryBuffers[MEM_UNUSED] + 4) = pspFastRand();
 
 	return g_pMemoryBuffers[MEM_UNUSED];
 

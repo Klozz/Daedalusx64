@@ -2017,7 +2017,7 @@ PATCH_FUNCTION_ENTRY(osSetEventMesg)
 #ifndef DISABLE_CPU_FUNCTIONS
 PATCH_FUNCTION_ENTRY(__osGetCause)
 PATCH_FUNCTION_ENTRY(__osDisableInt)
-//PATCH_FUNCTION_ENTRY(__osRestoreInt)  //buggy, 
+PATCH_FUNCTION_ENTRY(__osRestoreInt)  //buggy, <Why??? - Salvy>
 PATCH_FUNCTION_ENTRY(__osAtomicDec)
 //PATCH_FUNCTION_ENTRY(__osSetFpcCsr)
 PATCH_FUNCTION_ENTRY(__osSetCompare)

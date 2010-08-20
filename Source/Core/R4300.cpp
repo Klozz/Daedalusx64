@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Debug/DebugLog.h"
 #include "CPU.h"
-#include "RSP.h"
 #include "Interrupt.h"
 #include "DynaRec/TraceRecorder.h"
 
@@ -37,6 +36,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <pspfpu.h>
 
+// ToDo Move these macros to a new header.
+//
 #define	R4300_CALL_MAKE_OP( var )	OpCode	var;	var._u32 = op_code_bits
 
 #define INSTR_TARGET		( (gCPUState.CurrentPC & 0xF0000000) | (op_code.target<<2) )
@@ -77,7 +78,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 //*************************************************************************************
 #define sLOGICAL(OPERATOR)							sLOGIC(gRD_s64, gRS_s32, OPERATOR, gRT_s32)		//untested..//
-#define sDLOGICAL(OPERATOR)							sDLOGIC(gRD_s32, gRS_s32, OPERATOR, gRT_s32)	// Not tested really, but generates same asm as old code, we should be safe..
+#define sDLOGICAL(OPERATOR)							sDLOGIC(gRD_s64, gRS_s32, OPERATOR, gRT_s32)	// s64 a must, see Paper Mario
 #define uDLOGICAL(OPERATOR)							uDLOGIC(gRD_u64, gRS_u64, OPERATOR, gRT_u64)	// u64 a must here// Need to test !
 #define sDLOGICAL_WITH_IMM(OPERATOR)				sDLOGIC(gRT_s32, gRS_s32, OPERATOR, (s16) OFFSET_IMMEDIATE)	// s64 not a must:0 atleast M64 and SSV didn't complain, saved around 6 inst :) //
 #define uDLOGICAL_WITH_IMM(OPERATOR)				uDLOGIC(gRT_u64, gRS_u64, OPERATOR, (u16) OFFSET_IMMEDIATE) // u64 a must here//
@@ -1916,7 +1917,8 @@ static void R4300_CALL_TYPE R4300_Cop0_MFC0( R4300_CALL_SIGNATURE )
 
 		// Select a value between wired and 31.
 		// We should use TLB least-recently used here too?
-		gGPR[ op_code.rt ]._s32_0 = vfpu_randf(wired, 32);
+		//gGPR[ op_code.rt ]._s32_0 = vfpu_randf(wired, 32);
+		gGPR[ op_code.rt ]._s32_0 = (pspFastRand()%(32-wired)) + wired;
 
 		DBGConsole_Msg(0, "[MWarning reading MFC0 random register]");
 		break;
@@ -2067,10 +2069,10 @@ static void R4300_CALL_TYPE R4300_TLB_TLBWR( R4300_CALL_SIGNATURE )
 
 	// Select a value for index between wired and 31
 	
-	// errrg the vfpu here forr rand causes alot of overhead :/
+	// errrg the vfpu here for rand causes alot of overhead :/
 	//i = vfpu_randf(wired, 32);
 	
-	i = (rand()%(32-wired)) + wired;
+	i = (pspFastRand()%(32-wired)) + wired;
 
 	DPF( DEBUG_TLB, "TLBWR: INDEX: 0x%04x. ", i );
 
@@ -2206,15 +2208,8 @@ static void R4300_CALL_TYPE R4300_Cop1_CFC1( R4300_CALL_SIGNATURE ) 		// move Co
 	// Only defined for reg 0 or 31
 	if ( op_code.fs == 0 || op_code.fs == 31 )
 	{
-		gGPR[ op_code.rt ]._s64 = (s64)gCPUState.FPUControl[ op_code.fs ]._s32_0;
-		//if ( op_code.fs == 0 )
-		//{
-		//	DBGConsole_Msg( 0, "Reading FCR00 - %08x at %08x", gGPR[ op_code.rt ]._u32_0, gCPUState.CurrentPC  );
-		//}
-		//else
-		//{
-		//	DBGConsole_Msg( 0, "Reading FCR32 - %08x at %08x", gGPR[ op_code.rt ]._u32_0, gCPUState.CurrentPC  );
-		//}
+		//gGPR[ op_code.rt ]._s64 = (s64)gCPUState.FPUControl[ op_code.fs ]._s32_0;
+		gGPR[ op_code.rt ]._s32_0 = (s64)gCPUState.FPUControl[ op_code.fs ]._s32_0;
 	}
 }
 
@@ -2224,37 +2219,18 @@ static void R4300_CALL_TYPE R4300_Cop1_CTC1( R4300_CALL_SIGNATURE ) 		// move Co
 
 	// Only defined for reg 0 or 31
 	// TODO - Maybe an exception was raised?
-	if ( op_code.fs == 0 )
+	// Not needed for 0?
+	/*if ( op_code.fs == 0 )
 	{
 		gCPUState.FPUControl[ op_code.fs ]._u64 = gGPR[ op_code.rt ]._u64;
 
-	}
-	else if ( op_code.fs == 31 )
+	}*/
+	//else if ( op_code.fs == 31 )
+	if ( op_code.fs == 31 )
 	{
 		gCPUState.FPUControl[ op_code.fs ] = gGPR[ op_code.rt ];
 
 		u32		fpcr( gCPUState.FPUControl[ op_code.fs ]._u32_0 );
-
-		/*
-		if ( fpcr & FPCSR_FS )
-		{
-			DBGConsole_Msg( 0, "FCR31: Flush denormalised results to 0, no exception" );
-		}
-		else
-		{
-			DBGConsole_Msg( 0, "FCR31: denormalised results cause exception" );
-		}
-
-		u32		fp_cause(  fpcr & ( FPCSR_CE|FPCSR_CV|FPCSR_CZ|FPCSR_CO|FPCSR_CU|FPCSR_CI ) );
-		u32		fp_enable( fpcr & (	         FPCSR_EV|FPCSR_EZ|FPCSR_EO|FPCSR_EU|FPCSR_EI ) );
-		u32		fp_flags(  fpcr & (          FPCSR_FV|FPCSR_FZ|FPCSR_FO|FPCSR_FU|FPCSR_FI ) );
-
-		if ( fp_cause || fp_enable || fp_flags )
-		{
-			DBGConsole_Msg( 0, "FPCR: Cause %08x, Enable %08x, Flags %08x",
-				(fp_cause >> 12), (fp_enable>>7), (fp_flags>>2) );
-		}
-		*/
 
 		switch ( fpcr & FPCSR_RM_MASK )
 		{

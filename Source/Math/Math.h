@@ -173,15 +173,13 @@ inline float vfpu_sinf(float rad) {
     return result;
 }
 
-//Below function taken from PGE
-inline float vfpu_round(float x)
+inline s32 vfpu_round(float x)
 {
-	float result;
+	s32 result;
 
 	__asm__ volatile (
 		"mtv      %1, S000\n"
 		"vf2in.s  S000, S000, 0\n"
-		"vi2f.s	  S000, S000, 0\n"
 		"mfv      %0, S000\n"
 	: "=r"(result) : "r"(x));
 	
@@ -368,9 +366,12 @@ inline int pspFpuIsNaN(float f)
 	return (v);
 }
 
-
-
-
-
+//Speedy random number 0 - (2^32)-1 //Corn
+inline u32 pspFastRand()
+{
+	static u32 IO_RAND=0x12345678;
+	IO_RAND = (IO_RAND << 1) | (((IO_RAND >> 31) ^ (IO_RAND >> 28)) & 1);
+	return IO_RAND;
+}
 
 #endif // DAEDMATHS_H__

@@ -153,7 +153,6 @@ DAED_AUDIO_SRCS =  	Source/HLEAudio/ABI1.cpp \
 			Source/HLEAudio/AudioBuffer.cpp \
 			Source/HLEAudio/AudioHLEProcessor.cpp \
 			Source/HLEAudio/HLEMain.cpp \
-			Source/HLEAudio/SafeABI.cpp \
 			Source/SysPSP/HLEAudio/AudioCodePSP.cpp \
 			Source/SysPSP/HLEAudio/AudioPluginPSP.cpp
 

@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Debug/DebugLog.h"
 #include "Debug/Dump.h"			// For Dump_GetDumpDirectory()
 
+#include "HLEAudio/audiohle.h"	// For Audio_Ucode
+
 #include "OSHLE/ultra_rcp.h"
 #include "OSHLE/ultra_mbi.h"
 #include "OSHLE/ultra_sptask.h"
@@ -38,6 +40,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Utility/Profiler.h"
 #include "Utility/PrintOpCode.h"
+
+#include "SysPSP/Utility/JobManager.h"
 
 #include "Test/BatchTest.h"
 
@@ -50,6 +54,45 @@ static void RDP_DumpRSPData(char * szName, u32 dwCRC, u32 * pBase, u32 dwPCBase,
 
 bool	gHLEGraphicsEnabled = true;
 bool	gHLEAudioEnabled = true;
+
+//*****************************************************************************
+//
+//*****************************************************************************
+struct SHLEStartJob : public SJob
+{
+	SHLEStartJob()
+	{
+		InitJob = NULL;
+		DoJob = &DoHLEStartStatic;
+		FiniJob = &DoHLEFinishedStatic;
+	}
+
+	static int DoHLEStartStatic( SJob * arg )
+	{
+		OSTask * pTask = (OSTask *)(g_pu8SpMemBase + 0x0FC0); // might be unnecessary?
+		SHLEStartJob *	job( static_cast< SHLEStartJob * >( arg ) );
+		return job->DoHLEStart(pTask);
+	}
+
+	static int DoHLEFinishedStatic( SJob * arg )
+	{
+		SHLEStartJob *	job( static_cast< SHLEStartJob * >( arg ) );
+		return job->DoHLEFinish();
+	}
+
+	int DoHLEStart(OSTask * task)
+	{
+		//HLEStart();
+		Audio_Ucode(task);
+		return 0;
+	}
+
+	int DoHLEFinish()
+	{
+		CPU_AddEvent(RSP_AUDIO_INTR_CYCLES, CPU_EVENT_AUDIO);
+		return 0;
+	}
+};
 
 //*****************************************************************************
 //
@@ -197,11 +240,11 @@ static EProcessResult RSP_HLE_Graphics()
 		Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_DP);
 		R4300_Interrupt_UpdateCause3();
 		result = PR_COMPLETED;
-		#ifdef DAEDALUS_BATCH_TEST_ENABLED
+#ifdef DAEDALUS_BATCH_TEST_ENABLED
 			CBatchTestEventHandler * handler( BatchTest_GetHandler() );
 			if( result == PR_COMPLETED && handler )
 				handler->OnDisplayListComplete();
-		#endif
+#endif
 		result = PR_COMPLETED;
 	}
 
@@ -209,7 +252,7 @@ static EProcessResult RSP_HLE_Graphics()
 	{
 		DAEDALUS_PROFILE( "HLE: Graphics" );
 
-	#ifdef DAEDALUS_TRAP_PLUGIN_EXCEPTIONS
+#ifdef DAEDALUS_TRAP_PLUGIN_EXCEPTIONS
 		try
 		{
 			gGraphicsPlugin->ProcessDList();
@@ -221,9 +264,9 @@ static EProcessResult RSP_HLE_Graphics()
 			Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_DP);
 			R4300_Interrupt_UpdateCause3();
 		}
-	#else
+#else
 		gGraphicsPlugin->ProcessDList();
-	#endif
+#endif
 		result = PR_COMPLETED;
 	}
 	else 	 
@@ -240,21 +283,43 @@ static EProcessResult RSP_HLE_Graphics()
 //*****************************************************************************
 //
 //*****************************************************************************
-static EProcessResult RSP_HLE_Audio()
+static EProcessResult RSP_HLE_Audio(OSTask * task)
 {
-	if( gHLEAudioEnabled)
+	EProcessResult	result( PR_NOT_STARTED );
+
+	switch( gAudioPluginEnabled )
+	{
+		case APM_DISABLED:
+			result = PR_COMPLETED;
+			break;
+		case APM_ENABLED_ASYNC:
+			{
+				SHLEStartJob	job;
+				gJobManager.AddJob( &job, sizeof( job ) );
+			}
+			result = PR_STARTED;
+			break;
+		case APM_ENABLED_SYNC:
+			Audio_Ucode(task);
+			result = PR_COMPLETED;
+			break;
+	}
+
+	return result;
+	/*if( gHLEAudioEnabled)
 	{
 		if (g_pAiPlugin != NULL )
 		{
 			//RDP_AUD_ExecuteTask(pTask);
 			DAEDALUS_PROFILE( "HLE: Audio" );
-			return g_pAiPlugin->ProcessAList();
+			//Audio_Ucode(task);
+			//return g_pAiPlugin->ProcessAList();
 		}
 		else
 			return PR_COMPLETED;
 	}
 
-	return PR_NOT_STARTED;
+	return PR_NOT_STARTED;*/
 }
 
 void jpg_uncompress(OSTask *);
@@ -312,7 +377,7 @@ void RSP_HLE_ProcessTask()
 			break;
 
 		case M_AUDTASK:
-			result = RSP_HLE_Audio();
+			result = RSP_HLE_Audio(pTask);
 			break;
 
 		case M_VIDTASK:

@@ -212,14 +212,6 @@ struct SAbi1Interleave
 };
 DAEDALUS_STATIC_ASSERT( sizeof( SAbi1Interleave ) == 8 );
 
-
-
-
-
-
-
-
-
 struct SAbi2ClearBuffer
 {
 	unsigned		Count : 16;
@@ -229,7 +221,6 @@ struct SAbi2ClearBuffer
 	unsigned		: 8;			// Command
 };
 DAEDALUS_STATIC_ASSERT( sizeof( SAbi2ClearBuffer ) == 8 );
-
 
 struct SAbi2LoadBuffer
 {
@@ -367,14 +358,15 @@ typedef void ( * AudioHLEInstruction )( AudioHLECommand command );
 
 // These must be defined...
 #include "Core/Memory.h"
+#include "OSHLE/ultra_sptask.h"
 
+// MMmm, why not use the defines from Memory.h?
+// ToDo : remove these and use the ones already provided by the core?
 #define dmem	((u8*)g_pMemoryBuffers[MEM_SP_MEM] + SP_DMA_DMEM)
 #define imem	((u8*)g_pMemoryBuffers[MEM_SP_MEM] + SP_DMA_IMEM)
 #define rdram	((u8*)g_pMemoryBuffers[MEM_RD_RAM])
 
 // Use these functions to interface with the HLE Audio...
-void HLEStart();
-void ChangeABI(int type); // type 0 = AutoDetectMode
+int Audio_Ucode(OSTask *);
 
-extern u32 UCData, UDataLen;
 extern const u16 ResampleLUT[0x200];

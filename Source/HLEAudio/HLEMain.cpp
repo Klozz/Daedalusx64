@@ -23,14 +23,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //	and modified by StrmnNrmn to work with Daedalus PSP. Thanks Azimer!
 //	Drop me a line if you get chance :)
 //
+//
 
 #include "stdafx.h"
 #include "audiohle.h"
 #include "AudioHLEProcessor.h"
 
+
+
 // Audio UCode lists
-//     Dummy UCode Handler for UCode detection... (Will always assume UCode1 until the nth list is executed)
-extern AudioHLEInstruction SafeABI[0x20];
+// Dummy UCode Handler
+//
+static void SPU( AudioHLECommand command ){}
+//
+//     ABI ? : Unknown or unsupported UCode
+//
+AudioHLEInstruction ABIUnknown [0x20] = { // Unknown ABI
+	SPU, SPU, SPU, SPU, SPU, SPU, SPU, SPU,
+	SPU, SPU, SPU, SPU, SPU, SPU, SPU, SPU,
+	SPU, SPU, SPU, SPU, SPU, SPU, SPU, SPU,
+	SPU, SPU, SPU, SPU, SPU, SPU, SPU, SPU
+};
 //---------------------------------------------------------------------------------------------
 //
 //     ABI 1 : Mario64, WaveRace USA, Golden Eye 007, Quest64, SF Rush
@@ -56,103 +69,53 @@ extern AudioHLEInstruction ABI3[0x20];
 //				 Indiana Jones and Battle for Naboo (?)
 //---------------------------------------------------------------------------------------------
 //
-//     ABI ? : Unknown or unsupported UCode
+// Below functions were updated
 //
-extern AudioHLEInstruction ABIUnknown[0x20];
-//---------------------------------------------------------------------------------------------
-
-AudioHLEInstruction ABI[0x20];
-bool locklistsize = false;
 
 //---------------------------------------------------------------------------------------------
-// Set the Current ABI
-void ChangeABI (int type) {
-	switch (type) {
-		case 0x0:
-			//MessageBox (NULL, "ABI set to AutoDetect", "Audio ABI Changed", MB_OK);
-			memcpy (ABI, SafeABI, 0x20*4);
-		break;
-		case 0x1:
-			//MessageBox (NULL, "ABI set to ABI 1", "Audio ABI Changed", MB_OK);
-			memcpy (ABI, ABI1, 0x20*4);
-		break;
-		case 0x2:
-			//MessageBox (NULL, "ABI set to ABI 2", "Audio ABI Changed", MB_OK);
-			//MessageBox (NULL, "Mario Kart, Zelda64, Zelda MoM, WaveRace JAP, etc. are not supported right now...", "Audio ABI Changed", MB_OK);
-			//memcpy (ABI, ABIUnknown, 0x20*4);
-			memcpy (ABI, ABI2, 0x20*4);
-		break;
-		case 0x3:
-			//MessageBox (NULL, "ABI set to ABI 3", "Audio ABI Changed", MB_OK);
-			//MessageBox (NULL, "DK64, Perfect Dark, Banjo Kazooi, Banjo Tooie, (RARE), not supported yet...", "Audio ABI Changed", MB_OK);
-			//memcpy (ABI, ABIUnknown, 0x20*4);
-			memcpy (ABI, ABI3, 0x20*4);
-		break;
-		/*case 0x4: // Mario Kart, Zelda64 (Demo Version)
-			memcpy (ABI, ABI2, 0x20*4);
-		break;*/
-		case 0x5:
-			DAEDALUS_ERROR ("ABI set to ABI 5");
-			//MessageBox (NULL, "Rogue Squadron, Tarzan, Hydro Thunder, Indiana Jones and Battle for Naboo, and TWINE not supported yet...", "Audio ABI Not Supported", MB_OK);
-//     ABI 5 : Factor 5 - MoSys/MusyX
-//				 Rogue Squadron, Tarzan, Hydro Thunder, and TWINE
-//				 Indiana Jones and Battle for Naboo (?)
-			memcpy (ABI, ABIUnknown, 0x20*4);
-			//memcpy (ABI, ABI3, 0x20*4);
-		break;
-		default:
-			DAEDALUS_ERROR("ABI set to ABI Unknown");
-			memcpy (ABI, ABIUnknown, 0x20*4);
-			return; // Quick out to prevent Dynarec from getting it...
-	}
-}
-
+AudioHLEInstruction *ABI=ABIUnknown;
 //---------------------------------------------------------------------------------------------
 
-u32 UCData, UDataLen;
-
-void HLEStart()
+//*****************************************************************************
+//
+//*****************************************************************************
+inline void Audio_Ucode_Detect(OSTask * pTask)
 {
-	u32 base, dmembase;
-
-	u32 List  = ((u32*)dmem)[0xFF0/4], ListLen = ((u32*)dmem)[0xFF4/4];
-	u32 *HLEPtr= (u32 *)(rdram+List);
-	
-	UCData= ((u32*)dmem)[0xFD8/4];
-	UDataLen= ((u32*)dmem)[0xFDC/4];
-	base = ((u32*)dmem)[0xFD0/4];
-	dmembase = ((u32*)dmem)[0xFD8/4];
-
-	gAudioHLEState.LoopVal = 0;
-	memset( gAudioHLEState.Segments, 0, sizeof( gAudioHLEState.Segments ) );
-
-	//memcpy (imem+0x80, rdram+((u32*)dmem)[0xFD0/4], ((u32*)dmem)[0xFD4/4]);
-
-	ListLen = ListLen >> 2;
-
-	if (*(u32*)(rdram+UCData+0x30) == 0x0B396696) {
-		ChangeABI (5); // This will be replaced with ProcessMusyX
-		return;
-	}
-
-
-	for (u32 x=0; x < ListLen; x+=2)
+	if (*(u32*)(g_pu8RamBase + (u32)pTask->t.ucode_data + 0) != 0x01)
 	{
-		AudioHLECommand command;
-
-		command.cmd0 = HLEPtr[x  ];
-		command.cmd1 = HLEPtr[x+1];
-		ABI[command.cmd]( command );
+		if (*(u32*)(g_pu8RamBase + (u32)pTask->t.ucode_data + 0) == 0x0F)
+			ABI=ABIUnknown;
+		else
+			ABI=ABI3;
+	}
+	else
+	{
+		if (*(u32*)(g_pu8RamBase + (u32)pTask->t.ucode_data + 0x30) == 0xF0000F00)
+			ABI=ABI1;
+		else
+			ABI=ABI2;
 	}
 }
 
-static void SPU( AudioHLECommand command )
+//*****************************************************************************
+//
+//*****************************************************************************
+s32 Audio_Ucode(OSTask * pTask)
 {
+	u32 * p_alist = (u32 *)(g_pu8RamBase + (u32)pTask->t.data_ptr);
+    u32 i;
+
+	Audio_Ucode_Detect(pTask);
+
+	for (i = 0; i < (pTask->t.data_size/4);)
+    {
+		AudioHLECommand command;
+        command.cmd0 = p_alist[i++];
+        command.cmd1 = p_alist[i++];
+        ABI[command.cmd](command);
+		//printf("%08X %08X\n",command.cmd0,command.cmd1);
+	}
+
+    return 0;
 }
 
-AudioHLEInstruction ABIUnknown [0x20] = { // Unknown ABI
-	SPU, SPU, SPU, SPU, SPU, SPU, SPU, SPU,
-	SPU, SPU, SPU, SPU, SPU, SPU, SPU, SPU,
-	SPU, SPU, SPU, SPU, SPU, SPU, SPU, SPU,
-	SPU, SPU, SPU, SPU, SPU, SPU, SPU, SPU
-};

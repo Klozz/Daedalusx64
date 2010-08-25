@@ -110,7 +110,9 @@ void	CAudioPluginPsp::DacrateChanged( ESystemType system_type )
 	//if( gAudioPluginEnabled == APM_DISABLED ) return;
 	if( gAudioPluginEnabled > APM_DISABLED )
 	{
+#ifndef DAEDALUS_SILENT
 		printf( "DacrateChanged( %d )\n", system_type );
+#endif
 
 		u32 dacrate = Memory_AI_GetRegister(AI_DACRATE_REG);
 

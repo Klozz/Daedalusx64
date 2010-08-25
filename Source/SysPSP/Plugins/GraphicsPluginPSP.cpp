@@ -223,7 +223,7 @@ void CGraphicsPluginPsp::UpdateScreen()
 				pspDebugScreenSetTextColor( 0xffffffff );
 				pspDebugScreenSetBackColor(0);
 				pspDebugScreenSetXY(0, 0);
-				pspDebugScreenPrintf( "Frames/sec: %#.1f | Vbls/sec: %d/%d | Sync: %#.2f%%   ", gCurrentFramerate, u32( gCurrentVblrate ), FramerateLimiter_GetTvFrequencyHz(), FramerateLimiter_GetSync() * 100.0f );
+				pspDebugScreenPrintf( "FPS: %#.1f | VB: %d/%d | Sync: %#.1f%%   ", gCurrentFramerate, u32( gCurrentVblrate ), FramerateLimiter_GetTvFrequencyHz(), FramerateLimiter_GetSync() * 100.0f );
 			}
 			if( gGlobalPreferences.BatteryWarning )
 			{

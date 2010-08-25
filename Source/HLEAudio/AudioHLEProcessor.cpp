@@ -48,7 +48,6 @@ inline s32		FixedPointMul15( s32 a, s32 b )
 
 AudioHLEState gAudioHLEState;
 
-
 const u16 ResampleLUT[0x200] =
 {
 	0x0C39, 0x66AD, 0x0D46, 0xFFDF, 0x0B39, 0x6696, 0x0E5F, 0xFFD8,
@@ -84,7 +83,6 @@ const u16 ResampleLUT[0x200] =
 	0xFFC8, 0x10B4, 0x6626, 0x095A, 0xFFD0, 0x0F83, 0x6669, 0x0A44,
 	0xFFD8, 0x0E5F, 0x6696, 0x0B39, 0xFFDF, 0x0D46, 0x66AD, 0x0C39
 };
-
 
 void	AudioHLEState::ClearBuffer( u16 addr, u16 count )
 {
@@ -338,6 +336,47 @@ void	AudioHLEState::EnvMixer( u8 flags, u32 address )
 	memcpy(rdram+address, (u8 *)MixerWorkArea,80);
 }
 
+#if 1 //1->fast, 0->HQ //Corn
+void	AudioHLEState::Resample( u8 flags, u32 pitch, u32 address )
+{
+	bool	init( (flags & 0x1) != 0 );
+	DAEDALUS_ASSERT( (flags & 0x2) == 0, "Resample: unhandled flags %02x", flags );		// Was breakpoint - StrmnNrmn
+
+	pitch *= 2;
+
+	s16 *	buffer( (s16 *)(Buffer) );
+	u32		srcPtr(InBuffer/2);
+	u32		dstPtr(OutBuffer/2);
+	srcPtr -= 1;
+
+	u32 accumulator;
+	if (init)
+	{
+		buffer[(srcPtr)^1] = 0;
+		accumulator = 0;
+	}
+	else
+	{
+		buffer[(srcPtr)^1] = ((u16 *)rdram)[((address/2))^1];
+		accumulator = *(u16 *)(rdram+address+10);
+	}
+
+	u32		loops( ((Count+0xf)&0xFFF0)/2 );
+	for(u32 i = 0; i < loops ; ++i )
+	{
+		buffer[dstPtr^1] = buffer[(srcPtr+0)^1] + FixedPointMul15( buffer[(srcPtr+1)^1] - buffer[(srcPtr+0)^1], accumulator>>16 );
+		++dstPtr;
+		accumulator += pitch;
+		srcPtr += (accumulator>>16);
+		accumulator&=0xffff;
+	}
+
+	((u16 *)rdram)[((address/2))^1] = buffer[(srcPtr)^1];
+	*(u16 *)(rdram+address+10) = (u16)accumulator;
+}
+
+#else
+
 void	AudioHLEState::Resample( u8 flags, u32 pitch, u32 address )
 {
 	bool	init( (flags & 0x1) != 0 );
@@ -395,9 +434,9 @@ void	AudioHLEState::Resample( u8 flags, u32 pitch, u32 address )
 	}
 	*(u16 *)(rdram+address+10) = (u16)accumulator;
 }
+#endif
 
-
-void AudioHLEState::ExtractSamplesScale( s32 * output, u32 inPtr, s32 vscale ) const
+inline void AudioHLEState::ExtractSamplesScale( s32 * output, u32 inPtr, s32 vscale ) const
 {
 	int j = 0;
 
@@ -414,7 +453,7 @@ void AudioHLEState::ExtractSamplesScale( s32 * output, u32 inPtr, s32 vscale ) c
 	}
 }
 
-void AudioHLEState::ExtractSamples( s32 * output, u32 inPtr ) const
+inline void AudioHLEState::ExtractSamples( s32 * output, u32 inPtr ) const
 {
 	int j = 0;
 

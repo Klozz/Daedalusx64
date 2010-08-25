@@ -135,11 +135,8 @@ void	CAudioBuffer::AddSamples( const Sample * samples, u32 num_samples, u32 freq
 		Sample	out( Interpolate( in_a, in_b, s ) );
 
 		s += r;
-		if( s > 4096 )
-		{
-			s -= 4096;
-			++in_idx;
-		}
+		in_idx += s >> 12;
+		s &= 4095;
 
 		DAEDALUS_ASSERT( s >= 0 && s < 4096, "s out of range" );
 #endif

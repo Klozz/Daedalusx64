@@ -102,12 +102,14 @@ inline void Audio_Ucode_Detect(OSTask * pTask)
 //*****************************************************************************
 s32 Audio_Ucode(OSTask * pTask)
 {
-	u32 * p_alist = (u32 *)(g_pu8RamBase + (u32)pTask->t.data_ptr);
-    u32 i;
-
 	Audio_Ucode_Detect(pTask);
 
-	for (i = 0; i < (pTask->t.data_size/4);)
+	u32 * p_alist = (u32 *)(g_pu8RamBase + (u32)pTask->t.data_ptr);
+
+	//gAudioHLEState.LoopVal = 0;
+	//memset( gAudioHLEState.Segments, 0, sizeof( gAudioHLEState.Segments ) );
+
+	for (u32 i = 0; i < (pTask->t.data_size/4);)
     {
 		AudioHLECommand command;
         command.cmd0 = p_alist[i++];

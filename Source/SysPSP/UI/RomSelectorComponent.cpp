@@ -721,17 +721,17 @@ void IRomSelectorComponent::RenderPreview()
 						}
 					}
 					if ( p_rominfo->mSettings.Comment[9] != '0' ) {
-						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Use Flushtris:", c32::White );
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Increase VI Event:", c32::White );
 
 						if ( p_rominfo->mSettings.Comment[9] == '1' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Yes", c32::White );  y += line_height + 5;
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enable", c32::White );  y += line_height + 5;
 						}						
 						else if ( p_rominfo->mSettings.Comment[9] == '2' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "No", c32::White );  y += line_height + 5;
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disable", c32::White );  y += line_height + 5;
 						}
 					}
 					if ( p_rominfo->mSettings.Comment[10] != '0' ) {
-						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Dynamic Loop Optimisation:", c32::White );
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Dynamic Loop Optimization:", c32::White );
 
 						if ( p_rominfo->mSettings.Comment[10] == '1' ) {
 							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
@@ -751,33 +751,33 @@ void IRomSelectorComponent::RenderPreview()
 						}
 					}
 					if ( p_rominfo->mSettings.Comment[12] != '0' ) {
-						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "View Port Hack:", c32::White );
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Disable FP Usage Check:", c32::White );
 
 						if ( p_rominfo->mSettings.Comment[12] == '1' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Yes", c32::White );  y += line_height + 5;
 						}						
 						else if ( p_rominfo->mSettings.Comment[12] == '2' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "No", c32::White );  y += line_height + 5;
 						}
 					}
 					if ( p_rominfo->mSettings.Comment[13] != '0' ) {
-						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Disable Flat Shade:", c32::White );
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Basic TMEM Emulation:", c32::White );
 
 						if ( p_rominfo->mSettings.Comment[13] == '1' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Yes", c32::White );  y += line_height + 5;
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
 						}						
 						else if ( p_rominfo->mSettings.Comment[13] == '2' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "No", c32::White );  y += line_height + 5;
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
 						}
 					}
 					if ( p_rominfo->mSettings.Comment[14] != '0' ) {
-						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Disable Simulate Double:", c32::White );
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Remove Z-Fighting:", c32::White );
 
 						if ( p_rominfo->mSettings.Comment[14] == '1' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Yes", c32::White );  y += line_height + 5;
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
 						}						
 						else if ( p_rominfo->mSettings.Comment[14] == '2' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "No", c32::White );  y += line_height + 5;
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
 						}
 					}
 				}

@@ -32,6 +32,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Math/MathUtil.h"
 
+inline s32		FixedPointMul16( s32 a, s32 b )
+{
+	return s32( ( a * b ) >> 16 );
+}
+
 static void SPNOOP( AudioHLECommand command )
 {
 	DBGConsole_Msg( 0, "AudioHLE: Unknown/Unimplemented Audio Command %i in ABI 3", command.cmd );
@@ -81,18 +86,18 @@ void ENVMIXER3( AudioHLECommand command )
 	u8 flags = (u8)((command.cmd0 >> 16) & 0xff);
 	u32 addy = (command.cmd1 & 0xFFFFFF);
 
- 	short *inp=(short *)(gAudioHLEState.Buffer+0x4F0);
-	short *out=(short *)(gAudioHLEState.Buffer+0x9D0);
-	short *aux1=(short *)(gAudioHLEState.Buffer+0xB40);
-	short *aux2=(short *)(gAudioHLEState.Buffer+0xCB0);
-	short *aux3=(short *)(gAudioHLEState.Buffer+0xE20);
+ 	s16 *inp=(s16 *)(gAudioHLEState.Buffer+0x4F0);
+	s16 *out=(s16 *)(gAudioHLEState.Buffer+0x9D0);
+	s16 *aux1=(s16 *)(gAudioHLEState.Buffer+0xB40);
+	s16 *aux2=(s16 *)(gAudioHLEState.Buffer+0xCB0);
+	s16 *aux3=(s16 *)(gAudioHLEState.Buffer+0xE20);
 	s32 MainR;
 	s32 MainL;
 	s32 AuxR;
 	s32 AuxL;
-	int i1,o1,a1,a2,a3;
+	s32 i1,o1,a1,a2,a3;
 	//u16 AuxIncRate=1;
-	short zero[8];
+	s16 zero[8];
 	memset(zero,0,16);
 
 	s32 LAdder, LAcc, LVol;
@@ -142,7 +147,7 @@ void ENVMIXER3( AudioHLECommand command )
 	//	aux2=aux3=zero;
 	//}
 
-	for (int y = 0; y < (0x170/2); y++) {
+	for (s32 y = 0; y < (0x170/2); y++) {
 
 		// Left
 		LAcc += LAdder;
@@ -244,19 +249,19 @@ void ENVMIXER3o( AudioHLECommand command )
 	}
 #endif
 // ------------------------------------------------------------
- 	short *inp=(short *)(gAudioHLEState.Buffer+0x4F0);
-	short *out=(short *)(gAudioHLEState.Buffer+0x9D0);
-	short *aux1=(short *)(gAudioHLEState.Buffer+0xB40);
-	short *aux2=(short *)(gAudioHLEState.Buffer+0xCB0);
-	short *aux3=(short *)(gAudioHLEState.Buffer+0xE20);
+ 	s16 *inp=(s16 *)(gAudioHLEState.Buffer+0x4F0);
+	s16 *out=(s16 *)(gAudioHLEState.Buffer+0x9D0);
+	s16 *aux1=(s16 *)(gAudioHLEState.Buffer+0xB40);
+	s16 *aux2=(s16 *)(gAudioHLEState.Buffer+0xCB0);
+	s16 *aux3=(s16 *)(gAudioHLEState.Buffer+0xE20);
 
-	int MainR;
-	int MainL;
-	int AuxR;
-	int AuxL;
-	int i1,o1,a1,a2=0,a3=0;
+	s32 MainR;
+	s32 MainL;
+	s32 AuxR;
+	s32 AuxL;
+	s32 i1,o1,a1,a2=0,a3=0;
 	u16 AuxIncRate=1;
-	short zero[8];
+	s16 zero[8];
 	memset(zero,0,16);
 	s32 LVol, RVol;
 	s32 LAcc, RAcc;
@@ -296,13 +301,13 @@ void ENVMIXER3o( AudioHLECommand command )
 
 	//fprintf (dfile, "LTrg = %08X, LVol = %08X\n", LTrg, LVol);
 
-	for (int x=0; x<(0x170/2); x++) {
-		i1=(int)inp[x^1];
-		o1=(int)out[x^1];
-		a1=(int)aux1[x^1];
+	for (s32 x=0; x<(0x170/2); x++) {
+		i1=(s32)inp[x^1];
+		o1=(s32)out[x^1];
+		a1=(s32)aux1[x^1];
 		if (AuxIncRate) {
-			a2=(int)aux2[x^1];
-			a3=(int)aux3[x^1];
+			a2=(s32)aux2[x^1];
+			a3=(s32)aux3[x^1];
 		}
 		// TODO: here...
 		//LAcc = (LTrg << 16);
@@ -389,22 +394,22 @@ void ENVMIXER3 ( AudioHLECommand command ) { // Borrowed from RCP...
 	u8  flags = (u8)((command.cmd0 >> 16) & 0xff);
 	u32 addy = (command.cmd1 & 0xffffff);// + gAudioHLEState.Segments[(command.cmd1>>24)&0xf];
 
- 	short *inp=(short *)(gAudioHLEState.Buffer+0x4F0);
-	short *out=(short *)(gAudioHLEState.Buffer+0x9D0);
-	short *aux1=(short *)(gAudioHLEState.Buffer+0xB40);
-	short *aux2=(short *)(gAudioHLEState.Buffer+0xCB0);
-	short *aux3=(short *)(gAudioHLEState.Buffer+0xE20);
+ 	s16 *inp=(s16 *)(gAudioHLEState.Buffer+0x4F0);
+	s16 *out=(s16 *)(gAudioHLEState.Buffer+0x9D0);
+	s16 *aux1=(s16 *)(gAudioHLEState.Buffer+0xB40);
+	s16 *aux2=(s16 *)(gAudioHLEState.Buffer+0xCB0);
+	s16 *aux3=(s16 *)(gAudioHLEState.Buffer+0xE20);
 
 	gAudioHLEState.VolRight = (command.cmd0 & 0xffff); // Needed for future references
 
-	int i1,o1,a1,a2,a3;
-	int MainR;
-	int MainL;
-	int AuxR;
-	int AuxL;
+	s32 i1,o1,a1,a2,a3;
+	s32 MainR;
+	s32 MainL;
+	s32 AuxR;
+	s32 AuxL;
 
 	u16 AuxIncRate=1;
-	short zero[8];
+	s16 zero[8];
 	memset(zero,0,16);
 	if(flags & A_INIT) {
 		MainR = (gAudioHLEState.EnvDry * gAudioHLEState.VolTrgRight + 0x10000) >> 15;
@@ -423,13 +428,13 @@ void ENVMIXER3 ( AudioHLECommand command ) { // Borrowed from RCP...
 		AuxIncRate=0;
 		aux2=aux3=zero;
 	}
-	for(int i=0;i<(0x170/2);i++)
+	for(s32 i=0;i<(0x170/2);i++)
 	{
-		i1=(int)*(inp++);
-		o1=(int)*out;
-		a1=(int)*aux1;
-		a2=(int)*aux2;
-		a3=(int)*aux3;
+		i1=(s32)*(inp++);
+		o1=(s32)*out;
+		a1=(s32)*aux1;
+		a2=(s32)*aux2;
+		a3=(s32)*aux3;
 
 		o1=((o1*0x7fff)+(i1*MainR)+0x10000)>>15;
 		a2=((a2*0x7fff)+(i1*AuxR)+0x8000)>>16;
@@ -546,17 +551,17 @@ void ADPCM3( AudioHLECommand command )
 	//u16 Gain=(u16)(command.cmd0&0xffff);
 	u32 Address=(command.cmd0 & 0xffffff);// + gAudioHLEState.Segments[(command.cmd1>>24)&0xf];
 	u32 inPtr=(command.cmd1>>12)&0xf;
-	//short *out=(s16 *)(testbuff+(gAudioHLEState.OutBuffer>>2));
-	short *out=(short *)(gAudioHLEState.Buffer+(command.cmd1&0xfff)+0x4f0);
+	//s16 *out=(s16 *)(testbuff+(gAudioHLEState.OutBuffer>>2));
+	s16 *out=(s16 *)(gAudioHLEState.Buffer+(command.cmd1&0xfff)+0x4f0);
 	//u8 *in=(u8 *)(gAudioHLEState.Buffer+((command.cmd1>>12)&0xf)+0x4f0);
-	short count=(short)((command.cmd1 >> 16)&0xfff);
+	s16 count=(s16)((command.cmd1 >> 16)&0xfff);
 	u8 icode;
 	u8 code;
-	int vscale;
+	s32 vscale;
 	u16 index;
 	u16 j;
 	s32 a[8];
-	short *book1,*book2;
+	s16 *book1,*book2;
 
 	memset(out,0,32);
 
@@ -564,26 +569,26 @@ void ADPCM3( AudioHLECommand command )
 	{
 		if(Flags&0x2)
 		{/*
-			for(int i=0;i<16;i++)
+			for(s32 i=0;i<16;i++)
 			{
-				out[i]=*(short *)&rdram[(gAudioHLEState.LoopVal+i*2)^2];
+				out[i]=*(s16 *)&rdram[(gAudioHLEState.LoopVal+i*2)^2];
 			}*/
 			memcpy(out,&rdram[gAudioHLEState.LoopVal],32);
 		}
 		else
 		{/*
-			for(int i=0;i<16;i++)
+			for(s32 i=0;i<16;i++)
 			{
-				out[i]=*(short *)&rdram[(Address+i*2)^2];
+				out[i]=*(s16 *)&rdram[(Address+i*2)^2];
 			}*/
 			memcpy(out,&rdram[Address],32);
 		}
 	}
 
-	int l1=out[15];
-	int l2=out[14];
-	int inp1[8];
-	int inp2[8];
+	s32 l1=out[15];
+	s32 l2=out[14];
+	s32 inp1[8];
+	s32 inp2[8];
 	out+=16;
 	while(count>0)
 	{
@@ -595,7 +600,7 @@ void ADPCM3( AudioHLECommand command )
 		code=gAudioHLEState.Buffer[(0x4f0+inPtr)^3];
 		index=code&0xf;
 		index<<=4;									// index into the adpcm code table
-		book1=(short *)&gAudioHLEState.ADPCMTable[index];
+		book1=(s16 *)&gAudioHLEState.ADPCMTable[index];
 		book2=book1+8;
 		code>>=4;									// upper nibble is scale
 		vscale=(0x8000>>((12-code)-1));				// very strange. 0x8000 would be .5 in 16:16 format
@@ -608,21 +613,21 @@ void ADPCM3( AudioHLECommand command )
 		inPtr++;									// coded adpcm data lies next
 		j=0;
 		while(j<8)									// loop of 8, for 8 coded nibbles from 4 bytes
-													// which yields 8 short pcm values
+													// which yields 8 s16 pcm values
 		{
 			icode=gAudioHLEState.Buffer[(0x4f0+inPtr)^3];
 			inPtr++;
 
 			inp1[j]=(s16)((icode&0xf0)<<8);			// this will in effect be signed
 			if(code<12)
-				inp1[j]=((int)((int)inp1[j]*(int)vscale)>>16);
+				inp1[j]=((s32)((s32)inp1[j]*(s32)vscale)>>16);
 			else
 				DAEDALUS_ERROR( "Unhandled" );
 			j++;
 
 			inp1[j]=(s16)((icode&0xf)<<12);
 			if(code<12)
-				inp1[j]=((int)((int)inp1[j]*(int)vscale)>>16);
+				inp1[j]=((s32)((s32)inp1[j]*(s32)vscale)>>16);
 			else
 				DAEDALUS_ERROR( "Unhandled" );
 			j++;
@@ -633,80 +638,80 @@ void ADPCM3( AudioHLECommand command )
 			icode=gAudioHLEState.Buffer[(0x4f0+inPtr)^3];
 			inPtr++;
 
-			inp2[j]=(short)((icode&0xf0)<<8);			// this will in effect be signed
+			inp2[j]=(s16)((icode&0xf0)<<8);			// this will in effect be signed
 			if(code<12)
-				inp2[j]=((int)((int)inp2[j]*(int)vscale)>>16);
+				inp2[j]=((s32)((s32)inp2[j]*(s32)vscale)>>16);
 			else
 				DAEDALUS_ERROR( "Unhandled" );
 			j++;
 
-			inp2[j]=(short)((icode&0xf)<<12);
+			inp2[j]=(s16)((icode&0xf)<<12);
 			if(code<12)
-				inp2[j]=((int)((int)inp2[j]*(int)vscale)>>16);
+				inp2[j]=((s32)((s32)inp2[j]*(s32)vscale)>>16);
 			else
 				DAEDALUS_ERROR( "Unhandled" );
 			j++;
 		}
 
-		a[0]= (int)book1[0]*(int)l1;
-		a[0]+=(int)book2[0]*(int)l2;
-		a[0]+=(int)inp1[0]*(int)2048;
+		a[0]= (s32)book1[0]*(s32)l1;
+		a[0]+=(s32)book2[0]*(s32)l2;
+		a[0]+=(s32)inp1[0]*(s32)2048;
 
-		a[1] =(int)book1[1]*(int)l1;
-		a[1]+=(int)book2[1]*(int)l2;
-		a[1]+=(int)book2[0]*inp1[0];
-		a[1]+=(int)inp1[1]*(int)2048;
+		a[1] =(s32)book1[1]*(s32)l1;
+		a[1]+=(s32)book2[1]*(s32)l2;
+		a[1]+=(s32)book2[0]*inp1[0];
+		a[1]+=(s32)inp1[1]*(s32)2048;
 
-		a[2] =(int)book1[2]*(int)l1;
-		a[2]+=(int)book2[2]*(int)l2;
-		a[2]+=(int)book2[1]*inp1[0];
-		a[2]+=(int)book2[0]*inp1[1];
-		a[2]+=(int)inp1[2]*(int)2048;
+		a[2] =(s32)book1[2]*(s32)l1;
+		a[2]+=(s32)book2[2]*(s32)l2;
+		a[2]+=(s32)book2[1]*inp1[0];
+		a[2]+=(s32)book2[0]*inp1[1];
+		a[2]+=(s32)inp1[2]*(s32)2048;
 
-		a[3] =(int)book1[3]*(int)l1;
-		a[3]+=(int)book2[3]*(int)l2;
-		a[3]+=(int)book2[2]*inp1[0];
-		a[3]+=(int)book2[1]*inp1[1];
-		a[3]+=(int)book2[0]*inp1[2];
-		a[3]+=(int)inp1[3]*(int)2048;
+		a[3] =(s32)book1[3]*(s32)l1;
+		a[3]+=(s32)book2[3]*(s32)l2;
+		a[3]+=(s32)book2[2]*inp1[0];
+		a[3]+=(s32)book2[1]*inp1[1];
+		a[3]+=(s32)book2[0]*inp1[2];
+		a[3]+=(s32)inp1[3]*(s32)2048;
 
-		a[4] =(int)book1[4]*(int)l1;
-		a[4]+=(int)book2[4]*(int)l2;
-		a[4]+=(int)book2[3]*inp1[0];
-		a[4]+=(int)book2[2]*inp1[1];
-		a[4]+=(int)book2[1]*inp1[2];
-		a[4]+=(int)book2[0]*inp1[3];
-		a[4]+=(int)inp1[4]*(int)2048;
+		a[4] =(s32)book1[4]*(s32)l1;
+		a[4]+=(s32)book2[4]*(s32)l2;
+		a[4]+=(s32)book2[3]*inp1[0];
+		a[4]+=(s32)book2[2]*inp1[1];
+		a[4]+=(s32)book2[1]*inp1[2];
+		a[4]+=(s32)book2[0]*inp1[3];
+		a[4]+=(s32)inp1[4]*(s32)2048;
 
-		a[5] =(int)book1[5]*(int)l1;
-		a[5]+=(int)book2[5]*(int)l2;
-		a[5]+=(int)book2[4]*inp1[0];
-		a[5]+=(int)book2[3]*inp1[1];
-		a[5]+=(int)book2[2]*inp1[2];
-		a[5]+=(int)book2[1]*inp1[3];
-		a[5]+=(int)book2[0]*inp1[4];
-		a[5]+=(int)inp1[5]*(int)2048;
+		a[5] =(s32)book1[5]*(s32)l1;
+		a[5]+=(s32)book2[5]*(s32)l2;
+		a[5]+=(s32)book2[4]*inp1[0];
+		a[5]+=(s32)book2[3]*inp1[1];
+		a[5]+=(s32)book2[2]*inp1[2];
+		a[5]+=(s32)book2[1]*inp1[3];
+		a[5]+=(s32)book2[0]*inp1[4];
+		a[5]+=(s32)inp1[5]*(s32)2048;
 
-		a[6] =(int)book1[6]*(int)l1;
-		a[6]+=(int)book2[6]*(int)l2;
-		a[6]+=(int)book2[5]*inp1[0];
-		a[6]+=(int)book2[4]*inp1[1];
-		a[6]+=(int)book2[3]*inp1[2];
-		a[6]+=(int)book2[2]*inp1[3];
-		a[6]+=(int)book2[1]*inp1[4];
-		a[6]+=(int)book2[0]*inp1[5];
-		a[6]+=(int)inp1[6]*(int)2048;
+		a[6] =(s32)book1[6]*(s32)l1;
+		a[6]+=(s32)book2[6]*(s32)l2;
+		a[6]+=(s32)book2[5]*inp1[0];
+		a[6]+=(s32)book2[4]*inp1[1];
+		a[6]+=(s32)book2[3]*inp1[2];
+		a[6]+=(s32)book2[2]*inp1[3];
+		a[6]+=(s32)book2[1]*inp1[4];
+		a[6]+=(s32)book2[0]*inp1[5];
+		a[6]+=(s32)inp1[6]*(s32)2048;
 
-		a[7] =(int)book1[7]*(int)l1;
-		a[7]+=(int)book2[7]*(int)l2;
-		a[7]+=(int)book2[6]*inp1[0];
-		a[7]+=(int)book2[5]*inp1[1];
-		a[7]+=(int)book2[4]*inp1[2];
-		a[7]+=(int)book2[3]*inp1[3];
-		a[7]+=(int)book2[2]*inp1[4];
-		a[7]+=(int)book2[1]*inp1[5];
-		a[7]+=(int)book2[0]*inp1[6];
-		a[7]+=(int)inp1[7]*(int)2048;
+		a[7] =(s32)book1[7]*(s32)l1;
+		a[7]+=(s32)book2[7]*(s32)l2;
+		a[7]+=(s32)book2[6]*inp1[0];
+		a[7]+=(s32)book2[5]*inp1[1];
+		a[7]+=(s32)book2[4]*inp1[2];
+		a[7]+=(s32)book2[3]*inp1[3];
+		a[7]+=(s32)book2[2]*inp1[4];
+		a[7]+=(s32)book2[1]*inp1[5];
+		a[7]+=(s32)book2[0]*inp1[6];
+		a[7]+=(s32)inp1[7]*(s32)2048;
 
 		for(j=0;j<8;j++)
 		{
@@ -718,65 +723,65 @@ void ADPCM3( AudioHLECommand command )
 		l1=a[6];
 		l2=a[7];
 
-		a[0]= (int)book1[0]*(int)l1;
-		a[0]+=(int)book2[0]*(int)l2;
-		a[0]+=(int)inp2[0]*(int)2048;
+		a[0]= (s32)book1[0]*(s32)l1;
+		a[0]+=(s32)book2[0]*(s32)l2;
+		a[0]+=(s32)inp2[0]*(s32)2048;
 
-		a[1] =(int)book1[1]*(int)l1;
-		a[1]+=(int)book2[1]*(int)l2;
-		a[1]+=(int)book2[0]*inp2[0];
-		a[1]+=(int)inp2[1]*(int)2048;
+		a[1] =(s32)book1[1]*(s32)l1;
+		a[1]+=(s32)book2[1]*(s32)l2;
+		a[1]+=(s32)book2[0]*inp2[0];
+		a[1]+=(s32)inp2[1]*(s32)2048;
 
-		a[2] =(int)book1[2]*(int)l1;
-		a[2]+=(int)book2[2]*(int)l2;
-		a[2]+=(int)book2[1]*inp2[0];
-		a[2]+=(int)book2[0]*inp2[1];
-		a[2]+=(int)inp2[2]*(int)2048;
+		a[2] =(s32)book1[2]*(s32)l1;
+		a[2]+=(s32)book2[2]*(s32)l2;
+		a[2]+=(s32)book2[1]*inp2[0];
+		a[2]+=(s32)book2[0]*inp2[1];
+		a[2]+=(s32)inp2[2]*(s32)2048;
 
-		a[3] =(int)book1[3]*(int)l1;
-		a[3]+=(int)book2[3]*(int)l2;
-		a[3]+=(int)book2[2]*inp2[0];
-		a[3]+=(int)book2[1]*inp2[1];
-		a[3]+=(int)book2[0]*inp2[2];
-		a[3]+=(int)inp2[3]*(int)2048;
+		a[3] =(s32)book1[3]*(s32)l1;
+		a[3]+=(s32)book2[3]*(s32)l2;
+		a[3]+=(s32)book2[2]*inp2[0];
+		a[3]+=(s32)book2[1]*inp2[1];
+		a[3]+=(s32)book2[0]*inp2[2];
+		a[3]+=(s32)inp2[3]*(s32)2048;
 
-		a[4] =(int)book1[4]*(int)l1;
-		a[4]+=(int)book2[4]*(int)l2;
-		a[4]+=(int)book2[3]*inp2[0];
-		a[4]+=(int)book2[2]*inp2[1];
-		a[4]+=(int)book2[1]*inp2[2];
-		a[4]+=(int)book2[0]*inp2[3];
-		a[4]+=(int)inp2[4]*(int)2048;
+		a[4] =(s32)book1[4]*(s32)l1;
+		a[4]+=(s32)book2[4]*(s32)l2;
+		a[4]+=(s32)book2[3]*inp2[0];
+		a[4]+=(s32)book2[2]*inp2[1];
+		a[4]+=(s32)book2[1]*inp2[2];
+		a[4]+=(s32)book2[0]*inp2[3];
+		a[4]+=(s32)inp2[4]*(s32)2048;
 
-		a[5] =(int)book1[5]*(int)l1;
-		a[5]+=(int)book2[5]*(int)l2;
-		a[5]+=(int)book2[4]*inp2[0];
-		a[5]+=(int)book2[3]*inp2[1];
-		a[5]+=(int)book2[2]*inp2[2];
-		a[5]+=(int)book2[1]*inp2[3];
-		a[5]+=(int)book2[0]*inp2[4];
-		a[5]+=(int)inp2[5]*(int)2048;
+		a[5] =(s32)book1[5]*(s32)l1;
+		a[5]+=(s32)book2[5]*(s32)l2;
+		a[5]+=(s32)book2[4]*inp2[0];
+		a[5]+=(s32)book2[3]*inp2[1];
+		a[5]+=(s32)book2[2]*inp2[2];
+		a[5]+=(s32)book2[1]*inp2[3];
+		a[5]+=(s32)book2[0]*inp2[4];
+		a[5]+=(s32)inp2[5]*(s32)2048;
 
-		a[6] =(int)book1[6]*(int)l1;
-		a[6]+=(int)book2[6]*(int)l2;
-		a[6]+=(int)book2[5]*inp2[0];
-		a[6]+=(int)book2[4]*inp2[1];
-		a[6]+=(int)book2[3]*inp2[2];
-		a[6]+=(int)book2[2]*inp2[3];
-		a[6]+=(int)book2[1]*inp2[4];
-		a[6]+=(int)book2[0]*inp2[5];
-		a[6]+=(int)inp2[6]*(int)2048;
+		a[6] =(s32)book1[6]*(s32)l1;
+		a[6]+=(s32)book2[6]*(s32)l2;
+		a[6]+=(s32)book2[5]*inp2[0];
+		a[6]+=(s32)book2[4]*inp2[1];
+		a[6]+=(s32)book2[3]*inp2[2];
+		a[6]+=(s32)book2[2]*inp2[3];
+		a[6]+=(s32)book2[1]*inp2[4];
+		a[6]+=(s32)book2[0]*inp2[5];
+		a[6]+=(s32)inp2[6]*(s32)2048;
 
-		a[7] =(int)book1[7]*(int)l1;
-		a[7]+=(int)book2[7]*(int)l2;
-		a[7]+=(int)book2[6]*inp2[0];
-		a[7]+=(int)book2[5]*inp2[1];
-		a[7]+=(int)book2[4]*inp2[2];
-		a[7]+=(int)book2[3]*inp2[3];
-		a[7]+=(int)book2[2]*inp2[4];
-		a[7]+=(int)book2[1]*inp2[5];
-		a[7]+=(int)book2[0]*inp2[6];
-		a[7]+=(int)inp2[7]*(int)2048;
+		a[7] =(s32)book1[7]*(s32)l1;
+		a[7]+=(s32)book2[7]*(s32)l2;
+		a[7]+=(s32)book2[6]*inp2[0];
+		a[7]+=(s32)book2[5]*inp2[1];
+		a[7]+=(s32)book2[4]*inp2[2];
+		a[7]+=(s32)book2[3]*inp2[3];
+		a[7]+=(s32)book2[2]*inp2[4];
+		a[7]+=(s32)book2[1]*inp2[5];
+		a[7]+=(s32)book2[0]*inp2[6];
+		a[7]+=(s32)inp2[7]*(s32)2048;
 
 		for(j=0;j<8;j++)
 		{
@@ -793,6 +798,50 @@ void ADPCM3( AudioHLECommand command )
 	memcpy(&rdram[Address],out,32);
 }
 
+#if 1 //1->fast, 0->original Azimer //Corn 
+void RESAMPLE3( AudioHLECommand command )
+{
+	u8 Flags=(u8)((command.cmd1>>0x1e));
+	u32 Pitch=((command.cmd1>>0xe)&0xffff) << 1;
+	u32 addy = (command.cmd0 & 0xffffff);
+	u32 Accum;
+	s16 *dst;
+	s16 *src;
+	dst=(s16 *)(gAudioHLEState.Buffer);
+	src=(s16 *)(gAudioHLEState.Buffer);
+	u32 srcPtr=((((command.cmd1>>2)&0xfff)+0x4f0)/2);
+	u32 dstPtr;//=(gAudioHLEState.OutBuffer/2);
+
+	srcPtr -= 1;
+
+	if (command.cmd1 & 0x3) {
+		dstPtr = 0x660/2;
+	} else {
+		dstPtr = 0x4f0/2;
+	}
+
+	if ((Flags & 0x1) == 0) {	
+		src[srcPtr^1] = ((u16 *)rdram)[((addy/2))^1];
+		Accum = *(u16 *)(rdram+addy+10);
+	} else {
+		src[(srcPtr)^1] = 0;
+		Accum = 0;
+	}
+
+	for(u32 i=0;i < 0x170/2;i++)
+	{
+		dst[dstPtr^1] = src[srcPtr^1] + FixedPointMul16( src[(srcPtr+1)^1] - src[srcPtr^1], Accum );
+		++dstPtr;
+		Accum += Pitch;
+		srcPtr += (Accum>>16);
+		Accum &= 0xFFFF;
+	}
+
+	((u16 *)rdram)[((addy/2))^1] = src[srcPtr^1];
+	*(u16 *)(rdram+addy+10) = u16( Accum );
+}
+
+#else
 void RESAMPLE3( AudioHLECommand command )
 {
 	u8 Flags=(u8)((command.cmd1>>0x1e));
@@ -801,9 +850,9 @@ void RESAMPLE3( AudioHLECommand command )
 	u32 Accum=0;
 	u32 location;
 	s16 *lut;
-	short *dst;
+	s16 *dst;
 	s16 *src;
-	dst=(short *)(gAudioHLEState.Buffer);
+	dst=(s16 *)(gAudioHLEState.Buffer);
 	src=(s16 *)(gAudioHLEState.Buffer);
 	u32 srcPtr=((((command.cmd1>>2)&0xfff)+0x4f0)/2);
 	u32 dstPtr;//=(gAudioHLEState.OutBuffer/2);
@@ -821,18 +870,18 @@ void RESAMPLE3( AudioHLECommand command )
 	}
 
 	if ((Flags & 0x1) == 0) {	
-		for (int x=0; x < 4; x++) //memcpy (src+srcPtr, rdram+addy, 0x8);
+		for (s32 x=0; x < 4; x++) //memcpy (src+srcPtr, rdram+addy, 0x8);
 			src[(srcPtr+x)^1] = ((u16 *)rdram)[((addy/2)+x)^1];
 		Accum = *(u16 *)(rdram+addy+10);
 	} else {
-		for (int x=0; x < 4; x++)
+		for (s32 x=0; x < 4; x++)
 			src[(srcPtr+x)^1] = 0;//*(u16 *)(rdram+((addy+x)^2));
 	}
 
 	//if ((Flags & 0x2))
 	//	__asm int 3;
 
-	for(int i=0;i < 0x170/2;i++)	{
+	for(s32 i=0;i < 0x170/2;i++)	{
 		location = (((Accum * 0x40) >> 0x10) * 8);
 		//location = (Accum >> 0xa) << 0x3;
 		lut = (s16 *)(((u8 *)ResampleLUT) + location);
@@ -874,12 +923,13 @@ void RESAMPLE3( AudioHLECommand command )
 		srcPtr += (Accum>>16);
 		Accum&=0xffff;
 	}
-	for (int x=0; x < 4; x++)
+	for (s32 x=0; x < 4; x++)
 	{
 		((u16 *)rdram)[((addy/2)+x)^1] = src[(srcPtr+x)^1];
 	}
 	*(u16 *)(rdram+addy+10) = u16( Accum );
 }
+#endif
 
 void INTERLEAVE3( AudioHLECommand command )
 {

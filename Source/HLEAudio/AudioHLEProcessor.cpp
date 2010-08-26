@@ -48,7 +48,8 @@ inline s32		FixedPointMul15( s32 a, s32 b )
 
 AudioHLEState gAudioHLEState;
 
-const u16 ResampleLUT[0x200] =
+//Needed for Azimers resample alghorithm
+/*const u16 ResampleLUT[0x200] =
 {
 	0x0C39, 0x66AD, 0x0D46, 0xFFDF, 0x0B39, 0x6696, 0x0E5F, 0xFFD8,
 	0x0A44, 0x6669, 0x0F83, 0xFFD0, 0x095A, 0x6626, 0x10B4, 0xFFC8,
@@ -82,7 +83,7 @@ const u16 ResampleLUT[0x200] =
 	0xFFB6, 0x1338, 0x655E, 0x07AB, 0xFFBF, 0x11F0, 0x65CD, 0x087D,
 	0xFFC8, 0x10B4, 0x6626, 0x095A, 0xFFD0, 0x0F83, 0x6669, 0x0A44,
 	0xFFD8, 0x0E5F, 0x6696, 0x0B39, 0xFFDF, 0x0D46, 0x66AD, 0x0C39
-};
+};*/
 
 void	AudioHLEState::ClearBuffer( u16 addr, u16 count )
 {
@@ -336,7 +337,7 @@ void	AudioHLEState::EnvMixer( u8 flags, u32 address )
 	memcpy(rdram+address, (u8 *)MixerWorkArea,80);
 }
 
-#if 1 //1->fast, 0->HQ //Corn
+#if 1 //1->fast, 0->original Azimer //Corn calc two sample (s16) at once so we get to save a u32
 void	AudioHLEState::Resample( u8 flags, u32 pitch, u32 address )
 {
 	bool	init( (flags & 0x1) != 0 );
@@ -344,34 +345,40 @@ void	AudioHLEState::Resample( u8 flags, u32 pitch, u32 address )
 
 	pitch *= 2;
 
-	s16 *	buffer( (s16 *)(Buffer) );
+	s16 *	buffer_i( (s16 *)(Buffer) );
+	u32 *	buffer_o( (u32 *)(Buffer) );	//Save some bandwith and save two sample at once
 	u32		srcPtr(InBuffer/2);
-	u32		dstPtr(OutBuffer/2);
+	u32		dstPtr(OutBuffer/4);
+	u32		tmp;
 	srcPtr -= 1;
 
 	u32 accumulator;
 	if (init)
 	{
-		buffer[(srcPtr)^1] = 0;
+		buffer_i[srcPtr^1] = 0;
 		accumulator = 0;
 	}
 	else
 	{
-		buffer[(srcPtr)^1] = ((u16 *)rdram)[((address/2))^1];
+		buffer_i[(srcPtr)^1] = ((u16 *)rdram)[((address/2))^1];
 		accumulator = *(u16 *)(rdram+address+10);
 	}
 
-	u32		loops( ((Count+0xf)&0xFFF0)/2 );
+	u32		loops( ((Count+0xf)&0xFFF0)/4 );
 	for(u32 i = 0; i < loops ; ++i )
 	{
-		buffer[dstPtr^1] = buffer[(srcPtr+0)^1] + FixedPointMul15( buffer[(srcPtr+1)^1] - buffer[(srcPtr+0)^1], accumulator>>16 );
-		++dstPtr;
+		tmp =  (buffer_i[srcPtr^1] + FixedPointMul16( buffer_i[(srcPtr+1)^1] - buffer_i[srcPtr^1], accumulator )) << 16;
+		accumulator += pitch;
+		srcPtr += (accumulator>>16);
+		accumulator&=0xffff;
+		tmp |= (buffer_i[srcPtr^1] + FixedPointMul16( buffer_i[(srcPtr+1)^1] - buffer_i[srcPtr^1], accumulator )) & 0xFFFF;
+		buffer_o[dstPtr++] = tmp;
 		accumulator += pitch;
 		srcPtr += (accumulator>>16);
 		accumulator&=0xffff;
 	}
 
-	((u16 *)rdram)[((address/2))^1] = buffer[(srcPtr)^1];
+	((u16 *)rdram)[((address/2))^1] = buffer_i[srcPtr^1];
 	*(u16 *)(rdram+address+10) = (u16)accumulator;
 }
 
@@ -712,7 +719,7 @@ void	AudioHLEState::LoadADPCM( u32 address, u16 count )
 
 void	AudioHLEState::Interleave( u16 outaddr, u16 laddr, u16 raddr, u16 count )
 {
-	u16 *		out = (u16 *)(Buffer + outaddr);
+	u32 *		out = (u32 *)(Buffer + outaddr);	//Save some bandwith also corrected left and right//Corn
 	const u16 *	inr = (const u16 *)(Buffer+ raddr);
 	const u16 *	inl = (const u16 *)(Buffer+ laddr);
 
@@ -722,10 +729,8 @@ void	AudioHLEState::Interleave( u16 outaddr, u16 laddr, u16 raddr, u16 count )
 		u16 right=*(inr++);
 		u16 left =*(inl++);
 
-		*(out++) = *(inr++);
-		*(out++) = *(inl++);
-		*(out++) = right;
-		*(out++) = left;
+		*(out++) = (*(inr++) << 16) | *(inl++);
+		*(out++) = (right << 16)	| left;
 	}
 }
 
@@ -736,13 +741,24 @@ void	AudioHLEState::Interleave( u16 laddr, u16 raddr )
 
 void	AudioHLEState::Mixer( u16 dmemout, u16 dmemin, s32 gain, u16 count )
 {
-	for( u32 x=0; x < count; x+=2 )
+#if 1	//1->fast, 0->original //Corn
+for( u32 x=0; x < count; x+=4 )
+	{
+		u32	in( *(u32 *)(Buffer+dmemin+x) );
+		u32 out( *(u32 *)(Buffer+dmemout+x) );
+			
+		*(u32 *)(Buffer+dmemout+x) = ((FixedPointMul15( s16(in >> 16)   , gain ) + s16(out >> 16) ) << 16) |
+									  (FixedPointMul15( s16(in & 0xFFFF), gain ) + s16(out & 0xFFFF) );
+	}
+#else
+for( u32 x=0; x < count; x+=2 )
 	{
 		s16	in( *(s16 *)(Buffer+dmemin+x) );
 		s16 out( *(s16 *)(Buffer+dmemout+x) );
 			
 		*(s16 *)(Buffer+dmemout+x) = Saturate<s16>( FixedPointMul15( in, gain ) +s32( out ) );
 	}
+#endif
 }
 
 void	AudioHLEState::Deinterleave( u16 outaddr, u16 inaddr, u16 count )

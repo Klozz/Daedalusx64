@@ -602,7 +602,7 @@ void IRomSelectorComponent::RenderPreview()
 			}
 			if (( p_rominfo->mSettings.Comment[0] == '0' ) || ( p_rominfo->mSettings.Comment[0] == '1' ) || ( p_rominfo->mSettings.Comment[0] == '2' ) || ( p_rominfo->mSettings.Comment[0] == '3' ) || ( p_rominfo->mSettings.Comment[0] == '4' ) || ( p_rominfo->mSettings.Comment[0] == '5' )) {
 				if(showmoreinfo) {					
-					const char *compatver = p_rominfo->mSettings.Comment + 15;
+					const char *compatver = p_rominfo->mSettings.Comment + 16;
 					y = 44 + line_height;
 					mpContext->DrawRect( 100, 40, 280, 192, c32::White );
 					mpContext->DrawRect( 102, 42, 276, 188, c32::Black );
@@ -696,52 +696,61 @@ void IRomSelectorComponent::RenderPreview()
 						else if ( p_rominfo->mSettings.Comment[6] == '2' ) {
 							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
 						}
-					}
+					}	
 					if ( p_rominfo->mSettings.Comment[7] != '0' ) {
-						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Audio:", c32::White );
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Controller:", c32::White );
 
 						if ( p_rominfo->mSettings.Comment[7] == '1' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Async", c32::White );  y += line_height + 5;
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Default Z+L Swap", c32::White );  y += line_height + 5;
 						}						
 						else if ( p_rominfo->mSettings.Comment[7] == '2' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Sync", c32::White );  y += line_height + 5;
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "DPad and Buttons", c32::White );  y += line_height + 5;
 						}
 						else if ( p_rominfo->mSettings.Comment[7] == '3' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "DPad and Buttons Inverted", c32::White );  y += line_height + 5;
+						}
+						else if ( p_rominfo->mSettings.Comment[7] == '4' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "DPad", c32::White );  y += line_height + 5;
+						}
+						else if ( p_rominfo->mSettings.Comment[7] == '5' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "CButtons", c32::White );  y += line_height + 5;
 						}
 					}
 					if ( p_rominfo->mSettings.Comment[8] != '0' ) {
-						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Clean Scene:", c32::White );
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Audio:", c32::White );
 
 						if ( p_rominfo->mSettings.Comment[8] == '1' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Async", c32::White );  y += line_height + 5;
 						}						
 						else if ( p_rominfo->mSettings.Comment[8] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Sync", c32::White );  y += line_height + 5;
+						}
+						else if ( p_rominfo->mSettings.Comment[8] == '3' ) {
 							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
 						}
 					}
 					if ( p_rominfo->mSettings.Comment[9] != '0' ) {
-						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Increase VI Event:", c32::White );
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Clean Scene:", c32::White );
 
 						if ( p_rominfo->mSettings.Comment[9] == '1' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enable", c32::White );  y += line_height + 5;
-						}						
-						else if ( p_rominfo->mSettings.Comment[9] == '2' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disable", c32::White );  y += line_height + 5;
-						}
-					}
-					if ( p_rominfo->mSettings.Comment[10] != '0' ) {
-						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Dynamic Loop Optimization:", c32::White );
-
-						if ( p_rominfo->mSettings.Comment[10] == '1' ) {
 							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
 						}						
-						else if ( p_rominfo->mSettings.Comment[10] == '2' ) {
+						else if ( p_rominfo->mSettings.Comment[9] == '2' ) {
 							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
 						}
 					}
+					if ( p_rominfo->mSettings.Comment[10] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Increase VI Event:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[10] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enable", c32::White );  y += line_height + 5;
+						}						
+						else if ( p_rominfo->mSettings.Comment[10] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disable", c32::White );  y += line_height + 5;
+						}
+					}
 					if ( p_rominfo->mSettings.Comment[11] != '0' ) {
-						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Double Display Lists:", c32::White );
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Dynamic Loop Optimization:", c32::White );
 
 						if ( p_rominfo->mSettings.Comment[11] == '1' ) {
 							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
@@ -751,32 +760,42 @@ void IRomSelectorComponent::RenderPreview()
 						}
 					}
 					if ( p_rominfo->mSettings.Comment[12] != '0' ) {
-						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Disable FP Usage Check:", c32::White );
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Double Display Lists:", c32::White );
 
 						if ( p_rominfo->mSettings.Comment[12] == '1' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Yes", c32::White );  y += line_height + 5;
-						}						
-						else if ( p_rominfo->mSettings.Comment[12] == '2' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "No", c32::White );  y += line_height + 5;
-						}
-					}
-					if ( p_rominfo->mSettings.Comment[13] != '0' ) {
-						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Basic TMEM Emulation:", c32::White );
-
-						if ( p_rominfo->mSettings.Comment[13] == '1' ) {
 							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
 						}						
-						else if ( p_rominfo->mSettings.Comment[13] == '2' ) {
+						else if ( p_rominfo->mSettings.Comment[12] == '2' ) {
 							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
 						}
 					}
+					if ( p_rominfo->mSettings.Comment[13] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Disable FP Usage Check:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[13] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Yes", c32::White );  y += line_height + 5;
+						}						
+						else if ( p_rominfo->mSettings.Comment[13] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "No", c32::White );  y += line_height + 5;
+						}
+					}
 					if ( p_rominfo->mSettings.Comment[14] != '0' ) {
-						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Remove Z-Fighting:", c32::White );
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Basic TMEM Emulation:", c32::White );
 
 						if ( p_rominfo->mSettings.Comment[14] == '1' ) {
 							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
 						}						
 						else if ( p_rominfo->mSettings.Comment[14] == '2' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
+						}
+					}
+					if ( p_rominfo->mSettings.Comment[15] != '0' ) {
+						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Remove Z-Fighting:", c32::White );
+
+						if ( p_rominfo->mSettings.Comment[15] == '1' ) {
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
+						}						
+						else if ( p_rominfo->mSettings.Comment[15] == '2' ) {
 							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
 						}
 					}

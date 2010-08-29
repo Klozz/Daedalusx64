@@ -279,7 +279,7 @@ void DLParser_GBI1_CullDL( MicroCodeCommand command )
 	last &= 0xF; //Max 15 Verts -> 0 < = vO < vn = 15 (manual)
 
 	if( last < first ) return;
-	if( g_ROM.GameHacks == WAVE_RACER ) return; // Quick hack, cull dl brakes wave racer
+	if( g_ROM.GameHacks == WAR_GODS ) return; // Quick hack, cull dl brakes war gods
 
 	if ( PSPRenderer::Get()->TestVerts( first, last ) )
 	{

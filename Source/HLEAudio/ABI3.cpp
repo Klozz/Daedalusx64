@@ -713,15 +713,14 @@ void ADPCM3( AudioHLECommand command )
 		a[7]+=(s32)book2[0]*inp1[6];
 		a[7]+=(s32)inp1[7]*(s32)2048;
 
-		for(j=0;j<8;j++)
-		{
-			s16 r = Saturate<s16>( a[j^1] >> 11 );
-			a[j^1] = r;
-			*(out++)=r;
-		}
-		//out += 0x10;
-		l1=a[6];
-		l2=a[7];
+		*(out++) =      Saturate<s16>( a[1] >> 11 );
+		*(out++) =      Saturate<s16>( a[0] >> 11 );
+		*(out++) =      Saturate<s16>( a[3] >> 11 );
+		*(out++) =      Saturate<s16>( a[2] >> 11 );
+		*(out++) =      Saturate<s16>( a[5] >> 11 );
+		*(out++) =      Saturate<s16>( a[4] >> 11 );
+		*(out++) = l2 = Saturate<s16>( a[7] >> 11 );
+		*(out++) = l1 = Saturate<s16>( a[6] >> 11 );
 
 		a[0]= (s32)book1[0]*(s32)l1;
 		a[0]+=(s32)book2[0]*(s32)l2;
@@ -783,14 +782,14 @@ void ADPCM3( AudioHLECommand command )
 		a[7]+=(s32)book2[0]*inp2[6];
 		a[7]+=(s32)inp2[7]*(s32)2048;
 
-		for(j=0;j<8;j++)
-		{
-			s16 r = Saturate<s16>( a[j^1] >> 11 );
-			a[j^1] = r;
-			*(out++)=r;
-		}
-		l1=a[6];
-		l2=a[7];
+		*(out++) =      Saturate<s16>( a[1] >> 11 );
+		*(out++) =      Saturate<s16>( a[0] >> 11 );
+		*(out++) =      Saturate<s16>( a[3] >> 11 );
+		*(out++) =      Saturate<s16>( a[2] >> 11 );
+		*(out++) =      Saturate<s16>( a[5] >> 11 );
+		*(out++) =      Saturate<s16>( a[4] >> 11 );
+		*(out++) = l2 = Saturate<s16>( a[7] >> 11 );
+		*(out++) = l1 = Saturate<s16>( a[6] >> 11 );
 
 		count-=32;
 	}

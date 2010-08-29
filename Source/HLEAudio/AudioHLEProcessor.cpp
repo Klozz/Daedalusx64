@@ -99,18 +99,18 @@ void	AudioHLEState::EnvMixer( u8 flags, u32 address )
 	MessageBox (NULL, "Unaligned EnvMixer... please report this to Azimer with the following information: RomTitle, Place in the rom it occurred, and any save state just before the error", "AudioHLE Error", MB_OK);
 	}*/
 	// ------------------------------------------------------------
-	short *inp=(short *)(Buffer+InBuffer);
-	short *out=(short *)(Buffer+OutBuffer);
-	short *aux1=(short *)(Buffer+AuxA);
-	short *aux2=(short *)(Buffer+AuxC);
-	short *aux3=(short *)(Buffer+AuxE);
+	s16 *inp=(s16 *)(Buffer+InBuffer);
+	s16 *out=(s16 *)(Buffer+OutBuffer);
+	s16 *aux1=(s16 *)(Buffer+AuxA);
+	s16 *aux2=(s16 *)(Buffer+AuxC);
+	s16 *aux3=(s16 *)(Buffer+AuxE);
 	s32 MainR;
 	s32 MainL;
 	s32 AuxR;
 	s32 AuxL;
-	int i1,o1,a1,a2=0,a3=0;
+	s32 i1,o1,a1,a2=0,a3=0;
 	u16 AuxIncRate=1;
-	short zero[8];
+	s16 zero[8];
 	memset(zero,0,16);
 	s32 LVol, RVol;
 	s32 LAcc, RAcc;
@@ -126,12 +126,12 @@ void	AudioHLEState::EnvMixer( u8 flags, u32 address )
 	//fprintf (dfile, "\n----------------------------------------------------\n");
 	if (flags & A_INIT)
 	{
-		LVol = ((VolLeft * VolRampLeft)); 
+		LVol = ((VolLeft  * VolRampLeft)); 
 		RVol = ((VolRight * VolRampRight));
 		Wet = EnvWet;
 		Dry = EnvDry; // Save Wet/Dry values
 		LTrg = (VolTrgLeft << 16); RTrg = (VolTrgRight << 16); // Save Current Left/Right Targets
-		LAdderStart = VolLeft << 16;
+		LAdderStart = VolLeft  << 16;
 		RAdderStart = VolRight << 16;
 		LAdderEnd = LVol;
 		RAdderEnd = RVol;
@@ -162,11 +162,11 @@ void	AudioHLEState::EnvMixer( u8 flags, u32 address )
 	}
 
 	oMainL = (Dry * (LTrg>>16) + 0x4000) >> 15;
-	oAuxL  = (Wet * (LTrg>>16) + 0x4000)  >> 15;
+	oAuxL  = (Wet * (LTrg>>16) + 0x4000) >> 15;
 	oMainR = (Dry * (RTrg>>16) + 0x4000) >> 15;
-	oAuxR  = (Wet * (RTrg>>16) + 0x4000)  >> 15;
+	oAuxR  = (Wet * (RTrg>>16) + 0x4000) >> 15;
 
-	for (int y = 0; y < Count; y += 0x10)
+	for (s32 y = 0; y < Count; y += 0x10)
 	{
 		if (LAdderStart != LTrg)
 		{
@@ -208,15 +208,15 @@ void	AudioHLEState::EnvMixer( u8 flags, u32 address )
 			RVol = 0;
 		}
 
-		for (int x = 0; x < 8; x++)
+		for (s32 x = 0; x < 8; x++)
 		{
-			i1=(int)inp[ptr^1];
-			o1=(int)out[ptr^1];
-			a1=(int)aux1[ptr^1];
+			i1=(s32)inp[ptr^1];
+			o1=(s32)out[ptr^1];
+			a1=(s32)aux1[ptr^1];
 			if (AuxIncRate)
 			{
-				a2=(int)aux2[ptr^1];
-				a3=(int)aux3[ptr^1];
+				a2=(s32)aux2[ptr^1];
+				a3=(s32)aux3[ptr^1];
 			}
 			// TODO: here...
 			//LAcc = LTrg;
@@ -238,7 +238,7 @@ void	AudioHLEState::EnvMixer( u8 flags, u32 address )
 				else
 				{
 					MainL = (Dry * ((s32)LAcc>>16) + 0x4000) >> 15;
-					AuxL  = (Wet * ((s32)LAcc>>16) + 0x4000)  >> 15;
+					AuxL  = (Wet * ((s32)LAcc>>16) + 0x4000) >> 15;
 				}
 			}
 			else
@@ -253,7 +253,7 @@ void	AudioHLEState::EnvMixer( u8 flags, u32 address )
 				else
 				{
 					MainL = (Dry * ((s32)LAcc>>16) + 0x4000) >> 15;
-					AuxL  = (Wet * ((s32)LAcc>>16) + 0x4000)  >> 15;
+					AuxL  = (Wet * ((s32)LAcc>>16) + 0x4000) >> 15;
 				}
 			}
 
@@ -270,7 +270,7 @@ void	AudioHLEState::EnvMixer( u8 flags, u32 address )
 				else
 				{
 					MainR = (Dry * ((s32)RAcc>>16) + 0x4000) >> 15;
-					AuxR  = (Wet * ((s32)RAcc>>16) + 0x4000)  >> 15;
+					AuxR  = (Wet * ((s32)RAcc>>16) + 0x4000) >> 15;
 				}
 			}
 			else
@@ -285,21 +285,22 @@ void	AudioHLEState::EnvMixer( u8 flags, u32 address )
 				else
 				{
 					MainR = (Dry * ((s32)RAcc>>16) + 0x4000) >> 15;
-					AuxR  = (Wet * ((s32)RAcc>>16) + 0x4000)  >> 15;
+					AuxR  = (Wet * ((s32)RAcc>>16) + 0x4000) >> 15;
 				}
 			}
 
 			//fprintf (dfile, "%04X ", (LAcc>>16));
 
-			o1+=(/*(o1*0x7fff)+*/(i1*MainR)+0x4000)>>15;
-			a1+=(/*(a1*0x7fff)+*/(i1*MainL)+0x4000)>>15;
+			o1+=(/*(o1*0x7fff)+*/(i1*MainR)+0x4000) >> 15;
+			a1+=(/*(a1*0x7fff)+*/(i1*MainL)+0x4000) >> 15;
 
 			/*		o1=((s64)(((s64)o1*0xfffe)+((s64)i1*MainR*2)+0x8000)>>16);
 
 			a1=((s64)(((s64)a1*0xfffe)+((s64)i1*MainL*2)+0x8000)>>16);*/
 
-			o1 = Saturate<s16>( o1 );
-			a1 = Saturate<s16>( a1 );
+			//Do we need saturate here? //Corn
+			//o1 = Saturate<s16>( o1 );
+			//a1 = Saturate<s16>( a1 );
 
 			out[ptr^1]=o1;
 			aux1[ptr^1]=a1;
@@ -311,8 +312,9 @@ void	AudioHLEState::EnvMixer( u8 flags, u32 address )
 				a2+=(/*(a2*0x7fff)+*/(i1*AuxR)+0x4000)>>15;
 				a3+=(/*(a3*0x7fff)+*/(i1*AuxL)+0x4000)>>15;
 
-				a2 = Saturate<s16>( a2 );
-				a3 = Saturate<s16>( a3 );
+				//Do we need saturate here? //Corn
+				//a2 = Saturate<s16>( a2 );
+				//a3 = Saturate<s16>( a3 );
 
 				aux2[ptr^1]=a2;
 				aux3[ptr^1]=a3;
@@ -365,7 +367,7 @@ void	AudioHLEState::Resample( u8 flags, u32 pitch, u32 address )
 	}
 
 	u32		loops( ((Count+0xf)&0xFFF0)/4 );
-	for(u32 i = 0; i < loops ; ++i )
+	for(u32 i = loops; i !=0 ; i-- )
 	{
 		tmp =  (buffer_i[srcPtr^1] + FixedPointMul16( buffer_i[(srcPtr+1)^1] - buffer_i[srcPtr^1], accumulator )) << 16;
 		accumulator += pitch;
@@ -445,9 +447,9 @@ void	AudioHLEState::Resample( u8 flags, u32 pitch, u32 address )
 
 inline void AudioHLEState::ExtractSamplesScale( s32 * output, u32 inPtr, s32 vscale ) const
 {
-	int j = 0;
+	s32 j = 0;
 
-	// loop of 8, for 8 coded nibbles from 4 bytes which yields 8 short pcm values	
+	// loop of 8, for 8 coded nibbles from 4 bytes which yields 8 s16 pcm values	
 	while(j<8)
 	{
 		u8 icode( Buffer[(InBuffer+inPtr)^3] );
@@ -462,9 +464,9 @@ inline void AudioHLEState::ExtractSamplesScale( s32 * output, u32 inPtr, s32 vsc
 
 inline void AudioHLEState::ExtractSamples( s32 * output, u32 inPtr ) const
 {
-	int j = 0;
+	s32 j = 0;
 
-	// loop of 8, for 8 coded nibbles from 4 bytes which yields 8 short pcm values	
+	// loop of 8, for 8 coded nibbles from 4 bytes which yields 8 s16 pcm values	
 	while(j<8)
 	{
 		u8 icode( Buffer[(InBuffer+inPtr)^3] );
@@ -479,7 +481,83 @@ inline void AudioHLEState::ExtractSamples( s32 * output, u32 inPtr ) const
 //
 //	l1/l2 are IN/OUT
 //
-void DecodeSamples( s16 * out, s32 & l1, s32 & l2, const s32 * input, const s16 * book1, const s16 * book2 )
+#if 1 //1->fast, 0->original Azimer //Corn
+inline void DecodeSamples( s16 * out, s32 & l1, s32 & l2, const s32 * input, const s16 * book1, const s16 * book2 )
+{
+	s32 a[8];
+
+	a[0]= (s32)book1[0]*l1;
+	a[0]+=(s32)book2[0]*l2;
+	a[0]+=input[0]*2048;
+
+	a[1] =(s32)book1[1]*l1;
+	a[1]+=(s32)book2[1]*l2;
+	a[1]+=(s32)book2[0]*input[0];
+	a[1]+=input[1]*2048;
+
+	a[2] =(s32)book1[2]*l1;
+	a[2]+=(s32)book2[2]*l2;
+	a[2]+=(s32)book2[1]*input[0];
+	a[2]+=(s32)book2[0]*input[1];
+	a[2]+=input[2]*2048;
+
+	a[3] =(s32)book1[3]*l1;
+	a[3]+=(s32)book2[3]*l2;
+	a[3]+=(s32)book2[2]*input[0];
+	a[3]+=(s32)book2[1]*input[1];
+	a[3]+=(s32)book2[0]*input[2];
+	a[3]+=input[3]*2048;
+
+	a[4] =(s32)book1[4]*l1;
+	a[4]+=(s32)book2[4]*l2;
+	a[4]+=(s32)book2[3]*input[0];
+	a[4]+=(s32)book2[2]*input[1];
+	a[4]+=(s32)book2[1]*input[2];
+	a[4]+=(s32)book2[0]*input[3];
+	a[4]+=input[4]*2048;
+
+	a[5] =(s32)book1[5]*l1;
+	a[5]+=(s32)book2[5]*l2;
+	a[5]+=(s32)book2[4]*input[0];
+	a[5]+=(s32)book2[3]*input[1];
+	a[5]+=(s32)book2[2]*input[2];
+	a[5]+=(s32)book2[1]*input[3];
+	a[5]+=(s32)book2[0]*input[4];
+	a[5]+=input[5]*2048;
+
+	a[6] =(s32)book1[6]*l1;
+	a[6]+=(s32)book2[6]*l2;
+	a[6]+=(s32)book2[5]*input[0];
+	a[6]+=(s32)book2[4]*input[1];
+	a[6]+=(s32)book2[3]*input[2];
+	a[6]+=(s32)book2[2]*input[3];
+	a[6]+=(s32)book2[1]*input[4];
+	a[6]+=(s32)book2[0]*input[5];
+	a[6]+=input[6]*2048;
+
+	a[7] =(s32)book1[7]*l1;
+	a[7]+=(s32)book2[7]*l2;
+	a[7]+=(s32)book2[6]*input[0];
+	a[7]+=(s32)book2[5]*input[1];
+	a[7]+=(s32)book2[4]*input[2];
+	a[7]+=(s32)book2[3]*input[3];
+	a[7]+=(s32)book2[2]*input[4];
+	a[7]+=(s32)book2[1]*input[5];
+	a[7]+=(s32)book2[0]*input[6];
+	a[7]+=input[7]*2048;
+
+	*(out++) =      Saturate<s16>( a[1] >> 11 );
+	*(out++) =      Saturate<s16>( a[0] >> 11 );
+	*(out++) =      Saturate<s16>( a[3] >> 11 );
+	*(out++) =      Saturate<s16>( a[2] >> 11 );
+	*(out++) =      Saturate<s16>( a[5] >> 11 );
+	*(out++) =      Saturate<s16>( a[4] >> 11 );
+	*(out++) = l2 = Saturate<s16>( a[7] >> 11 );
+	*(out++) = l1 = Saturate<s16>( a[6] >> 11 );
+}
+
+#else
+inline void DecodeSamples( s16 * out, s32 & l1, s32 & l2, const s32 * input, const s16 * book1, const s16 * book2 )
 {
 	s32 a[8];
 
@@ -554,6 +632,7 @@ void DecodeSamples( s16 * out, s32 & l1, s32 & l2, const s32 * input, const s16 
 	l1=r[6];
 	l2=r[7];
 }
+#endif
 
 void AudioHLEState::ADPCMDecode( u8 flags, u32 address )
 {
@@ -590,7 +669,7 @@ void AudioHLEState::ADPCMDecode( u8 flags, u32 address )
 
 		u8 code=Buffer[(InBuffer+inPtr)^3];
 		u32 index=code&0xf;							// index into the adpcm code table
-		s16 * book1=(short *)&ADPCMTable[index<<4];
+		s16 * book1=(s16 *)&ADPCMTable[index<<4];
 		s16 * book2=book1+8;
 		code>>=4;									// upper nibble is scale
 
@@ -724,13 +803,13 @@ void	AudioHLEState::Interleave( u16 outaddr, u16 laddr, u16 raddr, u16 count )
 	const u16 *	inl = (const u16 *)(Buffer+ laddr);
 
 	u32	loop_count( count / 4 );
-	for( u32 x = 0; x < loop_count; x++ )
+	for( u32 x = loop_count; x != 0; x-- )
 	{
-		u16 right=*(inr++);
-		u16 left =*(inl++);
+		u16 right = *(inr++);
+		u16 left  = *(inl++);
 
 		*(out++) = (*(inr++) << 16) | *(inl++);
-		*(out++) = (right << 16)	| left;
+		*(out++) = (right    << 16)	| left;
 	}
 }
 
@@ -741,16 +820,6 @@ void	AudioHLEState::Interleave( u16 laddr, u16 raddr )
 
 void	AudioHLEState::Mixer( u16 dmemout, u16 dmemin, s32 gain, u16 count )
 {
-#if 1	//1->fast, 0->original //Corn
-for( u32 x=0; x < count; x+=4 )
-	{
-		u32	in( *(u32 *)(Buffer+dmemin+x) );
-		u32 out( *(u32 *)(Buffer+dmemout+x) );
-			
-		*(u32 *)(Buffer+dmemout+x) = ((FixedPointMul15( s16(in >> 16)   , gain ) + s16(out >> 16) ) << 16) |
-									  (FixedPointMul15( s16(in & 0xFFFF), gain ) + s16(out & 0xFFFF) );
-	}
-#else
 for( u32 x=0; x < count; x+=2 )
 	{
 		s16	in( *(s16 *)(Buffer+dmemin+x) );
@@ -758,7 +827,6 @@ for( u32 x=0; x < count; x+=2 )
 			
 		*(s16 *)(Buffer+dmemout+x) = Saturate<s16>( FixedPointMul15( in, gain ) +s32( out ) );
 	}
-#endif
 }
 
 void	AudioHLEState::Deinterleave( u16 outaddr, u16 inaddr, u16 count )

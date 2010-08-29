@@ -285,6 +285,8 @@ static EProcessResult RSP_HLE_Graphics()
 //*****************************************************************************
 static EProcessResult RSP_HLE_Audio(OSTask * task)
 {
+	Memory_SP_SetRegisterBits(SP_STATUS_REG, SP_STATUS_HALT);
+
 	EProcessResult	result( PR_NOT_STARTED );
 
 	switch( gAudioPluginEnabled )

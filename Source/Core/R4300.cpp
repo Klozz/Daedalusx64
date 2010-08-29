@@ -1927,7 +1927,8 @@ static void R4300_CALL_TYPE R4300_Cop0_MFC0( R4300_CALL_SIGNATURE )
 
 	default:
 		// No specific handling needs for reads to these registers.
-		gGPR[ op_code.rt ]._s32_0 = gCPUState.CPUControl[ op_code.fs ]._s32_0;
+		//gGPR[ op_code.rt ]._s32_0 = gCPUState.CPUControl[ op_code.fs ]._s32_0; // Brakes Conker
+		gGPR[ op_code.rt ]._s64 = (s64)gCPUState.CPUControl[ op_code.fs ]._s32_0;
 		break;
 	}
 }

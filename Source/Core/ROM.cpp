@@ -443,7 +443,7 @@ void SpecificGameHacks( const ROMHeader & id )
 	case 0x5742: g_ROM.GameHacks = SUPER_BOWLING;		break;
 	case 0x5546: g_ROM.GameHacks = CONKER;				break;
 	case 0x5750: g_ROM.GameHacks = PILOT_WINGS;			break;
-	case 0x5257: g_ROM.GameHacks = WAVE_RACER;			break;
+	case 0x4157: g_ROM.GameHacks = WAR_GODS;			break;
 	case 0x4c5a: g_ROM.GameHacks = ZELDA_OOT;			break;
 	case 0x535a: g_ROM.GameHacks = ZELDA_MM;			break;
 	case 0x3954: g_ROM.GameHacks = TIGERS_HONEY_HUNT;	break;

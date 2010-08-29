@@ -28,19 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ConfigOptions.h"
 
 //*****************************************************************************
-// rewritten to integer mode (faster & less ASM) //Corn
-//*****************************************************************************
-inline Sample	Interpolate( const Sample & a, const Sample & b, s32 r )
-{
-	Sample out;
-
-	out.L = a.L + ((( b.L - a.L ) * r ) >> 12 );
-	out.R = a.R + ((( b.R - a.R ) * r ) >> 12 );
-
-	return out;
-}
-
-//*****************************************************************************
 //
 //*****************************************************************************
 CAudioBuffer::CAudioBuffer( u32 buffer_size )
@@ -109,7 +96,7 @@ void	CAudioBuffer::AddSamples( const Sample * samples, u32 num_samples, u32 freq
 	u32		  in_idx( 0 );
 	u32		  output_samples( ( (num_samples-1) * output_freq ) / frequency );
 
-	for( u32 i = 0; i < output_samples; ++i )
+	for( u32 i = output_samples; i != 0 ; i-- )
 	{
 		DAEDALUS_ASSERT( in_idx + 1 < num_samples, "Input index out of range - %d / %d", in_idx+1, num_samples );
 
@@ -129,23 +116,26 @@ void	CAudioBuffer::AddSamples( const Sample * samples, u32 num_samples, u32 freq
 		out.L = out.R = v;
 
 #else
-		const Sample &	in_a( samples[ in_idx + 0 ] );
-		const Sample &	in_b( samples[ in_idx + 1 ] );
-
-		Sample	out( Interpolate( in_a, in_b, s ) );
+		//*****************************************************************************
+		// Resample in integer mode (faster & less ASM code) //Corn
+		//*****************************************************************************
+		Sample	out;
+		
+		out.L = samples[ in_idx ].L + ((( samples[ in_idx + 1 ].L - samples[ in_idx ].L ) * s ) >> 12 );
+		out.R = samples[ in_idx ].R + ((( samples[ in_idx + 1 ].R - samples[ in_idx ].R ) * s ) >> 12 );
 
 		s += r;
 		in_idx += s >> 12;
 		s &= 4095;
 
-		DAEDALUS_ASSERT( s >= 0 && s < 4096, "s out of range" );
+//		DAEDALUS_ASSERT( s >= 0 && s < 4096, "s out of range" );
 #endif
 
-		Sample *	next( write_ptr + 1 );
-		if( next >= mBufferEnd )
-			next = mBufferBegin;
+		write_ptr++;
+		if( write_ptr >= mBufferEnd )
+			write_ptr = mBufferBegin;
 
-		while( next == read_ptr )
+		while( write_ptr == read_ptr )
 		{
 			// The buffer is full - spin until the read pointer advances.
 			//    Note - spends a lot of time here if program is running
@@ -157,13 +147,15 @@ void	CAudioBuffer::AddSamples( const Sample * samples, u32 num_samples, u32 freq
 		//	ThreadSleepMs(1);
 		// ToDo: Why PSP only? //Only needed for ME?
 			if ( gAudioPluginEnabled == APM_ENABLED_SYNC )
-				ThreadSleepMs( 15 );	// make time for other threads //Corn
+				//Give time to other threads.
+				//Much more than 5ms results in EMU hangs when starting game with Async
+				//Much more than 10ms results in Async bug happening often in SM64 //Corn
+				ThreadSleepMs( 5 );
 //				ThreadYield(); // make time for other threads
 			read_ptr = mReadPtr;
 		}
 
 		*write_ptr = out;
-		write_ptr = next;
 	}
 
 	//Todo: Check Cache Routines

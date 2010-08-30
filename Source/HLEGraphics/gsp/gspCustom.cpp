@@ -592,12 +592,7 @@ void DLParser_GBI2_Conker( MicroCodeCommand command )
 
     bool tris_added = false;
 
-    while ( command.inst.cmd == 0x10 || command.inst.cmd == 0x11 || command.inst.cmd == 0x12 ||
-			command.inst.cmd == 0x13 || command.inst.cmd == 0x14 ||	command.inst.cmd == 0x15 ||
-			command.inst.cmd == 0x16 || command.inst.cmd == 0x17 || command.inst.cmd == 0x18 ||
-			command.inst.cmd == 0x19 || command.inst.cmd == 0x1a || command.inst.cmd == 0x1b ||
-			command.inst.cmd == 0x1c || command.inst.cmd == 0x1d || command.inst.cmd == 0x1e || 
-			command.inst.cmd == 0x1f )
+	while ( (command.inst.cmd > 0x0F) && (command.inst.cmd < 0x20) )
     {
 		u32 idx[12];
 		idx[0] = (command.inst.cmd1   )&0x1F;

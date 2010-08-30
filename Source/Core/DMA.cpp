@@ -51,196 +51,65 @@ bool gLogSpDMA = false;
 
 
 //*****************************************************************************
-//
+// Heavily based on Mupen
 //*****************************************************************************
+//123 to 57
 void DMA_SP_CopyFromRDRAM()
 {
-	u32 i;
 	u32 spmem_address_reg = Memory_SP_GetRegister(SP_MEM_ADDR_REG);
 	u32 rdram_address_reg = Memory_SP_GetRegister(SP_DRAM_ADDR_REG);
 	u32 rdlen_reg         = Memory_SP_GetRegister(SP_RD_LEN_REG);
+	u32 i;
 
-	u32 rdram_address = (rdram_address_reg&0x00FFFFFF)	& ~7;	// Align to 8 byte boundary
-	u32 spmem_address = (spmem_address_reg&0x1FFF)		& ~7;	// Align to 8 byte boundary
-	u32 length = ((rdlen_reg    )&0x0FFF) | 7;					// Round up to 8 bytes
-	u32 count  = ((rdlen_reg>>12)&0x00FF);
-	u32 skip   = ((rdlen_reg>>20)&0x0FFF);
-
-	u32 rdram_address_end = rdram_address + ( ((length+1)+skip) * (count+1) );
-//	u32 spmem_address_end = spmem_address + ( ((length+1)     ) * (count+1) );
-	u32 spmem_segment_end = ( spmem_address_reg & 0x0FFF ) + ( (length+1) * (count+1) );
-
-	//
-	// Perform a couple of sanity checks to ensure that we don't overflow
-	//
-	if ( rdram_address_end > gRamSize )
+	if ((spmem_address_reg & 0x1000) > 0)
 	{
-		DBGConsole_Msg( 0, "SP DMA to RDRAM overflows" );
-		return;
-	}
-
-	if ( spmem_segment_end > 0x1000 )
-	{
-//		DBGConsole_Msg( 0, "SP DMA to RDRAM crosses memory segment" );
-		return;
-	}
-#ifndef DAEDALUS_PUBLIC_RELEASE
-	if ( gLogSpDMA )
-	{
-		DBGConsole_Msg( 0, "SP: DMA 0x%08x <- 0x%08x L:%08x C:%02x S:%03x", spmem_address, rdram_address, length+1, count, skip );
-	}
-#endif
-
-//Todo:Try to optimize futher Little Endian code
-//Big Endian
-/*	for ( int c = 0; c <= count; c++ )
-	{
-		memcpy( &g_pu8SpMemBase[spmem_address], &g_pu8RamBase[rdram_address], length+1 );
-
-		rdram_address+= length+1;
-		spmem_address+= length+1;
-		rdram_address += skip;
-		// rdram_address has advanced by length + skip. spmem_address has advanced by length+1
-	}*/
-
-//Little Endian
-	if (skip != 0 || count != 0)
-	{
-		for ( u32 c = 0; c <= count; c++ )
+		for (i=0; i<((rdlen_reg & 0xFFF)+1); i++)
 		{
-			for ( i = 0; i <= length; i++ )
-			{
-				g_pu8SpMemBase[spmem_address^U8_TWIDDLE] = g_pu8RamBase[rdram_address^U8_TWIDDLE];
-
-				rdram_address++;
-				spmem_address++;
-			}
-			rdram_address += skip;
-			// rdram_address has advanced by length + skip. spmem_address has advanced by length+1
+			g_pu8SpImemBase[((spmem_address_reg& 0xFFF)+i)^U8_TWIDDLE]=
+			g_pu8RamBase[((rdram_address_reg & 0xFFFFFF)+i)^U8_TWIDDLE];
 		}
 	}
 	else
 	{
-		length++;
-
-		if ((rdram_address & 0x3) == 0 &&
-			(spmem_address & 0x3) == 0)
+		for (i=0; i<((rdlen_reg & 0xFFF)+1); i++)
 		{
-			// Optimise for u32 alignment
-
-			u32 aligned_length = length & ~0x3;
-
-			//
-			// Do multiple of four using memcpy
-			//
-			if ( aligned_length )		// Might be 0 if xfer is less than 4 bytes in total
-			{
-				memcpy( &g_pu8SpMemBase[spmem_address], &g_pu8RamBase[rdram_address], aligned_length );
-			}
-
-			//
-			// Do remainder - this is only 0->3 bytes
-			//
-			for (i = aligned_length; i < length; i++)
-			{
-				g_pu8SpMemBase[(i + spmem_address)^U8_TWIDDLE] = g_pu8RamBase[(i + rdram_address)^U8_TWIDDLE];
-			}
-		}
-		else
-		{
-			for (i = 0; i < length; i++)
-			{
-				g_pu8SpMemBase[(i + spmem_address)^U8_TWIDDLE] = g_pu8RamBase[(i + rdram_address)^U8_TWIDDLE];
-			}
-			DBGConsole_Msg(0, "Couldn't optimise: 0x%08x 0x%08x 0x%08x",
-				spmem_address, rdram_address, length);
+			g_pu8SpDmemBase[((spmem_address_reg & 0xFFF)+i)^U8_TWIDDLE]=
+			g_pu8RamBase[((rdram_address_reg & 0xFFFFFF)+i)^U8_TWIDDLE];
 		}
 	}
 
-	s_nTotalSPTransferSize += length;
-	s_nNumSPTransfers++;
-
-	//CDebugConsole::Get()->Stats( STAT_SP, "SP: S<-R %d %dMB", s_nNumSPTransfers, s_nTotalSPTransferSize/(1024*1024));
-
-	Memory_SP_SetRegister(SP_DMA_BUSY_REG, 0);
-	Memory_SP_ClrRegisterBits(SP_STATUS_REG, SP_STATUS_DMA_BUSY);
+	// Clear if DMA busy?
 }
 
-
 //*****************************************************************************
-//
+//Heavily based on Mupen
 //*****************************************************************************
 void DMA_SP_CopyToRDRAM()
 {
 	u32 spmem_address_reg = Memory_SP_GetRegister(SP_MEM_ADDR_REG);
 	u32 rdram_address_reg = Memory_SP_GetRegister(SP_DRAM_ADDR_REG);
 	u32 wrlen_reg         = Memory_SP_GetRegister(SP_WR_LEN_REG);
-
-	u32 rdram_address = (rdram_address_reg&0x00FFFFFF)	& ~7;	// Align to 8 byte boundary
-	u32 spmem_address = (spmem_address_reg&0x1FFF)		& ~7;	// Align to 8 byte boundary
-	u32 length = ((wrlen_reg    )&0x0FFF) | 7;					// Round up to 8 bytes
-	u32 count  = ((wrlen_reg>>12)&0x00FF);
-	u32 skip   = ((wrlen_reg>>20)&0x0FFF);
-
-	u32 rdram_address_end = rdram_address + ( ((length+1)+skip) * (count+1) );
-	u32 spmem_address_end = spmem_address + ( ((length+1)     ) * (count+1) );
-	u32 spmem_segment_end = ( spmem_address_reg & 0x0FFF ) + ( (length+1) * (count+1) );
-
-
-	use(spmem_address_end);
-
-	//
-	// Perform a couple of sanity checks to ensure that we don't overflow
-	//
-	if ( rdram_address_end > gRamSize )
+	u32 i;
+    
+	if ((spmem_address_reg & 0x1000) > 0)
 	{
-		DBGConsole_Msg( 0, "SP DMA to RDRAM overflows" );
-		return;
-	}
-
-	if ( spmem_segment_end > 0x1000 )
-	{
-		DBGConsole_Msg( 0, "SP DMA to RDRAM crosses memory segment" );
-		return;
-	}
-#ifndef DAEDALUS_PUBLIC_RELEASE
-	if ( gLogSpDMA )
-	{
-		DBGConsole_Msg( 0, "SP: DMA 0x%08x -> 0x%08x L:%08x C:%02x S:%03x", spmem_address, rdram_address, length+1, count, skip );
-	}
-#endif
-//Todo:Try to optimize futher Little Endian code
-//Big Endian
-/*	for ( u32 c = 0; c <= count; c++ )
-	{
-		memcpy( &g_pu8RamBase[rdram_address], &g_pu8SpMemBase[spmem_address], length+1 );
-		rdram_address+= length+1;
-		spmem_address+= length+1;
-		rdram_address += skip;
-		// rdram_address has advanced by length+1 + skip. spmem_address has advanced by length+1
-	}*/
-
-//Little Endian
-	for ( u32 c = 0; c <= count; c++ )
-	{
-		for ( u32 i = 0; i <= length; i++ )
+		for (i=0; i<((wrlen_reg & 0xFFF)+1); i++)
 		{
-			g_pu8RamBase[rdram_address^U8_TWIDDLE] = g_pu8SpMemBase[spmem_address^U8_TWIDDLE];
-
-			rdram_address++;
-			spmem_address++;
+			g_pu8RamBase[((rdram_address_reg & 0xFFFFFF)+i)^U8_TWIDDLE]=
+			g_pu8SpImemBase[((spmem_address_reg & 0xFFF)+i)^U8_TWIDDLE];
 		}
-		rdram_address += skip;
-		// rdram_address has advanced by length+1 + skip. spmem_address has advanced by length+1
+	}
+	else
+	{
+		for (i=0; i<((wrlen_reg & 0xFFF)+1); i++)
+		{
+			g_pu8RamBase[((rdram_address_reg & 0xFFFFFF)+i)^U8_TWIDDLE]=
+			g_pu8SpDmemBase[((spmem_address_reg & 0xFFF)+i)^U8_TWIDDLE];
+		}
 	}
 
-	DAEDALUS_ASSERT_Q( rdram_address == rdram_address_end );
-	DAEDALUS_ASSERT_Q( spmem_address == spmem_address_end );
-
-	Memory_SP_SetRegister(SP_DMA_BUSY_REG, 0);
-	Memory_SP_ClrRegisterBits(SP_STATUS_REG, SP_STATUS_DMA_BUSY);
+	// Clear if DMA busy?
 }
-
 //*****************************************************************************
 // Copy 64bytes from DRAM to PIF_RAM
 //*****************************************************************************

@@ -288,6 +288,9 @@ inline bool Memory_GetInternalReadAddress(u32 address, void ** p_translated)
 #define g_pu16SpMemBase ((u16*)g_pMemoryBuffers[MEM_SP_MEM])
 #define g_pu32SpMemBase ((u32*)g_pMemoryBuffers[MEM_SP_MEM])
 
+#define g_pu8SpDmemBase	((u8*)g_pMemoryBuffers[MEM_SP_MEM] + SP_DMA_DMEM)
+#define g_pu8SpImemBase	((u8*)g_pMemoryBuffers[MEM_SP_MEM] + SP_DMA_IMEM)
+
 extern u8 * g_pu8RamBase_8000;
 extern u8 * g_pu8RamBase_A000;
 

@@ -463,6 +463,12 @@ bool	DLParser_FetchNextCommand( MicroCodeCommand * p_command )
 	if( gDisplayListStack.empty() )
 		return false;
 
+	// This really important otherwise our ucode detector will pass lots of junk
+	// Also to avoid the passing any invalid detection , see Golden Eye or Conker for example
+	//
+	if( ucode_ver > GBI_0_UNK || ucode_ver < GBI_0 )
+		return false;
+
 	// Current PC is the last value on the stack
 	DList &		entry( gDisplayListStack.back() );
 	u32			pc( entry.addr );
@@ -543,13 +549,8 @@ void	DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 da
 
 	GBIMicrocode_DetectVersion( code_base, code_size, data_base, data_size, &gbi_version, &ucode_version );
 
-	// This really important otherwise our ucode detector will pick up lots of junk.
-	// Also helps to avoid the override of ucode_ver, see Golden Eye for example.
-	//
-	if( gbi_version > GBI_0_UNK )
-		DBGConsole_Msg(0, "[YWarning: Tried to load invalid ucode table # %d]", gbi_version);
-	else
-		ucode_ver = gbi_version;
+	// Pass detection to to be used by the dlist loop
+	ucode_ver = gbi_version;
 }
 
 
@@ -588,8 +589,8 @@ static void	DLParser_ProcessDList()
 	while (DLParser_FetchNextCommand(&command))
 	{
 		PROFILE_DL_CMD( command.inst.cmd );
-		
-		DAEDALUS_ERROR("Switching ucode table to %d", ucode_ver);
+
+		//DAEDALUS_ERROR("Switching ucode table to %d", ucode_ver);
 
 		gVertexStride = VertexStride[ucode_ver]; // Set up correct vertex stride
 		gInstructionLookup[ucode_ver][command.inst.cmd0>>24](command); //Set up selected ucode table
@@ -2053,8 +2054,6 @@ void DLParser_SetInstructionCountLimit( u32 limit )
 //RSP TRI commands..
 //In HLE emulation you NEVER see this commands !
 //*****************************************************************************
-
 void DLParser_TriRSP( MicroCodeCommand command ){ DL_PF("RSP Tri: (Ignored)"); }
-
 
 

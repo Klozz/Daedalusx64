@@ -45,7 +45,13 @@ namespace
 	const char *	gScreenDumpDumpPathFormat = "sd%04d.png";
 }
 
-#define PIXEL_SIZE (4) /* change this if you change to another screenmode */
+#ifndef DAEDALUS_SCRN_16BIT
+	#define PIXEL_SIZE (4) /* change this if you change to another screenmode */
+	#define SCR_MODE GU_PSM_8888
+#else
+	#define PIXEL_SIZE (2) /* change this if you change to another screenmode */
+	#define SCR_MODE GU_PSM_5551
+#endif
 #define FRAME_SIZE (BUF_WIDTH * SCR_HEIGHT * PIXEL_SIZE)
 #define DEPTH_SIZE (BUF_WIDTH * SCR_HEIGHT * 2)
 
@@ -279,9 +285,9 @@ bool IGraphicsContext::UpdateFrame( bool wait_for_vbl )
 		u32 dst = (u32)MAKE_UNCACHED_PTR((void*)LACED_DISP);
 
 		sceGuStart(GU_DIRECT,ilist);
-		sceGuCopyImage(GU_PSM_8888, 0, 0, 720, 240, 768*2, reinterpret_cast< void * >(src + 768*4), 0, 0, 768, reinterpret_cast< void * >(dst));
+		sceGuCopyImage(SCR_MODE, 0, 0, 720, 240, 768*2, reinterpret_cast< void * >(src + 768*4), 0, 0, 768, reinterpret_cast< void * >(dst));
 		sceGuTexSync();
-		sceGuCopyImage(GU_PSM_8888, 0, 0, 720, 240, 768*2, reinterpret_cast< void * >(src), 0, 0, 768, reinterpret_cast< void * >(dst + 768*262*4));
+		sceGuCopyImage(SCR_MODE, 0, 0, 720, 240, 768*2, reinterpret_cast< void * >(src), 0, 0, 768, reinterpret_cast< void * >(dst + 768*262*4));
 		sceGuTexSync();
 		sceGuFinish();
 		sceGuSync(0,0);
@@ -548,7 +554,7 @@ bool IGraphicsContext::Initialise()
 	sceDisplaySetMode(0, 480, 272);
 
 	sceGuStart(GU_DIRECT,list[0]);
-	sceGuDrawBuffer(GU_PSM_8888,draw_buffer_rel,BUF_WIDTH);
+	sceGuDrawBuffer(SCR_MODE,draw_buffer_rel,BUF_WIDTH);
 	sceGuDispBuffer(SCR_WIDTH,SCR_HEIGHT,disp_buffer_rel,BUF_WIDTH);
 	sceGuDepthBuffer(depth_buffer_rel,BUF_WIDTH);
 	sceGuOffset(2048 - (SCR_WIDTH/2),2048 - (SCR_HEIGHT/2));
@@ -569,7 +575,7 @@ bool IGraphicsContext::Initialise()
 	sceDisplayWaitVblankStart();
 	sceGuDisplay(GU_TRUE);
 
-	sceDisplaySetFrameBuf(MAKE_UNCACHED_PTR(disp_buffer), BUF_WIDTH, GU_PSM_8888, PSP_DISPLAY_SETBUF_NEXTFRAME);
+	sceDisplaySetFrameBuf(MAKE_UNCACHED_PTR(disp_buffer), BUF_WIDTH, SCR_MODE, PSP_DISPLAY_SETBUF_NEXTFRAME);
 
 	mpBuffers[ 0 ] = draw_buffer_rel;
 	mpBuffers[ 1 ] = disp_buffer_rel;
@@ -621,7 +627,7 @@ void IGraphicsContext::SwitchToChosenDisplay()
 	}
 
 	sceGuStart(GU_DIRECT,ilist);
-	sceGuDrawBuffer(GU_PSM_8888,save_draw_rel,BUF_WIDTH);
+	sceGuDrawBuffer(SCR_MODE,save_draw_rel,BUF_WIDTH);
 	sceGuDispBuffer(SCR_WIDTH,SCR_HEIGHT,save_disp_rel,BUF_WIDTH);
 	sceGuDepthBuffer(save_depth_rel,BUF_WIDTH);
 	sceGuOffset(2048 - (SCR_WIDTH/2),2048 - (SCR_HEIGHT/2));
@@ -644,7 +650,7 @@ void IGraphicsContext::SwitchToChosenDisplay()
 
 	void * frame_buffer = reinterpret_cast< void * >((reinterpret_cast< u32 >(save_disp_rel) + reinterpret_cast< u32 >( sceGeEdramGetAddr() )));
 	frame_buffer = MAKE_UNCACHED_PTR(frame_buffer);
-	sceDisplaySetFrameBuf(frame_buffer, BUF_WIDTH, GU_PSM_8888, PSP_DISPLAY_SETBUF_NEXTFRAME);
+	sceDisplaySetFrameBuf(frame_buffer, BUF_WIDTH, SCR_MODE, PSP_DISPLAY_SETBUF_NEXTFRAME);
 
 	mpBuffers[ 0 ] = save_draw_rel;
 	mpBuffers[ 1 ] = save_disp_rel;
@@ -671,7 +677,7 @@ void IGraphicsContext::SwitchToLcdDisplay()
 	sceDisplaySetMode(0, 480, 272);
 
 	sceGuStart(GU_DIRECT,ilist);
-	sceGuDrawBuffer(GU_PSM_8888,save_draw_rel,BUF_WIDTH);
+	sceGuDrawBuffer(SCR_MODE,save_draw_rel,BUF_WIDTH);
 	sceGuDispBuffer(SCR_WIDTH,SCR_HEIGHT,save_disp_rel,BUF_WIDTH);
 	sceGuDepthBuffer(save_depth_rel,BUF_WIDTH);
 	sceGuOffset(2048 - (SCR_WIDTH/2),2048 - (SCR_HEIGHT/2));
@@ -694,7 +700,7 @@ void IGraphicsContext::SwitchToLcdDisplay()
 
 	void * frame_buffer = reinterpret_cast< void * >((reinterpret_cast< u32 >(save_disp_rel) + reinterpret_cast< u32 >( sceGeEdramGetAddr() )));
 	frame_buffer = MAKE_UNCACHED_PTR(frame_buffer);
-	sceDisplaySetFrameBuf(frame_buffer, BUF_WIDTH, GU_PSM_8888, PSP_DISPLAY_SETBUF_NEXTFRAME);
+	sceDisplaySetFrameBuf(frame_buffer, BUF_WIDTH, SCR_MODE, PSP_DISPLAY_SETBUF_NEXTFRAME);
 
 	sceGuStart(GU_CALL,list[listNum&1]);
 }

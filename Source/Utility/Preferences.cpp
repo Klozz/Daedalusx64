@@ -251,6 +251,10 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		{ 	 
             preferences.RemoveZFighting = property->GetBooleanValue( false ); 	 
 		}
+		if( section->FindProperty( "AudioRateMatch", &property ) ) 	 
+		{ 	 
+            preferences.AudioRateMatch = property->GetBooleanValue( false ); 	 
+		}
 		if( section->FindProperty( "CheckTextureHashFrequency", &property ) )
 		{
 			preferences.CheckTextureHashFrequency = ROM_GetTextureHashFrequencyFromFrames( atoi( property->GetValue() ) );
@@ -308,6 +312,7 @@ void IPreferences::OutputSectionDetails( const RomID & id, const SRomPreferences
 	fprintf(fh, "CheckN64FPUsageDisable=%d\n",preferences.CheckN64FPUsageDisable);
 	fprintf(fh, "TMEMemulation=%d\n",preferences.TMEMemulation);
 	fprintf(fh, "RemoveZFighting=%d\n",preferences.RemoveZFighting);
+	fprintf(fh, "AudioRateMatch=%d\n",preferences.AudioRateMatch);
 	fprintf(fh, "CheckTextureHashFrequency=%d\n", ROM_GetTexureHashFrequencyAsFrames( preferences.CheckTextureHashFrequency ) );
 	fprintf(fh, "Frameskip=%d\n", ROM_GetFrameskipValueAsInt( preferences.Frameskip ) );
 	fprintf(fh, "AudioEnabled=%d\n", preferences.AudioEnabled);
@@ -439,6 +444,7 @@ SRomPreferences::SRomPreferences()
 	,	CheckN64FPUsageDisable( false )
 	,   TMEMemulation( false )
 	,   RemoveZFighting( false )
+	,	AudioRateMatch( false )
 	,	CheckTextureHashFrequency( THF_DISABLED )
 	,	Frameskip( FV_DISABLED )
 	,	AudioEnabled( APM_DISABLED )
@@ -464,6 +470,7 @@ void SRomPreferences::Reset()
 	CheckN64FPUsageDisable = false;
 	TMEMemulation = false;
 	RemoveZFighting = false;
+	AudioRateMatch = false;
 	CheckTextureHashFrequency = THF_DISABLED;
 	Frameskip = FV_DISABLED;
 	AudioEnabled = APM_DISABLED;
@@ -488,6 +495,7 @@ void	SRomPreferences::Apply() const
 	gCheckN64FPUsageDisable = g_ROM.settings.CheckN64FPUsageDisable || CheckN64FPUsageDisable;
 	gTMEMemulation = g_ROM.settings.TMEMemulation || TMEMemulation;
 	gRemoveZFighting = g_ROM.settings.RemoveZFighting || RemoveZFighting;
+	gAudioRateMatch = g_ROM.settings.AudioRateMatch || AudioRateMatch;
 	gCheckTextureHashFrequency = ROM_GetTexureHashFrequencyAsFrames( CheckTextureHashFrequency );
 	gFrameskipValue = Frameskip;
 

@@ -57,6 +57,7 @@ extern bool	gIncreaseVI_Event;
 extern bool gCheckN64FPUsageDisable;
 extern bool gTMEMemulation;
 extern bool gRemoveZFighting;
+extern bool gAudioRateMatch;
 //ToDo: Needs moving to Graphics plugin config
 extern bool	gCleanSceneEnabled;
 extern u32	gCheckTextureHashFrequency;

@@ -1840,7 +1840,8 @@ void PSPRenderer::ProcessVerts( u32 v0, u32 num, const FiddledVtx * verts, const
 //*****************************************************************************
 void PSPRenderer::SetNewVertexInfoVFPU(u32 address, u32 v0, u32 n)
 {
-	const FiddledVtx * const pVtxBase( (const FiddledVtx*)(g_pu8RamBase + address) );
+//	const FiddledVtx * const pVtxBase( (const FiddledVtx*)(g_pu8RamBase + address) );
+	pVtxBase = (FiddledVtx*)(g_pu8RamBase + address);
 
 	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );
 	const Matrix4x4 & matWorldProject( GetWorldProject() );

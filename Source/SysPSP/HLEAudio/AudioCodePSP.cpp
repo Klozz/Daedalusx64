@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "stdafx.h"
 
+#include "Utility/FramerateLimiter.h"
 #include "HLEAudio/AudioCode.h"
 #include "HLEAudio/AudioBuffer.h"
 
@@ -297,6 +298,16 @@ u32 AudioCode::AddBuffer( u8 *start, u32 length )
 	u32		num_samples( length / sizeof( Sample ) );
 
 	mBufferLength = num_samples;
+	
+	u32 rate=FramerateLimiter_GetSyncI();
+
+	if(gAudioRateMatch)
+	{
+		if(rate>88200) mOutputFrequency=88200;
+		else if(rate<44100) mOutputFrequency=44100;
+		else mOutputFrequency=rate;
+	}
+	else mOutputFrequency=44100;
 
 	switch( gAudioPluginEnabled )
 	{

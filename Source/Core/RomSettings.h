@@ -72,6 +72,7 @@ struct RomSettings
 	bool				CheckN64FPUsageDisable;
 	bool				TMEMemulation;
 	bool				RemoveZFighting;
+	bool				AudioRateMatch;
 
 	u32					RescanCount;
 	

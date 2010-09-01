@@ -37,7 +37,36 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 class CTexture;
 class CNativeTexture;
 class CBlendStates;
-struct FiddledVtx;
+struct FiddledVtx
+{
+        s16 y;
+        s16 x;
+
+        s16 flag;
+        s16 z;
+
+        s16 tv;
+        s16 tu;
+
+        union
+        {
+                struct
+                {
+                        u8 rgba_a;
+                        u8 rgba_b;
+                        u8 rgba_g;
+                        u8 rgba_r;
+                };
+                struct
+                {
+                        s8 norm_a;
+                        s8 norm_z;      // b
+                        s8 norm_y;      // g
+                        s8 norm_x;      // r
+                };
+        };
+};
+
 struct TextureVtx;
 
 ALIGNED_TYPE(struct, DaedalusLight, 16)
@@ -147,6 +176,8 @@ public:
 	bool				TestVerts( u32 v0, u32 vn ) const;				// Returns true if bounding volume is visible, false if culled
 	v4					GetTransformedVtxPos( u32 i ) const		{ return mVtxProjected[ i ].TransformedPos; }
 	u32					GetVtxFlags( u32 i ) const				{ return mVtxProjected[ i ].ClipFlags; }
+
+	s16					GetRawVtx( u32 i ) const		{ return pVtxBase[ i ].z; }
 
 	// Rendering stats
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
@@ -281,6 +312,8 @@ private:
 	u16					m_swIndexBuffer[500];
 	u32					m_dwNumIndices;
 
+	// RAW vertices...
+	FiddledVtx  *		pVtxBase;
 	// Processed vertices waiting for output...
 	DaedalusVtx4		mVtxProjected[MAX_VERTS];			// Transformed and projected vertices (suitable for clipping etc)
 	u32					mVtxClipFlagsUnion;					// Bitwise OR of all the vertex flags added to the current batch. If this is 0, we can trivially accept everything without clipping
@@ -308,35 +341,6 @@ private:
 	std::set< u64 >		mUnhandledCombinderStates;
 };
 
-struct FiddledVtx
-{
-        s16 y;
-        s16 x;
-
-        s16 flag;
-        s16 z;
-
-        s16 tv;
-        s16 tu;
-
-        union
-        {
-                struct
-                {
-                        u8 rgba_a;
-                        u8 rgba_b;
-                        u8 rgba_g;
-                        u8 rgba_r;
-                };
-                struct
-                {
-                        s8 norm_a;
-                        s8 norm_z;      // b
-                        s8 norm_y;      // g
-                        s8 norm_x;      // r
-                };
-        };
-};
 
 struct TextureVtx
 {

@@ -588,7 +588,7 @@ static void	DLParser_ProcessDList()
 
 	while (DLParser_FetchNextCommand(&command))
 	{
-		PROFILE_DL_CMD( command.inst.cmd );
+//		PROFILE_DL_CMD( command.inst.cmd );
 
 		//DAEDALUS_ERROR("Switching ucode table to %d", ucode_ver);
 

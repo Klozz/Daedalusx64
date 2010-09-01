@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <psppower.h>
 #include <pspsdk.h>
 #include <pspdisplay.h>
+#include <pspgu.h>
 #include <kubridge.h>
 #include <pspsysmem.h>
 
@@ -131,7 +132,11 @@ __attribute__ ((constructor))
 void loaderInit()
 {
     pspKernelSetKernelPC();
+#ifndef DAEDALUS_SCRN_16BIT
 	pspDebugScreenInit();
+#else
+	pspDebugScreenInitEx( NULL , GU_PSM_5551, 1); //Sets debug output to 16bit mode
+#endif
 	pspDebugInstallKprintfHandler(NULL);
 	pspDebugInstallErrorHandler(DaedalusExceptionHandler);
 	pspSdkInstallNoDeviceCheckPatch();
@@ -258,7 +263,11 @@ static bool	Initialize()
 //	srand(time(0));
 
 	//Set the debug output to default
+#ifndef DAEDALUS_SCRN_16BIT
 	pspDebugScreenInit();
+#else
+	pspDebugScreenInitEx( NULL , GU_PSM_5551, 1); //Sets debug output to 16bit mode
+#endif
 
 	initExceptionHandler();
 

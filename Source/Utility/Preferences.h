@@ -136,6 +136,7 @@ struct SRomPreferences
 	bool						CheckN64FPUsageDisable;
 	bool                        TMEMemulation;
 	bool						RemoveZFighting;
+	bool						AudioRateMatch;
 
 	ETextureHashFrequency		CheckTextureHashFrequency;
 	EFrameskipValue				Frameskip;

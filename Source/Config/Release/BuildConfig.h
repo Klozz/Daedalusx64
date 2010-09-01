@@ -50,5 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // Define this to turn off various debugging features for public release.
 #define DAEDALUS_PUBLIC_RELEASE
 
+// Define this to use 16bit instead of 32bit screen graphics
+//#define DAEDALUS_SCRN_16BIT
 
 #endif // CONFIG_H_

@@ -298,9 +298,8 @@ void	AudioHLEState::EnvMixer( u8 flags, u32 address )
 
 			a1=((s64)(((s64)a1*0xfffe)+((s64)i1*MainL*2)+0x8000)>>16);*/
 
-			//Do we need saturate here? //Corn
-			//o1 = Saturate<s16>( o1 );
-			//a1 = Saturate<s16>( a1 );
+			o1 = Saturate<s16>( o1 );
+			a1 = Saturate<s16>( a1 );
 
 			out[ptr^1]=o1;
 			aux1[ptr^1]=a1;
@@ -312,9 +311,8 @@ void	AudioHLEState::EnvMixer( u8 flags, u32 address )
 				a2+=(/*(a2*0x7fff)+*/(i1*AuxR)+0x4000)>>15;
 				a3+=(/*(a3*0x7fff)+*/(i1*AuxL)+0x4000)>>15;
 
-				//Do we need saturate here? //Corn
-				//a2 = Saturate<s16>( a2 );
-				//a3 = Saturate<s16>( a3 );
+				a2 = Saturate<s16>( a2 );
+				a3 = Saturate<s16>( a3 );
 
 				aux2[ptr^1]=a2;
 				aux3[ptr^1]=a3;

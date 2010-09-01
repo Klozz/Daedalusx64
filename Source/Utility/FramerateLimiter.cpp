@@ -182,6 +182,24 @@ f32	FramerateLimiter_GetSync()
 }
 
 //*****************************************************************************
+//	Get the current sync rate to match audio sample rate //Corn 
+//*****************************************************************************
+u32	FramerateLimiter_GetSyncI()
+{
+	static f32 sum=0.0f;
+
+	if( gTicksBetweenVbls == 0 )
+	{
+		return 44100;
+	}
+
+	//Filter variations a bit
+	sum = sum * 0.90f + 0.095f * 44100.0f * (f32)gCurrentAverageTicksPerVbl  / (f32)gTicksBetweenVbls;
+	//printf("%d\n",u32(sum));
+	return u32(sum);
+}
+
+//*****************************************************************************
 //
 //*****************************************************************************
 void	FramerateLimiter_SetLimit( bool limit )

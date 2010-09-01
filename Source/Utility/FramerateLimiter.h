@@ -25,6 +25,7 @@ extern bool			gSpeedSyncEnabled;
 void			FramerateLimiter_Reset();
 void			FramerateLimiter_Limit();
 f32				FramerateLimiter_GetSync();											// Returns fraction of real n64 we're running at (1 = 100%)
+u32				FramerateLimiter_GetSyncI();											// Returns fraction of real n64 we're running at (1 = 100%)
 u32				FramerateLimiter_GetTvFrequencyHz();
 
 #endif // FRAMERATELIMITER_H_

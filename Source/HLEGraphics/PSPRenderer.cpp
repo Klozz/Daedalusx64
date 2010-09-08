@@ -2547,3 +2547,32 @@ void PSPRenderer::Draw2DTexture( float imageX, float imageY, float frameX, float
 
 	sceGuDrawArray( GU_SPRITES, GU_TEXTURE_32BITF|GU_VERTEX_32BITF|GU_TRANSFORM_2D, 2, 0, p_verts);
 }
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void PSPRenderer::SetFogMinMax(float fMin, float fMax)
+{
+	//printf(" Fog %.3f..%.3f\n",fMin,fMax);
+	//printf("Set Fog: Min=%f, Max=%f",fMin,fMax);
+	sceGuFog(fMin, fMax, mFogColour.GetColour());
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void PSPRenderer::SetFogEnable(bool bEnable)
+{
+	bool bFogEnabled = bEnable && gFogEnabled;
+
+	if(bFogEnabled)
+	{
+		mTnLModeFlags|=TNL_FOG;
+		sceGuEnable(GU_FOG);
+	}
+	else
+	{
+		mTnLModeFlags&=~TNL_FOG;
+		sceGuDisable(GU_FOG);
+	}
+}

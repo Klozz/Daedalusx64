@@ -137,6 +137,7 @@ struct SRomPreferences
 	bool                        TMEMemulation;
 	bool						RemoveZFighting;
 	bool						AudioRateMatch;
+	bool						FogEnabled;
 
 	ETextureHashFrequency		CheckTextureHashFrequency;
 	EFrameskipValue				Frameskip;

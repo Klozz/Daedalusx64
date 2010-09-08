@@ -128,6 +128,7 @@ IAdvancedOptionsScreen::IAdvancedOptionsScreen( CUIContext * p_context, const Ro
 	mElements.Add( new CBoolSetting( &mRomPreferences.TMEMemulation, "Basic TMEM Emulation", "Whether partial emulation of the N64 texture memory area is enabled (This can slow down the emulator)", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.RemoveZFighting, "Remove Z-Fighting ", "Whether to remove Z fighting or any flicker/artifacts cause by it", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.AudioRateMatch, "Audio Rate Match", "Whether to match audio rate to the frame rate (works between 50-100% sync)", "Yes", "No" ) );
+	mElements.Add( new CBoolSetting( &mRomPreferences.FogEnabled, "Fog Emulation", "Whether to enable or disable fog emulation   (Experimental)", "Enabled", "Disabled" ) );
 
 	//	mElements.Add( new CUISpacer( 16 ) );
 #ifndef DAEDALUS_PUBLIC_RELEASE	// Below option is irrelevant to end user or game especific, we force this option on roms.ini

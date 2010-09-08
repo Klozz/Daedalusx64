@@ -765,11 +765,13 @@ void	AudioHLEState::SetBuffer( u8 flags, u16 in, u16 out, u16 count )
 
 void	AudioHLEState::DmemMove( u16 dst, u16 src, u16 count )
 {
-	count = (count + 3) & 0xfffc;
+	memcpy(Buffer + dst, Buffer + src, count);
+
+	/*count = (count + 3) & 0xfffc;
 	for (u32 i = 0; i < count; i++)
 	{
 		*(u8 *)(Buffer+((i+dst)^3)) = *(u8 *)(Buffer+((i+src)^3));
-	}
+	}*/
 }
 
 void	AudioHLEState::LoadADPCM( u32 address, u16 count )

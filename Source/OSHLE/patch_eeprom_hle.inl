@@ -1,34 +1,37 @@
 #define TEST_DISABLE_EEPROM_FUNCS //return PATCH_RET_NOT_PROCESSED;
 
+// I don't think for Eeprom patches we need to cast 64bit types - Salvy
+
 u32 Patch___osEepStatus()
 {
 TEST_DISABLE_EEPROM_FUNCS
 	// Return status of Eeeprom in OSContStatus struct passed in a1.
 	// a0 is the message queue to block on, and is ignored
 
-	//u32 dwMQ         = gGPR[REG_a0]._u32_0;
 	u32 ContStatus = gGPR[REG_a1]._u32_0;
+	u32 type, data;
 
-	//DBGConsole_Msg(0, "osEepStatus(0x%08x, 0x%08x), ra = 0x%08x", dwMQ, ContStatus, (u32)g_qwGPR[REG_ra]);
+	DBGConsole_Msg(0, "osEepStatus(), ra = 0x%08x", (u32)gGPR[REG_ra]._s64);
 
 	// Set up ContStatus values
-	if ( g_ROM.settings.SaveType == SAVE_TYPE_EEP4K || g_ROM.settings.SaveType == SAVE_TYPE_EEP16K )
+	switch(g_ROM.settings.SaveType)
 	{
-		u16 type = (g_ROM.settings.SaveType == SAVE_TYPE_EEP4K) ? CONT_EEPROM : CONT_EEP16K;
-		Write16Bits(ContStatus + 0, type );			// type
-		Write8Bits(ContStatus + 2, 0);				// status
-		Write8Bits(ContStatus + 3, 0);				// errno
-
-		gGPR[REG_v0]._u64 = 0;
+	case SAVE_TYPE_EEP4K:
+	case SAVE_TYPE_EEP16K:
+		type = (g_ROM.settings.SaveType == SAVE_TYPE_EEP4K) ? CONT_EEPROM : CONT_EEP16K;
+		data = 0;
+		break;
+	default:
+		type = 0;
+		data = CONT_NO_RESPONSE_ERROR;
+		break;
 	}
-	else
-	{
-		Write16Bits(ContStatus + 0, 0);				// type
-		Write8Bits(ContStatus + 2, 0);						// status
-		Write8Bits(ContStatus + 3, CONT_NO_RESPONSE_ERROR);	// errno
-		gGPR[REG_v0]._u64 = CONT_NO_RESPONSE_ERROR;
 
-	}
+	Write16Bits(ContStatus + 0, type);	// type
+	Write8Bits(ContStatus + 2, 0);		// status
+	Write8Bits(ContStatus + 3, data);	// errno
+	gGPR[REG_v0]._u64 = data;
+
 	return PATCH_RET_JR_RA;
 }
 

@@ -101,44 +101,33 @@ void RESAMPLE( AudioHLECommand command )
 
 void SETVOL( AudioHLECommand command )
 {
-// Might be better to unpack these depending on the flags...
+//  Might be better to unpack these depending on the flags...
 	u8 flags = (u8)((command.cmd0 >> 16) & 0xff);
 	s16 vol = (s16)(command.cmd0 & 0xffff);
 //	u16 voltgt =(u16)((command.cmd1 >> 16)&0xffff);
 	u16 volrate = (u16)((command.cmd1 & 0xffff));
 
-	if (flags & A_AUX)
+//  printf("flags %02x", flags);
+	switch(flags)
 	{
-		gAudioHLEState.EnvDry = vol;				// m_MainVol
-		gAudioHLEState.EnvWet = (s16)volrate;		// m_AuxVol
-	}
-	else if(flags & A_VOL)
-	{
-		// Set the Source(start) Volumes
-		if(flags & A_LEFT)
-		{
-			gAudioHLEState.VolLeft = vol;
-		}
-		else
-		{
-			// A_RIGHT
-			gAudioHLEState.VolRight = vol;
-		}
-	}
-	else 
-	{
-		// Set the Ramping values Target, Ramp
-		if(flags & A_LEFT)
-		{
-			gAudioHLEState.VolTrgLeft  = (s16)(command.cmd0 & 0xffff);		// m_LeftVol
-			gAudioHLEState.VolRampLeft = command.cmd1;
-		}
-		else
-		{
-			// A_RIGHT
-			gAudioHLEState.VolTrgRight  = (s16)(command.cmd0 & 0xffff);		// m_RightVol
-			gAudioHLEState.VolRampRight = command.cmd1;
-		}
+	case 8:
+		gAudioHLEState.EnvDry = vol;							// m_MainVol
+		gAudioHLEState.EnvWet = (s16)volrate;					// m_AuxVol
+		break;
+	case 6:
+		gAudioHLEState.VolRight = vol;							// RightVol
+		break;
+	case 4:
+		gAudioHLEState.VolLeft = vol;							// LeftVol
+		break;
+	case 2:
+		gAudioHLEState.VolTrgLeft  = (s16)command.cmd0;			// m_LeftVol
+		gAudioHLEState.VolRampLeft = command.cmd1;
+		break;
+	case 0:
+		gAudioHLEState.VolTrgRight  = (s16)command.cmd0;		// m_RightVol
+		gAudioHLEState.VolRampRight = command.cmd1;
+		break;
 	}
 }
 
@@ -203,6 +192,7 @@ void DMEMMOVE( AudioHLECommand command )
 	u16 dst( command.Abi1DmemMove.Dst );
 	u16 count( command.Abi1DmemMove.Count );
 
+	// XXX Check for 0 count?
 	gAudioHLEState.DmemMove( dst, src, count );
 }
 

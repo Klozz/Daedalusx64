@@ -61,7 +61,7 @@ private:
 
 
 public:
-	u8		Buffer[0x10000];
+	u8		Buffer[0x10000]; // Seems excesively large? 0x1000 should be enough.
 	u16		ADPCMTable[0x88];
 	s16		MixerWorkArea[256];
 	

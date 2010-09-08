@@ -1075,23 +1075,28 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 	case G_MW_SEGMENT:
 		{
 			u32 segment = (command.mw1.offset >> 2) & 0xF;
-			u32 base = command.mw1.value & 0x00FFFFFF;
+			u32 base = command.mw1.value;
 			DL_PF("    G_MW_SEGMENT Seg[%d] = 0x%08x", segment, base);
 			gSegments[segment] = base;
 		}
 		break;
-	case G_MW_FOG:
+	case G_MW_FOG: // WIP, only works for a few games
 		{
-			u16 wMult = u16(command.mw1.value >> 16);
-			u16 wOff  = u16(command.mw1.value      );
+			f32 a = command.mw1.value >> 16;
+			f32 b = command.mw1.value & 0xFFFF;
 
-			f32 fMult = ((f32)(s16)wMult) * (1.0f / 65536.0f);
-			f32 fOff  = ((f32)(s16)wOff)  * (1.0f / 65536.0f);
+			//f32 min = b - a;
+			//f32 max = b + a;
+			//min = min * (1.0f / 16.0f);
+			//max = max * (1.0f / 4.0f);
+			f32 min = a * 0.125f;
+			f32 max = b * 0.25f;
 
-			DL_PF("     G_MW_FOG. Mult = 0x%04x (%f), Off = 0x%04x (%f)", wMult, 255.0f * fMult, wOff, 255.0f * fOff );
+			//DL_PF(" G_MW_FOG. Mult = 0x%04x (%f), Off = 0x%04x (%f)", wMult, 255.0f * fMult, wOff, 255.0f * fOff );
 
-			PSPRenderer::Get()->SetFogMult( 255.0f * fMult );
-			PSPRenderer::Get()->SetFogOffset( 255.0f * fOff );
+			PSPRenderer::Get()->SetFogMinMax(min, max);
+
+			//printf("1Fog %.0f | %.0f || %.0f | %.0f\n", min, max, a, b);
 		}
 		break;
 	case G_MW_LIGHTCOL:
@@ -1199,27 +1204,31 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 	case G_MW_SEGMENT:
 		{
 			u32 segment = command.mw2.offset / 4;
-			u32 address	= command.mw2.value & 0x00FFFFFF;			// Hack - convert to physical
+			u32 address	= command.mw2.value;
 
 			DL_PF( "      G_MW_SEGMENT Segment[%d] = 0x%08x", segment, address );
 
 			gSegments[segment] = address;
 		}
 		break;
-	case G_MW_FOG:
+	case G_MW_FOG: // WIP, only works for a few games
 		{
-			u16 wMult = u16(command.mw2.value >> 16);
-			u16 wOff  = u16(command.mw2.value      );
+			f32 a = command.mw2.value >> 16;
+			f32 b = command.mw2.value & 0xFFFF;
 
-			f32 fMult = ((f32)(s16)wMult) * (1.0f / 65536.0f);
-			f32 fOff  = ((f32)(s16)wOff)  * (1.0f / 65536.0f);
+			//f32 min = b - a;
+			//f32 max = b + a;
+			//min = min * (1.0f / 16.0f);
+			//max = max * (1.0f / 4.0f);
+			f32 min = a * 0.125f;
+			f32 max = b * 0.25f;
 
-			DL_PF("     G_MW_FOG. Mult = 0x%04x (%f), Off = 0x%04x (%f)", wMult, 255.0f * fMult, wOff, 255.0f * fOff );
+			//DL_PF(" G_MW_FOG. Mult = 0x%04x (%f), Off = 0x%04x (%f)", wMult, 255.0f * fMult, wOff, 255.0f * fOff );
 
-			PSPRenderer::Get()->SetFogMult( 255.0f * fMult );
-			PSPRenderer::Get()->SetFogOffset( 255.0f * fOff );
+			PSPRenderer::Get()->SetFogMinMax(min, max);
+
+			//printf("1Fog %.0f | %.0f || %.0f | %.0f\n", min, max, a, b);
 		}
-		break;
 	case G_MW_LIGHTCOL:
 		{
 			u32 light_idx = command.mw2.offset / 0x18;

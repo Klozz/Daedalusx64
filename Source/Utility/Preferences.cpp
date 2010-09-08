@@ -255,6 +255,10 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		{ 	 
             preferences.AudioRateMatch = property->GetBooleanValue( false ); 	 
 		}
+		if( section->FindProperty( "FogEnabled", &property ) ) 	 
+		{ 	 
+            preferences.FogEnabled = property->GetBooleanValue( false ); 	 
+		}
 		if( section->FindProperty( "CheckTextureHashFrequency", &property ) )
 		{
 			preferences.CheckTextureHashFrequency = ROM_GetTextureHashFrequencyFromFrames( atoi( property->GetValue() ) );
@@ -313,6 +317,7 @@ void IPreferences::OutputSectionDetails( const RomID & id, const SRomPreferences
 	fprintf(fh, "TMEMemulation=%d\n",preferences.TMEMemulation);
 	fprintf(fh, "RemoveZFighting=%d\n",preferences.RemoveZFighting);
 	fprintf(fh, "AudioRateMatch=%d\n",preferences.AudioRateMatch);
+	fprintf(fh, "FogEnabled=%d\n",preferences.FogEnabled);
 	fprintf(fh, "CheckTextureHashFrequency=%d\n", ROM_GetTexureHashFrequencyAsFrames( preferences.CheckTextureHashFrequency ) );
 	fprintf(fh, "Frameskip=%d\n", ROM_GetFrameskipValueAsInt( preferences.Frameskip ) );
 	fprintf(fh, "AudioEnabled=%d\n", preferences.AudioEnabled);
@@ -445,6 +450,7 @@ SRomPreferences::SRomPreferences()
 	,   TMEMemulation( false )
 	,   RemoveZFighting( false )
 	,	AudioRateMatch( false )
+	,	FogEnabled( false )
 	,	CheckTextureHashFrequency( THF_DISABLED )
 	,	Frameskip( FV_DISABLED )
 	,	AudioEnabled( APM_DISABLED )
@@ -471,6 +477,7 @@ void SRomPreferences::Reset()
 	TMEMemulation = false;
 	RemoveZFighting = false;
 	AudioRateMatch = false;
+	FogEnabled = false;
 	CheckTextureHashFrequency = THF_DISABLED;
 	Frameskip = FV_DISABLED;
 	AudioEnabled = APM_DISABLED;
@@ -496,6 +503,7 @@ void	SRomPreferences::Apply() const
 	gTMEMemulation = g_ROM.settings.TMEMemulation || TMEMemulation;
 	gRemoveZFighting = g_ROM.settings.RemoveZFighting || RemoveZFighting;
 	gAudioRateMatch = g_ROM.settings.AudioRateMatch || AudioRateMatch;
+	gFogEnabled = g_ROM.settings.FogEnabled || FogEnabled;
 	gCheckTextureHashFrequency = ROM_GetTexureHashFrequencyAsFrames( CheckTextureHashFrequency );
 	gFrameskipValue = Frameskip;
 

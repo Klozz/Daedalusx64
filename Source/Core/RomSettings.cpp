@@ -320,6 +320,10 @@ bool IRomSettingsDB::OpenSettingsFile( const char * filename )
 		{ 	 
 			settings.AudioRateMatch = p_property->GetBooleanValue( false ); 	 
 		}
+		if( p_section->FindProperty( "FogEnabled", &p_property ) ) 	 
+		{ 	 
+			settings.FogEnabled = p_property->GetBooleanValue( false ); 	 
+		}
 
 		SetSettings( id, settings );
 	}
@@ -444,6 +448,7 @@ void IRomSettingsDB::OutputSectionDetails( const RomID & id, const RomSettings &
 	if( settings.TMEMemulation )				fprintf(fh, "TMEMemulation=yes\n"); 	 
 	if( settings.RemoveZFighting )				fprintf(fh, "RemoveZFighting=yes\n"); 	
 	if( settings.AudioRateMatch )				fprintf(fh, "AudioRateMatch=yes\n"); 
+	if( settings.FogEnabled )					fprintf(fh, "FogEnabled=yes\n"); 
 
 	if ( settings.ExpansionPakUsage != PAK_STATUS_UNKNOWN )	fprintf(fh, "ExpansionPakUsage=%s\n", ROM_GetExpansionPakUsageName( settings.ExpansionPakUsage ) );
 	if ( settings.SaveType != SAVE_TYPE_UNKNOWN )			fprintf(fh, "SaveType=%s\n", ROM_GetSaveTypeName( settings.SaveType ) );
@@ -506,6 +511,7 @@ RomSettings::RomSettings()
 ,   TMEMemulation( false )
 ,	RemoveZFighting( false )
 ,	AudioRateMatch( false )
+,	FogEnabled( false )
 ,	RescanCount(0)
 {
 }
@@ -540,5 +546,6 @@ void	RomSettings::Reset()
 	TMEMemulation = false;
 	RemoveZFighting = false;
 	AudioRateMatch = false;
+	FogEnabled = false;
 	RescanCount = 0;
 }

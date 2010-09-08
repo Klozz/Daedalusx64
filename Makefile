@@ -112,6 +112,7 @@ DAED_PSP_SRCS =		Source/SysPSP/Graphics/DrawText.cpp \
 			Source/SysPSP/Utility/IOPSP.cpp \
 			Source/SysPSP/Utility/ThreadPSP.cpp \
 			Source/SysPSP/Utility/TimingPSP.cpp \
+			Source/SysPSP/Utility/FastMemcpy.cpp \
 			Source/SysPSP/MediaEnginePRX/MediaEngine.S \
 			Source/SysPSP/MediaEnginePRX/me.c \
 			Source/SysPSP/DveMgr/pspDveManager.S \

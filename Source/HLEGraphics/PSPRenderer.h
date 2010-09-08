@@ -109,7 +109,6 @@ public:
 
 	// Verious rendering states
 	void				SetTextureEnable(bool enable)			{ if( enable ) mTnLModeFlags |= TNL_TEXTURE; else mTnLModeFlags &= ~TNL_TEXTURE; }
-	void				SetFogEnable(bool enable)				{ if( enable ) mTnLModeFlags |= TNL_FOG;	 else mTnLModeFlags &= ~TNL_FOG; }
 	void				SetLighting(bool enable)				{ if( enable ) mTnLModeFlags |= TNL_LIGHT;	 else mTnLModeFlags &= ~TNL_LIGHT; }
 	void				SetTextureGen(bool enable)				{ if( enable ) mTnLModeFlags |= TNL_TEXGEN;  else mTnLModeFlags &= ~TNL_TEXGEN; }
 
@@ -121,10 +120,6 @@ public:
 	void				SetLightCol(u32 light, u32 colour);
 	void				SetLightDirection(u32 l, float x, float y, float z);
 	inline void			SetAmbientLight( const v4 & colour )	{ mTnLParams.Ambient = colour; }
-
-	inline void			SetFogMult( float fFogMult )			{ mTnLParams.FogMult = fFogMult; }
-	inline void			SetFogOffset( float fFogOffset )		{ mTnLParams.FogOffset = fFogOffset; }
-	void				SetFogColour( c32 colour )				{ mFogColour = colour; }
 
 	void				SetCullMode( bool bCullFront, bool bCullBack );
 	void				SetSmooth( bool bSmooth )				{ mSmooth = bSmooth; }
@@ -139,6 +134,15 @@ public:
 	void				SetPSPViewport( s32 x, s32 y, u32 w, u32 h );
 	void				SetN64Viewport( const v3 & scale, const v3 & trans );
 	void				SetScissor( s32 x0, s32 y0, s32 x1, s32 y1 );
+
+	// Fog stuff
+	void				SetFogEnable(bool enable);
+	void				SetFogMinMax(float fMin, float fMax);
+	void				SetFogColour( c32 colour )				{ mFogColour = colour; }
+	// Unused.. will remove soon
+	inline void			SetFogMult( float fFogMult )			{ mTnLParams.FogMult = fFogMult; }
+	inline void			SetFogOffset( float fFogOffset )		{ mTnLParams.FogOffset = fFogOffset; }
+
 
 	// Matrix stuff
 	enum EMatrixLoadStyle

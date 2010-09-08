@@ -73,6 +73,7 @@ struct RomSettings
 	bool				TMEMemulation;
 	bool				RemoveZFighting;
 	bool				AudioRateMatch;
+	bool				FogEnabled;
 
 	u32					RescanCount;
 	

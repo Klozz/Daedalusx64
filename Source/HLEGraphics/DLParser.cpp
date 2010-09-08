@@ -1229,6 +1229,7 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 
 			//printf("1Fog %.0f | %.0f || %.0f | %.0f\n", min, max, a, b);
 		}
+		break;
 	case G_MW_LIGHTCOL:
 		{
 			u32 light_idx = command.mw2.offset / 0x18;

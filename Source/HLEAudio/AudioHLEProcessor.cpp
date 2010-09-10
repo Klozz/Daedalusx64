@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "stdafx.h"
 #include "AudioHLEProcessor.h"
 
+#include "../SysPSP/Utility/FastMemcpy.h"
+
 #include "audiohle.h"
 
 #include "Math/MathUtil.h"
@@ -772,6 +774,8 @@ void	AudioHLEState::DmemMove( u16 dst, u16 src, u16 count )
 	{
 		*(u8 *)(Buffer+((i+dst)^3)) = *(u8 *)(Buffer+((i+src)^3));
 	}*/
+	//COPY(Buffer + dst, Buffer + src, count,0)
+
 }
 
 void	AudioHLEState::LoadADPCM( u32 address, u16 count )

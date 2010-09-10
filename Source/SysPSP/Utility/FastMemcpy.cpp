@@ -8,19 +8,43 @@ homepage: http://wordpress.fx-world.org
 */
 
 #include "stdafx.h"
-#include "Fastmemcpy.h"
+#include "FastMemcpy.h"
+#include "Utility/Timing.h"
 
+#include <psprtc.h>
+
+
+//*****************************************************************************
+//
+//*****************************************************************************
+// Used to profile memcpys
+// Not the best place to be but meh..
+//
+/*
+u64	GetCurrent()
+{
+	u64 current;
+	NTiming::GetPreciseTime( &current );
+	return current;
+}
+*/
+u64 GetCurrent()
+{
+    u64 tick;
+    sceRtcGetCurrentTick(&tick);
+    return (s64)tick;
+}
 // Note, Do not use memcpy_vfpu for our graphics plugin
 // There's issues with cache consistance
+// Also avoid using in our audio plugin, otherwise the ME will choke with the vfpu :S
 //
 
 //*****************************************************************************
-//
-//*****************************************************************************
 //Taken from psp-programming forum (Raphael) 
-//little endian tweaked by Corn *might still miss some endian case in CPU part(size<64)  
-//
-inline void memcpy_vfpu( void* dst, void* src, u32 size )
+//Little endian tweaked by Corn 
+//*Still miss endian cases in VFPU
+//*****************************************************************************
+void memcpy_vfpu( void* dst, void* src, u32 size )
 {
 	u8* src8 = (u8*)src;
 	u8* dst8 = (u8*)dst;
@@ -35,8 +59,7 @@ inline void memcpy_vfpu( void* dst, void* src, u32 size )
 	{
 		// Align dst on 4 bytes or just resume if already done
 		while (((((u32)dst8) & 0x3)!=0) && size) {
-			//*dst8++ = *src8++;
-			*(u8*)((u32)dst8++ ^ U8_TWIDDLE) = *(u8*)((u32)src8++ ^ U8_TWIDDLE);
+			*(u8*)((u32)dst8++ ^ 3) = *(u8*)((u32)src8++ ^ 3);
 			size--;
 		}
 		if (size<4) goto bytecopy;
@@ -66,21 +89,18 @@ inline void memcpy_vfpu( void* dst, void* src, u32 size )
 				dst8 = (u8*)dst32;
 				break;
 			default:
+				register u32 a, b, c, d;
+				while (size>=4)
 				{
-					register u32 a, b, c, d;
-					while (size>=4)
-					{
-						a = *src8++;
-						b = *src8++;
-						c = *src8++;
-						d = *src8++;
-//						*dst32++ = (d << 24) | (c << 16) | (b << 8) | a;
-						*dst32++ = (a << 24) | (b << 16) | (c << 8) | d;
-						size -= 4;
-					}
-					if (size==0) return;		// fast out
-					dst8 = (u8*)dst32;
+					a = *(u8*)((u32)src8++ ^ 3);
+					b = *(u8*)((u32)src8++ ^ 3);
+					c = *(u8*)((u32)src8++ ^ 3);
+					d = *(u8*)((u32)src8++ ^ 3);
+					*dst32++ = (a << 24) | (b << 16) | (c << 8) | d;
+					size -= 4;
 				}
+				if (size==0) return;		// fast out
+				dst8 = (u8*)dst32;
 				break;
 		}
 		goto bytecopy;
@@ -88,8 +108,7 @@ inline void memcpy_vfpu( void* dst, void* src, u32 size )
 
 	// Align dst on 16 bytes to gain from vfpu aligned stores
 	while ((((u32)dst8) & 0xF)!=0 && size) {
-		//*dst8++ = *src8++;
-		*(u8*)((u32)dst8++ ^ U8_TWIDDLE) = *(u8*)((u32)src8++ ^ U8_TWIDDLE);
+		*(u8*)((u32)dst8++ ^ 3) = *(u8*)((u32)src8++ ^ 3);
 		size--;
 	}
 
@@ -353,16 +372,15 @@ bytecopy:
 	// Copy the remains byte per byte...
 	while (size--)
 	{
-		//*dst8++ = *src8++;
-		*(u8*)((u32)dst8++ ^ U8_TWIDDLE) = *(u8*)((u32)src8++ ^ U8_TWIDDLE);
+		*(u8*)((u32)dst8++ ^ 3) = *(u8*)((u32)src8++ ^ 3);
 	}
 }
 
 //*****************************************************************************
-//
+//Original PSP version should work like standard memcpy() 
 //*****************************************************************************
-// Tweaked for big endian - Corn   
-inline void memcpy_vfpu_b( void* dst, void* src, u32 size )
+//   
+void memcpy_vfpu_b( void* dst, void* src, u32 size )
 {
 	u8* src8 = (u8*)src;
 	u8* dst8 = (u8*)dst;
@@ -378,7 +396,6 @@ inline void memcpy_vfpu_b( void* dst, void* src, u32 size )
 		// Align dst on 4 bytes or just resume if already done
 		while (((((u32)dst8) & 0x3)!=0) && size) {
 			*dst8++ = *src8++;
-			//*(u8*)((u32)dst8++ ^ U8_TWIDDLE) = *(u8*)((u32)src8++ ^ U8_TWIDDLE);
 			size--;
 		}
 		if (size<4) goto bytecopy;
@@ -408,21 +425,18 @@ inline void memcpy_vfpu_b( void* dst, void* src, u32 size )
 				dst8 = (u8*)dst32;
 				break;
 			default:
+				register u32 a, b, c, d;
+				while (size>=4)
 				{
-					register u32 a, b, c, d;
-					while (size>=4)
-					{
-						a = *src8++;
-						b = *src8++;
-						c = *src8++;
-						d = *src8++;
-						*dst32++ = (d << 24) | (c << 16) | (b << 8) | a;
-						//*dst32++ = (a << 24) | (b << 16) | (c << 8) | d;
-						size -= 4;
-					}
-					if (size==0) return;		// fast out
-					dst8 = (u8*)dst32;
+					a = *src8++;
+					b = *src8++;
+					c = *src8++;
+					d = *src8++;
+					*dst32++ = (d << 24) | (c << 16) | (b << 8) | a;
+					size -= 4;
 				}
+				if (size==0) return;		// fast out
+				dst8 = (u8*)dst32;
 				break;
 		}
 		goto bytecopy;
@@ -431,7 +445,6 @@ inline void memcpy_vfpu_b( void* dst, void* src, u32 size )
 	// Align dst on 16 bytes to gain from vfpu aligned stores
 	while ((((u32)dst8) & 0xF)!=0 && size) {
 		*dst8++ = *src8++;
-		//*(u8*)((u32)dst8++ ^ U8_TWIDDLE) = *(u8*)((u32)src8++ ^ U8_TWIDDLE);
 		size--;
 	}
 
@@ -696,10 +709,75 @@ bytecopy:
 	while (size--)
 	{
 		*dst8++ = *src8++;
-		//*(u8*)((u32)dst8++ ^ U8_TWIDDLE) = *(u8*)((u32)src8++ ^ U8_TWIDDLE);
 	}
 }
 
 //*****************************************************************************
-//
+//Copy native N64 memory with CPU only //Corn
 //*****************************************************************************
+void memcpy_cpu( void* dst, void* src, u32 size )
+{
+	u8* src8 = (u8*)src;
+	u8* dst8 = (u8*)dst;
+	u32* src32;
+	u32* dst32;
+
+	// < 8 isn't worth trying any optimisations...
+	if (size<8) goto bytecopy;
+
+	// Align dst on 4 bytes or just resume if already done
+	while (((((u32)dst8) & 0x3)!=0) && size)
+	{
+		*(u8*)((u32)dst8++ ^ 3) = *(u8*)((u32)src8++ ^ 3);
+		size--;
+	}
+	if (size<4) goto bytecopy;
+
+	// We are dst aligned now and >= 4 bytes to copy
+	src32 = (u32*)src8;
+	dst32 = (u32*)dst8;
+	switch(((u32)src8)&0x3)
+	{
+		case 0:	//Both src and dst are aligned
+			while (size&0xC)
+			{
+				*dst32++ = *src32++;
+				size -= 4;
+			}
+			if (size==0) return;		// fast out
+			while (size>=16)
+			{
+				*dst32++ = *src32++;
+				*dst32++ = *src32++;
+				*dst32++ = *src32++;
+				*dst32++ = *src32++;
+				size -= 16;
+			}
+			if (size==0) return;		// fast out
+			src8 = (u8*)src32;
+			dst8 = (u8*)dst32;
+			break;
+		default:
+			register u32 a, b, c, d;
+			while (size>=4)
+			{
+				a = *(u8*)((u32)src8++ ^ 3);
+				b = *(u8*)((u32)src8++ ^ 3);
+				c = *(u8*)((u32)src8++ ^ 3);
+				d = *(u8*)((u32)src8++ ^ 3);
+				*dst32++ = (a << 24) | (b << 16) | (c << 8) | d;
+				size -= 4;
+			}
+			if (size==0) return;		// fast out
+			dst8 = (u8*)dst32;
+			break;
+	}
+		
+bytecopy:
+	// Copy the remains byte per byte...
+	while (size--)
+	{
+		*(u8*)((u32)dst8++ ^ 3) = *(u8*)((u32)src8++ ^ 3);
+	}
+}
+

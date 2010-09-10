@@ -31,8 +31,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "PIF.h"
 #include "Interrupt.h"
 #include "Save.h"
+#include <psprtc.h>
+#include <psppower.h>
 
-#include "SysPSP/Utility/FastMemcpy.cpp"
+#include "../SysPSP/Utility/FastMemcpy.h"
 
 #include "Debug/DebugLog.h"
 #include "Debug/DBGConsole.h"
@@ -50,8 +52,6 @@ bool gDMAUsed = false;
 #ifndef DAEDALUS_PUBLIC_RELEASE
 bool gLogSpDMA = false;
 #endif
-
-
 
 //*****************************************************************************
 // 

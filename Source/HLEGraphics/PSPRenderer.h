@@ -181,8 +181,6 @@ public:
 	v4					GetTransformedVtxPos( u32 i ) const		{ return mVtxProjected[ i ].TransformedPos; }
 	u32					GetVtxFlags( u32 i ) const				{ return mVtxProjected[ i ].ClipFlags; }
 
-	s16					GetRawVtx( u32 i ) const		{ return pVtxBase[ i ].z; }
-
 	// Rendering stats
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	u32					GetNumTrisRendered() const				{ return m_dwNumTrisRendered; }
@@ -316,8 +314,6 @@ private:
 	u16					m_swIndexBuffer[500];
 	u32					m_dwNumIndices;
 
-	// RAW vertices...
-	FiddledVtx  *		pVtxBase;
 	// Processed vertices waiting for output...
 	DaedalusVtx4		mVtxProjected[MAX_VERTS];			// Transformed and projected vertices (suitable for clipping etc)
 	u32					mVtxClipFlagsUnion;					// Bitwise OR of all the vertex flags added to the current batch. If this is 0, we can trivially accept everything without clipping

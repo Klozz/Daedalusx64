@@ -52,6 +52,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "ConfigOptions.h"
 
+#include "../SysPSP/Utility/FastMemcpy.h"
+
 #include <vector>
 
 
@@ -1698,10 +1700,14 @@ void DLParser_LoadTLut( MicroCodeCommand command )
 	u16 * p_source = (u16 *)&g_pu8RamBase[ g_TI.Address + offset ];
 	u16 * p_dest = (u16*)&gTextureMemory[ tmem ];
 
+#if 1
+	memcpy_vfpu_BE(p_dest, p_source, count << 1);
+#else
 	for (u32 i=0; i<count; i++)
 	{
 		p_dest[ i ] = p_source[ i ];
 	}
+#endif
 
 	// Format is always 16bpp - RGBA16 or IA16:
 	// I've no idea why these two are added - seems to work for 007!

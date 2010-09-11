@@ -113,6 +113,9 @@ static const u32 CLIP_TEST_FLAGS( X_POS | X_NEG | Y_POS | Y_NEG | Z_POS );
 #undef min
 #undef max
 
+//If defined fog will be done by sceGU
+#define NO_VFPU_FOG
+
 enum CycleType
 {
 	CYCLE_1CYCLE = 0,		// Please keep in this order - matches RDP
@@ -1489,10 +1492,8 @@ bool PSPRenderer::FlushTris()
 	//
 	// If smooth shading is turned off, duplicate the first diffuse color for all three verts
 	//
-	if ( !mSmoothShade )
-	{
+	//if ( !mSmoothShade )
 
-	}
 
 	//
 	//	If the depth source is prim, use the depth from the prim command
@@ -1522,7 +1523,7 @@ bool PSPRenderer::FlushTris()
 	//
 	const Matrix4x4	&		projection( mProjectionStack[mProjectionTop] );
 	const ScePspFMatrix4 *	p_psp_proj( reinterpret_cast< const ScePspFMatrix4 * >( &projection ) );
-
+	
 	sceGuSetMatrix( GU_PROJECTION, p_psp_proj );
 
 	RenderUsingCurrentBlendMode( p_vertices, num_vertices, RM_RENDER_3D, false );
@@ -1840,12 +1841,27 @@ void PSPRenderer::ProcessVerts( u32 v0, u32 num, const FiddledVtx * verts, const
 //*****************************************************************************
 void PSPRenderer::SetNewVertexInfoVFPU(u32 address, u32 v0, u32 n)
 {
-//	const FiddledVtx * const pVtxBase( (const FiddledVtx*)(g_pu8RamBase + address) );
-	pVtxBase = (FiddledVtx*)(g_pu8RamBase + address);
+	const FiddledVtx * const pVtxBase( (const FiddledVtx*)(g_pu8RamBase + address) );
 
 	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );
 	const Matrix4x4 & matWorldProject( GetWorldProject() );
 
+#ifdef NO_VFPU_FOG
+	switch( mTnLModeFlags & (TNL_TEXTURE|TNL_TEXGEN|TNL_LIGHT) )
+	{
+		// TNL_TEXGEN is ignored when TNL_LIGHT is disabled
+	case                                   0: _TransformVerticesWithColour_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
+	case                         TNL_TEXTURE: _TransformVerticesWithColour_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
+	case            TNL_TEXGEN              : _TransformVerticesWithColour_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
+	case            TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithColour_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
+
+		// TNL_TEXGEN is ignored when TNL_TEXTURE is disabled
+	case TNL_LIGHT                                     : _TransformVerticesWithLighting_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+	case TNL_LIGHT |                        TNL_TEXTURE: _TransformVerticesWithLighting_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+	case TNL_LIGHT |           TNL_TEXGEN              : _TransformVerticesWithLighting_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+	case TNL_LIGHT |           TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithLighting_f0_t2( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+
+#else
 	switch( mTnLModeFlags & (TNL_TEXTURE|TNL_TEXGEN|TNL_FOG|TNL_LIGHT) )
 	{
 		// TNL_TEXGEN is ignored when TNL_LIGHT is disabled
@@ -1867,7 +1883,7 @@ void PSPRenderer::SetNewVertexInfoVFPU(u32 address, u32 v0, u32 n)
 	case TNL_LIGHT | TNL_FOG |              TNL_TEXTURE: _TransformVerticesWithLighting_f1_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
 	case TNL_LIGHT | TNL_FOG | TNL_TEXGEN              : _TransformVerticesWithLighting_f1_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
 	case TNL_LIGHT | TNL_FOG | TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithLighting_f1_t2( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
-
+#endif
 	default:
 		NODEFAULT;
 		break;
@@ -1887,6 +1903,22 @@ void PSPRenderer::SetNewVertexInfoVFPU_No_Light(u32 address, u32 v0, u32 n)
 	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );
 	const Matrix4x4 & matWorldProject( GetWorldProject() );
 
+#ifdef NO_VFPU_FOG
+	switch( mTnLModeFlags & (TNL_TEXTURE|TNL_TEXGEN) )
+	{
+		// TNL_TEXGEN is ignored when TNL_LIGHT is disabled
+	case                                   0: _TransformVerticesWithColour_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
+	case                         TNL_TEXTURE: _TransformVerticesWithColour_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
+	case            TNL_TEXGEN              : _TransformVerticesWithColour_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
+	case            TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithColour_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
+
+		// TNL_TEXGEN is ignored when TNL_TEXTURE is disabled
+	case TNL_LIGHT                                     : _TransformVerticesWithLighting_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+	case TNL_LIGHT |                        TNL_TEXTURE: _TransformVerticesWithLighting_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+	case TNL_LIGHT |           TNL_TEXGEN              : _TransformVerticesWithLighting_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+	case TNL_LIGHT |           TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithLighting_f0_t2( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+
+#else
 	switch( mTnLModeFlags & (TNL_TEXTURE|TNL_TEXGEN|TNL_FOG) )
 	{
 		// TNL_TEXGEN is ignored when TNL_LIGHT is disabled
@@ -1908,6 +1940,7 @@ void PSPRenderer::SetNewVertexInfoVFPU_No_Light(u32 address, u32 v0, u32 n)
 	case TNL_LIGHT | TNL_FOG |              TNL_TEXTURE: _TransformVerticesWithLighting_f1_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
 	case TNL_LIGHT | TNL_FOG | TNL_TEXGEN              : _TransformVerticesWithLighting_f1_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
 	case TNL_LIGHT | TNL_FOG | TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithLighting_f1_t2( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+#endif
 
 	default:
 		NODEFAULT;
@@ -1923,8 +1956,10 @@ void PSPRenderer::SetNewVertexInfoVFPU_No_Light(u32 address, u32 v0, u32 n)
 //*****************************************************************************
 void PSPRenderer::SetNewVertexInfoDKR(u32 dwAddress, u32 dwV0, u32 dwNum)
 {
-	s32 nFogR, nFogG, nFogB, nFogA;
+	
 
+#ifndef NO_VFPU_FOG
+	s32 nFogR, nFogG, nFogB, nFogA;
 	if (mTnLModeFlags & TNL_FOG)
 	{
 		nFogR = mFogColour.GetR();
@@ -1932,6 +1967,7 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 dwAddress, u32 dwV0, u32 dwNum)
 		nFogB = mFogColour.GetB();
 		nFogA = mFogColour.GetA();
 	}
+#endif
 	s16 * pVtxBase = (s16*)(g_pu8RamBase + dwAddress);
 
 	const Matrix4x4 & matWorldProject( GetWorldProject() );
@@ -2305,14 +2341,8 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 	//	It sets up a texture with a mask_s/t of 6/6 (64x64), but sets the tile size to
 	//	256*128. clamp_s/t are set, meaning the texture wraps 4x and 2x.
 	//
-	if( tile_size.GetWidth() > ti.GetWidth() )
-	{
-		mode_u = GU_REPEAT;
-	}
-	if( tile_size.GetHeight() > ti.GetHeight() )
-	{
-		mode_v = GU_REPEAT;
-	}
+	if( tile_size.GetWidth()  > ti.GetWidth()  ) mode_u = GU_REPEAT;
+	if( tile_size.GetHeight() > ti.GetHeight() ) mode_v = GU_REPEAT;
 
 	sceGuTexWrap( mode_u, mode_v );
 
@@ -2564,15 +2594,19 @@ void PSPRenderer::SetFogMinMax(float fMin, float fMax)
 void PSPRenderer::SetFogEnable(bool bEnable)
 {
 	bool bFogEnabled = bEnable && gFogEnabled;
-
+	
 	if(bFogEnabled)
 	{
+#ifndef NO_VFPU_FOG
 		mTnLModeFlags|=TNL_FOG;
+#endif
 		sceGuEnable(GU_FOG);
 	}
 	else
 	{
+#ifndef NO_VFPU_FOG
 		mTnLModeFlags&=~TNL_FOG;
+#endif
 		sceGuDisable(GU_FOG);
 	}
 }

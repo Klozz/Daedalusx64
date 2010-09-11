@@ -431,25 +431,11 @@ void DLParser_GBI2_0x8( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_BranchZ( MicroCodeCommand command )
 {
- //	union{	
-	//	u32 itg;
-	//	float flt;
-	//} c;
-	//c.itg = command.inst.cmd1;
-	//u32 vtx = (command.inst.cmd0 & 0x00000FFF);
-	//union{
-	//	u32 uint;
-	//	s32 sint;
-	//} c;
-	//c.uint = command.inst.cmd1;
 	u32 vtx = (command.inst.cmd0 & 0xFFF) >> 1;
 	f32 vtxdepth = PSPRenderer::Get()->GetTransformedVtxPos(vtx).z/PSPRenderer::Get()->GetTransformedVtxPos(vtx).w;
-//	f32 vtxdepth = PSPRenderer::Get()->GetTransformedVtxPos(vtx).z;
-//	f32 vtxdepth = PSPRenderer::Get()->GetRawVtx(vtx);
-	// See OOT : Death Mountain and MM : Outside of Clock Town.
-	if( vtxdepth <= (s32)(command.inst.cmd1 * 2) ) // Not working
-//	if( vtxdepth <= c.flt) // Corn FIX.
-//	if( 1 ) // Corn FIX.
+
+	// See OOT : Death Mountain and MM : Outside of Clock Town, Glover.
+	if( vtxdepth <= (s32)(command.inst.cmd1 * 2) ) // This is still not right
 	{																
 		u32 pc = gDisplayListStack.back().addr;	// This points to the next instruction
 		u32 dl = *(u32 *)(g_pu8RamBase + pc-12);
@@ -461,9 +447,9 @@ void DLParser_GBI1_BranchZ( MicroCodeCommand command )
 		Dl.addr = address;
 		Dl.limit = ~0;
 		gDisplayListStack.push_back(Dl);
-//		printf("jump ");
+		//printf("jump ");
 	}
-//	else 		printf("stay ");
+	//else printf("stay ");
 }
 
 //***************************************************************************** 

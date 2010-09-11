@@ -42,80 +42,93 @@ u64 GetCurrent()
 //*****************************************************************************
 //Taken from psp-programming forum (Raphael) 
 //Little endian tweaked by Corn 
-//*Still miss endian cases in VFPU
 //*****************************************************************************
-void memcpy_vfpu( void* dst, void* src, u32 size )
+void memcpy_vfpu_LE( void* dst, void* src, u32 size )
 {
 	u8* src8 = (u8*)src;
 	u8* dst8 = (u8*)dst;
+	u32* src32;
+	u32* dst32;
 	u8* udst8;
 	u8* dst64a;
 
 	// < 8 isn't worth trying any optimisations...
 	if (size<8) goto bytecopy;
 
-	// < 64 means we don't gain anything from using vfpu...
-	if (size<64)
+	// Align dst on 4 bytes or just resume if already done
+	while (((((u32)dst8) & 0x3)!=0) && size)
 	{
-		// Align dst on 4 bytes or just resume if already done
-		while (((((u32)dst8) & 0x3)!=0) && size) {
-			*(u8*)((u32)dst8++ ^ 3) = *(u8*)((u32)src8++ ^ 3);
-			size--;
-		}
-		if (size<4) goto bytecopy;
-
-		// We are dst aligned now and >= 4 bytes to copy
-		u32* src32 = (u32*)src8;
-		u32* dst32 = (u32*)dst8;
-		switch(((u32)src8)&0x3)
-		{
-			case 0:
-				while (size&0xC)
-				{
-					*dst32++ = *src32++;
-					size -= 4;
-				}
-				if (size==0) return;		// fast out
-				while (size>=16)
-				{
-					*dst32++ = *src32++;
-					*dst32++ = *src32++;
-					*dst32++ = *src32++;
-					*dst32++ = *src32++;
-					size -= 16;
-				}
-				if (size==0) return;		// fast out
-				src8 = (u8*)src32;
-				dst8 = (u8*)dst32;
-				break;
-			default:
-				register u32 a, b, c, d;
-				while (size>=4)
-				{
-					a = *(u8*)((u32)src8++ ^ 3);
-					b = *(u8*)((u32)src8++ ^ 3);
-					c = *(u8*)((u32)src8++ ^ 3);
-					d = *(u8*)((u32)src8++ ^ 3);
-					*dst32++ = (a << 24) | (b << 16) | (c << 8) | d;
-					size -= 4;
-				}
-				if (size==0) return;		// fast out
-				dst8 = (u8*)dst32;
-				break;
-		}
-		goto bytecopy;
-	}
-
-	// Align dst on 16 bytes to gain from vfpu aligned stores
-	while ((((u32)dst8) & 0xF)!=0 && size) {
 		*(u8*)((u32)dst8++ ^ 3) = *(u8*)((u32)src8++ ^ 3);
 		size--;
 	}
 
+	// We are dst aligned now and >= 4 bytes to copy
+	src32 = (u32*)src8;
+	dst32 = (u32*)dst8;
+	switch(((u32)src8)&0x3)
+	{
+		case 0:	//Both src and dst are aligned to 4 bytes
+			if (size>63) goto vfpucopy;	//64 bytes or more we do VFPU
+			while (size&0xC)
+			{
+				*dst32++ = *src32++;
+				size -= 4;
+			}
+			if (size==0) return;		// fast out
+			while (size>=16)
+			{
+				*dst32++ = *src32++;
+				*dst32++ = *src32++;
+				*dst32++ = *src32++;
+				*dst32++ = *src32++;
+				size -= 16;
+			}
+			if (size==0) return;		// fast out
+			src8 = (u8*)src32;
+			dst8 = (u8*)dst32;
+			break;
+		default:
+			register u32 a, b, c, d;
+			while (size>=4)
+			{
+				a = *(u8*)((u32)src8++ ^ 3);
+				b = *(u8*)((u32)src8++ ^ 3);
+				c = *(u8*)((u32)src8++ ^ 3);
+				d = *(u8*)((u32)src8++ ^ 3);
+				*dst32++ = (a << 24) | (b << 16) | (c << 8) | d;
+				size -= 4;
+			}
+			if (size==0) return;		// fast out
+			dst8 = (u8*)dst32;
+			break;
+	}
+	goto bytecopy;
+
+vfpucopy:
+	// Align dst on 16 bytes to gain from vfpu aligned stores
+
+	//printf("1 %8X %8X %d\n",(u32)dst8,(u32)src8,size);
+
+	//while ((((u32)dst8) & 0xF)!=0 && size)
+	//{
+	//	*(u8*)((u32)dst8++ ^ 3) = *(u8*)((u32)src8++ ^ 3);
+	//	size--;
+	//}
+
+	while (((u32)dst32 & 0xF)!=0 && size)
+	{
+		*dst32++ = *src32++;
+		size -= 4;
+	}
+	src8 = (u8*)src32;
+	dst8 = (u8*)dst32;
+
+	//printf("2 %8X %8X %d\n",(u32)dst8,(u32)src8,size);
+
 	// We use uncached dst to use VFPU writeback and free cpu cache for src only
 	udst8 = (u8*)((u32)dst8 | 0x40000000);
 	// We need the 64 byte aligned address to make sure the dcache is invalidated correctly
-	dst64a = (u8*)((u32)dst8&~0x3F);
+	dst64a = (u8*)((u32)dst8 & ~0x3F);
 	// Invalidate the first line that matches up to the dst start
 	if (size>=64)
 	asm(".set	push\n"					// save assembler option
@@ -378,9 +391,10 @@ bytecopy:
 
 //*****************************************************************************
 //Original PSP version should work like standard memcpy() 
+//Big Endian
 //*****************************************************************************
 //   
-void memcpy_vfpu_b( void* dst, void* src, u32 size )
+void memcpy_vfpu_BE( void* dst, void* src, u32 size )
 {
 	u8* src8 = (u8*)src;
 	u8* dst8 = (u8*)dst;
@@ -398,14 +412,14 @@ void memcpy_vfpu_b( void* dst, void* src, u32 size )
 			*dst8++ = *src8++;
 			size--;
 		}
-		if (size<4) goto bytecopy;
+		//if (size<4) goto bytecopy;
 
 		// We are dst aligned now and >= 4 bytes to copy
 		u32* src32 = (u32*)src8;
 		u32* dst32 = (u32*)dst8;
 		switch(((u32)src8)&0x3)
 		{
-			case 0:
+			case 0:	//Both src and dst are aligned to 4 bytes
 				while (size&0xC)
 				{
 					*dst32++ = *src32++;
@@ -443,7 +457,8 @@ void memcpy_vfpu_b( void* dst, void* src, u32 size )
 	}
 
 	// Align dst on 16 bytes to gain from vfpu aligned stores
-	while ((((u32)dst8) & 0xF)!=0 && size) {
+	while ((((u32)dst8) & 0xF)!=0 && size)
+	{
 		*dst8++ = *src8++;
 		size--;
 	}
@@ -714,8 +729,9 @@ bytecopy:
 
 //*****************************************************************************
 //Copy native N64 memory with CPU only //Corn
+//Little Endian
 //*****************************************************************************
-void memcpy_cpu( void* dst, void* src, u32 size )
+void memcpy_cpu_LE( void* dst, void* src, u32 size )
 {
 	u8* src8 = (u8*)src;
 	u8* dst8 = (u8*)dst;
@@ -731,14 +747,13 @@ void memcpy_cpu( void* dst, void* src, u32 size )
 		*(u8*)((u32)dst8++ ^ 3) = *(u8*)((u32)src8++ ^ 3);
 		size--;
 	}
-	if (size<4) goto bytecopy;
 
 	// We are dst aligned now and >= 4 bytes to copy
 	src32 = (u32*)src8;
 	dst32 = (u32*)dst8;
 	switch(((u32)src8)&0x3)
 	{
-		case 0:	//Both src and dst are aligned
+		case 0:	//Both src and dst are aligned to 4 bytes
 			while (size&0xC)
 			{
 				*dst32++ = *src32++;
@@ -757,7 +772,7 @@ void memcpy_cpu( void* dst, void* src, u32 size )
 			src8 = (u8*)src32;
 			dst8 = (u8*)dst32;
 			break;
-		default:
+		default: //At least dst is aligned
 			register u32 a, b, c, d;
 			while (size>=4)
 			{

@@ -116,8 +116,11 @@ ISelectedRomComponent::ISelectedRomComponent( CUIContext * p_context, CFunctor *
 	
 	mElements.Add( new CUISpacer( 16 ) );
 
-	u32 i = mElements.Add( new CUICommandImpl( new CMemberFunctor< ISelectedRomComponent >( this, &ISelectedRomComponent::StartEmulation ), "Start Emulation", "Start emulating the selected rom." ) );
-
+#ifdef DAEDALUS_SCRN_16BIT
+	u32 i = mElements.Add( new CUICommandImpl( new CMemberFunctor< ISelectedRomComponent >( this, &ISelectedRomComponent::StartEmulation ), "Start 16bit Emulation", "Start emulating the selected rom." ) );
+#else
+	u32 i = mElements.Add( new CUICommandImpl( new CMemberFunctor< ISelectedRomComponent >( this, &ISelectedRomComponent::StartEmulation ), "Start 32bit Emulation", "Start emulating the selected rom." ) );
+#endif
 	mElements.SetSelected( i );
 }
 

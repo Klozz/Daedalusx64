@@ -41,7 +41,11 @@ namespace
 	const u32				TEXT_AREA_LEFT = 40;
 	const u32				TEXT_AREA_RIGHT = 480-40;
 
-	const char * const DAEDALUS_VERSION_TEXT = "DaedalusX64 Revision "SVNVERSION"";
+#ifdef DAEDALUS_SCRN_16BIT
+	const char * const DAEDALUS_VERSION_TEXT = "DaedalusX64 16BIT Revision "SVNVERSION"";
+#else
+	const char * const DAEDALUS_VERSION_TEXT = "DaedalusX64 32BIT Revision "SVNVERSION"";
+#endif
 
 	const char * const		DATE_TEXT = "Built " __DATE__;
 

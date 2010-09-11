@@ -31,8 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "PIF.h"
 #include "Interrupt.h"
 #include "Save.h"
-#include <psprtc.h>
-#include <psppower.h>
 
 #include "../SysPSP/Utility/FastMemcpy.h"
 
@@ -65,15 +63,15 @@ void DMA_SP_CopyFromRDRAM()
 
 	if ((spmem_address_reg & 0x1000) > 0)
 	{
-		memcpy_vfpu(&g_pu8SpImemBase[(spmem_address_reg & 0xFFF)],
-					&g_pu8RamBase[(rdram_address_reg & 0xFFFFFF)],
-					(rdlen_reg & 0xFFF)+1 );
+		memcpy_vfpu_LE(&g_pu8SpImemBase[(spmem_address_reg & 0xFFF)],
+					   &g_pu8RamBase[(rdram_address_reg & 0xFFFFFF)],
+					  (rdlen_reg & 0xFFF)+1 );
 	}
 	else
 	{
-		memcpy_vfpu(&g_pu8SpDmemBase[(spmem_address_reg & 0xFFF)],
-					&g_pu8RamBase[(rdram_address_reg & 0xFFFFFF)],
-					(rdlen_reg & 0xFFF)+1 ); 
+		memcpy_vfpu_LE(&g_pu8SpDmemBase[(spmem_address_reg & 0xFFF)],
+					   &g_pu8RamBase[(rdram_address_reg & 0xFFFFFF)],
+					  (rdlen_reg & 0xFFF)+1 ); 
 	}
 }
 
@@ -88,15 +86,15 @@ void DMA_SP_CopyToRDRAM()
     
 	if ((spmem_address_reg & 0x1000) > 0)
 	{
-		memcpy_vfpu(&g_pu8RamBase[(rdram_address_reg & 0xFFFFFF)],
-					&g_pu8SpImemBase[(spmem_address_reg & 0xFFF)],
-					(wrlen_reg & 0xFFF)+1 ); 
+		memcpy_vfpu_LE(&g_pu8RamBase[(rdram_address_reg & 0xFFFFFF)],
+					   &g_pu8SpImemBase[(spmem_address_reg & 0xFFF)],
+					  (wrlen_reg & 0xFFF)+1 ); 
 	}
 	else
 	{
-		memcpy_vfpu(&g_pu8RamBase[(rdram_address_reg & 0xFFFFFF)],
-					&g_pu8SpDmemBase[(spmem_address_reg & 0xFFF)],
-					(wrlen_reg & 0xFFF)+1 ); 
+		memcpy_vfpu_LE(&g_pu8RamBase[(rdram_address_reg & 0xFFFFFF)],
+					   &g_pu8SpDmemBase[(spmem_address_reg & 0xFFF)],
+					  (wrlen_reg & 0xFFF)+1 ); 
 	}
 }
 //*****************************************************************************
@@ -110,7 +108,7 @@ void DMA_SI_CopyFromDRAM( )
 
 	DPF( DEBUG_MEMORY_PIF, "DRAM (0x%08x) -> PIF Transfer ", mem );
 
-	memcpy_vfpu(p_dst, p_src, 64);
+	memcpy_vfpu_LE(p_dst, p_src, 64);
 
 #ifndef DAEDALUS_PUBLIC_RELEASE
 	u8 control_byte = p_dst[ 63 ^ U8_TWIDDLE ];
@@ -140,7 +138,7 @@ void DMA_SI_CopyToDRAM( )
 	// Check controller status!
 	CController::Get()->Process();
 
-	memcpy_vfpu(p_dst, p_src, 64);
+	memcpy_vfpu_LE(p_dst, p_src, 64);
 
 	Memory_SI_SetRegisterBits(SI_STATUS_REG, SI_STATUS_INTERRUPT);
 	Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_SI);
@@ -175,10 +173,13 @@ bool DMA_HandleTransfer( u8 * p_dst, u32 dst_offset, u32 dst_size, const u8 * p_
 		return false;
 	}
 
-	//Todo:Try to optimize futher Little Endian code
-	//Big Endian
-	//memcpy(&p_dst[dst_offset],  &p_src[src_offset], length);
+#if 1 //1->new, 0->old
+	//Little Endian
+	//Doesn't like that we use VFPU here //Corn
+	memcpy_cpu_LE(&p_dst[dst_offset],  (void*)&p_src[src_offset], length);
 
+#else
+	//Todo:Try to optimize futher Little Endian code
 	//Little Endian
 	// We only have to fiddle the bytes when
 	// a) the src is not word aligned
@@ -209,6 +210,7 @@ bool DMA_HandleTransfer( u8 * p_dst, u32 dst_offset, u32 dst_size, const u8 * p_
 			p_dst[(i + dst_offset)^U8_TWIDDLE] = p_src[(i + src_offset)^U8_TWIDDLE];
 		}
 	}
+#endif
 	return true;
 }
 

@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <vector>
 
 extern u32 gRDPFrame;
-u32		FRAMES_TO_KILL = 10;
+u32		FRAMES_TO_KILL = 15;
 
 using namespace PixelFormats;
 
@@ -96,7 +96,7 @@ namespace
 		dst.Palette = palette;
 		// TODO: Only need 16 entries for CI4
 		dst.PaletteEntries = palette ? 256 : 0;
-		
+
 		if( ConvertTexture( dst, texture_info ) )
 		{
 			*p_texels = texels;
@@ -276,7 +276,7 @@ namespace
 		case TexFmt_4444:		ClampTexels< Pf4444 >( texels, n64_width, n64_height, native_width, native_height, native_stride );		return;
 		case TexFmt_8888:		ClampTexels< Pf8888 >( texels, n64_width, n64_height, native_width, native_height, native_stride );		return;
 		case TexFmt_CI4_8888:	ClampTexels< PfCI44 >( texels, n64_width, n64_height, native_width, native_height, native_stride );		return;
-		case TexFmt_CI8_8888:	ClampTexels< PfCI8 >( texels, n64_width, n64_height, native_width, native_height, native_stride );		return;
+		case TexFmt_CI8_8888:	ClampTexels< PfCI8 > ( texels, n64_width, n64_height, native_width, native_height, native_stride );		return;
 		}
 		DAEDALUS_ERROR( "Unhandled texture format" );
 	}
@@ -644,7 +644,9 @@ bool	CTexture::HasExpired() const
 	else
 	{
 		//Otherwise a higher number can be used to avoid cache thrashing
-		FRAMES_TO_KILL = 10; //May need further adjustment (based on the ROM's Framrate)
+		//May need further adjustment (based on the ROM's Framrate)
+		//Spread them over time so not all get killed at once //Corn
+		FRAMES_TO_KILL = 20 + (pspFastRand() & 0x7); 
 	}
 	return gRDPFrame - mFrameLastUsed > FRAMES_TO_KILL;
 }

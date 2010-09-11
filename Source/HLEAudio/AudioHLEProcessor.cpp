@@ -27,11 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "stdafx.h"
 #include "AudioHLEProcessor.h"
 
-#include "../SysPSP/Utility/FastMemcpy.h"
-
 #include "audiohle.h"
 
 #include "Math/MathUtil.h"
+#include "../SysPSP/Utility/FastMemcpy.h"
 
 inline s32		FixedPointMulFull16( s32 a, s32 b )
 {
@@ -447,35 +446,40 @@ void	AudioHLEState::Resample( u8 flags, u32 pitch, u32 address )
 
 inline void AudioHLEState::ExtractSamplesScale( s32 * output, u32 inPtr, s32 vscale ) const
 {
-	s32 j = 0;
+	u8 icode;
 
 	// loop of 8, for 8 coded nibbles from 4 bytes which yields 8 s16 pcm values	
-	while(j<8)
-	{
-		u8 icode( Buffer[(InBuffer+inPtr)^3] );
-		inPtr++;
-
-		output[j+0]=FixedPointMul16( (s16)((icode&0xf0)<< 8), vscale );
-		output[j+1]=FixedPointMul16( (s16)((icode&0x0f)<<12), vscale );
-
-		j += 2;
-	}
+	icode = Buffer[(InBuffer+inPtr++)^3];
+	*output++ = FixedPointMul16( (s16)((icode&0xf0)<< 8), vscale );
+	*output++ = FixedPointMul16( (s16)((icode&0x0f)<<12), vscale );
+	icode = Buffer[(InBuffer+inPtr++)^3];
+	*output++ = FixedPointMul16( (s16)((icode&0xf0)<< 8), vscale );
+	*output++ = FixedPointMul16( (s16)((icode&0x0f)<<12), vscale );
+	icode = Buffer[(InBuffer+inPtr++)^3];
+	*output++ = FixedPointMul16( (s16)((icode&0xf0)<< 8), vscale );
+	*output++ = FixedPointMul16( (s16)((icode&0x0f)<<12), vscale );
+	icode = Buffer[(InBuffer+inPtr++)^3];
+	*output++ = FixedPointMul16( (s16)((icode&0xf0)<< 8), vscale );
+	*output++ = FixedPointMul16( (s16)((icode&0x0f)<<12), vscale );
 }
 
 inline void AudioHLEState::ExtractSamples( s32 * output, u32 inPtr ) const
 {
-	s32 j = 0;
+	u8 icode;
 
 	// loop of 8, for 8 coded nibbles from 4 bytes which yields 8 s16 pcm values	
-	while(j<8)
-	{
-		u8 icode( Buffer[(InBuffer+inPtr)^3] );
-		inPtr++;
-
-		output[j+0]=(s16)((icode&0xf0)<< 8);
-		output[j+1]=(s16)((icode&0x0f)<<12);
-		j += 2;
-	}
+	icode = Buffer[(InBuffer+inPtr++)^3];
+	*output++ = (s16)((icode&0xf0)<< 8);
+	*output++ = (s16)((icode&0x0f)<<12);
+	icode = Buffer[(InBuffer+inPtr++)^3];
+	*output++ = (s16)((icode&0xf0)<< 8);
+	*output++ = (s16)((icode&0x0f)<<12);
+	icode = Buffer[(InBuffer+inPtr++)^3];
+	*output++ = (s16)((icode&0xf0)<< 8);
+	*output++ = (s16)((icode&0x0f)<<12);
+	icode = Buffer[(InBuffer+inPtr++)^3];
+	*output++ = (s16)((icode&0xf0)<< 8);
+	*output++ = (s16)((icode&0x0f)<<12);
 }
 
 //
@@ -546,14 +550,14 @@ inline void DecodeSamples( s16 * out, s32 & l1, s32 & l2, const s32 * input, con
 	a[7]+=(s32)book2[0]*input[6];
 	a[7]+=input[7]*2048;
 
-	*(out++) =      Saturate<s16>( a[1] >> 11 );
-	*(out++) =      Saturate<s16>( a[0] >> 11 );
-	*(out++) =      Saturate<s16>( a[3] >> 11 );
-	*(out++) =      Saturate<s16>( a[2] >> 11 );
-	*(out++) =      Saturate<s16>( a[5] >> 11 );
-	*(out++) =      Saturate<s16>( a[4] >> 11 );
-	*(out++) = l2 = Saturate<s16>( a[7] >> 11 );
-	*(out++) = l1 = Saturate<s16>( a[6] >> 11 );
+	*out++ =      Saturate<s16>( a[1] >> 11 );
+	*out++ =      Saturate<s16>( a[0] >> 11 );
+	*out++ =      Saturate<s16>( a[3] >> 11 );
+	*out++ =      Saturate<s16>( a[2] >> 11 );
+	*out++ =      Saturate<s16>( a[5] >> 11 );
+	*out++ =      Saturate<s16>( a[4] >> 11 );
+	*out++ = l2 = Saturate<s16>( a[7] >> 11 );
+	*out++ = l1 = Saturate<s16>( a[6] >> 11 );
 }
 
 #else
@@ -767,15 +771,13 @@ void	AudioHLEState::SetBuffer( u8 flags, u16 in, u16 out, u16 count )
 
 void	AudioHLEState::DmemMove( u16 dst, u16 src, u16 count )
 {
-	memcpy(Buffer + dst, Buffer + src, count);
+	memcpy_cpu_LE(Buffer + dst, Buffer + src, (count + 3) & 0xfffc);
 
 	/*count = (count + 3) & 0xfffc;
 	for (u32 i = 0; i < count; i++)
 	{
 		*(u8 *)(Buffer+((i+dst)^3)) = *(u8 *)(Buffer+((i+src)^3));
 	}*/
-	//COPY(Buffer + dst, Buffer + src, count,0)
-
 }
 
 void	AudioHLEState::LoadADPCM( u32 address, u16 count )

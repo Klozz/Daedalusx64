@@ -94,6 +94,46 @@ u32	TextureInfo::GetWidthInBytes() const
 //*************************************************************************************
 //
 //*************************************************************************************
+#if 1 //1->new hash(fast), 0-> old hash(expensive)
+u32 TextureInfo::GenerateHashValue() const
+{
+	DAEDALUS_PROFILE( "TextureInfo::GenerateHashValue" );
+	
+	// If CRC checking is disabled, always return 0
+	if ( gCheckTextureHashFrequency == 0 ) return 0;
+
+	//DAEDALUS_ASSERT( (GetLoadAddress() + Height * Pitch) < 4*1024*1024, "Address of texture is out of bounds" );
+
+	const u8 *p_bytes = g_pu8RamBase + GetLoadAddress();
+	u32 bytes_per_line = GetWidthInBytes();	//Get number of bytes per line
+	u32 hash_value = 0;
+	
+	u32 step = bytes_per_line + (bytes_per_line >> 2);
+	if (Height > 15)	step = (Height >> 3) * bytes_per_line + (bytes_per_line >> 2);
+	if (bytes_per_line > 16) bytes_per_line = 16;	//Limit to 16 bytes
+	
+	//We want to sample the data  as far apart as possible
+	//u32 step = ((Pitch-16) / 6) & 0xFFFC;
+	//if (bytes_per_line > 16) bytes_per_line = 16;	//Limit to 16 bytes
+
+	u32 shift=0;
+	for (u32 y = 0; y < 6; y++)		// Hash X Lines per texture
+	{
+		//hash_value = murmur2_neutral_hash( p_bytes, bytes_per_line, hash_value);
+		//for (u32 z = 0; z < bytes_per_line; z++) hash_value ^= p_bytes[z] << ((z & 3) << 3);	//Do check sum for each line
+		for (u32 z = 0; z < bytes_per_line; z++)
+		{
+			hash_value ^= p_bytes[z] << shift++;	//Do check sum for each line
+			if (shift > 24) shift=0;
+		}
+		p_bytes += step;	//Advance pointer to next line
+	}
+
+//	printf("%08X %d %d %d %d %d\n",hash_value,step, Size, Pitch, Height, Width);
+	return hash_value;
+}
+
+#else
 u32 TextureInfo::GenerateHashValue() const
 {
 	DAEDALUS_PROFILE( "TextureInfo::GenerateHashValue" );
@@ -131,7 +171,7 @@ u32 TextureInfo::GenerateHashValue() const
 	{
 		u32 bytes;
 		if ( GetSize() == G_IM_SIZ_4b )	bytes = 16  * 4;
-		else									bytes = 256 * 4;
+		else							bytes = 256 * 4;
 
 		p_bytes = reinterpret_cast< const u8 * >( GetPalettePtr() );
 		hash_value = murmur2_neutral_hash( p_bytes, bytes, hash_value );
@@ -139,7 +179,7 @@ u32 TextureInfo::GenerateHashValue() const
 
 	return hash_value;
 }
-
+#endif
 //*************************************************************************************
 //
 //*************************************************************************************

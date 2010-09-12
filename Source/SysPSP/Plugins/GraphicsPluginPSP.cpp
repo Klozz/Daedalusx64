@@ -223,7 +223,7 @@ void CGraphicsPluginPsp::UpdateScreen()
 				pspDebugScreenSetTextColor( 0xffffffff );
 				pspDebugScreenSetBackColor(0);
 				pspDebugScreenSetXY(0, 0);
-				pspDebugScreenPrintf( "FPS: %#.1f | VB: %d/%d | Sync: %#.1f%%   ", gCurrentFramerate, u32( gCurrentVblrate ), FramerateLimiter_GetTvFrequencyHz(), FramerateLimiter_GetSync() * 100.0f );
+				pspDebugScreenPrintf( "FPS %#.1f | VB %d/%d | Sync %#.1f%%   ", gCurrentFramerate, u32( gCurrentVblrate ), FramerateLimiter_GetTvFrequencyHz(), FramerateLimiter_GetSync() * 100.0f );
 			}
 			if( gGlobalPreferences.BatteryWarning )
 			{
@@ -245,7 +245,7 @@ void CGraphicsPluginPsp::UpdateScreen()
 		}
 		else
 		{
-			gFrameskipActive = (current_frame % gFrameskipValue) != 0;
+			gFrameskipActive = (current_frame % (gFrameskipValue + 1)) != 0;
 		}
 
 		last_origin = current_origin;

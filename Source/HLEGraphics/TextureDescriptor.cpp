@@ -97,6 +97,11 @@ u32	TextureInfo::GetWidthInBytes() const
 #if 1 //1->new hash(fast), 0-> old hash(expensive)
 u32 TextureInfo::GenerateHashValue() const
 {
+	//Rewritten to use less recources //Corn
+	//Number of places to do fragment hash from in texture
+	//More rows will use more CPU, MARIO KART 64 could use more to be perfect in menus but...
+	const u32 CHK_ROW = 5;
+
 	DAEDALUS_PROFILE( "TextureInfo::GenerateHashValue" );
 	
 	// If CRC checking is disabled, always return 0
@@ -105,31 +110,47 @@ u32 TextureInfo::GenerateHashValue() const
 	//DAEDALUS_ASSERT( (GetLoadAddress() + Height * Pitch) < 4*1024*1024, "Address of texture is out of bounds" );
 
 	const u8 *p_bytes = g_pu8RamBase + GetLoadAddress();
-	u32 bytes_per_line = GetWidthInBytes();	//Get number of bytes per line
 	u32 hash_value = 0;
 	
-	u32 step = bytes_per_line + (bytes_per_line >> 2);
-	if (Height > 15)	step = (Height >> 3) * bytes_per_line + (bytes_per_line >> 2);
-	if (bytes_per_line > 16) bytes_per_line = 16;	//Limit to 16 bytes
-	
 	//We want to sample the data  as far apart as possible
-	//u32 step = ((Pitch-16) / 6) & 0xFFFC;
-	//if (bytes_per_line > 16) bytes_per_line = 16;	//Limit to 16 bytes
-
+	u32 step = Height * Width * (1<<Size) >> 1;	//Get size in bytes
+	
 	u32 shift=0;
-	for (u32 y = 0; y < 6; y++)		// Hash X Lines per texture
+	if (step < (CHK_ROW * 16))	//if texture is small hash all of it
 	{
-		//hash_value = murmur2_neutral_hash( p_bytes, bytes_per_line, hash_value);
-		//for (u32 z = 0; z < bytes_per_line; z++) hash_value ^= p_bytes[z] << ((z & 3) << 3);	//Do check sum for each line
-		for (u32 z = 0; z < bytes_per_line; z++)
+		for (u32 z = 0; z < step; z++)
 		{
-			hash_value ^= p_bytes[z] << shift++;	//Do check sum for each line
+			hash_value ^= p_bytes[z] << shift++;
 			if (shift > 24) shift=0;
 		}
-		p_bytes += step;	//Advance pointer to next line
 	}
+	else	//if texture is big, hash only some parts inside it
+	{
+		step = (step - 16) / CHK_ROW-1;
+		for (u32 y = 0; y < CHK_ROW; y++)
+		{
+			for (u32 z = 0; z < 16; z++)
+			{
+				hash_value ^= p_bytes[z] << shift++;
+				if (shift > 24) shift=0;
+			}
+			p_bytes += step;
+		}
+	}
+	
+	//If texture has a palette then make hash of that too
+	//Might not be needed but it would catch if only the colors are changed in a palette texture
+	//It is a bit expensive CPU wise so better leave out unless really needed
+	//It assumes 4 byte alignment so we use u32 (faster than u8)
+	//Used in OOT for the sky, really minor so is not worth the CPU time always check for it
+	/*if (GetFormat() == G_IM_FMT_CI)  
+	{
+		const u32* ptr = reinterpret_cast< const u32 * >( GetPalettePtr() );
+		if ( GetSize() == G_IM_SIZ_4b )	for (u32 z = 0; z < 16; z++) hash_value ^= *ptr++;
+		else							for (u32 z = 0; z < 256; z++) hash_value ^= *ptr++;
+	}*/
 
-//	printf("%08X %d %d %d %d %d\n",hash_value,step, Size, Pitch, Height, Width);
+	//printf("%08X %d S%d P%d H%d W%d B%d\n", hash_value, step, Size, Pitch, Height, Width, Height*Width*(1<<Size)>>1);
 	return hash_value;
 }
 

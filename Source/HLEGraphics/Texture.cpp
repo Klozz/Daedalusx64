@@ -642,8 +642,6 @@ bool	CTexture::HasExpired() const
 		u32 hash_value( mTextureInfo.GenerateHashValue() );
 
 		if (mTextureContentsHash != hash_value) return true;	//Drop current texture and load the new one //Corn
-
-		return false;	//Current texture seems up to date //Corn
 	}
 
 	//Otherwise we wait 20+random(7) frames to avoid cache thrashing

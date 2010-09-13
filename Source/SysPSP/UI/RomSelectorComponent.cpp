@@ -57,8 +57,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern "C" {
 int getbuttons();
 }
-
-u32 new_kbuttons;
+extern u32 num_buttons[2];
+extern bool PSP_NO_KBUTTONS;
 
 int romselmenuani = 0;
 int romselmenufs = 31;
@@ -1152,6 +1152,9 @@ void IRomSelectorComponent::Render()
 {
 	if(mQuitTriggered)
 	{
+		if(PSP_NO_KBUTTONS)
+					mpContext->DrawTextAlign(0,480,AT_CENTRE,120,"Hold Select First..", DrawTextUtilities::TextRed);
+
 		mpContext->DrawTextAlign(0,480,AT_CENTRE,135,"Press X to confirm you want to quit",
 			       	DrawTextUtilities::TextRed);
 		mpContext->DrawTextAlign(0,480,AT_CENTRE,150,"Any other key will cancel",
@@ -1183,6 +1186,7 @@ void IRomSelectorComponent::Render()
 //*************************************************************************************
 void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 old_buttons, u32 new_buttons )
 {
+	u32 kernel_buttons = getbuttons();
 	static const float	SCROLL_RATE_PER_SECOND = 25.0f;		// 25 roms/second
 	
 	/*Apply stick deadzone preference in the RomSelector menu*/
@@ -1292,14 +1296,13 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 
 	}
 
-	// Init our kernel buttons, ex HOME button
-	new_kbuttons = getbuttons();
+	u32 set_buttons = (PSP_NO_KBUTTONS == 0) ? kernel_buttons : new_buttons;
 
-	if(old_buttons != new_kbuttons)
+	if(old_buttons != set_buttons)
 	{
-		if(new_kbuttons & PSP_CTRL_HOME) 
+		if(set_buttons & num_buttons[PSP_NO_KBUTTONS])
 		{
-				mQuitTriggered=true;
+			mQuitTriggered=true;
 		}
 	}
 	//

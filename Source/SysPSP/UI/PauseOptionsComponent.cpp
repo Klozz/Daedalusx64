@@ -192,9 +192,9 @@ void	IPauseOptionsComponent::Update( float elapsed_time, const v2 & stick, u32 o
 	{
 		if(new_buttons & PSP_CTRL_TRIANGLE)
 		{
-			(*mOnReset)();
+			OnReset();
 		}
-		else if(new_buttons & PSP_CTRL_SQUARE)
+		else if(new_buttons & PSP_CTRL_CIRCLE)
 		{
 			mExitConfirmation=false;
 			return;
@@ -213,7 +213,6 @@ void	IPauseOptionsComponent::Update( float elapsed_time, const v2 & stick, u32 o
 				mElements.SelectNext();
 			}
 				
-			
 			CUIElement *	element( mElements.GetSelectedElement() );
 			if( element != NULL )
 			{
@@ -247,7 +246,7 @@ void	IPauseOptionsComponent::Render()
 			       	DrawTextUtilities::TextRed);
 		mpContext->DrawTextAlign(0,480,AT_CENTRE,135,"Press Triangle to confirm",
 			       	DrawTextUtilities::TextRed);
-		mpContext->DrawTextAlign(0,480,AT_CENTRE,150,"Press Square to cancel",
+		mpContext->DrawTextAlign(0,480,AT_CENTRE,150,"Press Circle to cancel",
 			       	DrawTextUtilities::TextRed);
 	}
 	else

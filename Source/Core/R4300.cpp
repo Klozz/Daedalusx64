@@ -334,6 +334,7 @@ __forceinline void StoreFPR_Single( u32 reg, f32 value )
 //	int -> float conversion routines
 //
 //*****************************************************************************
+/*
 __forceinline f32 s32_to_f32( s32 x )
 {
 	return (f32)x;
@@ -369,7 +370,7 @@ __forceinline f32 d64_to_f32( d64 x )
 	return (f32)x;
 }
 
-
+*/
 //*****************************************************************************
 //
 //	Float -> int conversion routines
@@ -388,6 +389,8 @@ inline void SET_ROUND_MODE( ERoundingMode mode )
 	// I don't think anything is required here
 }
 
+// These conversions seem rather unnecessary... we need to be careful, will start gettin' rid of em soon.. - Salvy
+//
 inline s32 f32_to_s32_cvt( f32 x )					{ s32 r; asm volatile ( "cvt.w.s %1, %1\nmfc1 %0,%1\n" : "=r"(r) : "f"(x) ); return r; }
 inline s32 f32_to_s32_trunc( f32 x )				{ s32 r; asm volatile ( "trunc.w.s %1, %1\nmfc1 %0,%1\n" : "=r"(r) : "f"(x) ); return r; }
 inline s32 f32_to_s32_round( f32 x )				{ s32 r; asm volatile ( "round.w.s %1, %1\nmfc1 %0,%1\n" : "=r"(r) : "f"(x) ); return r; }
@@ -2323,9 +2326,9 @@ static void R4300_CALL_TYPE R4300_Cop1_W_CVT_S( R4300_CALL_SIGNATURE )
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	s32 nTemp = LoadFPR_Word( op_code.fs );
+	f32 nTemp = LoadFPR_Word( op_code.fs );
 
-	StoreFPR_Single( op_code.fd, s32_to_f32( nTemp ) );
+	StoreFPR_Single( op_code.fd, nTemp );
 }
 
 static void R4300_CALL_TYPE R4300_Cop1_W_CVT_D( R4300_CALL_SIGNATURE )
@@ -2334,14 +2337,14 @@ static void R4300_CALL_TYPE R4300_Cop1_W_CVT_D( R4300_CALL_SIGNATURE )
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	s32 nTemp = LoadFPR_Word( op_code.fs );
+	d64 nTemp = LoadFPR_Word( op_code.fs );
 
 	// Convert using current rounding mode?
 
 	if (gCPUState.CPUControl[C0_SR]._u32_0 & SR_FR)
-		StoreFPR_Double<true>( op_code.fd, s32_to_d64( nTemp ) );
+		StoreFPR_Double<true>( op_code.fd, nTemp );
 	else
-		StoreFPR_Double<false>( op_code.fd, s32_to_d64( nTemp ) );
+		StoreFPR_Double<false>( op_code.fd, nTemp );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -2358,25 +2361,25 @@ static void R4300_CALL_TYPE R4300_Cop1_L_CVT_S( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	s64 nTemp = LoadFPR_Long( op_code.fs );
+	f32 nTemp = LoadFPR_Long( op_code.fs );
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Single( op_code.fd, s64_to_f32( nTemp ));
+	StoreFPR_Single( op_code.fd, nTemp );
 }
 
 static void R4300_CALL_TYPE R4300_Cop1_L_CVT_D( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	s64 nTemp = LoadFPR_Long( op_code.fs );
+	d64 nTemp = LoadFPR_Long( op_code.fs );
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
 	if (gCPUState.CPUControl[C0_SR]._u32_0 & SR_FR)
-		StoreFPR_Double<true>( op_code.fd, s64_to_d64( nTemp ) );
+		StoreFPR_Double<true>( op_code.fd, nTemp );
 	else
-		StoreFPR_Double<false>( op_code.fd, s64_to_d64( nTemp ) );
+		StoreFPR_Double<false>( op_code.fd, nTemp );
 }
 
 
@@ -2613,13 +2616,13 @@ static void R4300_CALL_TYPE R4300_Cop1_S_CVT_D( R4300_CALL_SIGNATURE )
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	f32 fX = LoadFPR_Single( op_code.fs );
+	d64 fX = LoadFPR_Single( op_code.fs );
 
 
 	if (gCPUState.CPUControl[C0_SR]._u32_0 & SR_FR)
-		StoreFPR_Double<true>( op_code.fd, f32_to_d64( fX ) );
+		StoreFPR_Double<true>( op_code.fd, fX );
 	else
-		StoreFPR_Double<false>( op_code.fd, f32_to_d64( fX ) );
+		StoreFPR_Double<false>( op_code.fd, fX );
 }
 
 
@@ -3064,11 +3067,11 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_CVT_S( R43
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
+	f32 fX = LoadFPR_Double< FullLength >( op_code.fs );
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Single( op_code.fd, d64_to_f32( fX ) );
+	StoreFPR_Single( op_code.fd, fX );
 }
 
 // Convert f64 to word...

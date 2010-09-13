@@ -87,12 +87,10 @@ extern int PSP_TV_LACED;
 
 /* Kernel Buttons functions */
 extern "C" {
-int getbuttons();
+u32 getbuttons();
 }
-
-int KernelButtons;
-int Get_Kernel_Buttons;
-
+// Input style for either kernel or non-kernel button
+u32	num_buttons[2]   = {0x010000, 0x000001};
 
 bool PSP_IS_SLIM = false;
 bool PSP_NO_KBUTTONS = false;
@@ -274,7 +272,8 @@ static bool	Initialize()
 	_DisableFPUExceptions();
 
 	// Set up our Kernel Buttons : Home, Vol- +, etc
-	Get_Kernel_Buttons = pspSdkLoadStartModule("kernelbuttons.prx", PSP_MEMORY_PARTITION_KERNEL);
+	int Get_Kernel_Buttons = pspSdkLoadStartModule("kernelbuttons.prx", PSP_MEMORY_PARTITION_KERNEL);
+
 	if (Get_Kernel_Buttons >= 0)
 	{
 		printf( "Successfully loaded kernelbuttons.prx: %08X\n", Get_Kernel_Buttons );
@@ -340,7 +339,7 @@ bool	gShowProfilerResults = false;
 //*************************************************************************************
 //
 //*************************************************************************************
-static void	DisplayProfilerResults()
+static void	DisplayProfilerResults() 			// ..... unused code
 {
 	if(gShowProfilerResults)
 	{
@@ -365,9 +364,9 @@ static void	DisplayProfilerResults()
 			pspDebugScreenPrintf( "\n" );
 
 			// Init our kernel buttons, ex HOME button
-			KernelButtons = getbuttons();
+			kernel_buttons = getbuttons();
 
-			if(kernelButtons && PSP_CTRL_HOME)
+			if(kernel_buttons & PSP_CTRL_HOME)
 			{
 				menu_button_pressed = true;
 			}
@@ -485,31 +484,31 @@ void HandleEndOfFrame()
 	//	Enter the debug menu as soon as select is newly pressed
 	//
 	// If kernelbuttons.prx couldn't be loaded, allow select button to be used instead
-	// Errg we should make this more pretty :p
 	//
-	if( PSP_NO_KBUTTONS )
+
+	// Init our kernel buttons, ex HOME button
+	u32 kernel_buttons = getbuttons();
+
+	// This isn't needed for kernel_buttons..
+	SceCtrlData pad; 
+
+	static u32 oldButtons = 0;
+
+	// This isn't needed for kernel_buttons..
+	sceCtrlPeekBufferPositive(&pad, 1); 
+
+	// Check only once, since the status of the button won't change
+	u32 button_status = (PSP_NO_KBUTTONS == 0) ? kernel_buttons : pad.Buttons;
+
+	if(oldButtons != button_status)
 	{
-		SceCtrlData pad;
-
-		static u32 oldButtons = 0;
-
-		sceCtrlPeekBufferPositive(&pad, 1);
-		if(oldButtons != pad.Buttons)
+		 // Check to be sure default button would be only used when kernelbuttons.prx failed!
+		if(button_status & num_buttons[PSP_NO_KBUTTONS])
 		{
-			if( pad.Buttons & PSP_CTRL_SELECT)
-				activate_pause_menu = true;
-		}
-		oldButtons = pad.Buttons;
-
-	}
-	else 
-	{
-		// Init our kernel buttons, ex HOME button
-		KernelButtons = getbuttons();
-
-		if(KernelButtons & PSP_CTRL_HOME )
 			activate_pause_menu = true;
+		}
 	}
+	oldButtons = button_status;
 
 	if(activate_pause_menu)
 	{

@@ -6,9 +6,9 @@ PSP_MODULE_INFO("buttons", 0x1000, 1, 1);
 //PSP_HEAP_SIZE_KB(32);
 //PSP_NO_CREATE_MAIN_THREAD();
  
-int getbuttons()
+u32 getbuttons()
 {
-	int k1 = pspSdkSetK1(0);
+	u32 k1 = pspSdkSetK1(0);
 	 
 	//pspSdkSetK1(0);
 	 

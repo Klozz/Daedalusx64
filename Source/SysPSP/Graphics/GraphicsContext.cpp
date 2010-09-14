@@ -50,7 +50,7 @@ namespace
 	#define SCR_MODE GU_PSM_8888
 #else
 	#define PIXEL_SIZE (2) /* change this if you change to another screenmode */
-	#define SCR_MODE GU_PSM_5551
+	#define SCR_MODE GU_PSM_5650
 #endif
 #define FRAME_SIZE (BUF_WIDTH * SCR_HEIGHT * PIXEL_SIZE)
 #define DEPTH_SIZE (BUF_WIDTH * SCR_HEIGHT * 2)
@@ -233,6 +233,20 @@ void IGraphicsContext::ClearZBuffer(float depth)
 	sceGuClearDepth(depth);
 	sceGuClear(flags);
 }
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void IGraphicsContext::DoubleDisplayList()
+{
+	if(gDoubleDisplayEnabled)
+	{
+		sceGuStart(GU_DIRECT,callList);
+		sceGuCallList(list[listNum&1]);
+		sceGuFinish(); //Display Frame
+	}
+}
+
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -258,7 +272,6 @@ void IGraphicsContext::EndFrame()
 	DoubleDisplayList();
 }
 
-
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -279,6 +292,7 @@ bool IGraphicsContext::UpdateFrame( bool wait_for_vbl )
 	{
 		sceDisplayWaitVblankStart();
 	}
+
 	if (PSP_TV_LACED)
 	{
 		u32 src = (u32)MAKE_UNCACHED_PTR((void*)LACED_DRAW);
@@ -308,7 +322,10 @@ bool IGraphicsContext::UpdateFrame( bool wait_for_vbl )
 	mpCurrentBackBuffer = p_back;
 
 	SetDebugScreenTarget( TS_BACKBUFFER );
+
 	if(!wait_for_vbl) DoubleDisplayList();
+
+	//printf("1 %p\n",mpCurrentBackBuffer);
 	return true;
 }
 
@@ -521,10 +538,12 @@ bool IGraphicsContext::Initialise()
 	}
 
 	CVideoMemoryManager::Get()->Alloc( FRAME_SIZE, &draw_buffer, &is_videmem );
+
 	if ( PSP_TV_CABLE > 0 )
 		CVideoMemoryManager::Get()->Alloc( LACED_SIZE, &disp_buffer, &is_videmem );
 	else
 		CVideoMemoryManager::Get()->Alloc( FRAME_SIZE, &disp_buffer, &is_videmem );
+
 	CVideoMemoryManager::Get()->Alloc( DEPTH_SIZE, &depth_buffer, &is_videmem );
 
 	void *	draw_buffer_rel( VramAddrAsOffset( draw_buffer ) );
@@ -535,9 +554,9 @@ bool IGraphicsContext::Initialise()
 	save_depth_rel = depth_buffer_rel;
 
 #ifndef DAEDALUS_SILENT
-	printf( "Allocated %d bytes of memory for draw buffer at %p\n", FRAME_SIZE, draw_buffer );
-	printf( "Allocated %d bytes of memory for draw buffer at %p\n", FRAME_SIZE, disp_buffer );
-	printf( "Allocated %d bytes of memory for draw buffer at %p\n", DEPTH_SIZE, depth_buffer );
+	printf( "Alloc %d bytes for draw buffer A at %p\n", FRAME_SIZE, draw_buffer );
+	printf( "Alloc %d bytes for draw buffer B at %p\n", FRAME_SIZE, disp_buffer );
+	printf( "Alloc %d bytes for Z buffer at %p\n", DEPTH_SIZE, depth_buffer );
 #endif
 
 	// buffer pointers for interlaced blits
@@ -703,14 +722,4 @@ void IGraphicsContext::SwitchToLcdDisplay()
 	sceDisplaySetFrameBuf(frame_buffer, BUF_WIDTH, SCR_MODE, PSP_DISPLAY_SETBUF_NEXTFRAME);
 
 	sceGuStart(GU_CALL,list[listNum&1]);
-}
-
-void IGraphicsContext::DoubleDisplayList()
-{
-	if(gDoubleDisplayEnabled)
-	{
-		sceGuStart(GU_DIRECT,callList);
-		sceGuCallList(list[listNum&1]);
-		sceGuFinish(); //Display Frame
-	}
 }

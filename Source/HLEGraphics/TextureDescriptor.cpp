@@ -113,8 +113,9 @@ u32 TextureInfo::GenerateHashValue() const
 	u32 hash_value = 0;
 	
 	//We want to sample the data  as far apart as possible
-	u32 step = Height * Width * (1<<Size) >> 1;	//Get size in bytes
-	
+	//u32 step = Height * Width * (1<<Size) >> 1;	//Get size in bytes
+	u32 step = Height * Pitch;	//Get size in bytes
+
 	u32 shift=0;
 	if (step < (CHK_ROW * 16))	//if texture is small hash all of it
 	{

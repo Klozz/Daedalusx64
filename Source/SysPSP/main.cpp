@@ -133,7 +133,7 @@ void loaderInit()
 #ifndef DAEDALUS_SCRN_16BIT
 	pspDebugScreenInit();
 #else
-	pspDebugScreenInitEx( NULL , GU_PSM_5551, 1); //Sets debug output to 16bit mode
+	pspDebugScreenInitEx( NULL , GU_PSM_5650, 1); //Sets debug output to 16bit mode
 #endif
 	pspDebugInstallKprintfHandler(NULL);
 	pspDebugInstallErrorHandler(DaedalusExceptionHandler);
@@ -264,7 +264,7 @@ static bool	Initialize()
 #ifndef DAEDALUS_SCRN_16BIT
 	pspDebugScreenInit();
 #else
-	pspDebugScreenInitEx( NULL , GU_PSM_5551, 1); //Sets debug output to 16bit mode
+	pspDebugScreenInitEx( NULL , GU_PSM_5650, 1); //Sets debug output to 16bit mode
 #endif
 
 	initExceptionHandler();

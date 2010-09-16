@@ -521,6 +521,12 @@ namespace
 
 bool IGraphicsContext::Initialise()
 {
+static const ScePspIMatrix4 dither_matrix =
+	{{-2, 1,-1, 2},
+	 {-1, 2,-2, 1},
+	 { 2,-1, 1,-2},
+	 { 1,-2, 2,-1}};
+
 	sceGuInit();
 
 	bool	is_videmem;		// Result is ignored
@@ -573,6 +579,11 @@ bool IGraphicsContext::Initialise()
 	sceDisplaySetMode(0, 480, 272);
 
 	sceGuStart(GU_DIRECT,list[0]);
+#ifdef DAEDALUS_SCRN_16BIT
+	//Do some dithering to simulate more colors //Corn
+	sceGuSetDither(&dither_matrix);
+	sceGuEnable(GU_DITHER);
+#endif
 	sceGuDrawBuffer(SCR_MODE,draw_buffer_rel,BUF_WIDTH);
 	sceGuDispBuffer(SCR_WIDTH,SCR_HEIGHT,disp_buffer_rel,BUF_WIDTH);
 	sceGuDepthBuffer(depth_buffer_rel,BUF_WIDTH);

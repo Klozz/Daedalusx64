@@ -178,13 +178,14 @@ void	CAudioPluginPsp::Update( bool wait )
 // We need to figure out this to get async working again..
 //
 
+/*
 EProcessResult	CAudioPluginPsp::ProcessAList()
 {
 	// Deprecated ProcessAList, is done directly in the RSP plugin now
 	// Remove me
 	//
 
-	/*Memory_SP_SetRegisterBits(SP_STATUS_REG, SP_STATUS_HALT);
+	Memory_SP_SetRegisterBits(SP_STATUS_REG, SP_STATUS_HALT);
 
 	EProcessResult	result( PR_NOT_STARTED );
 
@@ -207,8 +208,8 @@ EProcessResult	CAudioPluginPsp::ProcessAList()
 			break;
 	}
 
-	return result;*/
-}
+	return result;
+}*/
 
 //*****************************************************************************
 //

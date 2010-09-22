@@ -40,7 +40,7 @@ public:
 	virtual void			LenChanged();
 	virtual u32				ReadLength();
 	virtual void			Update( bool wait );
-	virtual EProcessResult	ProcessAList();
+//	virtual EProcessResult	ProcessAList();
 	virtual void			RomClosed();
 
 			void			SetAdaptFrequecy( bool adapt );

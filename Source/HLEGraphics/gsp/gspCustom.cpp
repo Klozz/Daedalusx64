@@ -562,17 +562,17 @@ void DLParser_RDPHalf1_GoldenEye( MicroCodeCommand command )
 	// Coordinates, textures, and color
 	f32 x0 = (s32)(a3>>16)/32768.0f;	// Loads our texture coordinates
 	f32 y0 = int(a1&0xFFFF)/4;			// Loads color etc
-	f32 x1 = 320*4;						// Loads Both screen coordinates and texture coordinates.
+	f32 x1 = 320*100;					// Loads Both screen coordinates and texture coordinates.
 	f32 y1 = int(a1>>16)/4;				// Loads texture, color etc
 
 	// TIP : f32 x1 can be modified to render the sky differently.
 	// Need to check on real hardware to tweak our sky correctly if needed.
 
 	// Loads texrect
-	v2 xy0( x0 / 4.0f, x0 / 4.0f );
-	v2 xy1( x1 / 4.0f, x1 / 4.0f );
-	v2 uv0( y0 / 32.0f, y0 / 32.0f );
-	v2 uv1( y1 / 32.0f, y1 / 32.0f );
+	v2 xy0( x0, x0 );
+	v2 xy1( x1, x1 );
+	v2 uv0( y0 / 40.0f, y0 / 40.0f );
+	v2 uv1( y1 / 40.0f, y1 / 40.0f );
 
 	//DL_PF(" Word 1: %u, Word 2: %u, Word 3: %u, Word 4: %u, Word 5: %u, Word 6: %u, Word 7: %u, Word 8: %u, Word 9: %u", a1, a2, a3, a4, a5, a6, a7, a8, a9);
 	//DL_PF("    Tile:%d Screen(%f,%f) -> (%f,%f)",				   tile, xy0, xy1, uv0, uv1);
@@ -714,7 +714,7 @@ void RSP_Vtx_Conker( MicroCodeCommand command )
 	DL_PF("    Vtx: address 0x%08x, len: %d, v0: %d, n: %d", address, len, v0, n);
 
 	// XXX Fix me
-	PSPRenderer::Get()->SetNewVertexInfoVFPU_No_Light( address, v0, n );
+	PSPRenderer::Get()->SetNewVertexInfoConker( address, v0, n );
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
       gNumVertices += n;

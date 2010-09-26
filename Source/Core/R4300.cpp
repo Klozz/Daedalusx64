@@ -702,8 +702,9 @@ static void R4300_CALL_TYPE R4300_JAL( R4300_CALL_SIGNATURE ) 				// Jump And Li
 	// Store return address
 	STORE_LINK(REG_ra);
 
-	gCPUState.TargetPC = INSTR_TARGET;
-	gCPUState.Delay  = DO_DELAY;
+	u32 new_pc = INSTR_TARGET;
+
+	CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
 }
 
 static void R4300_CALL_TYPE R4300_BEQ( R4300_CALL_SIGNATURE ) 		// Branch on Equal
@@ -2446,7 +2447,10 @@ static void R4300_CALL_TYPE R4300_Cop1_S_DIV( R4300_CALL_SIGNATURE )
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	if ( fDivisor == 0 )
+	// Causes excitebike to freeze when entering the menu
+	// Should we handle if /0?
+	//
+	/*if ( fDivisor == 0 )
 	{
 		if ( gCPUState.FPUControl[ 31 ]._u32_0 & FPCSR_EZ )
 		{
@@ -2458,7 +2462,7 @@ static void R4300_CALL_TYPE R4300_Cop1_S_DIV( R4300_CALL_SIGNATURE )
 			//DBGConsole_Msg( 0, "Float divide by zero, setting flag" );
 			gCPUState.FPUControl[ 31 ]._u32_0 |= FPCSR_FZ;
 		}
-	}
+	}*/
 
 	StoreFPR_Single( op_code.fd, fDividend / fDivisor );
 }

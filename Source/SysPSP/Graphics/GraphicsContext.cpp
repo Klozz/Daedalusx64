@@ -58,9 +58,9 @@ namespace
 #define LACED_HEIGHT 503
 #define LACED_SIZE (BUF_WIDTH * LACED_HEIGHT * PIXEL_SIZE)
 
-static unsigned int __attribute__((aligned(16))) list[2][262144];
-static unsigned int __attribute__((aligned(16))) callList[64];
-static unsigned int __attribute__((aligned(16))) ilist[256];
+static u32 __attribute__((aligned(16))) list[2][262144];
+static u32 __attribute__((aligned(16))) callList[64];
+static u32 __attribute__((aligned(16))) ilist[256];
 
 int listNum = 0;
 //////////////////////////////////////////////
@@ -110,6 +110,7 @@ public:
 
 	void				SetDebugScreenTarget( ETargetSurface buffer );
 
+	void				ViewportType(u32 * d_width, u32 * d_height, u32 * f_width, u32 * f_height );
 	void				DumpScreenShot();
 	void				DumpNextScreen()			{ mDumpNextScreen = 2; }
 
@@ -361,6 +362,68 @@ void IGraphicsContext::SetDebugScreenTarget( ETargetSurface buffer )
 }
 
 //*****************************************************************************
+// Change current viewport, either for tv out or PSP itself
+// 
+//*****************************************************************************
+void IGraphicsContext::ViewportType(u32 * d_width, u32 * d_height, u32 * f_width, u32 * f_height )
+{
+	if( gGlobalPreferences.TVEnable && PSP_TV_CABLE > 0)
+	{
+		switch ( gGlobalPreferences.ViewportType )
+		{
+		case VT_UNSCALED_4_3:		// 1:1
+			if ( gGlobalPreferences.TVType == TT_WIDESCREEN )
+			{
+				*d_width = 528;
+				*d_height = 448;
+			}
+			else
+			{
+				*d_width = 640;
+				*d_height = 448;
+			}
+			break;
+		case VT_SCALED_4_3:		// Largest 4:3
+			if ( gGlobalPreferences.TVType == TT_WIDESCREEN )
+			{
+				*d_width = 542;
+				*d_height = 460;
+			}
+			else
+			{
+				*d_width = 658;
+				*d_height = 460;
+			}
+			break;
+		case VT_FULLSCREEN:		// Fullscreen
+			*d_width = 720;
+			*d_height = 460; // 460 seems to be the limit due to renderer conversions
+			break;
+ 		}
+ 		*f_width = 720;
+ 		*f_height = 480;
+	}
+	else
+	{
+		switch ( gGlobalPreferences.ViewportType )
+		{
+		case VT_UNSCALED_4_3:		// 1:1
+			*d_width = 320;
+			*d_height = 240;
+			break;
+		case VT_SCALED_4_3:		// Largest 4:3
+			*d_width = 362;
+			*d_height = 272;
+			break;
+		case VT_FULLSCREEN:		// Fullscreen
+			*d_width = 480;
+			*d_height = 272;
+			break;
+ 		}
+	}
+}
+
+//*****************************************************************************
 // Save current visible screen as PNG
 // From Shazz/71M - thanks guys!
 //*****************************************************************************
@@ -436,60 +499,9 @@ void IGraphicsContext::DumpScreenShot()
 	u32		display_height( 0 );
 	u32		frame_width( 480 );
 	u32		frame_height( 272 );
-	if ( gGlobalPreferences.TVEnable && PSP_TV_CABLE > 0)
-	{
-		switch ( gGlobalPreferences.ViewportType )
-		{
-		case VT_UNSCALED_4_3:		// 1:1
-			if ( gGlobalPreferences.TVType == TT_WIDESCREEN )
-			{
-				display_width = 528;
-				display_height = 448;
-			}
-			else
-			{
-				display_width = 640;
-				display_height = 448;
-			}
-			break;
-		case VT_SCALED_4_3:		// Largest 4:3
-			if ( gGlobalPreferences.TVType == TT_WIDESCREEN )
-			{
-				display_width = 542;
-				display_height = 460;
-			}
-			else
-			{
-				display_width = 658;
-				display_height = 460;
-			}
-			break;
-		case VT_FULLSCREEN:		// Fullscreen
-			display_width = 720;
-			display_height = 460;
-			break;
- 		}
- 		frame_width = 720;
- 		frame_height = 480;
-	}
-	else
-	{
-		switch ( gGlobalPreferences.ViewportType )
-		{
-		case VT_UNSCALED_4_3:		// 1:1
-			display_width = 320;
-			display_height = 240;
-			break;
-		case VT_SCALED_4_3:		// Largest 4:3
-			display_width = 362;
-			display_height = 272;
-			break;
-		case VT_FULLSCREEN:		// Fullscreen
-			display_width = 480;
-			display_height = 272;
-			break;
- 		}
-	}
+
+	ViewportType(&display_width, &display_height, &frame_width, &frame_height );
+
 	DAEDALUS_ASSERT( display_width != 0 && display_height != 0, "Unhandled viewport type" );
 
 	s32		display_x( (frame_width - display_width)/2 );

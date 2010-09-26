@@ -212,8 +212,14 @@ struct N64Light
 	u32 pad;
 };
 
+struct RDP_Scissor
+{
+	u32 left, top, right, bottom;
+};
+
 
 u32	gSegments[16];
+static RDP_Scissor scissors;
 static N64Light  g_N64Lights[8];
 SImageDescriptor g_TI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
 SImageDescriptor g_CI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
@@ -906,16 +912,9 @@ void DLParser_GBI1_Noop( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-//u32 keyB,keyG,keyA,keyR;
-//float fKeyA;
 void DLParser_SetKeyGB( MicroCodeCommand command )
 {
-
-//keyB = ((command.inst.cmd1)>>8)&0xFF;
-//keyG = ((command.inst.cmd1)>>24)&0xFF;
-//keyA = (keyR + keyG + keyB)/3;
-//fKeyA = keyA/255.0f;
-
+	DL_PF( "	SetKeyGB (Ignored)" );
 }
 
 //*****************************************************************************
@@ -923,44 +922,15 @@ void DLParser_SetKeyGB( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_SetKeyR( MicroCodeCommand command )
 {
-//	keyR = ((command.inst.cmd1)>>8)&0xFF;
-//	keyA = (keyR+ keyG+keyB)/3;
-//	fKeyA = keyA/255.0f;
+	DL_PF( "	SetKeyR (Ignored)" );
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-//int g_convk0,g_convk1,g_convk2,g_convk3,g_convk4,g_convk5;
-//float g_convc0,g_convc1,g_convc2,g_convc3,g_convc4,g_convc5;
 void DLParser_SetConvert( MicroCodeCommand command )
 {
-//	int temp;
-
-//	temp = ((command.inst.cmd0)>>13)&0x1FF;
-//	g_convk0 = temp>0xFF ? -(temp-0x100) : temp;
-
-//	temp = ((command.inst.cmd0)>>4)&0x1FF;
-//	g_convk1 = temp>0xFF ? -(temp-0x100) : temp;
-
-//	temp = (command.inst.cmd0)&0xF;
-//	temp = (temp<<5)|(((command.inst.cmd0)>>27)&0x1F);
-//	g_convk2 = temp>0xFF ? -(temp-0x100) : temp;
-
-//	temp = ((command.inst.cmd1)>>18)&0x1FF;
-//	g_convk3 = temp>0xFF ? -(temp-0x100) : temp;
-
-//	temp = ((command.inst.cmd1)>>9)&0x1FF;
-//	g_convk4 = temp>0xFF ? -(temp-0x100) : temp;
-
-//	temp = (command.inst.cmd1)&0x1FF;
-//	g_convk5 = temp>0xFF ? -(temp-0x100) : temp;
-
-//	g_convc0 = g_convk5/255.0f+1.0f;
-//	g_convc1 = g_convk0/255.0f*g_convc0;
-//	g_convc2 = g_convk1/255.0f*g_convc0;
-//	g_convc3 = g_convk2/255.0f*g_convc0;
-//	g_convc4 = g_convk3/255.0f*g_convc0;
+	DL_PF( "	SetConvert (Ignored)" );
 }
 
 
@@ -1529,37 +1499,78 @@ void DLParser_DumpVtxInfo(u32 address, u32 v0_idx, u32 num_verts)
 	}
 }
 #endif
+
 //*****************************************************************************
 //
 //*****************************************************************************
-
 void DLParser_SetScissor( MicroCodeCommand command )
 {
+	u32 addr = RDPSegAddr(command.inst.cmd1);
+
 	// The coords are all in 8:2 fixed point
 	u32 x0   = command.scissor.x0;
 	u32 y0   = command.scissor.y0;
 	u32 mode = command.scissor.mode;
 	u32 x1   = command.scissor.x1;
 	u32 y1   = command.scissor.y1;
-	u32 addr = RDPSegAddr(command.inst.cmd1);
+
+	// Set up scissoring zone, we'll use it to scissor other stuff ex Texrect
+	scissors.left	= x0>>2;
+	scissors.top	= y0>>2;
+	scissors.right	= x1>>2;
+	scissors.bottom	= y1>>2;
 
 	use(mode);
 
+	// Hack to correct Super Bowling's right screen, left screen needs fb emulation
 	if ( g_ROM.GameHacks == SUPER_BOWLING && g_CI.Address%0x100 != 0 )
 	{
 		// right half screen
 		RDP_MoveMemViewport( addr );
 	}
 
-	DL_PF("    x0=%d y0=%d x1=%d y1=%d mode=%d addr=%08X", x0/4, y0/4, x1/4, y1/4, mode, addr);
+	// Ok... Golden Eye correct scissor zone (in-game) should be : left=0, top=10, right=320, bottom=230
+	// Enable hack to correct scissor issues in GE...
+	// Hackish as hell D: but can't find a better way to work aorund this...
+	if (g_ROM.GameHacks == GOLDEN_EYE) 
+	{
+		if(g_ROM.rh.CountryID ==0x45)
+		{
+			// Fix bottom and top scisorring
+			if(scissors.top==0 && scissors.left==0 && scissors.right==320 && scissors.bottom ==240)
+			{
+				scissors.top=10;
+				scissors.bottom =230;
+			}
+
+			// Fix left and right scisorring
+			if(scissors.left !=0 && scissors.bottom < scissors.right ) 
+			{
+				scissors.left =0;
+				scissors.right =g_CI.Width;
+			}
+		}
+		else
+		{
+			// E version etc doesn't seem to need scissoring, nice! Fill any gaps anyways..
+			if(scissors.left==1 || scissors.top==1)
+			{
+				scissors.left-=1;
+				scissors.top-=1;
+				scissors.right+=1;
+				scissors.bottom+=1;
+			}
+		}
+	}
+
+	DL_PF("    x0=%d y0=%d x1=%d y1=%d mode=%d addr=%08X", scissors.left, scissors.top, scissors.right, scissors.bottom, mode, addr);
 
 	// Set the cliprect now...
-	if ( x0 < x1 && y0 < y1 )
+	if ( scissors.left < scissors.right && scissors.top < scissors.bottom )
 	{
-		PSPRenderer::Get()->SetScissor( x0/4, y0/4, x1/4, y1/4 );
+		PSPRenderer::Get()->SetScissor( scissors.left, scissors.top, scissors.right, scissors.bottom );
 	}
 }
-
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -1782,6 +1793,12 @@ void DLParser_TexRect( MicroCodeCommand command )
 	v2 uv0( tex_rect.s * (1.0f / 32.0f), tex_rect.t * (1.0f / 32.0f) );
 	v2 uv1;
 
+	// Removes offscreen texrect, also fixes several glitches like in John Romero's Daikatana 
+	if( xy0.x >= scissors.right || xy0.y >= scissors.bottom || xy1.x < scissors.left || xy1.y < scissors.top )
+	{
+		return;
+	}
+
 	if ((gOtherModeH & G_CYC_COPY) == G_CYC_COPY)
 	{
 		d.x *= 0.25f;	// In copy mode 4 pixels are copied at once.
@@ -1854,6 +1871,15 @@ void DLParser_FillRect( MicroCodeCommand command )
 	v2 xy0( x0 * 0.25f, y0 * 0.25f );
 	v2 xy1( x1 * 0.25f, y1 * 0.25f );
 
+	// Removes unnecesary fillrects in Golden Eye and other games.
+	if( xy0.x >= scissors.right || xy0.y >= scissors.bottom || xy1.x < scissors.left || xy1.y < scissors.top )
+	{
+		return;
+	}
+
+	// Unless we support fb emulation, we can safetly skip here
+	if( g_CI.Size != G_IM_SIZ_16b )	return;
+
 	// Note, in some modes, the right/bottom lines aren't drawn
 
 	DL_PF("    (%d,%d) (%d,%d)", x0, y0, x1, y1);
@@ -1879,6 +1905,8 @@ void DLParser_FillRect( MicroCodeCommand command )
 
 		c32		colour;
 		
+		// We only care for G_IM_SIZ_16b, Note this might change once framebuffer emulation is implemented
+		//
 		if ( g_CI.Size == G_IM_SIZ_16b )
 		{
 			PixelFormats::N64::Pf5551	c( (u16)gFillColor );
@@ -1886,11 +1914,13 @@ void DLParser_FillRect( MicroCodeCommand command )
 			colour = PixelFormats::convertPixelFormat< c32, PixelFormats::N64::Pf5551 >( c );
 
 			//printf( "FillRect: %08x, %04x\n", colour.GetColour(), c.Bits );
+
 		}
-		else
+		/*else
 		{
 			colour = c32( gFillColor );
-		}
+		}*/
+
 		DL_PF("    Filling Rectangle");
 		PSPRenderer::Get()->FillRect( xy0, xy1, colour.GetColour() );
 	}

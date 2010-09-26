@@ -433,60 +433,8 @@ void PSPRenderer::BeginScene()
 	//
 	//	We do this each frame as it lets us adapt to changes in the viewport dynamically
 	//
-	if ( gGlobalPreferences.TVEnable && PSP_TV_CABLE > 0)
-	{
-		switch ( gGlobalPreferences.ViewportType )
-		{
-		case VT_UNSCALED_4_3:		// 1:1
-			if ( gGlobalPreferences.TVType == TT_WIDESCREEN )
-			{
-				display_width = 528;
-				display_height = 448;
-			}
-			else
-			{
-				display_width = 640;
-				display_height = 448;
-			}
-			break;
-		case VT_SCALED_4_3:		// Largest 4:3
-			if ( gGlobalPreferences.TVType == TT_WIDESCREEN )
-			{
-				display_width = 542;
-				display_height = 460;
-			}
-			else
-			{
-				display_width = 658;
-				display_height = 460;
-			}
-			break;
-		case VT_FULLSCREEN:		// Fullscreen
-			display_width = 720;
-			display_height = 460; // 460 seems to be the limit due to renderer conversions
-			break;
- 		}
- 		frame_width = 720;
- 		frame_height = 480;
-	}
-	else
-	{
-		switch ( gGlobalPreferences.ViewportType )
-		{
-		case VT_UNSCALED_4_3:		// 1:1
-			display_width = 320;
-			display_height = 240;
-			break;
-		case VT_SCALED_4_3:		// Largest 4:3
-			display_width = 362;
-			display_height = 272;
-			break;
-		case VT_FULLSCREEN:		// Fullscreen
-			display_width = 480;
-			display_height = 272;
-			break;
- 		}
-	}
+	CGraphicsContext::Get()->ViewportType(&display_width, &display_height, &frame_width, &frame_height );
+
 	DAEDALUS_ASSERT( display_width != 0 && display_height != 0, "Unhandled viewport type" );
 
 	s32		display_x( (frame_width - display_width)/2 );

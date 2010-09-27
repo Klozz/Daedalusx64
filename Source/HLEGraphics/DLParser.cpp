@@ -1555,10 +1555,10 @@ void DLParser_SetScissor( MicroCodeCommand command )
 			// E version etc doesn't seem to need scissoring, nice! Fill any gaps anyways..
 			if(scissors.left==1 || scissors.top==1)
 			{
-				scissors.left-=1;
-				scissors.top-=1;
-				scissors.right+=1;
-				scissors.bottom+=1;
+				scissors.left--;
+				scissors.top--;
+				scissors.right++;
+				scissors.bottom++;
 			}
 		}
 	}

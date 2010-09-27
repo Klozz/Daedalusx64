@@ -533,12 +533,6 @@ namespace
 
 bool IGraphicsContext::Initialise()
 {
-static const ScePspIMatrix4 dither_matrix =
-	{{-2, 1,-1, 2},
-	 {-1, 2,-2, 1},
-	 { 2,-1, 1,-2},
-	 { 1,-2, 2,-1}};
-
 	sceGuInit();
 
 	bool	is_videmem;		// Result is ignored
@@ -593,6 +587,11 @@ static const ScePspIMatrix4 dither_matrix =
 	sceGuStart(GU_DIRECT,list[0]);
 #ifdef DAEDALUS_SCRN_16BIT
 	//Do some dithering to simulate more colors //Corn
+	static const ScePspIMatrix4 dither_matrix =
+		{{-2, 1,-1, 2},
+		 {-1, 2,-2, 1},
+		 { 2,-1, 1,-2},
+		 { 1,-2, 2,-1}};
 	sceGuSetDither(&dither_matrix);
 	sceGuEnable(GU_DITHER);
 #endif

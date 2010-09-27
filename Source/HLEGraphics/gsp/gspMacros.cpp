@@ -121,7 +121,7 @@ void DLParser_GBI2_Vtx( MicroCodeCommand command )
     u32 n      = command.vtx2.n;
     u32 v0	   = vend - n;
 
-    DL_PF( "    Address 0x%08x, vEnd: %d, v0: %d, Num: %d", address, vend, v0, n );
+	DL_PF( "    Address 0x%08x, vEnd: %d, v0: %d, Num: %d", address, vend, v0, n );
 
     if ( vend > 64 )
     {
@@ -757,7 +757,7 @@ void DLParser_GBI2_Quad( MicroCodeCommand command )
     u32 pc = gDisplayListStack.back().addr;
     u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
 
-    bool tris_added = false;
+	bool tris_added = false;
 
 	while ( command.inst.cmd == G_GBI2_QUAD )
     {
@@ -774,7 +774,9 @@ void DLParser_GBI2_Quad( MicroCodeCommand command )
 
         tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
 
-        command.inst.cmd0 = *pCmdBase++;
+		//printf("Q 0x%08x: %08x %08x %d\n", pc-8, command.inst.cmd0, command.inst.cmd1, tris_added);
+
+		command.inst.cmd0 = *pCmdBase++;
         command.inst.cmd1 = *pCmdBase++;
         pc += 8;
 
@@ -807,7 +809,6 @@ void DLParser_GBI2_Line3D( MicroCodeCommand command )
 
 	while ( command.inst.cmd == G_GBI2_LINE3D )
     {
-        // Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
         u32 v0_idx = command.gbi2line3d.v0 >> 1;
         u32 v1_idx = command.gbi2line3d.v1 >> 1;
         u32 v2_idx = command.gbi2line3d.v2 >> 1;

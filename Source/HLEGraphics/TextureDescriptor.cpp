@@ -99,7 +99,7 @@ u32 TextureInfo::GenerateHashValue() const
 {
 	//Rewritten to use less recources //Corn
 	//Number of places to do fragment hash from in texture
-	//More rows will use more CPU, MARIO KART 64 could use more to be perfect in menus but...
+	//More rows will use more CPU...
 	const u32 CHK_ROW = 5;
 
 	DAEDALUS_PROFILE( "TextureInfo::GenerateHashValue" );
@@ -109,33 +109,33 @@ u32 TextureInfo::GenerateHashValue() const
 
 	//DAEDALUS_ASSERT( (GetLoadAddress() + Height * Pitch) < 4*1024*1024, "Address of texture is out of bounds" );
 
-	const u8 *p_bytes = g_pu8RamBase + GetLoadAddress();
+	u8 *ptr_b = g_pu8RamBase + GetLoadAddress();
 	u32 hash_value = 0;
-	
-	//We want to sample the data  as far apart as possible
-	//u32 step = Height * Width * (1<<Size) >> 1;	//Get size in bytes
-	u32 step = Height * Pitch;	//Get size in bytes
 
-	u32 shift=0;
-	if (step < (CHK_ROW * 16))	//if texture is small hash all of it
+	//u32 step = Height * Width * (1<<Size) >> 1;	//Get size in bytes
+	u32 step = Height * Pitch;	//Get size in bytes, seems to be more accurate
+
+	if((u32)ptr_b & 0x3)	//Check if aligned to 4 bytes if not then align
 	{
-		for (u32 z = 0; z < step; z++)
-		{
-			hash_value ^= p_bytes[z] << shift++;
-			if (shift > 24) shift=0;
-		}
+		ptr_b += 4 - ((u32)ptr_b & 0x3);
+		step  -= 4 - ((u32)ptr_b & 0x3);
+	}
+
+	u32 *ptr = (u32*)ptr_b;	//use 32bit access
+	step = step >> 2;	//convert to 32bit access
+
+	//We want to sample the texture data as far apart as possible
+	if (step < (CHK_ROW * 4))	//if texture is small hash all of it
+	{
+		for (u32 z = 0; z < step; z++) hash_value = ((hash_value << 1) | (hash_value >> 0x1F)) ^ ptr[z];
 	}
 	else	//if texture is big, hash only some parts inside it
 	{
-		step = (step - 16) / CHK_ROW-1;
+		step = (step - 4) / CHK_ROW;
 		for (u32 y = 0; y < CHK_ROW; y++)
 		{
-			for (u32 z = 0; z < 16; z++)
-			{
-				hash_value ^= p_bytes[z] << shift++;
-				if (shift > 24) shift=0;
-			}
-			p_bytes += step;
+			for (u32 z = 0; z < 4; z++)	hash_value = ((hash_value << 1) | (hash_value >> 0x1F)) ^ ptr[z];
+			ptr += step;
 		}
 	}
 	
@@ -143,7 +143,7 @@ u32 TextureInfo::GenerateHashValue() const
 	//Might not be needed but it would catch if only the colors are changed in a palette texture
 	//It is a bit expensive CPU wise so better leave out unless really needed
 	//It assumes 4 byte alignment so we use u32 (faster than u8)
-	//Used in OOT for the sky, really minor so is not worth the CPU time always check for it
+	//Used in OOT for the sky, really minor so is not worth the CPU time to always check for it
 	/*if (GetFormat() == G_IM_FMT_CI)  
 	{
 		const u32* ptr = reinterpret_cast< const u32 * >( GetPalettePtr() );
@@ -151,7 +151,7 @@ u32 TextureInfo::GenerateHashValue() const
 		else							for (u32 z = 0; z < 256; z++) hash_value ^= *ptr++;
 	}*/
 
-	//printf("%08X %d S%d P%d H%d W%d B%d\n", hash_value, step, Size, Pitch, Height, Width, Height*Width*(1<<Size)>>1);
+	//printf("%08X %d S%d P%d H%d W%d B%d\n", hash_value, step, Size, Pitch, Height, Width, Height * Pitch);
 	return hash_value;
 }
 

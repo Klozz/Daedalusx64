@@ -17,6 +17,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+//Draw normal filled triangles
+#define DRAW_MODE GU_TRIANGLES
+//Draw lines
+//Also enable clean scene in advanced menu //Corn
+//#define DRAW_MODE GU_LINE_STRIP
+
+//If defined fog will be done by sceGU
+//Otherwise it enables some non working legacy VFPU fog //Corn
+#define NO_VFPU_FOG
+
 #include "stdafx.h"
 
 #include "PSPRenderer.h"
@@ -113,9 +123,6 @@ static const u32 CLIP_TEST_FLAGS( X_POS | X_NEG | Y_POS | Y_NEG | Z_POS );
 #undef min
 #undef max
 
-//If defined fog will be done by sceGU
-#define NO_VFPU_FOG
-
 enum CycleType
 {
 	CYCLE_1CYCLE = 0,		// Please keep in this order - matches RDP
@@ -123,7 +130,6 @@ enum CycleType
 	CYCLE_COPY,
 	CYCLE_FILL,
 };
-
 
 extern int HAVE_DVE;
 extern int PSP_TV_CABLE;
@@ -276,7 +282,7 @@ PSPRenderer::PSPRenderer()
 //*****************************************************************************
 //
 //*****************************************************************************
-PSPRenderer::~PSPRenderer()
+inline PSPRenderer::~PSPRenderer()
 {
 	delete mFillBlendStates;
 	delete mCopyBlendStates;
@@ -442,8 +448,8 @@ void PSPRenderer::BeginScene()
 
 	SetPSPViewport( display_x, display_y, display_width, display_height );
 
-	v3 scale( 640*0.25f, 480*0.25f, 511*0.25f );
-	v3 trans( 640*0.25f, 480*0.25f, 511*0.25f );
+	v3 scale( 640.0f*0.25f, 480.0f*0.25f, 511.0f*0.25f );
+	v3 trans( 640.0f*0.25f, 480.0f*0.25f, 511.0f*0.25f );
 
 	SetN64Viewport( scale, trans );
 }
@@ -531,7 +537,7 @@ void	PSPRenderer::UpdateViewport()
 //*****************************************************************************
 //
 //*****************************************************************************
-v2	PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
+inline v2	PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
 {
 	v2	psp_coords;
 
@@ -539,14 +545,9 @@ v2	PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
 	// We round these value here, so that when we scale up the coords to our screen
 	// coords we don't get any gaps.
 	//
-
-	// rounding twice really needed? //Corn
-	// Is needed otherwise the it brakes the main menu in GoldenEye
-	//
+	// rounding twice needed, otherwise it brakes the main menu in GoldenEye
 	psp_coords.x = vfpu_round( vfpu_round( n64_coords.x ) * mN64ToPSPScale.x + mN64ToPSPTranslate.x );
 	psp_coords.y = vfpu_round( vfpu_round( n64_coords.y ) * mN64ToPSPScale.y + mN64ToPSPTranslate.y );
-	//psp_coords.x = vfpu_round( n64_coords.x * mN64ToPSPScale.x + mN64ToPSPTranslate.x );
-	//psp_coords.y = vfpu_round( n64_coords.y * mN64ToPSPScale.y + mN64ToPSPTranslate.y );
 
 	return psp_coords;
 }
@@ -712,7 +713,7 @@ void PSPRenderer::RenderUsingRenderSettings( const CBlendStates * states, Daedal
 			sceGuDisable(GU_TEXTURE_2D);
 		}
 
-		sceGuDrawArray( GU_TRIANGLES, render_flags, num_vertices, NULL, p_vertices );
+		sceGuDrawArray( DRAW_MODE, render_flags, num_vertices, NULL, p_vertices );
 	}
 }
 //*****************************************************************************
@@ -749,7 +750,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 					if( gRemoveZFighting )
 					{
 						if( IsZModeDecal() )
-							sceGuDepthOffset(50);	// We need atleast 40.0f to fix Mario 64's z-fighting issues.
+							sceGuDepthOffset(50);	// We need atleast 40 to fix Mario 64's z-fighting issues.
 						else
 							sceGuDepthOffset(0);
 					}
@@ -876,7 +877,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 		sceGuTexMode(GU_PSM_8888,0,0,GL_TRUE);		// maxmips/a2/swizzle = 0
 
-		sceGuDrawArray( GU_TRIANGLES, render_flags, num_vertices, NULL, p_vertices );
+		sceGuDrawArray( DRAW_MODE, render_flags, num_vertices, NULL, p_vertices );
 	}
 	else
 #endif
@@ -926,7 +927,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 
 		details.ColourAdjuster.Process( p_vertices, num_vertices );
 
-		sceGuDrawArray( GU_TRIANGLES, render_flags, num_vertices, NULL, p_vertices );
+		sceGuDrawArray( DRAW_MODE, render_flags, num_vertices, NULL, p_vertices );
 	}
 	else if( blend_entry.States != NULL )
 	{
@@ -962,7 +963,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 			// Use the nasty placeholder texture
 			SelectPlaceholderTexture( PTT_MISSING );
 			sceGuTexFunc( GU_TFX_REPLACE, GU_TCC_RGBA );
-			sceGuDrawArray( GU_TRIANGLES, render_flags, num_vertices, NULL, p_vertices );
+			sceGuDrawArray( DRAW_MODE, render_flags, num_vertices, NULL, p_vertices );
 		}
 		else
 		{
@@ -974,7 +975,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		// Set default states
 		DAEDALUS_ERROR( "Unhandled blend mode" );
 		sceGuDisable( GU_TEXTURE_2D );
-		sceGuDrawArray( GU_TRIANGLES, render_flags, num_vertices, NULL, p_vertices );
+		sceGuDrawArray( DRAW_MODE, render_flags, num_vertices, NULL, p_vertices );
 	}
 }
 
@@ -983,7 +984,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 //*****************************************************************************
 namespace
 {
-	v2	GetEdgeForCycleMode( u32 cycle_type )
+inline	v2	GetEdgeForCycleMode( u32 cycle_type )
 	{
 		v2 edge( 0.f, 0.f );
 
@@ -1206,7 +1207,7 @@ bool PSPRenderer::TestVerts( u32 v0, u32 vn ) const
 //*****************************************************************************
 //
 //*****************************************************************************
-v4 PSPRenderer::LightVert( const v3 & norm ) const
+inline v4 PSPRenderer::LightVert( const v3 & norm ) const
 {
 	// Do ambient
 	v4	result( mTnLParams.Ambient );
@@ -2110,7 +2111,7 @@ void PSPRenderer::ModifyVertexInfo(u32 whered, u32 vert, u32 val)
 //*****************************************************************************
 //
 //*****************************************************************************
-void PSPRenderer::SetVtxColor( u32 vert, c32 color )
+inline void PSPRenderer::SetVtxColor( u32 vert, c32 color )
 {
 	//if ( vert < MAX_VERTS )
 	//{
@@ -2133,7 +2134,7 @@ void PSPRenderer::SetVtxTextureCoord( u32 vert, short tu, short tv )
 //*****************************************************************************
 //
 //*****************************************************************************
-void PSPRenderer::SetVtxXY( u32 vert, float x, float y )
+inline void PSPRenderer::SetVtxXY( u32 vert, float x, float y )
 {
 	//if ( vert < MAX_VERTS )
 	//{
@@ -2313,6 +2314,7 @@ void	PSPRenderer::SetScissor( s32 x0, s32 y0, s32 x1, s32 y1 )
 	v2		psp_coords_br( ConvertN64ToPsp( n64_coords_br ) );
 
 	// N.B. Think the arguments are x0,y0,x1,y1, and not x,y,w,h as the docs describe
+	//printf("%d %d %d %d\n", s32(psp_coords_tl.x),s32(psp_coords_tl.y),s32(psp_coords_br.x),s32(psp_coords_br.y));
 	sceGuScissor( s32(psp_coords_tl.x), s32(psp_coords_tl.y),
 				  s32(psp_coords_br.x), s32(psp_coords_br.y) );
 }
@@ -2353,6 +2355,20 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace
 //*****************************************************************************
 void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace)
 {
+
+	f32 *mtx=(f32*)&mat;
+
+#if 0	//1-> show matrix, 0-> skip
+	for(u32 i=0;i<4;i++) printf("%.3f ",mtx[i]);
+	printf("\n");
+	for(u32 i=4;i<8;i++) printf("%.3f ",mtx[i]);
+	printf("\n");
+	for(u32 i=8;i<12;i++) printf("%.3f ",mtx[i]);
+	printf("\n");
+	for(u32 i=12;i<16;i++) printf("%.3f ",mtx[i]);
+	printf("\n\n");
+#endif
+
 	// ModelView
 	if (bPush)
 	{
@@ -2377,6 +2393,10 @@ void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace)
 		if (bReplace)
 		{
 			// Load projection matrix
+			//Hack needed to show heart in OOT & MM
+			//it renders at Z cordinate = 0.0f that gets clipped away.
+			//so we translate them a bit along Z to make them stick :) //Corn
+			if(mtx[14] == 0.0f && ((g_ROM.GameHacks == ZELDA_MM) || (g_ROM.GameHacks == ZELDA_OOT))) mtx[14]-=10.1f;
 			mModelViewStack[mModelViewTop] = mat;
 		}
 		else

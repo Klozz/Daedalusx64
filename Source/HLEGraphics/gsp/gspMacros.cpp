@@ -435,7 +435,7 @@ void DLParser_GBI1_BranchZ( MicroCodeCommand command )
 	f32 vtxdepth = PSPRenderer::Get()->GetTransformedVtxPos(vtx).z/PSPRenderer::Get()->GetTransformedVtxPos(vtx).w;
 
 	// See OOT : Death Mountain and MM : Outside of Clock Town, Glover.
-	if( vtxdepth <= (s32)(command.inst.cmd1 * 2) ) // This is still not right
+	if( -vtxdepth <= (s32)(command.inst.cmd1) ) // This is still not right
 	{																
 		u32 pc = gDisplayListStack.back().addr;	// This points to the next instruction
 		u32 dl = *(u32 *)(g_pu8RamBase + pc-12);

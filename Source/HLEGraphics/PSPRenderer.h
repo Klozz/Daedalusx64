@@ -299,8 +299,10 @@ private:
 	CRefPtr<CTexture>	mpTexture[ NUM_N64_TEXTURES ];
 	v2					mTileTopLeft[ NUM_N64_TEXTURES ];
 	v2					mTileScale[ NUM_N64_TEXTURES ];
-
-	static const u32 MATRIX_STACK_SIZE = 20; // XXXX Do not go over 60.
+	
+	// XXXX Do not go over 60.
+	//Max is 32 but can be lower, does it matter? Maybe in SSV? //Corn
+	static const u32 MATRIX_STACK_SIZE = 32; 
 
 	const Matrix4x4 &	GetWorldProject() const;
 

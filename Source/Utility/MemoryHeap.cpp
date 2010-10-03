@@ -17,6 +17,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+//Define line below to show amount of allocated VRAM //Corn
+//#define SHOW_MEM
+
 #include "stdafx.h"
 #include "MemoryHeap.h"
 #include "Math/MathUtil.h"
@@ -69,7 +72,9 @@ private:
 
 	Chunk *				mpMemMap;
 	u32					mMemMapLen;
-
+#ifdef SHOW_MEM
+	u32					mMemAlloc;
+#endif
 };
 
 //*****************************************************************************
@@ -104,6 +109,9 @@ IMemoryHeap::IMemoryHeap( u32 size )
 ,	mDeleteOnDestruction( true )
 ,	mpMemMap( NULL )
 ,	mMemMapLen( 0 )
+#ifdef SHOW_MEM
+,	mMemAlloc( 0 )
+#endif
 {
 }
 
@@ -116,6 +124,9 @@ IMemoryHeap::IMemoryHeap( void * base_ptr, u32 size )
 ,	mDeleteOnDestruction( false )
 ,	mpMemMap( NULL )
 ,	mMemMapLen( 0 )
+#ifdef SHOW_MEM
+,	mMemAlloc( 0 )
+#endif
 {
 }
 
@@ -180,6 +191,10 @@ void* IMemoryHeap::Alloc( u32 size )
 			u8 * new_adr = mpMemMap[i].Ptr;
 			if( adr + size <= new_adr )
 			{
+#ifdef SHOW_MEM
+				mMemAlloc += size;
+				printf("Mem %d +\n", mMemAlloc);
+#endif
 				return InsertNew( i, adr, size );
 			}
 
@@ -192,6 +207,10 @@ void* IMemoryHeap::Alloc( u32 size )
 		return NULL;
 	}
 
+#ifdef SHOW_MEM
+	mMemAlloc += size;
+	printf("Mem %d +\n", mMemAlloc);
+#endif
 	return InsertNew( mMemMapLen, adr, size );
 }
 
@@ -211,6 +230,9 @@ void  IMemoryHeap::Free( void * ptr )
 		{
 			Chunk *tmp;
 
+#ifdef SHOW_MEM
+			mMemAlloc -= mpMemMap[i].Length;
+#endif
 			mMemMapLen--;
 			memmove( &mpMemMap[i], &mpMemMap[i+1], (mMemMapLen-i) * sizeof(mpMemMap[0]) );
 			tmp = reinterpret_cast< Chunk * >( realloc( mpMemMap, mMemMapLen * sizeof(mpMemMap[0]) ) );
@@ -220,6 +242,9 @@ void  IMemoryHeap::Free( void * ptr )
 			}
 		}
 	}
+#ifdef SHOW_MEM
+	printf("Mem %d -\n", mMemAlloc);
+#endif
 }
 
 //*****************************************************************************

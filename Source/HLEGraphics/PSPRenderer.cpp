@@ -115,7 +115,9 @@ u32		_ClipToHyperPlane( DaedalusVtx4 * dest, const DaedalusVtx4 * source, const 
 #define Z_POS  0x20
 
 // Test all but Z_NEG (for No Near Plane microcodes)
-static const u32 CLIP_TEST_FLAGS( X_POS | X_NEG | Y_POS | Y_NEG | Z_POS );
+//static const u32 CLIP_TEST_FLAGS( X_POS | X_NEG | Y_POS | Y_NEG | Z_POS );
+//Skip Z clip all together according to RICE //Corn
+static const u32 CLIP_TEST_FLAGS( X_POS | X_NEG | Y_POS | Y_NEG );
 
 #define GL_TRUE                           1
 #define GL_FALSE                          0
@@ -131,37 +133,17 @@ enum CycleType
 	CYCLE_FILL,
 };
 
-extern int HAVE_DVE;
-extern int PSP_TV_CABLE;
-extern int PSP_TV_LACED;
-
-extern u32 BUF_WIDTH;
 extern u32 SCR_WIDTH;
 extern u32 SCR_HEIGHT;
-#define PIXEL_SIZE (4) /* change this if you change to another screenmode */
-#define FRAME_SIZE (BUF_WIDTH * SCR_HEIGHT * PIXEL_SIZE)
-#define DEPTH_SIZE (BUF_WIDTH * SCR_HEIGHT * 2)
 
 static f32 sViWidth = 320.0f;
 static f32 sViHeight = 240.0f;
 
-static const float gFillRectDepth( 0.0f );
 static const float gTexRectDepth( 0.0f );
-
-static const float gMaxZValue( 1.0f);
 
 ALIGNED_GLOBAL(u32,gWhiteTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ], DATA_ALIGN);
 ALIGNED_GLOBAL(u32,gPlaceholderTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ], DATA_ALIGN);
 ALIGNED_GLOBAL(u32,gSelectedTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ], DATA_ALIGN);
-
-void			DaedalusVtx4::Interpolate( const DaedalusVtx4 & lhs, const DaedalusVtx4 & rhs, float factor )
-{
-	ProjectedPos = lhs.ProjectedPos + (rhs.ProjectedPos - lhs.ProjectedPos) * factor;
-	TransformedPos = lhs.TransformedPos + (rhs.TransformedPos - lhs.TransformedPos) * factor;
-	Colour = lhs.Colour + (rhs.Colour - lhs.Colour) * factor;
-	Texture = lhs.Texture + (rhs.Texture - lhs.Texture) * factor;
-	ClipFlags = 0;
-}
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST //DEBUG_DISPLAYLIST needed for PrintMux
 extern void		PrintMux( FILE * fh, u64 mux );
@@ -1253,6 +1235,18 @@ static const v4 NDCPlane[6] =
 
 // Ununsed... we might remove this, or keep it for check-in
 #ifdef DAEDALUS_IS_LEGACY
+//*****************************************************************************
+//
+//*****************************************************************************
+void DaedalusVtx4::Interpolate( const DaedalusVtx4 & lhs, const DaedalusVtx4 & rhs, float factor )
+{
+	ProjectedPos = lhs.ProjectedPos + (rhs.ProjectedPos - lhs.ProjectedPos) * factor;
+	TransformedPos = lhs.TransformedPos + (rhs.TransformedPos - lhs.TransformedPos) * factor;
+	Colour = lhs.Colour + (rhs.Colour - lhs.Colour) * factor;
+	Texture = lhs.Texture + (rhs.Texture - lhs.Texture) * factor;
+	ClipFlags = 0;
+}
+
 //*****************************************************************************
 //
 //*****************************************************************************

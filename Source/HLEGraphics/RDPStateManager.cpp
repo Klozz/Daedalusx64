@@ -77,6 +77,7 @@ void	CRDPStateManager::SetTileSize( u32 idx, const RDP_TileSize & tile_size )
 
 		// XXXX might be able to remove this with recent tile loading fixes?
 		// Wetrix hack
+		//printf(" top%d, bottom%d, left%d,right%d\n", tile_size.top,tile_size.bottom,tile_size.left,tile_size.right);
 		if (tile_size.top > tile_size.bottom || tile_size.left > tile_size.right)
 		{
 			DAEDALUS_DL_ERROR( "Specifying negative width/height for tile descriptor" );
@@ -210,24 +211,15 @@ const TextureInfo & CRDPStateManager::GetTextureDescriptor( u32 idx ) const
 		u32		num_bytes( pixels2bytes( num_pixels, rdp_tile.size ) );
 		DAEDALUS_DL_ASSERT( num_bytes <= 4096, "Suspiciously large texture load: %d bytes (%dx%d, %dbpp)", num_bytes, tile_width, tile_height, (1<<(rdp_tile.size+2)) );
 #endif
-		// Quick hack to fix "black textures" in several games for ex: Majora's Mask, hopefully won't mess out anything
-		// This isn't quiet right for most games like Majora's Mask or Animal Crossing...but it works quiet well in games like Flying Dragon and HM64
-		// Maybe multiple is wrong, or we're missing something else?
-		// Brakes Aerogauge, anyways basic tmem option is enough to fix the black textures..
-
-		switch (rdp_tile.size)
+		//Quick fix to correct texturing issues and missing logo in Harvest Moon 64
+		//8b =>0 <=7, force 0
+		if(rdp_tile.size != G_IM_SIZ_8b)
 		{
-			//case G_IM_SIZ_4b: palette = 16  * 2 * rdp_tile.palette; break;	// Should we disable this hack if gTMEMemulation is enabled?
-			case G_IM_SIZ_8b: 
-				palette = 0; 
-				break;	// Fixes Harvest Moon's bad texturing and main menu logo
-			default:
-				palette = rdp_tile.palette;
-				break;
+			palette = rdp_tile.palette;
 		}
 
 		ti.SetTmemAddress( rdp_tile.tmem );
-		ti.SetTLutIndex( palette );
+		ti.SetTLutIndex( palette ); 
 
 		ti.SetLoadAddress( address );
 		ti.SetFormat( rdp_tile.format );
@@ -238,7 +230,6 @@ const TextureInfo & CRDPStateManager::GetTextureDescriptor( u32 idx ) const
 		u32	tile_left( rdp_tilesize.left / 4 );
 		DAEDALUS_DL_ASSERT( (rdp_tile.size > 0) || (tile_left&1) == 0, "Expecting an even Left for 4bpp formats" );
 #endif
-
 		ti.SetWidth( tile_width );
 		ti.SetHeight( tile_height );
 		ti.SetPitch( pitch );

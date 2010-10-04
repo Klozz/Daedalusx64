@@ -113,10 +113,13 @@ void MatrixFromN64FixedPoint( u32 address )
 //*************************************************************************************
 //
 //*************************************************************************************
-static void RDP_GFX_Force_Matrix(u32 address)
+// Arrrg this isn't right, need to implement it correctly...
+// Donald Duck, Tarzan, all wrestling games use this
+//
+static void RDP_Force_Matrix(u32 address)
 {
 	// Fix me !
-	/*
+	
 	if (address + 64 > MAX_RAM_ADDRESS)
 	{
 		DBGConsole_Msg(0, "ForceMtx: Address invalid (0x%08x)", address);
@@ -124,8 +127,7 @@ static void RDP_GFX_Force_Matrix(u32 address)
 	}
 
 	MatrixFromN64FixedPoint(address);
-	PSPRenderer::Get()->SetProjection(mat, true, PSPRenderer::MATRIX_LOAD);	// Arrrg this isn't right, fix me !
-	*/
+	PSPRenderer::Get()->SetProjection(mat, true, true);
 }
 
 //*************************************************************************************
@@ -1298,7 +1300,7 @@ void DLParser_GBI1_MoveMem( MicroCodeCommand command )
 			DL_PF("    G_MV_TXTATT");
 			break;
 		case G_MV_MATRIX_1:
-			RDP_GFX_Force_Matrix(address);
+			RDP_Force_Matrix(address);
 			break;
 		//Next 3 MATRIX commands should be ignored, since they were in the previous command.
 		case G_MV_MATRIX_2:	/*IGNORED*/	DL_PF("     G_MV_MATRIX_2");											break;
@@ -1414,7 +1416,7 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 		}
 	 case G_GBI2_MV_MATRIX:
 		DL_PF("		Force Matrix: addr=%08X", address);
-		RDP_GFX_Force_Matrix(address);
+		RDP_Force_Matrix(address);
 		break;
 	case G_GBI2_MVO_L0:
 	case G_GBI2_MVO_L1:

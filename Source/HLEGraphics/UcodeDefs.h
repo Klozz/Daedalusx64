@@ -98,7 +98,6 @@ struct GBI1_Vtx
 	unsigned int addr;
 };
 
-
 struct GBI2_Vtx
 {
 	unsigned int vend:8;
@@ -107,6 +106,24 @@ struct GBI2_Vtx
 	unsigned int :4;
 	unsigned int cmd:8;
 	unsigned int addr;
+};
+
+struct GBI1_BranchZ
+{
+    unsigned int pad0:1;      
+    unsigned int vtx:11;     
+    unsigned int pad1:12;       
+    unsigned int cmd:8;         
+    unsigned int value:32;     
+}; 
+
+struct GBI1_ModifyVtx
+{
+	unsigned int pad0:1;          
+	unsigned int vtx:15;  
+	unsigned int offset:8;    
+	unsigned int cmd:8;           
+	unsigned int value;
 };
 
 struct GBI_Texture
@@ -120,6 +137,17 @@ struct GBI_Texture
 	unsigned int	cmd:8;
 	unsigned int	scaleT:16;
 	unsigned int	scaleS:16;
+};
+
+struct SetCullDL
+{
+    unsigned int pad0:1;             
+    unsigned int first:15;   
+    unsigned int pad2:8;            
+    unsigned int cmd:8;             
+    unsigned int pad3:1;            
+    unsigned int end:15;    
+    unsigned int pad4:8;             
 };
 
 struct SetTImg
@@ -213,7 +241,6 @@ struct GBI2_Tri2
 	unsigned int flag:8;
 };
 
-
 struct GBI2_Line3D
 {
 	unsigned int v3:8;
@@ -258,6 +285,24 @@ struct GBI1_Tri2
 	unsigned int flag:8;
 };
 
+struct GBI0_Tri4
+{
+	unsigned int v0:4;
+	unsigned int v3:4;
+	unsigned int v6:4;
+	unsigned int v9:4;
+	unsigned int pad:8;
+	unsigned int cmd:8;
+	unsigned int v1:4;
+	unsigned int v2:4;
+	unsigned int v4:4;
+	unsigned int v5:4;
+	unsigned int v7:4;
+	unsigned int v8:4;
+	unsigned int v10:4;
+	unsigned int v11:4;
+};
+
 struct GBI1_Dlist
 {
 	unsigned int	:16;
@@ -289,12 +334,28 @@ struct SetLoadTile
 	unsigned int	pad:5;
 };
 
+// XXX Check me !
+/*
+struct SetFillRect
+{
+    unsigned int y1   : 12;
+    unsigned int x1   : 12;
+	unsigned int cmd  : 8;
+
+    unsigned int y0   : 12;
+    unsigned int x0   : 12;  
+    unsigned int pad  : 8;
+};
+*/
+
 union MicroCodeCommand
 {
 	Instruction		inst;
 	GBI0_Vtx		vtx0;
 	GBI1_Vtx		vtx1;
 	GBI2_Vtx		vtx2;
+	GBI1_ModifyVtx	modifyvtx;
+	GBI1_BranchZ	branchz;
 	GBI1_Matrix		mtx1;
 	GBI2_Matrix		mtx2;
 	GBI1_PopMatrix	popmtx;
@@ -306,12 +367,15 @@ union MicroCodeCommand
 	GBI2_Tri2		gbi2tri2;
 	GBI1_MoveWord	mw1;
 	GBI2_MoveWord	mw2;
+	SetCullDL		culldl;		
 	SetColor		color;
 	SetTImg			img;
 	GBI1_Dlist		dlist;
 	SetScissor		scissor;
 	SetLoadTile		loadtile;
+	//SetFillRect		fillrect;
 	GBI_Texture		texture;
+	GBI0_Tri4		tri4;
 
 	u64	force_structure_alignment;
 };

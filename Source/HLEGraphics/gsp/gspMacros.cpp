@@ -151,13 +151,11 @@ void DLParser_GBI2_Vtx( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_ModifyVtx( MicroCodeCommand command )
 {
-	const u32 FACTOR = 1; // This might need a bit of changing for other microcodes
+	u32 offset =  command.modifyvtx.offset;
+	u32 vert   = command.modifyvtx.vtx;
+	u32 value  = command.modifyvtx.value;
 
-	u32 offset =  (command.inst.cmd0 >> 16) & 0xFF;
-	u32 vert   = ((command.inst.cmd0      ) & 0xFFFF) >> FACTOR;
-	u32 value  = command.inst.cmd1;
-
-	// Helps to avoid crash after swinging in Mario Golf
+	// Cures crash after swinging in Mario Golf
 	if( vert > 80 )
 	{
 		DAEDALUS_ERROR("ModifyVtx: Invalid vertex number: %d", vert);
@@ -269,21 +267,15 @@ void DLParser_GBI2_PopMtx( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_CullDL( MicroCodeCommand command )
 {
-	u32 first = command.inst.cmd0 / gVertexStride;
-	u32 last = command.inst.cmd1 / gVertexStride;
+	u32 first = command.culldl.first;
+	u32 last = command.culldl.end;
 
-	DL_PF(" Culling using verts %d to %d", first, last);
-
-	// Mask into range
-	first &= 0xF; //Max 15 Verts -> 0 < = vO < vn = 15 (manual)
-	last &= 0xF; //Max 15 Verts -> 0 < = vO < vn = 15 (manual)
+	DL_PF(" Culling using verts %d to %d\n", first, last);
 
 	if( last < first ) return;
-	if( g_ROM.GameHacks == WAR_GODS ) return; // Quick hack, cull dl brakes war gods
-
-	if ( PSPRenderer::Get()->TestVerts( first, last ) )
+	if( PSPRenderer::Get()->TestVerts( first, last ) )
 	{
-		DL_PF(" Display list is visible, returning (GBI1)");
+		DL_PF(" Display list is visible, returning");
 		return;
 	}
 
@@ -294,40 +286,6 @@ void DLParser_GBI1_CullDL( MicroCodeCommand command )
 	DL_PF(" No vertices were visible, culling rest of display list");
 
 	DLParser_PopDL();
-
-}
-//*****************************************************************************
-//
-//*****************************************************************************
-void DLParser_GBI2_CullDL( MicroCodeCommand command )
-{
-
-#if 0	//1-> old way, 0-> new way //Corn
-	u32 first = ((command.inst.cmd0) & 0xfff) / 2;
-	u32 last  = ((command.inst.cmd1) & 0xfff) / 2;
-#else
-	// Mask into range
-	//Max 15 Verts -> 0 < = vO < vn = 15 (manual) //Corn
-	u32 first = ((command.inst.cmd0) & 0x1F) >> 1;
-	u32 last  = ((command.inst.cmd1) & 0x1F) >> 1;
-#endif
-	if( last < first )	return;		// Fixes Aidyn Chronicles
-
-	DL_PF("    Culling using verts %d to %d", first, last);
-
-	if ( PSPRenderer::Get()->TestVerts( first, last ) )
-	{
-		DL_PF( "    Display list is visible, returning" );
-	}
-	else
-	{
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-		gNumDListsCulled++;
-#endif
-		DL_PF("    Display list is invisible, culling");
-
-		DLParser_PopDL();
-	}
 }
 
 //*****************************************************************************
@@ -337,9 +295,10 @@ void DLParser_GBI1_DL( MicroCodeCommand command )
 {
     u32 address = RDPSegAddr(command.dlist.addr);
 
-	if( address > MAX_RAM_ADDRESS ) // Fixes Shadow of Empire
+	// Fixes Shadow of Empire (SOTE)
+	if( address > MAX_RAM_ADDRESS )
 	{
-		DAEDALUS_DL_ERROR("Error: DL addr out of range (0x%08x)", address);
+		DAEDALUS_DL_ERROR("DL addr out of range (0x%08x)", address);
 		address &= (MAX_RAM_ADDRESS-1);
 	}
 
@@ -359,43 +318,16 @@ void DLParser_GBI1_DL( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_GBI2_DL(  MicroCodeCommand command  )
-{
-    u32             push( (command.inst.cmd0 >> 16) & 0x01 );
-    u32             address( RDPSegAddr(command.inst.cmd1) );
-
-    DL_PF("    Push:0x%02x Addr: 0x%08x", push, address);
-
-    DList dl;
-    dl.addr = address;
-    dl.limit = ~0;
-
-    switch (push)
-    {
-        case G_DL_PUSH:                 DLParser_PushDisplayList( dl );         break;
-   		case G_DL_NOPUSH:               DLParser_CallDisplayList( dl );         break;
-    }
-}
-
-//*****************************************************************************
-//
-//*****************************************************************************
 void DLParser_GBI1_EndDL( MicroCodeCommand command )
 {
-        DLParser_PopDL();
+	DLParser_PopDL();
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_GBI2_EndDL( MicroCodeCommand command )
-{
-        DLParser_PopDL();
-}
-
-//*****************************************************************************
+// Kirby 64 and Cruisn' Exotica use this
 //
-//*****************************************************************************
 void DLParser_GBI2_DL_Count( MicroCodeCommand command )
 {
 	DAEDALUS_ERROR("DL_COUNT");
@@ -410,33 +342,26 @@ void DLParser_GBI2_DL_Count( MicroCodeCommand command )
 }
 
 //*****************************************************************************
-//
-//*****************************************************************************
-/*
-void DLParser_GBI2_0x8( MicroCodeCommand command )
-{
-	if( ((command.inst.cmd0)&0x00FFFFFF) == 0x2F && ((command.inst.cmd1)&0xFF000000) == 0x80000000 )
-	{
-		// V-Rally 64
-		DLParser_S2DEX_ObjLdtxRectR(command);
-	}
-	else
-	{
-		DLParser_Nothing(command);
-	}
-}
-*/
-//*****************************************************************************
 // When the depth is less than the z value provided, branch to given address
 //*****************************************************************************
 void DLParser_GBI1_BranchZ( MicroCodeCommand command )
 {
-	u32 vtx = (command.inst.cmd0 & 0xFFF) >> 1;
-	f32 vtxdepth = PSPRenderer::Get()->GetTransformedVtxPos(vtx).z/PSPRenderer::Get()->GetTransformedVtxPos(vtx).w;
-
-	// See OOT : Death Mountain and MM : Outside of Clock Town, Glover.
-	if( -vtxdepth <= (s32)(command.inst.cmd1) ) // This is still not right
-	{																
+	u32 vtx		 = command.branchz.vtx;
+#if 0
+	//Proper? Atleast according to Rice, but fails in OOT : Death Mountain and MM : Outside of Clock Town
+	f32 vtxdepth = PSPRenderer::Get()->GetTransformedVtxPos(vtx).y/PSPRenderer::Get()->GetTransformedVtxPos(vtx).w;
+#else
+	// Works the best.. give us a nice depth result and allow us to only branch when needed ex 9920 <= 800 != branch :).
+	// We'll see if any issue comes up...
+	FiddledVtx *pVtxBase = (FiddledVtx*)(g_pu8RamBase + RDPSegAddr(command.inst.cmd1));
+#endif
+	
+#if 0
+	if( vtxdepth <= (s32)command.branchz.value ) // This is still not right
+#else
+	if( pVtxBase != NULL && pVtxBase[vtx].z <= (s32)command.branchz.value )
+#endif
+	{					
 		u32 pc = gDisplayListStack.back().addr;	// This points to the next instruction
 		u32 dl = *(u32 *)(g_pu8RamBase + pc-12);
 		u32 address = RDPSegAddr(dl);
@@ -447,9 +372,7 @@ void DLParser_GBI1_BranchZ( MicroCodeCommand command )
 		Dl.addr = address;
 		Dl.limit = ~0;
 		gDisplayListStack.push_back(Dl);
-		//printf("jump ");
 	}
-	//else printf("stay ");
 }
 
 //***************************************************************************** 
@@ -485,8 +408,8 @@ static void DLParser_InitGeometryMode()
 	bool bCullBack          = (gGeometryMode & G_CULL_BACK)			? true : false;
 	if( bCullFront && bCullBack )
 	{
-		DAEDALUS_ERROR(" Warning : Both front and back are culled ");
-		bCullFront = false; // should never cull front
+		// Fixes Mortal Kombat 4
+		bCullFront = false; // Should never cull front
 	}
 	PSPRenderer::Get()->SetCullMode(bCullFront, bCullBack);
 
@@ -748,11 +671,6 @@ void DLParser_GBI2_Texture( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_Quad( MicroCodeCommand command )
 {
-	// Ok this using the same fucntion as Line3D, which is wrong
-	// This command is supposed to draw the missing heart on Zelda: OOT and MM.
-	// Because of that we are marking Quad cmd as unimplemented, since we are still mising the heart.
-
-
     // While the next command pair is Tri2, add vertices
     u32 pc = gDisplayListStack.back().addr;
     u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
@@ -1024,8 +942,6 @@ void DLParser_GBI1_Tri1( MicroCodeCommand command )
 {
     DAEDALUS_PROFILE( "DLParser_GBI1_Tri1_T" );
 
-	DAEDALUS_ERROR("vertex : %d",gVertexStride);
-
     // While the next command pair is Tri1, add vertices
     u32 pc = gDisplayListStack.back().addr;
     u32 * pCmdBase = (u32 *)( g_pu8RamBase + pc );
@@ -1078,46 +994,36 @@ void DLParser_GBI0_Tri4( MicroCodeCommand command )
     {
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
         u32 flags = (command.inst.cmd0 >> 16) & 0xFF;
-		DL_PF("    GBI1 Tri4: 0x%08x 0x%08x Flag: 0x%02x", command.inst.cmd0, command.inst.cmd1, flags);
+		DL_PF("    GBI0 Tri4: 0x%08x 0x%08x Flag: 0x%02x", command.inst.cmd0, command.inst.cmd1, flags);
 #endif
-#if 0 //0->new way, 1-> old way //Corn
-		for( int i=0; i<4; i++)
-		{
-			u32 v0 = (command.inst.cmd1 >> (4+(i<<3))) & 0xF;
-			u32 v1 = (command.inst.cmd1 >> (  (i<<3))) & 0xF;
-			u32 v2 = (command.inst.cmd0 >> (  (i<<2))) & 0xF;
-
-			tris_added |= PSPRenderer::Get()->AddTri(v0, v2, v1);
-		}
-#else
 		//Tri #1
-		u32 v0 = (command.inst.cmd1 >> 4 ) & 0xF;
-		u32 v1 = (command.inst.cmd1      ) & 0xF;
-		u32 v2 = (command.inst.cmd0      ) & 0xF;
+		u32 v0 = command.tri4.v0;
+		u32 v1 = command.tri4.v1;
+		u32 v2 = command.tri4.v2;
 
-		tris_added |= PSPRenderer::Get()->AddTri(v0, v2, v1);
+		tris_added |= PSPRenderer::Get()->AddTri(v0, v1, v2);
 
 		//Tri #2
-			v0 = (command.inst.cmd1 >> 12) & 0xF;
-			v1 = (command.inst.cmd1 >> 8 ) & 0xF;
-			v2 = (command.inst.cmd0 >> 4 ) & 0xF;
+		u32 v3 = command.tri4.v3;
+		u32 v4 = command.tri4.v4;
+		u32 v5 = command.tri4.v5;
 
-		tris_added |= PSPRenderer::Get()->AddTri(v0, v2, v1);
+		tris_added |= PSPRenderer::Get()->AddTri(v3, v4, v5);
 
 		//Tri #3
-			v0 = (command.inst.cmd1 >> 20) & 0xF;
-			v1 = (command.inst.cmd1 >> 16) & 0xF;
-			v2 = (command.inst.cmd0 >> 8 ) & 0xF;
+		u32 v6 = command.tri4.v6;
+		u32 v7 = command.tri4.v7;
+		u32 v8 = command.tri4.v8;
 
-		tris_added |= PSPRenderer::Get()->AddTri(v0, v2, v1);
+		tris_added |= PSPRenderer::Get()->AddTri(v6, v7, v8);
 
 		//Tri #4
-			v0 = (command.inst.cmd1 >> 28) & 0xF;
-			v1 = (command.inst.cmd1 >> 24) & 0xF;
-			v2 = (command.inst.cmd0 >> 12) & 0xF;
+		u32 v9  = command.tri4.v9;
+		u32 v10 = command.tri4.v10;
+		u32 v11 = command.tri4.v11;
 
-		tris_added |= PSPRenderer::Get()->AddTri(v0, v2, v1);
-#endif
+		tris_added |= PSPRenderer::Get()->AddTri(v9, v10, v11);
+
 		command.inst.cmd0			= *(u32 *)(g_pu8RamBase + pc+0);
 		command.inst.cmd1			= *(u32 *)(g_pu8RamBase + pc+4);
 		pc += 8;
@@ -1145,3 +1051,21 @@ void DLParser_GBI0_Quad( MicroCodeCommand command )
 {
 	DAEDALUS_ERROR("GBI0_Quad : Line3D not supported in ucode0 ? ( Ignored )");
 }
+
+//*****************************************************************************
+//
+//*****************************************************************************
+/*
+void DLParser_GBI2_0x8( MicroCodeCommand command )
+{
+	if( ((command.inst.cmd0)&0x00FFFFFF) == 0x2F && ((command.inst.cmd1)&0xFF000000) == 0x80000000 )
+	{
+		// V-Rally 64
+		DLParser_S2DEX_ObjLdtxRectR(command);
+	}
+	else
+	{
+		DLParser_Nothing(command);
+	}
+}
+*/

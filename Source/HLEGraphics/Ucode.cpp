@@ -183,7 +183,7 @@ const MicroCodeInstruction gInstructionLookup[13][256] =
 	// Ucode:F3DEX_GBI_2
 	// Zelda and new games
 	{
-		DLParser_GBI1_Noop, DLParser_GBI2_Vtx, DLParser_GBI1_ModifyVtx, DLParser_GBI2_CullDL,
+		DLParser_GBI1_Noop, DLParser_GBI2_Vtx, DLParser_GBI1_ModifyVtx, DLParser_GBI1_CullDL,
 		DLParser_GBI1_BranchZ, DLParser_GBI2_Tri1, DLParser_GBI2_Tri2, DLParser_GBI2_Quad,
 		/*DLParser_GBI2_0x8*/DLParser_GBI2_Line3D, DLParser_S2DEX_Bg1cyc, DLParser_S2DEX_BgCopy, DLParser_S2DEX_ObjRendermode,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
@@ -253,7 +253,7 @@ const MicroCodeInstruction gInstructionLookup[13][256] =
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
 		DLParser_Nothing, DLParser_GBI2_DL_Count, DLParser_GBI2_DMA_IO, DLParser_GBI2_Texture,
 		DLParser_GBI2_PopMtx, DLParser_GBI2_GeometryMode, DLParser_GBI2_Mtx, DLParser_GBI2_MoveWord,
-		DLParser_GBI2_MoveMem, DLParser_GBI1_LoadUCode, DLParser_GBI2_DL, DLParser_GBI2_EndDL,
+		DLParser_GBI2_MoveMem, DLParser_GBI1_LoadUCode, DLParser_GBI1_DL, DLParser_GBI1_EndDL,
 		//e0
 		DLParser_GBI1_SpNoop, DLParser_GBI1_RDPHalf_1, DLParser_GBI2_SetOtherModeL, DLParser_GBI2_SetOtherModeH,
 		DLParser_TexRect, DLParser_TexRectFlip, DLParser_RDPLoadSync, DLParser_RDPPipeSync,
@@ -329,7 +329,7 @@ const MicroCodeInstruction gInstructionLookup[13][256] =
 		DLParser_Nothing, DLParser_GBI1_Tri1, DLParser_GBI1_RDPHalf_Cont, DLParser_GBI1_RDPHalf_2,
 		DLParser_GBI1_RDPHalf_1, DLParser_GBI1_Line3D, DLParser_GBI1_ClearGeometryMode, DLParser_GBI1_SetGeometryMode,
 		DLParser_GBI1_EndDL, DLParser_GBI1_SetOtherModeL, DLParser_GBI1_SetOtherModeH, DLParser_GBI1_Texture,
-		DLParser_GBI1_MoveWord, DLParser_GBI1_PopMtx, DLParser_GBI1_Noop/*DLParser_GBI1_CullDL*/, DLParser_GBI1_Tri1,
+		DLParser_GBI1_MoveWord, DLParser_GBI1_PopMtx, DLParser_GBI1_CullDL, DLParser_GBI1_Tri1,
 
 		//c0
 		DLParser_GBI1_Noop, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
@@ -783,7 +783,7 @@ const MicroCodeInstruction gInstructionLookup[13][256] =
 	// Ucode:F3DEXBG_GBI_2 ?? Conker
 	// Games : Conker BFD
 	{
-		DLParser_GBI1_Noop, RSP_Vtx_Conker, DLParser_GBI1_ModifyVtx, DLParser_GBI2_CullDL,
+		DLParser_GBI1_Noop, RSP_Vtx_Conker, DLParser_GBI1_ModifyVtx, DLParser_GBI1_CullDL,
 		DLParser_GBI1_BranchZ, DLParser_GBI2_Tri1, DLParser_GBI2_Tri2, DLParser_GBI2_Quad,
 		/*DLParser_GBI2_0x8*/DLParser_GBI2_Line3D, DLParser_S2DEX_Bg1cyc, DLParser_S2DEX_BgCopy, DLParser_S2DEX_ObjRendermode,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
@@ -853,7 +853,7 @@ const MicroCodeInstruction gInstructionLookup[13][256] =
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
 		DLParser_Nothing, DLParser_GBI2_DL_Count, DLParser_GBI2_DMA_IO, DLParser_GBI2_Texture,
 		DLParser_GBI2_PopMtx, DLParser_GBI2_GeometryMode, DLParser_GBI2_Mtx, RSP_MoveWord_Conker,
-		RSP_MoveMem_Conker, DLParser_GBI1_LoadUCode, DLParser_GBI2_DL, DLParser_GBI2_EndDL,
+		RSP_MoveMem_Conker, DLParser_GBI1_LoadUCode, DLParser_GBI1_DL, DLParser_GBI1_EndDL,
 		//e0
 		DLParser_GBI1_SpNoop, DLParser_GBI1_RDPHalf_1, DLParser_GBI2_SetOtherModeL, DLParser_GBI2_SetOtherModeH,
 		DLParser_TexRect, DLParser_TexRectFlip, DLParser_RDPLoadSync, DLParser_RDPPipeSync,
@@ -870,7 +870,7 @@ const MicroCodeInstruction gInstructionLookup[13][256] =
 	//Games: Perfect Dark
 	{
 		DLParser_GBI1_SpNoop, DLParser_GBI1_Mtx, DLParser_GBI1_Reserved, DLParser_GBI1_MoveMem,
-		RSP_Vtx_PD, DLParser_GBI1_Reserved, DLParser_GBI2_DL, RSP_Set_Vtx_CI_PD,
+		RSP_Vtx_PD, DLParser_GBI1_Reserved, DLParser_GBI1_DL, RSP_Set_Vtx_CI_PD,
 		DLParser_GBI1_Reserved, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
 		//10
@@ -1042,7 +1042,7 @@ const MicroCodeInstruction gInstructionLookup[13][256] =
 	// Ucode 3 - S2DEX GBI2
 	{
 
-		DLParser_GBI1_Noop, DLParser_S2DEX_ObjRectangle, DLParser_S2DEX_ObjSprite, DLParser_GBI2_CullDL,
+		DLParser_GBI1_Noop, DLParser_S2DEX_ObjRectangle, DLParser_S2DEX_ObjSprite, DLParser_GBI1_CullDL,
 		DLParser_S2DEX_SelectDl, DLParser_S2DEX_ObjLoadTxtr, DLParser_S2DEX_ObjLdtxSprite, DLParser_S2DEX_ObjLdtxRect,
 		DLParser_S2DEX_ObjLdtxRectR, DLParser_S2DEX_Bg1cyc, DLParser_S2DEX_BgCopy, DLParser_S2DEX_ObjRendermode,
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
@@ -1110,7 +1110,7 @@ const MicroCodeInstruction gInstructionLookup[13][256] =
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
 		DLParser_Nothing, DLParser_GBI2_DL_Count, DLParser_GBI2_DMA_IO, DLParser_GBI2_Texture,
 		DLParser_GBI2_PopMtx, DLParser_GBI2_GeometryMode, DLParser_GBI2_Mtx, DLParser_GBI2_MoveWord,
-		DLParser_GBI2_MoveMem, DLParser_GBI1_LoadUCode, DLParser_GBI2_DL, DLParser_GBI2_EndDL,
+		DLParser_GBI2_MoveMem, DLParser_GBI1_LoadUCode, DLParser_GBI1_DL, DLParser_GBI1_EndDL,
 		//e0
 		DLParser_GBI1_SpNoop, DLParser_GBI1_RDPHalf_1, DLParser_GBI2_SetOtherModeL, DLParser_GBI2_SetOtherModeH,
 		DLParser_TexRect, DLParser_TexRectFlip, DLParser_RDPLoadSync, DLParser_RDPPipeSync,

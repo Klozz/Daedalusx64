@@ -26,34 +26,34 @@ struct Instruction
 {
 	union 
 	{
-		unsigned int cmd0;
+		u32 cmd0;
 		struct 
 		{
-			unsigned int arg0:24;
-			unsigned int cmd:8;
+			u32 arg0:24;
+			u32 cmd:8;
 		};
 	};
-	unsigned int cmd1;
+	u32 cmd1;
 };
 
 struct GBI1_Matrix
 {
-	unsigned int	len:16;
-	unsigned int	projection:1;
-	unsigned int	load:1;
-	unsigned int	push:1;
-	unsigned int	:5;
-	unsigned int	cmd:8;
-	unsigned int    addr;
+	u32	len:16;
+	u32	projection:1;
+	u32	load:1;
+	u32	push:1;
+	u32	:5;
+	u32	cmd:8;
+	u32 addr;
 };
 
 
 struct GBI1_PopMatrix
 {
-	unsigned int	:24;
-	unsigned int	cmd:8;
-	unsigned int	projection:1;
-	unsigned int	:31;
+	u32	:24;
+	u32	cmd:8;
+	u32	projection:1;
+	u32	:31;
 };
 
 struct GBI2_Matrix
@@ -62,291 +62,292 @@ struct GBI2_Matrix
 	{
 		struct 
 		{
-			unsigned int	param:8;
-			unsigned int	len:16;
-			unsigned int	cmd:8;
+			u32	param:8;
+			u32	len:16;
+			u32	cmd:8;
 		};
 		struct 
 		{
-			unsigned int	nopush:1;
-			unsigned int	load:1;
-			unsigned int	projection:1;
-			unsigned int	:5;
-			unsigned int	len2:16;
-			unsigned int	cmd2:8;
+			u32	nopush:1;
+			u32	load:1;
+			u32	projection:1;
+			u32	:5;
+			u32	len2:16;
+			u32	cmd2:8;
 		};
 	};
-	unsigned int    addr;
+	u32 addr;
 };
 
 struct GBI0_Vtx
 {
-	unsigned int len:16;
-	unsigned int v0:4;
-	unsigned int n:4;
-	unsigned int cmd:8;
-	unsigned int addr;
+	u32 len:16;
+	u32 v0:4;
+	u32 n:4;
+	u32 cmd:8;
+	u32 addr;
 };
 
 struct GBI1_Vtx
 {
-	unsigned int len:10;
-	unsigned int n:6;
-	unsigned int :1;
-	unsigned int v0:7;
-	unsigned int cmd:8;
-	unsigned int addr;
+	u32 len:10;
+	u32 n:6;
+	u32 :1;
+	u32 v0:7;
+	u32 cmd:8;
+	u32 addr;
 };
 
 struct GBI2_Vtx
 {
-	unsigned int vend:8;
-	unsigned int :4;
-	unsigned int n:8;
-	unsigned int :4;
-	unsigned int cmd:8;
-	unsigned int addr;
+	u32 vend:8;
+	u32 :4;
+	u32 n:8;
+	u32 :4;
+	u32 cmd:8;
+	u32 addr;
 };
 
 struct GBI1_BranchZ
 {
-    unsigned int pad0:1;      
-    unsigned int vtx:11;     
-    unsigned int pad1:12;       
-    unsigned int cmd:8;         
-    unsigned int value:32;     
+    u32 pad0:1;      
+    u32 vtx:11;     
+    u32 pad1:12;       
+    u32 cmd:8;         
+    u32 value:32;     
 }; 
 
 struct GBI1_ModifyVtx
 {
-	unsigned int pad0:1;          
-	unsigned int vtx:15;  
-	unsigned int offset:8;    
-	unsigned int cmd:8;           
-	unsigned int value;
+	u32 pad0:1;          
+	u32 vtx:15;  
+	u32 offset:8;    
+	u32 cmd:8;           
+	u32 value;
 };
 
 struct GBI_Texture
 {
-	unsigned int	enable_gbi0:1;
-	unsigned int	enable_gbi2:1;
-	unsigned int	:6;
-	unsigned int	tile:3;
-	unsigned int	level:3;
-	unsigned int	:10;
-	unsigned int	cmd:8;
-	unsigned int	scaleT:16;
-	unsigned int	scaleS:16;
+	u32	enable_gbi0:1;
+	u32	enable_gbi2:1;
+	u32	:6;
+	u32	tile:3;
+	u32	level:3;
+	u32	:10;
+	u32	cmd:8;
+	u32	scaleT:16;
+	u32	scaleS:16;
 };
 
 struct SetCullDL
 {
-    unsigned int pad0:1;             
-    unsigned int first:15;   
-    unsigned int pad2:8;            
-    unsigned int cmd:8;             
-    unsigned int pad3:1;            
-    unsigned int end:15;    
-    unsigned int pad4:8;             
+    u32 pad0:1;             
+    u32 first:15;   
+    u32 pad2:8;            
+    u32 cmd:8;             
+    u32 pad3:1;            
+    u32 end:15;    
+    u32 pad4:8;             
 };
 
 struct SetTImg
 {
-	unsigned int    width:12;
-	unsigned int    :7;
-	unsigned int    siz:2;
-	unsigned int    fmt:3;
-	unsigned int	cmd:8;
-	unsigned int    addr;
+	u32 width:12;
+	u32 :7;
+	u32 siz:2;
+	u32 fmt:3;
+	u32	cmd:8;
+	u32 addr;
 };
 
 struct LoadTile
 {
-	unsigned int	tl:12;
-	unsigned int	sl:12;
-	unsigned int	cmd:8;
+	u32	tl:12;
+	u32	sl:12;
+	u32	cmd:8;
 
-	unsigned int	th:12;
-	unsigned int	sh:12;
-	unsigned int	tile:3;
-	unsigned int	pad:5;
+	u32	th:12;
+	u32	sh:12;
+	u32	tile:3;
+	u32	pad:5;
 };
 
 struct SetColor 
 {
-	unsigned int	prim_level:8;
-	unsigned int	prim_min_level:8;
-	unsigned int	pad:8;
-	unsigned int	cmd:8;
+	u32	prim_level:8;
+	u32	prim_min_level:8;
+	u32	pad:8;
+	u32	cmd:8;
 
 	union 
 	{
-		unsigned int	color;
+		u32	color;
 		struct 
 		{
-			unsigned int fillcolor:16;
-			unsigned int fillcolor2:16;
+			u32 fillcolor:16;
+			u32 fillcolor2:16;
 		};
 		struct 
 		{
-			unsigned int a:8;
-			unsigned int b:8;
-			unsigned int g:8;
-			unsigned int r:8;
+			u32 a:8;
+			u32 b:8;
+			u32 g:8;
+			u32 r:8;
 		};
 	};
 };
 
 struct GBI1_MoveWord
 {
-	unsigned int	type:8;
-	unsigned int	offset:16;
-	unsigned int	cmd:8;
-	unsigned int	value;
+	u32	type:8;
+	u32	offset:16;
+	u32	cmd:8;
+	u32	value;
 };
 
 struct GBI2_MoveWord
 {
-	unsigned int	offset:16;
-	unsigned int	type:8;
-	unsigned int	cmd:8;
-	unsigned int	value;
+	u32	offset:16;
+	u32	type:8;
+	u32	cmd:8;
+	u32	value;
 };
 
 struct GBI2_Tri1
 {
-	unsigned int v0:8;
-	unsigned int v1:8;
-	unsigned int v2:8;
-	unsigned int cmd:8;
-	unsigned int pad:24;
-	unsigned int flag:8;
+	u32 v0:8;
+	u32 v1:8;
+	u32 v2:8;
+	u32 cmd:8;
+	u32 pad:24;
+	u32 flag:8;
 };
 
 struct GBI2_Tri2
 {
-	unsigned int :1;
-	unsigned int v3:7;
-	unsigned int :1;
-	unsigned int v4:7;
-	unsigned int :1;
-	unsigned int v5:7;
-	unsigned int cmd:8;
-	unsigned int :1;
-	unsigned int v0:7;
-	unsigned int :1;
-	unsigned int v1:7;
-	unsigned int :1;
-	unsigned int v2:7;
-	unsigned int flag:8;
+	u32 :1;
+	u32 v3:7;
+	u32 :1;
+	u32 v4:7;
+	u32 :1;
+	u32 v5:7;
+	u32 cmd:8;
+	u32 :1;
+	u32 v0:7;
+	u32 :1;
+	u32 v1:7;
+	u32 :1;
+	u32 v2:7;
+	u32 flag:8;
 };
 
 struct GBI2_Line3D
 {
-	unsigned int v3:8;
-	unsigned int v4:8;
-	unsigned int v5:8;
-	unsigned int cmd:8;
+	u32 v3:8;
+	u32 v4:8;
+	u32 v5:8;
+	u32 cmd:8;
 
-	unsigned int v0:8;
-	unsigned int v1:8;
-	unsigned int v2:8;
-	unsigned int flag:8;
+	u32 v0:8;
+	u32 v1:8;
+	u32 v2:8;
+	u32 flag:8;
 };
 
 struct GBI1_Line3D
 {
-	unsigned int w0;
-	unsigned int v2:8;
-	unsigned int v1:8;
-	unsigned int v0:8;
-	unsigned int v3:8;
+	u32 w0;
+	u32 v2:8;
+	u32 v1:8;
+	u32 v0:8;
+	u32 v3:8;
 };
 
 struct GBI1_Tri1
 {
-	unsigned int w0;
-	unsigned int v2:8;
-	unsigned int v1:8;
-	unsigned int v0:8;
-	unsigned int flag:8;
+	u32 w0;
+	u32 v2:8;
+	u32 v1:8;
+	u32 v0:8;
+	u32 flag:8;
 };
 
 struct GBI1_Tri2
 {
-	unsigned int v5:8;
-	unsigned int v4:8;
-	unsigned int v3:8;
-	unsigned int cmd:8;
+	u32 v5:8;
+	u32 v4:8;
+	u32 v3:8;
+	u32 cmd:8;
 
-	unsigned int v2:8;
-	unsigned int v1:8;
-	unsigned int v0:8;
-	unsigned int flag:8;
+	u32 v2:8;
+	u32 v1:8;
+	u32 v0:8;
+	u32 flag:8;
 };
 
 struct GBI0_Tri4
 {
-	unsigned int v0:4;
-	unsigned int v3:4;
-	unsigned int v6:4;
-	unsigned int v9:4;
-	unsigned int pad:8;
-	unsigned int cmd:8;
-	unsigned int v1:4;
-	unsigned int v2:4;
-	unsigned int v4:4;
-	unsigned int v5:4;
-	unsigned int v7:4;
-	unsigned int v8:4;
-	unsigned int v10:4;
-	unsigned int v11:4;
+	u32 v0:4;
+	u32 v3:4;
+	u32 v6:4;
+	u32 v9:4;
+	u32 pad:8;
+	u32 cmd:8;
+	u32 v1:4;
+	u32 v2:4;
+	u32 v4:4;
+	u32 v5:4;
+	u32 v7:4;
+	u32 v8:4;
+	u32 v10:4;
+	u32 v11:4;
 };
 
 struct GBI1_Dlist
 {
-	unsigned int	:16;
-	unsigned int	param:8;
-	unsigned int	cmd:8;
-	unsigned int    addr;
+	u32	:16;
+	u32	param:8;
+	u32	cmd:8;
+	u32 addr;
 };
 
 struct SetScissor
 {
-	unsigned int	y0:12;	    
-	unsigned int	x0:12;	   
-	unsigned int	cmd:8;	    
-	unsigned int	y1:12;	    
-	unsigned int	x1:12;	  
-	unsigned int	mode:2;
-	unsigned int	pad:6;	
+	u32	y0:12;	    
+	u32	x0:12;	   
+	u32	cmd:8;	    
+	u32	y1:12;	    
+	u32	x1:12;	  
+	u32	mode:2;
+	u32	pad:6;	
 };
 
 struct SetLoadTile
 {
-	unsigned int	tl:12;
-	unsigned int	sl:12;
-	unsigned int	cmd:8;
+	u32	tl:12;
+	u32	sl:12;
+	u32	cmd:8;
 
-	unsigned int	th:12;
-	unsigned int	sh:12;
-	unsigned int	tile:3;
-	unsigned int	pad:5;
+	u32	th:12;
+	u32	sh:12;
+	u32	tile:3;
+	u32	pad:5;
 };
 
-// XXX Check me !
-/*
 struct SetFillRect
 {
-    unsigned int y1   : 12;
-    unsigned int x1   : 12;
-	unsigned int cmd  : 8;
+	u32 pad1	: 2;
+	u32 y1		: 10;
+	u32 pad0	: 2;
+	u32 x1		: 10;
+	u32 cmd		: 8;
 
-    unsigned int y0   : 12;
-    unsigned int x0   : 12;  
-    unsigned int pad  : 8;
+	u32 pad3	: 2;
+	u32 y0		: 10;
+	u32 pad4	: 2;
+	u32 x0		: 10;
+	u32 pad2	: 8;
 };
-*/
 
 union MicroCodeCommand
 {
@@ -365,17 +366,17 @@ union MicroCodeCommand
 	GBI2_Line3D		gbi2line3d;
 	GBI2_Tri1		gbi2tri1;
 	GBI2_Tri2		gbi2tri2;
+	GBI0_Tri4		tri4;
 	GBI1_MoveWord	mw1;
 	GBI2_MoveWord	mw2;
+	GBI_Texture		texture;
+	GBI1_Dlist		dlist;
 	SetCullDL		culldl;		
 	SetColor		color;
 	SetTImg			img;
-	GBI1_Dlist		dlist;
 	SetScissor		scissor;
 	SetLoadTile		loadtile;
-	//SetFillRect		fillrect;
-	GBI_Texture		texture;
-	GBI0_Tri4		tri4;
+	SetFillRect		fillrect;
 
 	u64	force_structure_alignment;
 };

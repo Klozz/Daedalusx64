@@ -74,7 +74,7 @@ class c32 /*: public PixelFormats::Psp::Pf8888*/
 		static const c32	Red;
 		static const c32	Green;
 		static const c32	Blue;
-
+		static const c32	Gold;
 		static const c32	Magenta;
 	private:
 		u32		mColour;

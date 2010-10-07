@@ -1517,10 +1517,10 @@ void DLParser_SetScissor( MicroCodeCommand command )
 	u32 y1   = command.scissor.y1;
 
 	// Set up scissoring zone, we'll use it to scissor other stuff ex Texrect
-	scissors.left	= x0>>2;
-	scissors.top	= y0>>2;
-	scissors.right	= x1>>2;
-	scissors.bottom	= y1>>2;
+	scissors.left	= x0 >> 2;
+	scissors.top	= y0 >> 2;
+	scissors.right	= x1 >> 2;
+	scissors.bottom	= y1 >> 2;
 
 	use(mode);
 
@@ -1789,17 +1789,24 @@ void DLParser_TexRect( MicroCodeCommand command )
 	tex_rect.cmd2 = command2.inst.cmd1;
 	tex_rect.cmd3 = command3.inst.cmd1;
 
-	v2 d( tex_rect.dsdx * (1.0f / 1024.0f), tex_rect.dtdy * (1.0f / 1024.0f) );
-	v2 xy0( tex_rect.x0 * (1.0f / 4.0f), tex_rect.y0 * (1.0f / 4.0f) );
-	v2 xy1( tex_rect.x1 * (1.0f / 4.0f), tex_rect.y1 * (1.0f / 4.0f) );
-	v2 uv0( tex_rect.s * (1.0f / 32.0f), tex_rect.t * (1.0f / 32.0f) );
-	v2 uv1;
+	// Removes offscreen texrect, also fixes several glitches like in John Romero's Daikatana
+	// Do compare with integers saves CPU //Corn
+	u32	x0 = tex_rect.x0 >> 2;
+	u32	y0 = tex_rect.y0 >> 2;
+	u32	x1 = tex_rect.x1 >> 2;
+	u32	y1 = tex_rect.y1 >> 2;
 
-	// Removes offscreen texrect, also fixes several glitches like in John Romero's Daikatana 
-	if( xy0.x >= scissors.right || xy0.y >= scissors.bottom || xy1.x < scissors.left || xy1.y < scissors.top )
+	if( x0 >= scissors.right || y0 >= scissors.bottom || x1 < scissors.left || y1 < scissors.top )
 	{
 		return;
 	}
+
+	//Not using floats here breaks GE 007 intro
+	v2 d( tex_rect.dsdx / 1024.0f, tex_rect.dtdy / 1024.0f );
+	v2 xy0( tex_rect.x0 / 4.0f, tex_rect.y0 / 4.0f );
+	v2 xy1( tex_rect.x1 / 4.0f, tex_rect.y1 / 4.0f );
+	v2 uv0( tex_rect.s / 32.0f, tex_rect.t / 32.0f );
+	v2 uv1;
 
 	if ((gOtherModeH & G_CYC_COPY) == G_CYC_COPY)
 	{
@@ -1819,7 +1826,6 @@ void DLParser_TexRect( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-
 void DLParser_TexRectFlip( MicroCodeCommand command )
 { 
 	MicroCodeCommand command2;
@@ -1838,10 +1844,10 @@ void DLParser_TexRectFlip( MicroCodeCommand command )
 	tex_rect.cmd2 = command2.inst.cmd1;
 	tex_rect.cmd3 = command3.inst.cmd1;
 
-	v2 d( tex_rect.dsdx * (1.0f / 1024.0f), tex_rect.dtdy * (1.0f / 1024.0f) );
-	v2 xy0( tex_rect.x0 * (1.0f / 4.0f), tex_rect.y0 * (1.0f / 4.0f) );
-	v2 xy1( tex_rect.x1 * (1.0f / 4.0f), tex_rect.y1 * (1.0f / 4.0f) );
-	v2 uv0( tex_rect.s * (1.0f / 32.0f), tex_rect.t * (1.0f / 32.0f) );
+	v2 d( tex_rect.dsdx / 1024.0f, tex_rect.dtdy / 1024.0f );
+	v2 xy0( tex_rect.x0 / 4.0f, tex_rect.y0 / 4.0f );
+	v2 xy1( tex_rect.x1 / 4.0f, tex_rect.y1 / 4.0f );
+	v2 uv0( tex_rect.s / 32.0f, tex_rect.t / 32.0f );
 	v2 uv1;
 
 	if ((gOtherModeH & G_CYC_COPY) == G_CYC_COPY)
@@ -1865,16 +1871,9 @@ void DLParser_TexRectFlip( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_FillRect( MicroCodeCommand command )
 { 
-	u32 x0   = (command.inst.cmd1>>12)&0xFFF;
-	u32 y0   = (command.inst.cmd1>>0 )&0xFFF;
-	u32 x1   = (command.inst.cmd0>>12)&0xFFF;
-	u32 y1   = (command.inst.cmd0>>0 )&0xFFF;
-
-	v2 xy0( x0 * 0.25f, y0 * 0.25f );
-	v2 xy1( x1 * 0.25f, y1 * 0.25f );
-
 	// Removes unnecesary fillrects in Golden Eye and other games.
-	if( xy0.x >= scissors.right || xy0.y >= scissors.bottom || xy1.x < scissors.left || xy1.y < scissors.top )
+	if( command.fillrect.x0 >= scissors.right || command.fillrect.y0 >= scissors.bottom ||
+		command.fillrect.x1 <  scissors.left  || command.fillrect.y1 <  scissors.top )
 	{
 		return;
 	}
@@ -1882,9 +1881,12 @@ void DLParser_FillRect( MicroCodeCommand command )
 	// Unless we support fb emulation, we can safetly skip here
 	if( g_CI.Size != G_IM_SIZ_16b )	return;
 
+	v2 xy0( command.fillrect.x0, command.fillrect.y0 );
+	v2 xy1( command.fillrect.x1, command.fillrect.y1 );
+
 	// Note, in some modes, the right/bottom lines aren't drawn
 
-	DL_PF("    (%d,%d) (%d,%d)", x0, y0, x1, y1);
+	DL_PF("    (%d,%d) (%d,%d)", command.fillrect.x0, command.fillrect.y0, command.fillrect.x1, command.fillrect.y1);
 
 	// TODO - In 1/2cycle mode, skip bottom/right edges!?
 

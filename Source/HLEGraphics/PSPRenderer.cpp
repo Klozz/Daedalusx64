@@ -141,6 +141,8 @@ static f32 sViHeight = 240.0f;
 
 static const float gTexRectDepth( 0.0f );
 
+bool bStarOrigin = false;
+
 ALIGNED_GLOBAL(u32,gWhiteTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ], DATA_ALIGN);
 ALIGNED_GLOBAL(u32,gPlaceholderTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ], DATA_ALIGN);
 ALIGNED_GLOBAL(u32,gSelectedTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ], DATA_ALIGN);
@@ -801,8 +803,8 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	{
 		if ( gRDPOtherMode.cvg_x_alpha )	// I think this implies that alpha is coming from
 		{
-			// Going over 0x70 brakes OOT, but going lesser than that makes lines on games visible...ex: Paper Mario.
-			sceGuAlphaFunc(GU_GREATER, 0x70, 0xff);	// This seems to be best balanced..
+			bStarOrigin = true;	// Used to enable Mario 64 star blend when alpha origs, we do this to avoid messing the text.
+			sceGuAlphaFunc(GU_GREATER, 0x70, 0xff); // Going over 0x70 brakes OOT, but going lesser than that makes lines on games visible...ex: Paper Mario.
 			sceGuEnable(GU_ALPHA_TEST);
 		}
 		else

@@ -34,6 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <pspgu.h>
 
+extern bool bStarOrigin;
+
 /* Define to handle first cycle */
 
 //#define CHECK_FIRST_CYCLE
@@ -1245,6 +1247,23 @@ void BlendMode_0x00147e2844fe793cLL( BLEND_MODE_ARGS )
 		sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 	}
 	
+}
+
+// Mario 64 - Star
+//case 0x00fffffffffcfa7dLL:
+//aRGB0	: (0		- 0		) * 0	+ Texel0 
+//aA0	: (0		- 0		) * 0	+ Env 
+//aRGB1	: (0		- 0		) * 0	+ Texel0 
+//aA1	: (0		- 0		) * 0	+ Env 
+void BlendMode_0x00fffffffffcfa7dLL (BLEND_MODE_ARGS)
+{
+	// Check to be sure we are blending the star !!!
+	// We should make this check more robust to avoid messing any other stuff.
+	if( num_cycles == 1 && bStarOrigin )
+	{
+		details.ColourAdjuster.SetRGB( c32::Gold );
+		sceGuTexFunc(GU_TFX_BLEND, GU_TCC_RGB);
+	}
 }
 // Mario Golf Trees
 //case 0x005632801ffcfff8LL:
@@ -4752,6 +4771,7 @@ OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 	BLEND_MODE(0x00ffedffffd996cbLL);
 	BLEND_MODE(0x00fffe04f3fcf378LL);
 	BLEND_MODE(0x00ffffffff09f63fLL);
+	BLEND_MODE(0x00fffffffffcfa7dLL);
 			
 #undef BLEND_MODE
 	}

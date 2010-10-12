@@ -83,6 +83,18 @@ int HAVE_DVE = -1; // default is no DVE Manager
 int PSP_TV_CABLE = -1; // default is no cable
 int PSP_TV_LACED = 0; // default is not interlaced
 
+#ifdef DAEDALUS_SCRN_16BIT
+static const ScePspIMatrix4 dither_matrixA =
+		{{-2, 1,-1, 2},
+		 {-1, 2,-2, 1},
+		 { 2,-1, 1,-2},
+		 { 1,-2, 2,-1}};
+static const ScePspIMatrix4 dither_matrixB =
+		{{ 2,-1, 1,-2},
+		 { 1,-2, 2,-1},
+		 {-2, 1,-1, 2},
+		 {-1, 2,-2, 1}};
+#endif
 
 // Implementation
 class IGraphicsContext : public CGraphicsContext
@@ -103,7 +115,6 @@ public:
 
 	void				BeginFrame();
 	void				EndFrame();
-	void				DoubleDisplayList();
 	bool				UpdateFrame( bool wait_for_vbl );
 	bool				GetBufferSize( u32 * p_width, u32 * p_height );
 	bool				Initialise();
@@ -183,6 +194,13 @@ IGraphicsContext::~IGraphicsContext()
 //*****************************************************************************
 void IGraphicsContext::ClearAllSurfaces()
 {
+	//sceGuStart(GU_CALL,list[0]);
+	//sceGuFinish();
+	//sceGuStart(GU_CALL,list[1]);
+	//sceGuFinish();
+
+	if(gDoubleDisplayEnabled) sceGuStart(GU_CALL,list[listNum]); //Begin other Display List	return;
+
 	for( u32 i = 0; i < 2; ++i )
 	{
 		//Start Frame
@@ -199,19 +217,24 @@ void IGraphicsContext::ClearAllSurfaces()
 }
 
 //*****************************************************************************
-//
+//Clear screen and/or Zbuffer
 //*****************************************************************************
 void IGraphicsContext::Clear(bool clear_screen, bool clear_depth)
 {
-	int	flags( 0 );
+	u32	flags(GU_FAST_CLEAR_BIT);
 
 	if(clear_screen)
-		flags |= GU_COLOR_BUFFER_BIT|GU_FAST_CLEAR_BIT;
-	if(clear_depth)
-		flags |= GU_DEPTH_BUFFER_BIT|GU_FAST_CLEAR_BIT;
+	{
+		sceGuClearColor(0xff000000);
+		flags |= GU_COLOR_BUFFER_BIT;
+	}
 
-	sceGuClearColor(0xff000000);
-	sceGuClearDepth(0);				// 1?
+	if(clear_depth)
+	{
+		sceGuClearDepth(0);
+		flags |= GU_DEPTH_BUFFER_BIT;
+	}
+
 	sceGuClear(flags);
 }
 
@@ -222,30 +245,17 @@ void IGraphicsContext::Clear(u32 frame_buffer_col, u32 depth)
 {
 	sceGuClearColor(frame_buffer_col);
 	sceGuClearDepth(depth);				// 1?
-	sceGuClear(GU_COLOR_BUFFER_BIT|GU_DEPTH_BUFFER_BIT|GU_FAST_CLEAR_BIT);
-}
-//*****************************************************************************
-//
-//*****************************************************************************
-void IGraphicsContext::ClearZBuffer(float depth)
-{
-	u32 flags = GU_COLOR_BUFFER_BIT|GU_FAST_CLEAR_BIT;
-	//int	flags( GU_COLOR_BUFFER_BIT );
-	sceGuClearDepth(depth);
-	sceGuClear(flags);
+	sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT | GU_FAST_CLEAR_BIT);
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-void IGraphicsContext::DoubleDisplayList()
+void IGraphicsContext::ClearZBuffer(float depth)
 {
-	if(gDoubleDisplayEnabled)
-	{
-		sceGuStart(GU_DIRECT,callList);
-		sceGuCallList(list[listNum&1]);
-		sceGuFinish(); //Display Frame
-	}
+	//Clear both screen and Zbuffer
+	sceGuClearDepth(depth);
+	sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT | GU_FAST_CLEAR_BIT);
 }
 
 //*****************************************************************************
@@ -253,15 +263,23 @@ void IGraphicsContext::DoubleDisplayList()
 //*****************************************************************************
 void IGraphicsContext::BeginFrame()
 {
-	if(gDoubleDisplayEnabled)
-	{
-        listNum ^= 1;
-		sceGuStart(GU_CALL,list[listNum&1]); //Begin other Display List
-	}
-	else
-	{
-		sceGuStart(GU_DIRECT,list[0]);
-	}
+	if(!gDoubleDisplayEnabled) sceGuStart(GU_DIRECT,list[0]);
+	//else
+	//{
+		//sceGuOffset(2048 - (SCR_WIDTH/2),2048 - (SCR_HEIGHT/2));
+		//sceGuViewport(2048,2048,SCR_WIDTH,SCR_HEIGHT);
+		//sceGuScissor(0,0,SCR_WIDTH,SCR_HEIGHT);	//Make sure we clean the whole screen
+		//sceGuClearDepth(0);	//Clear Zbuffer to infinity
+		//sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT | GU_FAST_CLEAR_BIT);	//Clear both screen & Zbuffer
+		//sceGuClear(GU_COLOR_BUFFER_BIT | GU_FAST_CLEAR_BIT);	//Clear screen
+		//sceGuClear(GU_DEPTH_BUFFER_BIT | GU_FAST_CLEAR_BIT);	//Clear Zbuffer
+	//}
+
+#ifdef DAEDALUS_SCRN_16BIT
+	//Toggle dither matrices between frames to smooth 16bit color even further //Corn
+	if(listNum) sceGuSetDither(&dither_matrixB);
+	else sceGuSetDither(&dither_matrixA);
+#endif
 }
 
 //*****************************************************************************
@@ -269,8 +287,7 @@ void IGraphicsContext::BeginFrame()
 //*****************************************************************************
 void IGraphicsContext::EndFrame()
 {
-	sceGuFinish();
-	DoubleDisplayList();
+	if(!gDoubleDisplayEnabled) sceGuFinish();
 }
 
 //*****************************************************************************
@@ -282,17 +299,15 @@ bool IGraphicsContext::UpdateFrame( bool wait_for_vbl )
 
 	void * p_back;
 
+	if(gDoubleDisplayEnabled) sceGuFinish();
+	
 	sceGuSync(0,0);
 
-	if( !gCleanSceneEnabled ) 
-		sceGuClear(GU_DEPTH_BUFFER_BIT|GU_FAST_CLEAR_BIT); // Clears the depth-buffer
-	else
-		CleanScene = true;
-
-	if(wait_for_vbl)
-	{
-		sceDisplayWaitVblankStart();
-	}
+	if(!gCleanSceneEnabled) sceGuClear(GU_DEPTH_BUFFER_BIT | GU_FAST_CLEAR_BIT); // Clears the Z-buffer 
+	else CleanScene = true;
+	
+	//Used for GUI menu to slow things down, in game we skip this
+	if(wait_for_vbl) sceDisplayWaitVblankStart();
 
 	if (PSP_TV_LACED)
 	{
@@ -322,11 +337,19 @@ bool IGraphicsContext::UpdateFrame( bool wait_for_vbl )
 
 	mpCurrentBackBuffer = p_back;
 
-	SetDebugScreenTarget( TS_BACKBUFFER );
+	SetDebugScreenTarget( TS_BACKBUFFER );	//Used to print FPS and other stats
 
-	if(!wait_for_vbl) DoubleDisplayList();
+	if(gDoubleDisplayEnabled) 
+	{
+		sceGuStart(GU_DIRECT,callList);
+		sceGuCallList(list[listNum]);
+		sceGuFinish(); //Display Frame
+		listNum ^= 1;	//Toggle lists 0 & 1
+		sceGuStart(GU_CALL,list[listNum]); //Begin other Display List
+	}
+	else listNum ^= 1;	//Toggle lists 0 & 1
 
-	//printf("1 %p\n",mpCurrentBackBuffer);
+	//printf("%d %d\n",listNum,gDoubleDisplayEnabled);
 	return true;
 }
 
@@ -587,12 +610,7 @@ bool IGraphicsContext::Initialise()
 	sceGuStart(GU_DIRECT,list[0]);
 #ifdef DAEDALUS_SCRN_16BIT
 	//Do some dithering to simulate more colors //Corn
-	static const ScePspIMatrix4 dither_matrix =
-		{{-2, 1,-1, 2},
-		 {-1, 2,-2, 1},
-		 { 2,-1, 1,-2},
-		 { 1,-2, 2,-1}};
-	sceGuSetDither(&dither_matrix);
+	sceGuSetDither(&dither_matrixA);
 	sceGuEnable(GU_DITHER);
 #endif
 	sceGuDrawBuffer(SCR_MODE,draw_buffer_rel,BUF_WIDTH);
@@ -627,7 +645,6 @@ bool IGraphicsContext::Initialise()
 	sceGuFinish();
 	sceGuStart(GU_CALL,list[1]);
 	sceGuFinish();
-
 
 	// The app is ready to go
 	mInitialised = true;
@@ -743,5 +760,5 @@ void IGraphicsContext::SwitchToLcdDisplay()
 	frame_buffer = MAKE_UNCACHED_PTR(frame_buffer);
 	sceDisplaySetFrameBuf(frame_buffer, BUF_WIDTH, SCR_MODE, PSP_DISPLAY_SETBUF_NEXTFRAME);
 
-	sceGuStart(GU_CALL,list[listNum&1]);
+	sceGuStart(GU_CALL,list[listNum]);
 }

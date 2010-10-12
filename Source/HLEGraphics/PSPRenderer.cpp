@@ -282,7 +282,7 @@ bool PSPRenderer::RestoreRenderStates()
 	// We do our own culling
 	sceGuDisable(GU_CULL_FACE);
 
-	// But clip our tris please
+	// But clip our tris please (looks better in far field see Aerogauge)
 	sceGuEnable(GU_CLIP_PLANES);
 	//sceGuDisable(GU_CLIP_PLANES);
 
@@ -729,14 +729,17 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 					
 					// Fixes Zfighting issues we have on the PSP.
 					// Might need abit of tweaking though.
-					// Brakes Starfox...
-					//
-					if( gRemoveZFighting )
+					// Breaks Starfox...
+					// Breaks Double display list //Corn 
+					if( !gDoubleDisplayEnabled )
 					{
-						if( IsZModeDecal() )
-							sceGuDepthOffset(50);	// We need atleast 40 to fix Mario 64's z-fighting issues.
-						else
-							sceGuDepthOffset(0);
+						if( gRemoveZFighting )
+						{
+							if( IsZModeDecal() )
+								sceGuDepthOffset(50);	// We need atleast 40 to fix Mario 64's z-fighting issues.
+							else
+								sceGuDepthOffset(0);
+						}
 					}
  				}
 				else

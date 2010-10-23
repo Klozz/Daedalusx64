@@ -2214,8 +2214,8 @@ static void R4300_CALL_TYPE R4300_Cop1_CFC1( R4300_CALL_SIGNATURE ) 		// move Co
 	// Only defined for reg 0 or 31
 	if ( op_code.fs == 0 || op_code.fs == 31 )
 	{
-		//gGPR[ op_code.rt ]._s64 = (s64)gCPUState.FPUControl[ op_code.fs ]._s32_0;
-		gGPR[ op_code.rt ]._s32_0 = (s64)gCPUState.FPUControl[ op_code.fs ]._s32_0;
+		gGPR[ op_code.rt ]._s64 = (s64)gCPUState.FPUControl[ op_code.fs ]._s32_0;
+		//gGPR[ op_code.rt ]._s32_0 = (s64)gCPUState.FPUControl[ op_code.fs ]._s32_0;  //Slows down DOOM64
 	}
 }
 
@@ -2249,10 +2249,9 @@ static void R4300_CALL_TYPE R4300_Cop1_CTC1( R4300_CALL_SIGNATURE ) 		// move Co
 
 		SET_ROUND_MODE( gRoundingMode );
 	}
-	else
-	{
-
-	}
+	//else
+	//{
+	//}
 
 	// Now generate lots of exceptions :-)
 }

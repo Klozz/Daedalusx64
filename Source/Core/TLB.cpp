@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "OSHLE/ultra_R4300.h"
 
 ALIGNED_GLOBAL(TLBEntry, g_TLBs[32], CACHE_ALIGN);
-u32 TLBEntry::LastMatched = 0;
+//u32 TLBEntry::LastMatched = 0;
 
 void TLBEntry::UpdateValue(u32 _pagemask, u32 _hi, u32 _pfno, u32 _pfne)
 {
@@ -101,16 +101,16 @@ void TLBEntry::Reset()
 //*****************************************************************************
 //
 //*****************************************************************************
-bool	TLBEntry::FindTLBEntry( u32 address, u32 * p_idx )
+inline bool	TLBEntry::FindTLBEntry( u32 address, u32 * p_idx )
 {
-	u32 i;
+	static u32 i = 0;
 
 	for ( u32 count = 0; count < 32; count++ )
 	{
 		// Hack to check most recently reference entry first
 		// This gives some speedup if the matched address is near
 		// the end of the tlb array (32 entries)
-		i = (count + LastMatched) & 0x1F;
+		i = (count + i) & 0x1F;
 
 		struct TLBEntry & tlb = g_TLBs[i];
 
@@ -128,7 +128,6 @@ bool	TLBEntry::FindTLBEntry( u32 address, u32 * p_idx )
 			}
 
 			*p_idx = i;
-			LastMatched = i;
 
 			return true;
 		}

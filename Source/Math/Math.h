@@ -366,7 +366,7 @@ inline int pspFpuIsNaN(float f)
 	return (v);
 }
 
-//Speedy random number 0 - (2^32)-1 //Corn
+//Speedy random number 1 - (2^32)-1 //Corn
 inline u32 pspFastRand()
 {
 	static u32 IO_RAND=0x12345678;
@@ -374,4 +374,33 @@ inline u32 pspFastRand()
 	return IO_RAND;
 }
 
+//Fast way to check IsNaN on doubles //Corn
+inline bool IsNaN_Double(double x)
+ {
+     union
+	 {
+		 double val_D;
+		 u64 val_I;
+	 }Conv;
+
+	 Conv.val_D = x;
+
+	 return (Conv.val_I & 0x7fffffffffffffffLL) > 0x7ff0000000000000LL;
+ }
+
+//Fast way to check IsNaN on floats //Corn
+inline bool IsNaN_Float(float x)
+{
+     union
+	 {
+		 f32 val_F;
+		 u32 val_I;
+	 }Conv;
+
+	 Conv.val_F = x;
+
+	 return (Conv.val_I & 0x7fffffff) > 0x7f800000;
+}
+
 #endif // DAEDMATHS_H__
+

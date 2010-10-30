@@ -2323,6 +2323,19 @@ void	PSPRenderer::SetScissor( s32 x0, s32 y0, s32 x1, s32 y1 )
 //*****************************************************************************
 void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace)
 {
+
+#if 0	//1-> show matrix, 0-> skip
+	for(u32 i=0;i<4;i++) printf("%.3f ",mat.mRaw[i]);
+	printf("\n");
+	for(u32 i=4;i<8;i++) printf("%.3f ",mat.mRaw[i]);
+	printf("\n");
+	for(u32 i=8;i<12;i++) printf("%.3f ",mat.mRaw[i]);
+	printf("\n");
+	for(u32 i=12;i<16;i++) printf("%.3f ",mat.mRaw[i]);
+	printf("\n\n");
+#endif
+
+	// Projection
 	if (bPush)
 	{
 		if (mProjectionTop >= (MATRIX_STACK_SIZE-1))
@@ -2335,13 +2348,18 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace
 			mProjectionStack[mProjectionTop] = mat;
 		else
 			mProjectionStack[mProjectionTop] = mat * mProjectionStack[mProjectionTop-1];
-
 	}
 	else
 	{
 		if (bReplace)
+		{
 			// Load projection matrix
 			mProjectionStack[mProjectionTop] = mat;
+			//Hack needed to show heart in OOT & MM
+			//it renders at Z cordinate = 0.0f that gets clipped away.
+			//so we translate them a bit along Z to make them stick :) //Corn
+			if((g_ROM.GameHacks == ZELDA_MM) || (g_ROM.GameHacks == ZELDA_OOT)) mProjectionStack[mProjectionTop].mRaw[14] += 0.4f;
+		}
 		else
 			mProjectionStack[mProjectionTop] = mat * mProjectionStack[mProjectionTop];
 	}
@@ -2355,16 +2373,14 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace
 void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace)
 {
 
-	f32 *mtx=(f32*)&mat;
-
 #if 0	//1-> show matrix, 0-> skip
-	for(u32 i=0;i<4;i++) printf("%.3f ",mtx[i]);
+	for(u32 i=0;i<4;i++) printf("%.3f ",mat.mRaw[i]);
 	printf("\n");
-	for(u32 i=4;i<8;i++) printf("%.3f ",mtx[i]);
+	for(u32 i=4;i<8;i++) printf("%.3f ",mat.mRaw[i]);
 	printf("\n");
-	for(u32 i=8;i<12;i++) printf("%.3f ",mtx[i]);
+	for(u32 i=8;i<12;i++) printf("%.3f ",mat.mRaw[i]);
 	printf("\n");
-	for(u32 i=12;i<16;i++) printf("%.3f ",mtx[i]);
+	for(u32 i=12;i<16;i++) printf("%.3f ",mat.mRaw[i]);
 	printf("\n\n");
 #endif
 
@@ -2392,10 +2408,6 @@ void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace)
 		if (bReplace)
 		{
 			// Load projection matrix
-			//Hack needed to show heart in OOT & MM
-			//it renders at Z cordinate = 0.0f that gets clipped away.
-			//so we translate them a bit along Z to make them stick :) //Corn
-			if(mtx[14] == 0.0f && ((g_ROM.GameHacks == ZELDA_MM) || (g_ROM.GameHacks == ZELDA_OOT))) mtx[14]-=10.1f;
 			mModelViewStack[mModelViewTop] = mat;
 		}
 		else

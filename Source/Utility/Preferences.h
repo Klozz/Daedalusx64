@@ -45,6 +45,7 @@ enum ETextureHashFrequency
 enum EFrameskipValue
 {
 	FV_DISABLED = 0,
+	FV_AUTO,
 	FV_1,
 	FV_2,
 	FV_3,
@@ -54,7 +55,6 @@ enum EFrameskipValue
 	FV_7,
 	FV_8,
 	FV_9,
-	FV_10,
 #ifndef DAEDALUS_PUBLIC_RELEASE
 	FV_99,
 #endif

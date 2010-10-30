@@ -215,6 +215,8 @@ void CGraphicsPluginPsp::UpdateScreen()
 	{
 		//printf( "Flip (%08x, %08x)\n", current_origin, last_origin );
 		UpdateFramerate();
+	
+		f32 Fsync = FramerateLimiter_GetSync();
 
 		if(!gFrameskipActive)
 		{		
@@ -223,7 +225,7 @@ void CGraphicsPluginPsp::UpdateScreen()
 				pspDebugScreenSetTextColor( 0xffffffff );
 				pspDebugScreenSetBackColor(0);
 				pspDebugScreenSetXY(0, 0);
-				pspDebugScreenPrintf( "FPS %#.1f | VB %d/%d | Sync %#.1f%%   ", gCurrentFramerate, u32( gCurrentVblrate ), FramerateLimiter_GetTvFrequencyHz(), FramerateLimiter_GetSync() * 100.0f );
+				pspDebugScreenPrintf( "FPS %#.1f | VB %d/%d | Sync %#.1f%%   ", gCurrentFramerate, u32( gCurrentVblrate ), FramerateLimiter_GetTvFrequencyHz(), Fsync * 100.0f );
 			}
 			if( gGlobalPreferences.BatteryWarning )
 			{
@@ -239,13 +241,21 @@ void CGraphicsPluginPsp::UpdateScreen()
 
 		static u32 current_frame = 0;
 		current_frame++;
+
 		if( gFrameskipValue == FV_DISABLED )
 		{
 			gFrameskipActive = false;
 		}
 		else
 		{
-			gFrameskipActive = (current_frame % (gFrameskipValue + 1)) != 0;
+			//skip next frame if in auto mode and we are running slow //Corn
+			if(gFrameskipValue == FV_AUTO)
+			{
+				if(!gFrameskipActive && (Fsync < 1.0f)) gFrameskipActive = true;
+				else gFrameskipActive = false;
+			}
+			//Or skip frames as set in menu
+			else gFrameskipActive = (current_frame % gFrameskipValue) != 0;
 		}
 
 		last_origin = current_origin;

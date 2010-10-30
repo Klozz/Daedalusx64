@@ -179,6 +179,7 @@ public:
 	
 	bool				TestVerts( u32 v0, u32 vn ) const;				// Returns true if bounding volume is visible, false if culled
 	v4					GetTransformedVtxPos( u32 i ) const		{ return mVtxProjected[ i ].TransformedPos; }
+	v4					GetProjectedVtxPos( u32 i ) const		{ return mVtxProjected[ i ].ProjectedPos; }
 	u32					GetVtxFlags( u32 i ) const				{ return mVtxProjected[ i ].ClipFlags; }
 
 	// Rendering stats

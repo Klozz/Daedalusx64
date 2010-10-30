@@ -374,6 +374,7 @@ inline u32 pspFastRand()
 	return IO_RAND;
 }
 
+/*
 //Fast way to check IsNaN on doubles //Corn
 inline bool IsNaN_Double(double x)
  {
@@ -401,6 +402,7 @@ inline bool IsNaN_Float(float x)
 
 	 return (Conv.val_I & 0x7fffffff) > 0x7f800000;
 }
+*/
 
 #endif // DAEDMATHS_H__
 

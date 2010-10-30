@@ -1491,12 +1491,13 @@ void DLParser_DumpVtxInfo(u32 address, u32 v0_idx, u32 num_verts)
 			f32 tv = f32(nTV) * (1.0f / 32.0f);
 
 			const v4 & t = PSPRenderer::Get()->GetTransformedVtxPos( idx );
+			const v4 & p = PSPRenderer::Get()->GetProjectedVtxPos( idx );
 
 			psSrc += 8;			// Increase by 16 bytes
 			pcSrc += 16;
 
-			DL_PF(" #%02d Flags: 0x%04x Pos: {% 6f,% 6f,% 6f} Tex: {%+7.2f,%+7.2f}, Extra: %02x %02x %02x %02x (transf: {% 6f,% 6f,% 6f})",
-				idx, wFlags, x, y, z, tu, tv, a, b, c, d, t.x, t.y, t.z );
+			DL_PF(" #%02d Flags: 0x%04x Pos:{% 6f,% 6f,% 6f} Tex:{%+7.2f,%+7.2f}, Extra: %02x %02x %02x %02x (tran:{% 6f,% 6f,% 6f,% 6f} proj:{% 6f,% 6f,% 6f,% 6f})",
+				idx, wFlags, x, y, z, tu, tv, a, b, c, d, t.x, t.y, t.z, t.w, p.x, p.y, p.z, p.w);
 		}
 	}
 }

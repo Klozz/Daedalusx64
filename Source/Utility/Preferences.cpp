@@ -620,6 +620,7 @@ const char *			ROM_GetFrameskipDescription( EFrameskipValue value )
 	switch( value )
 	{
 	case FV_DISABLED:		return "Disabled";
+	case FV_AUTO:			return "Auto";
 	case FV_1:				return "1";
 	case FV_2:				return "2";
 	case FV_3:				return "3";
@@ -629,7 +630,6 @@ const char *			ROM_GetFrameskipDescription( EFrameskipValue value )
 	case FV_7:				return "7";
 	case FV_8:				return "8";
 	case FV_9:				return "9";
-	case FV_10:				return "10";
 #ifndef DAEDALUS_PUBLIC_RELEASE
 	case FV_99:				return "99";
 #endif

@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility/IO.h"
 
 #include "Graphics/GraphicsContext.h"
+#include "Plugins/GraphicsPlugin.h"
 
 #include "Debug/Dump.h"
 #include "Debug/DBGConsole.h"
@@ -706,6 +707,7 @@ void DLParser_Process()
 		DLParser_ProcessDList();
 		PSPRenderer::Get()->EndScene();
 	}
+	gGraphicsPlugin->UpdateScreen();
 
 	// Do this regardless!
 	FinishRDPJob();

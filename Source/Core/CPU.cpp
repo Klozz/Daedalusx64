@@ -54,9 +54,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "ConfigOptions.h"
 
-#include "Plugins/GraphicsPlugin.h"
-#include "Plugins/AudioPlugin.h"
-
 #include <algorithm>
 #include <string>
 
@@ -714,20 +711,11 @@ void CPU_HANDLE_COUNT_INTERRUPT()
 			Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_VI);
 			R4300_Interrupt_UpdateCause3();
 
-			if (gGraphicsPlugin != NULL)
-			{
-				gGraphicsPlugin->UpdateScreen();
-			}
-
-			if (g_pAiPlugin != NULL)
-			{
-				g_pAiPlugin->Update(false);
-			}
-
 			//ToDo: Has to be a better way than this???
-			if ((gVerticalInterrupts & 0x3C) == 0) // every 60 frame
+			//Maybe After each X frames instead of each 60 VI?
+			if ((gVerticalInterrupts & 0x3C) == 0) // every 60 VBLs
 				Save::Flush();
-
+			//Same here?
 			if( gSaveStateOperation != SSO_NONE )
 			{
 				HandleSaveStateOperation();

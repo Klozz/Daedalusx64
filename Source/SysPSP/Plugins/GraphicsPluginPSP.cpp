@@ -251,7 +251,7 @@ void CGraphicsPluginPsp::UpdateScreen()
 			//skip next frame if in auto mode and we are running slow //Corn
 			if(gFrameskipValue == FV_AUTO)
 			{
-				if(!gFrameskipActive && (Fsync < 1.0f)) gFrameskipActive = true;
+				if(!gFrameskipActive && (Fsync < 0.965f)) gFrameskipActive = true;
 				else gFrameskipActive = false;
 			}
 			//Or skip frames as set in menu

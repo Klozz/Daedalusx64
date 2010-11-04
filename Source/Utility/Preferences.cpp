@@ -442,7 +442,7 @@ SRomPreferences::SRomPreferences()
 	,	DynarecEnabled( true )
 	,	DynarecStackOptimisation( true )
 	,	DynarecLoopOptimisation( true )
-	,	DoubleDisplayEnabled( false )
+	,	DoubleDisplayEnabled( true )
 	,	SimulateDoubleDisabled( false )
 	,	CleanSceneEnabled( false )
 	,	IncreaseVI_Event( false )
@@ -469,7 +469,7 @@ void SRomPreferences::Reset()
 	DynarecEnabled = true;
 	DynarecStackOptimisation = true;
 	DynarecLoopOptimisation = true;
-	DoubleDisplayEnabled =false;
+	DoubleDisplayEnabled = true;
 	SimulateDoubleDisabled = false;
 	CleanSceneEnabled = false;
 	IncreaseVI_Event = false;

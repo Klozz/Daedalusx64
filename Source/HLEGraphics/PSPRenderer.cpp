@@ -731,16 +731,16 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 					// Might need abit of tweaking though.
 					// Breaks Starfox...
 					// Breaks Double display list //Corn 
-					if( !gDoubleDisplayEnabled )
-					{
-						if( gRemoveZFighting )
-						{
-							if( IsZModeDecal() )
-								sceGuDepthOffset(50);	// We need atleast 40 to fix Mario 64's z-fighting issues.
-							else
-								sceGuDepthOffset(0);
-						}
-					}
+					//if( !gDoubleDisplayEnabled )
+					//{
+					//	if( gRemoveZFighting )
+					//	{
+					//		if( IsZModeDecal() )
+					//			sceGuDepthOffset(50);	// We need atleast 40 to fix Mario 64's z-fighting issues.
+					//		else
+					//			sceGuDepthOffset(0);
+					//	}
+					//}
  				}
 				else
 				{
@@ -1469,7 +1469,12 @@ bool PSPRenderer::FlushTris()
 	//	Render out our vertices
 	//	XXXX Should be using GetWorldProject()?
 	//
-	const Matrix4x4	&		projection( mProjectionStack[mProjectionTop] );
+	Matrix4x4 &	projection( mProjectionStack[mProjectionTop] );
+
+	//If decal polys, we shift geometry in Z a bit with projection matrix
+	//to eliminate z-fight //Corn
+	if( (gRDPOtherMode.zmode == 3) && gRemoveZFighting ) projection.mRaw[14] -= 0.3f;
+
 	const ScePspFMatrix4 *	p_psp_proj( reinterpret_cast< const ScePspFMatrix4 * >( &projection ) );
 	
 	sceGuSetMatrix( GU_PROJECTION, p_psp_proj );

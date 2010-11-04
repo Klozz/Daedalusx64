@@ -290,7 +290,7 @@ bool IRomSettingsDB::OpenSettingsFile( const char * filename )
 		}
 		if( p_section->FindProperty( "DoubleDisplayEnabled", &p_property ) )
 		{
-			settings.DoubleDisplayEnabled = p_property->GetBooleanValue( false );
+			settings.DoubleDisplayEnabled = p_property->GetBooleanValue( true );
 		}
 		if( p_section->FindProperty( "SimulateDoubleDisabled", &p_property ) )
 		{
@@ -440,7 +440,7 @@ void IRomSettingsDB::OutputSectionDetails( const RomID & id, const RomSettings &
 	if( !settings.DynarecSupported )			fprintf(fh, "DynarecSupported=no\n");
 	if( !settings.DynarecStackOptimisation )	fprintf(fh, "DynarecStackOptimisation=no\n");
 	if( !settings.DynarecLoopOptimisation )		fprintf(fh, "DynarecLoopOptimisation=no\n");
-	if( settings.DoubleDisplayEnabled )			fprintf(fh, "DoubleDisplayEnabled=yes\n");
+	if( settings.DoubleDisplayEnabled )			fprintf(fh, "DoubleDisplayEnabled=no\n");
 	if( settings.SimulateDoubleDisabled )		fprintf(fh, "SimulateDoubleDisabled=yes\n");
 	if( settings.CleanSceneEnabled )			fprintf(fh, "CleanSceneEnabled=yes\n");
 	if( settings.IncreaseVI_Event )				fprintf(fh, "IncreaseVI_Event=yes\n");
@@ -503,7 +503,7 @@ RomSettings::RomSettings()
 ,	DynarecSupported( true )
 ,	DynarecStackOptimisation( true )
 ,	DynarecLoopOptimisation( true )
-,	DoubleDisplayEnabled( false )
+,	DoubleDisplayEnabled( true )
 ,	SimulateDoubleDisabled( false )
 ,	CleanSceneEnabled( false )
 ,	IncreaseVI_Event( false )
@@ -538,7 +538,7 @@ void	RomSettings::Reset()
 	DynarecSupported = true;
 	DynarecStackOptimisation = true;
 	DynarecLoopOptimisation = true;
-	DoubleDisplayEnabled = false;
+	DoubleDisplayEnabled = true;
 	SimulateDoubleDisabled = false;
 	CleanSceneEnabled = false;
 	IncreaseVI_Event = false;

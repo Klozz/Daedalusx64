@@ -221,6 +221,10 @@ static bool SortByGameName( const SRomInfo * a, const SRomInfo * b )
 //*************************************************************************************
 //
 //*************************************************************************************
+//Lifting this out makes it remmember last choosen ROM
+//Could probably be fixed better but C++ is giving me an attitude //Corn
+static u32 mCurrentSelection = 0;
+
 class IRomSelectorComponent : public CRomSelectorComponent
 {
 		typedef std::vector<SRomInfo*>	RomInfoList;
@@ -249,7 +253,6 @@ class IRomSelectorComponent : public CRomSelectorComponent
 		CFunctor1< const char * > *	OnRomSelected; 
 		RomInfoList					mRomsList;
 		AlphaMap					mRomCategoryMap;
-		u32							mCurrentSelection;
 		s32							mCurrentScrollOffset;
 		float						mSelectionAccumulator;
 		std::string					mSelectedRom;
@@ -293,7 +296,7 @@ CRomSelectorComponent *	CRomSelectorComponent::Create( CUIContext * p_context, C
 IRomSelectorComponent::IRomSelectorComponent( CUIContext * p_context, CFunctor1< const char * > * on_rom_selected )
 :	CRomSelectorComponent( p_context )
 ,	OnRomSelected( on_rom_selected )
-,	mCurrentSelection( 0 )
+//,	mCurrentSelection( 0 )
 ,	mCurrentScrollOffset( 0 )
 ,	mSelectionAccumulator( 0 )
 ,	mpPreviewTexture( NULL )
@@ -1204,7 +1207,7 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 
 	ECategory current_category( GetCurrentCategory() );
 
-	u32				initial_selection( mCurrentSelection );
+	u32	initial_selection( mCurrentSelection );
 		
 	if( mQuitTriggered)
 	{

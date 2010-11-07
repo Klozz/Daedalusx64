@@ -36,7 +36,7 @@ namespace
 {
 	const char * const		LOGO_FILENAME = DAEDALUS_PSP_PATH( "Resources/logo.png" );
 
-	const float				MAX_TIME = 3.0f;
+	const float				MAX_TIME = 0.5f;
 }
 
 //*************************************************************************************

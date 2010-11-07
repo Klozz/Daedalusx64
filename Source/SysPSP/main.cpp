@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility/IO.h"
 #include "Utility/Preferences.h"
 #include "Utility/Timer.h"
+#include "Utility/Thread.h"
 
 #include "Graphics/GraphicsContext.h"
 
@@ -240,6 +241,48 @@ static int SetupCallbacks()
 }
 #endif
 
+//*************************************************************************************
+//Panic button thread quits to the menu when pressed
+//*************************************************************************************
+static int PanicThread( SceSize args, void * argp )
+{
+	u32 count = 0;
+
+	DAEDALUS_ERROR("PANIC THREAD STARTED\n");
+
+	//Loop 4 ever
+	while(1)
+	{
+		if( getbuttons() & PSP_CTRL_NOTE )
+		{
+			if(++count > 5)		//If button presse for more that 2sec we return to main menu
+			{
+				CGraphicsContext::Get()->ClearAllSurfaces();
+				DAEDALUS_ERROR("Detected panic");
+				CPU_Halt("Panic");
+			}
+		}
+		else count = 0;
+
+		//Idle here, only check button 3 times/sec not to hog CPU time from EMU
+		ThreadSleepMs(300);	
+	}
+
+	return 0;
+}
+
+static int SetupPanic()
+{
+	int thidf = sceKernelCreateThread( "PanicThread", PanicThread, 0x11, 0xFA0, PSP_THREAD_ATTR_USER, 0 );
+
+	if(thidf >= 0)
+	{
+		sceKernelStartThread(thidf, 0, 0);
+	}
+
+	return 0;
+}
+
 extern void InitialiseJobManager();
 //*************************************************************************************
 //
@@ -283,6 +326,9 @@ static bool	Initialize()
 		printf( "Couldn't load kernelbuttons.prx: %08X\n", Get_Kernel_Buttons );
 		PSP_NO_KBUTTONS = true;
 	}
+
+	//Init Panic button thread
+	SetupPanic();
 
 	// We have to kill our Callbacks if we hook succesfully "home" button...
 	if( PSP_NO_KBUTTONS )

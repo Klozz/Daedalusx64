@@ -1458,7 +1458,7 @@ bool PSPRenderer::FlushTris()
 
 	//
 	//	For now do all clipping though ge -
-	//
+	//	Some billboards (Koopa air) in Mario Kart have issues if Cull gets (re)moved
 	if( m_bCullFront )
 	{
 		sceGuFrontFace(GU_CW);

@@ -133,7 +133,7 @@ public:
 	// Viewport stuff
 	void				SetPSPViewport( s32 x, s32 y, u32 w, u32 h );
 	void				SetN64Viewport( const v3 & scale, const v3 & trans );
-	void				SetScissor( s32 x0, s32 y0, s32 x1, s32 y1 );
+	void				SetScissor( u32 x0, u32 y0, u32 x1, u32 y1 );
 
 	// Fog stuff
 	void				SetFogEnable(bool enable);

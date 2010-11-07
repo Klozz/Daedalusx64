@@ -136,8 +136,10 @@ enum CycleType
 extern u32 SCR_WIDTH;
 extern u32 SCR_HEIGHT;
 
-static f32 sViWidth = 320.0f;
-static f32 sViHeight = 240.0f;
+static f32 fViWidth = 320.0f;
+static f32 fViHeight = 240.0f;
+static u32 uViWidth = 320;
+static u32 uViHeight = 240;
 
 static const float gTexRectDepth( 0.0f );
 
@@ -326,15 +328,15 @@ bool PSPRenderer::RestoreRenderStates()
 //*****************************************************************************
 void PSPRenderer::SetVIScales()
 {
-	f32 sRatio = 0.75f;	// NTSC
+	const f32 sRatio = 0.75f;	// NTSC
 
 	u32 width = Memory_VI_GetRegister( VI_WIDTH_REG );
 
 	u32 ScaleX = Memory_VI_GetRegister( VI_X_SCALE_REG ) & 0xFFF;
 	u32 ScaleY = Memory_VI_GetRegister( VI_Y_SCALE_REG ) & 0xFFF;
 
-	f32 fScaleX = (f32)ScaleX / (1<<10);
-	f32 fScaleY = (f32)ScaleY / (1<<10);
+	f32 fScaleX = (f32)ScaleX / 1024.0f;
+	f32 fScaleY = (f32)ScaleY / 1024.0f;
 
 	//DBGConsole_Msg(DEBUG_VI, "VI_X_SCALE_REG set to 0x%08x (%f)", dwValue, 1/fScale);
 	//DBGConsole_Msg(DEBUG_VI, "VI_Y_SCALE_REG set to 0x%08x (%f)", dwValue, 1/fScale);
@@ -343,42 +345,50 @@ void PSPRenderer::SetVIScales()
 	u32 VStartReg = Memory_VI_GetRegister( VI_V_START_REG );
 
 	u32	hstart = HStartReg >> 16;
-	u32	hend = HStartReg & 0xffff;
+	u32	hend   = HStartReg & 0xffff;
 	//DBGConsole_Msg( 0, "h start/end %x %x", hstart, hend );		// 128 725 - 597
 
 	u32	vstart = VStartReg >> 16;
-	u32	vend = VStartReg & 0xffff;
+	u32	vend   = VStartReg & 0xffff;
 	//DBGConsole_Msg( 0, "v start/end %x %x", vstart, vend );		// 56 501 - 445
 
-	sViWidth  = (u32)( (hend-hstart)    * fScaleX);
-	sViHeight = (u32)(((vend-vstart)/2) * fScaleY);
-
+	fViWidth  = (u32)((f32) (hend-hstart)    * fScaleX);
+	fViHeight = (u32)((f32)((vend-vstart)/2) * fScaleY);
+	
+	//If we are close to 240 in height then set to 240 //Corn
+	if( abs(240 - (u32)fViHeight) < 4 ) fViHeight = 240.0f;
+	
 	// XXX Need to check PAL games.
 	//if(g_ROM.TvType != OS_TV_NTSC) sRatio = 9/11.0f;
 
 	if( ScaleY == 0 )
 	{
-		sViHeight = sViWidth*sRatio;
+		fViHeight = fViWidth * sRatio;
 	}
 	else
 	{
 		if( width > 0x300 )			//This sets the correct height in various games
-			sViHeight *= 2.0f;		//ex : Megaman 64
+			fViHeight *= 2.0f;		//ex : Megaman 64
 	}
 
-	if( sViHeight<100 || sViWidth<100 )
+	//Sometimes HStartReg and VStartReg are zero
+	//This fixes gaps is some games ex: CyberTiger
+	if( (fViHeight < 100) || (fViWidth < 100) )
 	{
-		//Sometimes HStartReg and VStartReg are zero
-		//This fixes gaps is some games ex: CyberTiger
-		sViWidth = (f32)width;
-		sViHeight = sViWidth*sRatio;
+		fViWidth = (f32)width;
+		fViHeight = fViWidth * sRatio;
 	}
+
 	// With recent fixes, this doesn't seem to be used anymore ~ Salvy
 	//If zero: Set to defaults
 	/*
-	if ( sViWidth == 0 ) sViWidth = 320;
-	if ( sViHeight == 0 ) sViHeight = 240;
+	if ( fViWidth == 0 ) fViWidth = 320;
+	if ( fViHeight == 0 ) fViHeight = 240;
 	*/
+
+	//Used to set a limit on Scissors //Corn
+	uViWidth  = (u32)fViWidth - 1;
+	uViHeight = (u32)fViHeight - 1;
 }
 
 //*****************************************************************************
@@ -409,7 +419,7 @@ void PSPRenderer::BeginScene()
 
 	RestoreRenderStates();
 
-	extern bool			gNeedZBufferUdate;
+	extern bool	gNeedZBufferUdate;
 	gNeedZBufferUdate = true;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
@@ -475,8 +485,8 @@ void	PSPRenderer::SelectPlaceholderTexture( EPlaceholderTextureType type )
 //*****************************************************************************
 void PSPRenderer::SetPSPViewport( s32 x, s32 y, u32 w, u32 h )
 {
-	mN64ToPSPScale.x = f32( w ) / sViWidth;
-	mN64ToPSPScale.y = f32( h ) / sViHeight;
+	mN64ToPSPScale.x = f32( w ) / fViWidth;
+	mN64ToPSPScale.y = f32( h ) / fViHeight;
 
 	mN64ToPSPTranslate.x  = f32( x );
 	mN64ToPSPTranslate.y  = f32( y );
@@ -731,16 +741,16 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 					// Might need abit of tweaking though.
 					// Breaks Starfox...
 					// Breaks Double display list //Corn 
-					//if( !gDoubleDisplayEnabled )
-					//{
-					//	if( gRemoveZFighting )
-					//	{
-					//		if( IsZModeDecal() )
-					//			sceGuDepthOffset(50);	// We need atleast 40 to fix Mario 64's z-fighting issues.
-					//		else
-					//			sceGuDepthOffset(0);
-					//	}
-					//}
+					/*if( !gDoubleDisplayEnabled )
+					{
+						if( gRemoveZFighting )
+						{
+							if( IsZModeDecal() )
+								sceGuDepthOffset(50);	// We need atleast 40 to fix Mario 64's z-fighting issues.
+							else
+								sceGuDepthOffset(0);
+						}
+					}*/
  				}
 				else
 				{
@@ -1159,11 +1169,9 @@ bool PSPRenderer::AddTri(u32 v0, u32 v1, u32 v2)
 	{
 		DL_PF("   Tri: %d,%d,%d", v0, v1, v2);
 
-		m_swIndexBuffer[   m_dwNumIndices ] = (u16)v0;
-		m_swIndexBuffer[ ++m_dwNumIndices ] = (u16)v1;
-		m_swIndexBuffer[ ++m_dwNumIndices ] = (u16)v2;
-		
-		++m_dwNumIndices;
+		m_swIndexBuffer[ m_dwNumIndices++ ] = (u16)v0;
+		m_swIndexBuffer[ m_dwNumIndices++ ] = (u16)v1;
+		m_swIndexBuffer[ m_dwNumIndices++ ] = (u16)v2;
 
 		mVtxClipFlagsUnion |= f0 | f1 | f2;
 
@@ -1370,7 +1378,7 @@ bool PSPRenderer::FlushTris()
 
 	// Hack for Conker BFD || no vertices to render? //Corn
 	extern bool bConkerHideShadow;
-	if( (g_ROM.GameHacks == CONKER && bConkerHideShadow) || num_vertices == 0)
+	if( (bConkerHideShadow && (g_ROM.GameHacks == CONKER)) || num_vertices == 0)
 	{
 		DAEDALUS_ERROR("Warning: Hack for Conker shadow || No Vtx to render" );
 		m_dwNumIndices = 0;
@@ -1409,13 +1417,14 @@ bool PSPRenderer::FlushTris()
 		EnableTexturing( gTextureTile );
 
 		// Bias points in decal mode
-		if (IsZModeDecal())
+		// Is this for Z-fight? not working to well for that, at least not on PSP//Corn
+		/*if (IsZModeDecal())
 		{
 			for ( u32 v = 0; v < num_vertices; v++ )
 			{
 				p_vertices[v].Position.z += DECAL_Z_OFFSET;
 			}
-		}
+		}*/
 	}
 
 	//
@@ -1450,7 +1459,7 @@ bool PSPRenderer::FlushTris()
 	//
 	//	For now do all clipping though ge -
 	//
-	if(m_bCullFront)
+	if( m_bCullFront )
 	{
 		sceGuFrontFace(GU_CW);
 		sceGuEnable(GU_CULL_FACE);
@@ -1473,7 +1482,7 @@ bool PSPRenderer::FlushTris()
 
 	//If decal polys, we shift geometry in Z a bit with projection matrix
 	//to eliminate z-fight //Corn
-	if( (gRDPOtherMode.zmode == 3) && gRemoveZFighting ) projection.mRaw[14] -= 0.3f;
+	if( (gRDPOtherMode.zmode == 3) && gRemoveZFighting ) projection.mRaw[14] -= 0.4f;
 
 	const ScePspFMatrix4 *	p_psp_proj( reinterpret_cast< const ScePspFMatrix4 * >( &projection ) );
 	
@@ -1521,11 +1530,9 @@ void PSPRenderer::PrepareTrisClipped( DaedalusVtx ** p_p_vertices, u32 * p_num_v
 
 	for(u32 i = 0; i < (m_dwNumIndices - 2);)
 	{
-		u32 idx0 = m_swIndexBuffer[   i ];
-		u32 idx1 = m_swIndexBuffer[ ++i ];
-		u32 idx2 = m_swIndexBuffer[ ++i ];
-
-		++i;
+		u32 idx0 = m_swIndexBuffer[ i++ ];
+		u32 idx1 = m_swIndexBuffer[ i++ ];
+		u32 idx2 = m_swIndexBuffer[ i++ ];
 
 		if(mVtxProjected[idx0].ClipFlags | mVtxProjected[idx1].ClipFlags | mVtxProjected[idx2].ClipFlags)
 		{
@@ -1550,11 +1557,9 @@ void PSPRenderer::PrepareTrisClipped( DaedalusVtx ** p_p_vertices, u32 * p_num_v
 			}
 			for( u32 j = 0; j <= out - 3; ++j)
 			{
-				clipped_vertices[   num_vertices ] = temp_a[ 0 ];
-				clipped_vertices[ ++num_vertices ] = temp_a[ j + 1 ];
-				clipped_vertices[ ++num_vertices ] = temp_a[ j + 2 ];
-
-				++num_vertices;
+				clipped_vertices[ num_vertices++ ] = temp_a[ 0 ];
+				clipped_vertices[ num_vertices++ ] = temp_a[ j + 1 ];
+				clipped_vertices[ num_vertices++ ] = temp_a[ j + 2 ];
 			}
 		}
 		else
@@ -1565,11 +1570,9 @@ void PSPRenderer::PrepareTrisClipped( DaedalusVtx ** p_p_vertices, u32 * p_num_v
 				break;
 			}
 
-			clipped_vertices[   num_vertices ] = mVtxProjected[ idx0 ];
-			clipped_vertices[ ++num_vertices ] = mVtxProjected[ idx1 ];
-			clipped_vertices[ ++num_vertices ] = mVtxProjected[ idx2 ];
-
-			++num_vertices;
+			clipped_vertices[ num_vertices++ ] = mVtxProjected[ idx0 ];
+			clipped_vertices[ num_vertices++ ] = mVtxProjected[ idx1 ];
+			clipped_vertices[ num_vertices++ ] = mVtxProjected[ idx2 ];
 		}
 	}
 
@@ -2089,12 +2092,12 @@ void PSPRenderer::ModifyVertexInfo(u32 whered, u32 vert, u32 val)
 				if((current_scale&0xF) != 0 )
 				{
 					// Tarzan... I don't know why is so different...
-					SetVtxXY( vert, x / sViWidth , y / sViHeight );
+					SetVtxXY( vert, f32(x) / fViWidth , f32(y) / fViHeight );
 				}
 				else
 				{	
 					// Megaman and other games
-					SetVtxXY( vert, (x<<1) / sViWidth , (y<<1) / sViHeight );
+					SetVtxXY( vert, f32(x<<1) / fViWidth , f32(y<<1) / fViHeight );
 				}
 			}
 			break;
@@ -2263,12 +2266,10 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 			ti.GetFormatName(), ti.GetSizeInBits(),
 			ti.GetWidth(), ti.GetHeight() );
 
-	if( mpTexture[ index ] != NULL && mpTexture[ index ]->GetTextureInfo() == ti )
-		return;
-
+	if( (mpTexture[ index ] != NULL) && (mpTexture[ index ]->GetTextureInfo() == ti) ) return;
 
 	// Check for 0 width/height textures
-	if( ti.GetWidth() == 0 || ti.GetHeight() == 0 )
+	if( (ti.GetWidth() == 0) || (ti.GetHeight() == 0) )
 	{
 		DAEDALUS_DL_ERROR( "Loading texture with 0 width/height" );
 	}
@@ -2309,8 +2310,12 @@ void	PSPRenderer::SetCullMode( bool bCullFront, bool bCullBack )
 //*****************************************************************************
 //
 //*****************************************************************************
-void	PSPRenderer::SetScissor( s32 x0, s32 y0, s32 x1, s32 y1 )
+void	PSPRenderer::SetScissor( u32 x0, u32 y0, u32 x1, u32 y1 )
 {
+	//Clamp scissor to max N64 screen resolution //Corn
+	if( x1 > uViWidth )  x1 = uViWidth;
+	if( y1 > uViHeight ) y1 = uViHeight;
+
 	v2		n64_coords_tl( x0, y0 );
 	v2		n64_coords_br( x1, y1 );
 

@@ -632,7 +632,6 @@ bool	CTexture::IsFresh() const
 //*************************************************************************************
 // 
 //*************************************************************************************
-#if 1	//1->new, 0-> old
 bool	CTexture::HasExpired() const
 {
 	//Needs to be cleared anytime a texture is updated to avoid graphical bugs
@@ -649,29 +648,7 @@ bool	CTexture::HasExpired() const
 	//Spread them over time so not all get killed at once, lower value uses less cache tho //Corn
 	return gRDPFrame - mFrameLastUsed > (20 + (pspFastRand() & 0x7)); 
 }
-#else
-bool	CTexture::HasExpired() const
-{
-	u32	FRAMES_TO_KILL;
 
-	// XXXX Suspect this could do with tweaking
-	if (!IsFresh())
-	{
-		//Needs to be cleared anytime a texture is updated to avoid graphical bugs
-		//This will force a texture to be reloaded //Corn
-		FRAMES_TO_KILL = 0;
-	}
-	else
-	{
-		//Otherwise a higher number can be used to avoid cache thrashing
-		//May need further adjustment (based on the ROM's Framrate)
-		//Spread them over time so not all get killed at once, lower value uses less cache tho //Corn
-		FRAMES_TO_KILL = 20 + (pspFastRand() & 0x7); 
-	}
-	
-	return gRDPFrame - mFrameLastUsed > FRAMES_TO_KILL;
-}
-#endif
 //*****************************************************************************
 //
 //*****************************************************************************

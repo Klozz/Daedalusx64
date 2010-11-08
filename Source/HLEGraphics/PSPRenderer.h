@@ -280,8 +280,8 @@ private:
 
 	bool				m_bZBuffer;
 
-	bool				m_bCullFront;
-	bool				m_bCullBack;
+	bool				m_bCull;
+	int					m_bCull_mode;
 	
 	u32					mAlphaThreshold;
 

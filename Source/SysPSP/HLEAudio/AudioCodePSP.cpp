@@ -299,15 +299,15 @@ u32 AudioCode::AddBuffer( u8 *start, u32 length )
 
 	mBufferLength = num_samples;
 	
-	u32 rate=FramerateLimiter_GetSyncI();
-
+	//Adapt Audio to sync% //Corn
 	if(gAudioRateMatch)
 	{
-		if(rate>88200) mOutputFrequency=88200;
-		else if(rate<44100) mOutputFrequency=44100;
-		else mOutputFrequency=rate;
+		u32 rate = FramerateLimiter_GetSyncI();	//Calc audio rate according to filtered sync value
+		if(rate > 88200) mOutputFrequency = 88200;	//limit upper rate
+		else if(rate < 44100) mOutputFrequency = 44100;	//limit lower rate
+		else mOutputFrequency = rate;
 	}
-	else mOutputFrequency=44100;
+	else mOutputFrequency = 44100;
 
 	switch( gAudioPluginEnabled )
 	{

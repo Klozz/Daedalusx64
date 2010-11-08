@@ -255,8 +255,9 @@ static int PanicThread( SceSize args, void * argp )
 	{
 		if( getbuttons() & PSP_CTRL_NOTE )
 		{
-			if(++count > 5)		//If button presse for more that 2sec we return to main menu
+			if(++count > 3)		//If button presse for more that 2sec we return to main menu
 			{
+				count = 0;
 				CGraphicsContext::Get()->ClearAllSurfaces();
 				DAEDALUS_ERROR("Detected panic");
 				CPU_Halt("Panic");

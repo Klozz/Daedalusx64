@@ -175,8 +175,8 @@ PSPRenderer::PSPRenderer()
 ,	m_dwNumLights(0)
 ,	m_bZBuffer(false)
 
-,	m_bCullFront(false)
-,	m_bCullBack(true)
+,	m_bCull(true)
+,	m_bCull_mode(GU_CCW)
 
 ,	mAlphaThreshold(0)
 
@@ -740,17 +740,16 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 					// Fixes Zfighting issues we have on the PSP.
 					// Might need abit of tweaking though.
 					// Breaks Starfox...
-					// Breaks Double display list //Corn 
-					/*if( !gDoubleDisplayEnabled )
+					// sceGuDepthOffset() breaks Double display list so we try sceGuDepthRange() instead //Corn 
+					if( gRemoveZFighting )
 					{
-						if( gRemoveZFighting )
-						{
-							if( IsZModeDecal() )
-								sceGuDepthOffset(50);	// We need atleast 40 to fix Mario 64's z-fighting issues.
-							else
-								sceGuDepthOffset(0);
-						}
-					}*/
+						if( IsZModeDecal() )
+							sceGuDepthRange(65535,80);
+							//sceGuDepthOffset(50);	// We need atleast 40 to fix Mario 64's z-fighting issues.
+						else
+							sceGuDepthRange(65535,0);
+							//sceGuDepthOffset(0);
+					}
  				}
 				else
 				{
@@ -1459,14 +1458,9 @@ bool PSPRenderer::FlushTris()
 	//
 	//	For now do all clipping though ge -
 	//	Some billboards (Koopa air) in Mario Kart have issues if Cull gets (re)moved
-	if( m_bCullFront )
+	if( m_bCull )
 	{
-		sceGuFrontFace(GU_CW);
-		sceGuEnable(GU_CULL_FACE);
-	}
-	else if( m_bCullBack )
-	{
-		sceGuFrontFace(GU_CCW);
+		sceGuFrontFace(m_bCull_mode);
 		sceGuEnable(GU_CULL_FACE);
 	}
 	else
@@ -1480,9 +1474,9 @@ bool PSPRenderer::FlushTris()
 	//
 	Matrix4x4 &	projection( mProjectionStack[mProjectionTop] );
 
-	//If decal polys, we shift geometry in Z a bit with projection matrix
-	//to eliminate z-fight //Corn
-	if( (gRDPOtherMode.zmode == 3) && gRemoveZFighting ) projection.mRaw[14] -= 0.4f;
+	//If decal polys, we shift near/far plane a bit with projection matrix to eliminate z-fight //Corn
+	//Works well in most games and is practically "free", however OOT does not work :(
+	//if( (gRDPOtherMode.zmode == 3) && gRemoveZFighting ) projection.mRaw[10] += 0.0004f;
 
 	const ScePspFMatrix4 *	p_psp_proj( reinterpret_cast< const ScePspFMatrix4 * >( &projection ) );
 	
@@ -2303,8 +2297,17 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 //*****************************************************************************
 void	PSPRenderer::SetCullMode( bool bCullFront, bool bCullBack )
 {
-	m_bCullFront = bCullFront;
-	m_bCullBack = bCullBack;
+	if( bCullFront )
+	{
+		m_bCull = true;
+		m_bCull_mode = GU_CW;
+	}
+	else if( bCullBack )
+	{
+		m_bCull = true;
+		m_bCull_mode = GU_CCW;
+	}
+	else m_bCull = false;
 }
 
 //*****************************************************************************
@@ -2368,7 +2371,7 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace
 			//Hack needed to show heart in OOT & MM
 			//it renders at Z cordinate = 0.0f that gets clipped away.
 			//so we translate them a bit along Z to make them stick :) //Corn
-			if((g_ROM.GameHacks == ZELDA_MM) || (g_ROM.GameHacks == ZELDA_OOT)) mProjectionStack[mProjectionTop].mRaw[14] += 0.4f;
+			if((g_ROM.GameHacks == ZELDA_OOT) || (g_ROM.GameHacks == ZELDA_MM)) mProjectionStack[mProjectionTop].mRaw[14] += 0.4f;
 		}
 		else
 			mProjectionStack[mProjectionTop] = mat * mProjectionStack[mProjectionTop];

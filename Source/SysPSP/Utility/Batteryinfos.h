@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2010 Salvy6735
+Copyright (C) 2010 Salvy6735 / psppwner300
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -17,39 +17,44 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#include <time.h>
 #include <pspdebug.h>
 #include <psppower.h>
+#include <psputils.h>
+#include <psputility_sysparam.h>
 
-#ifndef LOWBATTERY_H_
-#define LOWBATTERY_H_
+#ifndef BATTERYINFOS_H_
+#define BATTERYINFOS_H_
 
-// ToDO : Improve futher this
-//
 ///////////////////////////////////////////////////////////////////////////////
-//																			 //
+//Battery info psppwner300 / Corn											 //
 ///////////////////////////////////////////////////////////////////////////////
-void low_battery_warning()
-{
-	//if( !gGlobalPreferences.BatteryWarning || scePowerIsBatteryCharging() ) return;
-	if( scePowerIsBatteryCharging() ) return;
-	int bat = scePowerGetBatteryLifePercent();
-	if (bat > 9) return;	//No warning unless battery is under 10%
-
-	static u32 counter = 0;
-
-	if ((++counter & 63) < 50)	// Make it flash
+void battery_infos()
+{	
+	struct tm *current_time;
+	time_t current_time_flat;
+	sceKernelLibcTime(&current_time_flat);
+	current_time = localtime(&current_time_flat);
+	
+	s32 bat = scePowerGetBatteryLifePercent();
+	s32 batteryLifeTime = scePowerGetBatteryLifeTime();
+	
+	if (scePowerIsBatteryExist())
 	{
-		const u32 red	=	0x000000ff;	//  Red..
+		const u32 black	=	0x00000000;	//  Black..
 		const u32 white =	0xffffffff;	//  White..
-
-		pspDebugScreenSetXY(50, 0);		// Allign to the left, becareful not touch the edges
-		pspDebugScreenSetBackColor( red );
+		
+		pspDebugScreenSetXY(0, 0);		// Allign to the left, becareful not touch the edges
+		pspDebugScreenSetBackColor( black );
 		pspDebugScreenSetTextColor( white );
-		pspDebugScreenPrintf( " Battery Low: %d%% ", bat);	// it's defined as a single character...
+		pspDebugScreenPrintf("Batt: %d%% %0.2fV %dC", bat, (float) scePowerGetBatteryVolt() / 1000.0f, scePowerGetBatteryTemp());
+		pspDebugScreenPrintf(" | %2dh%2dm", batteryLifeTime / 60, batteryLifeTime - 60 * (batteryLifeTime / 60));
+		pspDebugScreenPrintf(" | %02d%c%02d", current_time->tm_hour, (current_time->tm_sec&1?':':' '), current_time->tm_min);
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////
 //																			 //
 ///////////////////////////////////////////////////////////////////////////////
-#endif // LOWBATTERY_H_
+
+#endif // BATTERYINFOS_H_
 

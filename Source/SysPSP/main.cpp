@@ -246,6 +246,8 @@ static int SetupCallbacks()
 //*************************************************************************************
 static int PanicThread( SceSize args, void * argp )
 {
+	const u32 MASK = PSP_CTRL_LTRIGGER | PSP_CTRL_RTRIGGER | PSP_CTRL_DOWN | PSP_CTRL_CROSS;
+
 	u32 count = 0;
 
 	DAEDALUS_ERROR("PANIC THREAD STARTED\n");
@@ -253,9 +255,10 @@ static int PanicThread( SceSize args, void * argp )
 	//Loop 4 ever
 	while(1)
 	{
-		if( getbuttons() & PSP_CTRL_NOTE )
+		//if( getbuttons() & PSP_CTRL_NOTE )
+		if( (getbuttons() & MASK) == MASK )
 		{
-			if(++count > 3)		//If button presse for more that 2sec we return to main menu
+			if(++count > 5)		//If button presse for more that 2sec we return to main menu
 			{
 				count = 0;
 				CGraphicsContext::Get()->ClearAllSurfaces();

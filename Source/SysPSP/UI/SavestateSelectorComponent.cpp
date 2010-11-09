@@ -54,7 +54,7 @@ namespace
 	const s32				DESCRIPTION_AREA_LEFT = 16;
 	const s32				DESCRIPTION_AREA_RIGHT = 480-16;
 
-	const u32				NUM_SAVESTATE_SLOTS = 16;
+	const u32				NUM_SAVESTATE_SLOTS = 64;
 
 	const u32				INVALID_SLOT = u32( -1 );
 }
@@ -412,7 +412,7 @@ void	ISavestateSelectorComponent::Render()
 	if( mSelectedSlot == INVALID_SLOT )
 	{
 		if( mElements.GetSelectedIndex() > 14 )
-			mElements.Draw( mpContext, TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_LEFT, TEXT_AREA_TOP - mElements.GetSelectedIndex()*10 );
+			mElements.Draw( mpContext, TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_LEFT, TEXT_AREA_TOP - mElements.GetSelectedIndex()*11 );
 		else
 			mElements.Draw( mpContext, TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_LEFT, TEXT_AREA_TOP);
 

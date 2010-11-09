@@ -30,15 +30,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Core/RomSettings.h"
 
 #include "Utility/Preferences.h"
+#include "Utility/Thread.h"
 
 #include "Input/InputManager.h"
 
 #include "Graphics/ColourValue.h"
 #include "SysPSP/Graphics/DrawText.h"
+#include "SysPSP/Utility/PathsPSP.h"
 
 #include "ConfigOptions.h"
 
 #include <pspctrl.h>
+#include <pspkernel.h>
 
 namespace
 {
@@ -185,6 +188,7 @@ class IRomPreferencesScreen : public CRomPreferencesScreen, public CUIScreen
 	private:
 				void				OnConfirm();
 				void				OnCancel();
+				void				ResetDefaults();
 
 	private:
 		RomID						mRomID;
@@ -192,6 +196,8 @@ class IRomPreferencesScreen : public CRomPreferencesScreen, public CUIScreen
 		SRomPreferences				mRomPreferences;
 
 		bool						mIsFinished;
+
+		bool						mReset;
 
 		CUIElementBag				mElements;
 };
@@ -219,6 +225,7 @@ IRomPreferencesScreen::IRomPreferencesScreen( CUIContext * p_context, const RomI
 ,	mRomID( rom_id )
 ,	mRomName( "?" )
 ,	mIsFinished( false )
+,	mReset( false)
 {
 	CPreferences::Get()->GetRomPreferences( mRomID, &mRomPreferences );
 
@@ -241,6 +248,7 @@ IRomPreferencesScreen::IRomPreferencesScreen( CUIContext * p_context, const RomI
 //	mElements.Add( new CUISpacer( 16 ) );
 
 	mElements.Add( new CUICommandImpl( new CMemberFunctor< IRomPreferencesScreen >( this, &IRomPreferencesScreen::OnConfirm ), "Confirm Settings", "Confirm changes to settings and return." ) );
+	mElements.Add( new CUICommandImpl( new CMemberFunctor< IRomPreferencesScreen >( this, &IRomPreferencesScreen::ResetDefaults ), "Reset Settings", "Resets all preferences to default, and removes rom.db and all *.hle* savegame files." ) );
 	mElements.Add( new CUICommandImpl( new CMemberFunctor< IRomPreferencesScreen >( this, &IRomPreferencesScreen::OnCancel ), "Cancel", "Cancel changes to settings and return." ) );
 
 }
@@ -257,6 +265,18 @@ IRomPreferencesScreen::~IRomPreferencesScreen()
 //*************************************************************************************
 void	IRomPreferencesScreen::Update( float elapsed_time, const v2 & stick, u32 old_buttons, u32 new_buttons )
 {
+	if( mReset)
+	{
+		if( new_buttons & PSP_CTRL_SELECT )
+		{
+			remove(DAEDALUS_PSP_PATH("preferences.ini"));
+			remove(DAEDALUS_PSP_PATH("rom.db"));
+			remove(DAEDALUS_PSP_PATH("SaveGames/*.hle"));
+			ThreadSleepMs(2000);	//safety wait for MS
+			sceKernelExitGame();
+		}
+	}
+	
 	if(old_buttons != new_buttons)
 	{
 		if( new_buttons & PSP_CTRL_UP )
@@ -326,6 +346,12 @@ void	IRomPreferencesScreen::Render()
 								 DrawTextUtilities::TextWhite,
 								 VA_BOTTOM );
 	}
+	
+	if( mReset)
+	{
+		mpContext->DrawTextAlign(0,480,AT_CENTRE,235,"Changes require a reset (press SELECT to confirm).",
+			       	DrawTextUtilities::TextRed);
+	}
 }
 
 //*************************************************************************************
@@ -336,6 +362,14 @@ void	IRomPreferencesScreen::Run()
 	CUIScreen::Run();
 }
 
+
+//*************************************************************************************
+//
+//*************************************************************************************
+void	IRomPreferencesScreen::ResetDefaults()
+{	
+	mReset=true;
+}
 
 //*************************************************************************************
 //

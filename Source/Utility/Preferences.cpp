@@ -152,6 +152,7 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		BOOL_SETTING( gGlobalPreferences, HighlightInexactBlendModes, defaults );
 		BOOL_SETTING( gGlobalPreferences, CustomBlendModes, defaults );
 		BOOL_SETTING( gGlobalPreferences, BatteryWarning, defaults );
+		BOOL_SETTING( gGlobalPreferences, SkipSplash, defaults );
 		BOOL_SETTING( gGlobalPreferences, LogMicrocodes, defaults );
 		BOOL_SETTING( gGlobalPreferences, LargeROMBuffer, defaults );
 		FLOAT_SETTING( gGlobalPreferences, StickMinDeadzone, defaults );
@@ -344,6 +345,7 @@ void IPreferences::Commit()
 		OUTPUT_BOOL( gGlobalPreferences, HighlightInexactBlendModes, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, CustomBlendModes, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, BatteryWarning, defaults );
+		OUTPUT_BOOL( gGlobalPreferences, SkipSplash, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, LogMicrocodes, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, LargeROMBuffer, defaults );
 		OUTPUT_INT( gGlobalPreferences, GuiColor, defaults )
@@ -412,6 +414,7 @@ SGlobalPreferences::SGlobalPreferences()
 ,	HighlightInexactBlendModes( false )
 ,	CustomBlendModes( true )
 ,	BatteryWarning( false )
+,	SkipSplash( false )
 ,	LogMicrocodes( false )
 ,	LargeROMBuffer( true )
 ,	ForceTextureFilter( FORCE_DEFAULT_FILTER )

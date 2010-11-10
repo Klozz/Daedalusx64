@@ -1377,6 +1377,10 @@
 							>
 						</File>
 						<File
+							RelativePath=".\Source\SysPSP\UI\RomSelectorComponentdebug.cpp"
+							>
+						</File>
+						<File
 							RelativePath=".\Source\SysPSP\UI\SavestateSelectorComponent.cpp"
 							>
 						</File>

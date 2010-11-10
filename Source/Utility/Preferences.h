@@ -100,6 +100,7 @@ struct SGlobalPreferences
 	bool						HighlightInexactBlendModes;
 	bool						CustomBlendModes;
 	bool						BatteryWarning;
+	bool						SkipSplash;
 	bool						LogMicrocodes;
 	bool						LargeROMBuffer;
 	EForceTextureFilter			ForceTextureFilter;

@@ -272,6 +272,7 @@ IGlobalSettingsComponent::IGlobalSettingsComponent( CUIContext * p_context )
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.SoftwareClipping, "Software Clipping",	"Enable software clipping of vertices. Disable this for a small speedup, at the expense of image quality.", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.HighlightInexactBlendModes, "Highlight Inexact Blend Modes",	"Replace inexact blend modes with a placeholder texture.", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.BatteryWarning, "Low Battery Warning",	"Whether to allow Daedalus to notify when the battery is low.", "Yes", "No" ) );
+	mElements.Add( new CBoolSetting( &gGlobalPreferences.SkipSplash, "Skip Splash Screen",	"Whether or not to skip the logo screen.", "Yes", "No" ) );
 
 
 #ifndef DAEDALUS_PUBLIC_RELEASE

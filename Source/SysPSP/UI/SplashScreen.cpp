@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Math/Math.h"	// VFPU Math
 
+#include "Utility/Preferences.h"
 #include "SysPSP/Utility/PathsPSP.h"
 
 #include <pspctrl.h>
@@ -105,7 +106,7 @@ ISplashScreen::~ISplashScreen()
 void	ISplashScreen::Update( float elapsed_time, const v2 & stick, u32 old_buttons, u32 new_buttons )
 {
 	// If any button was unpressed and is now pressed, exit
-	if((~old_buttons) & new_buttons)
+	if(((~old_buttons) & new_buttons) || gGlobalPreferences.SkipSplash )
 	{
 		mIsFinished = true;
 	}

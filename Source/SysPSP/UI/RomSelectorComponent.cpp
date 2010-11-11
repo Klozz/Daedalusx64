@@ -264,6 +264,8 @@ class IRomSelectorComponent : public CRomSelectorComponent
 		float						mPreviewLoadedTime;		// How long the preview has been loaded (so we can fade in)
 		float						mTimeSinceScroll;		// 
 
+		bool						mDeleteRom;
+		bool						mRomDeleted;
 		bool						mQuitTriggered;
 };
 
@@ -304,6 +306,8 @@ IRomSelectorComponent::IRomSelectorComponent( CUIContext * p_context, CFunctor1<
 ,	mPreviewLoadedTime( 0.0f )
 ,	mTimeSinceScroll( 0.0f )
 ,	mQuitTriggered(false)
+,	mDeleteRom(true)
+,	mRomDeleted(false)
 {
 	for( u32 i = 0; i < ARRAYSIZE( gRomsDirectories ); ++i )
 	{
@@ -746,10 +750,10 @@ void IRomSelectorComponent::RenderPreview()
 						mpContext->DrawTextAlign( 104, 376, AT_LEFT, y, "Increase VI Event:", c32::White );
 
 						if ( p_rominfo->mSettings.Comment[10] == '1' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enable", c32::White );  y += line_height + 5;
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 5;
 						}						
 						else if ( p_rominfo->mSettings.Comment[10] == '2' ) {
-							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disable", c32::White );  y += line_height + 5;
+							mpContext->DrawTextAlign( 104, 376, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 5;
 						}
 					}
 					if ( p_rominfo->mSettings.Comment[11] != '0' ) {
@@ -1182,6 +1186,18 @@ void IRomSelectorComponent::Render()
 			RenderCategoryList();
 		}
 	}
+	
+	if(mDeleteRom)
+	{
+		mpContext->DrawTextAlign(0,480,AT_CENTRE,242,"SELECT: Delete ROM",
+			       	DrawTextUtilities::TextRed);
+	}
+	
+	if(mRomDeleted)
+	{
+		mpContext->DrawTextAlign(0,480,AT_CENTRE,242,"Restart now.",
+			       	DrawTextUtilities::TextRed);
+	}
 }
 
 //*************************************************************************************
@@ -1211,6 +1227,7 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 		
 	if( mQuitTriggered)
 	{
+		mDeleteRom = false;
 		if(new_buttons & PSP_CTRL_CROSS)
 			sceKernelExitGame();
 		else if(new_buttons != old_buttons)
@@ -1296,6 +1313,20 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 				}
 			}
 		}	
+		
+			if(new_buttons & PSP_CTRL_SELECT)
+		{
+			if(mCurrentSelection < mRomsList.size())
+			{
+				mSelectedRom = mRomsList[ mCurrentSelection ]->mFilename;
+				
+				{
+					remove( mSelectedRom.c_str() );
+					mDeleteRom = false;
+					mRomDeleted = true;
+				}
+			}
+		}
 
 	}
 

@@ -848,7 +848,11 @@ static void R4300_CALL_TYPE R4300_SLTI( R4300_CALL_SIGNATURE ) 			// Set on Less
 	}
 	else
 	{
+#if 1 //1->default, 0->"hack" that speeds up SM64 when sound is off (just for reference) //Salvy
 		gGPR[op_code.rt]._u64 = 0;
+#else
+		gGPR[op_code.rt]._u32_0 = 0;
+#endif
 	}
 }
 

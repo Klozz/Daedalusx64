@@ -271,8 +271,8 @@ void	IRomPreferencesScreen::Update( float elapsed_time, const v2 & stick, u32 ol
 		{
 			remove(DAEDALUS_PSP_PATH("preferences.ini"));
 			remove(DAEDALUS_PSP_PATH("rom.db"));
-			remove(DAEDALUS_PSP_PATH("SaveGames/*.hle"));
-			ThreadSleepMs(2000);	//safety wait for MS
+			//remove(DAEDALUS_PSP_PATH("SaveGames/*.hle"));
+			ThreadSleepMs(1000);	//safety wait for MS
 			sceKernelExitGame();
 		}
 	}

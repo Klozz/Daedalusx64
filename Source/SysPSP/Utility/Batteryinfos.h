@@ -17,11 +17,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include <time.h>
+//#include <time.h>
+//#include <psputils.h>
+//#include <psputility_sysparam.h>
 #include <pspdebug.h>
 #include <psppower.h>
-#include <psputils.h>
-#include <psputility_sysparam.h>
+#include <psprtc.h>
 
 #ifndef BATTERYINFOS_H_
 #define BATTERYINFOS_H_
@@ -31,25 +32,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ///////////////////////////////////////////////////////////////////////////////
 void battery_infos()
 {	
-	struct tm *current_time;
-	time_t current_time_flat;
-	sceKernelLibcTime(&current_time_flat);
-	current_time = localtime(&current_time_flat);
+	const u32 black	=	0x00000000;	//  Black..
+	const u32 white =	0xffffffff;	//  White..
 	
-	s32 bat = scePowerGetBatteryLifePercent();
-	s32 batteryLifeTime = scePowerGetBatteryLifeTime();
-	
+    pspTime time;
+    sceRtcGetCurrentClockLocalTime(&time);
+
+	pspDebugScreenSetXY(0, 0);		// Allign to the left, becareful not touch the edges
+	pspDebugScreenSetBackColor( black );
+	pspDebugScreenSetTextColor( white );
+
 	if (scePowerIsBatteryExist())
-	{
-		const u32 black	=	0x00000000;	//  Black..
-		const u32 white =	0xffffffff;	//  White..
-		
-		pspDebugScreenSetXY(0, 0);		// Allign to the left, becareful not touch the edges
-		pspDebugScreenSetBackColor( black );
-		pspDebugScreenSetTextColor( white );
-		pspDebugScreenPrintf("Batt: %d%% %0.2fV %dC", bat, (float) scePowerGetBatteryVolt() / 1000.0f, scePowerGetBatteryTemp());
-		pspDebugScreenPrintf(" | %2dh%2dm", batteryLifeTime / 60, batteryLifeTime - 60 * (batteryLifeTime / 60));
-		pspDebugScreenPrintf(" | %02d%c%02d", current_time->tm_hour, (current_time->tm_sec&1?':':' '), current_time->tm_min);
+	{		
+		s32 bat = scePowerGetBatteryLifePercent();
+		s32 batteryLifeTime = scePowerGetBatteryLifeTime();
+
+		pspDebugScreenPrintf("Batt:%d%% %0.2fV %dC", bat, (float) scePowerGetBatteryVolt() / 1000.0f, scePowerGetBatteryTemp());
+		pspDebugScreenPrintf(" %2dh%2dm", batteryLifeTime / 60, batteryLifeTime - 60 * (batteryLifeTime / 60));
+		pspDebugScreenPrintf(" | %d:%02d%c%02d ", time.hour, time.minutes, (time.seconds&1?':':' '), time.seconds);
+	}
+	else
+	{		
+		pspDebugScreenPrintf("Batt:--%% -.--V --C");
+		pspDebugScreenPrintf(" --h--m");
+		pspDebugScreenPrintf(" | %d:%02d%c%02d ", time.hour, time.minutes, (time.seconds&1?':':' '), time.seconds);
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////

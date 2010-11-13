@@ -246,7 +246,7 @@ static int SetupCallbacks()
 //*************************************************************************************
 static int PanicThread( SceSize args, void * argp )
 {
-	const u32 MASK = PSP_CTRL_LTRIGGER | PSP_CTRL_RTRIGGER | PSP_CTRL_DOWN | PSP_CTRL_CROSS;
+	const u32 MASK = PSP_CTRL_LTRIGGER | PSP_CTRL_RTRIGGER | PSP_CTRL_START;
 
 	u32 count = 0;
 
@@ -344,7 +344,8 @@ static bool	Initialize()
 	}
 
 	//Set up the DveMgr (TV Display) and Detect PSP Slim
-	if ( kuKernelGetModel() == PSP_MODEL_SLIM_AND_LITE )
+	//if ( kuKernelGetModel() == PSP_MODEL_SLIM_AND_LITE )
+	if ( kuKernelGetModel() != PSP_MODEL_STANDARD )
 	{
 		PSP_IS_SLIM = true;
 		HAVE_DVE = pspSdkLoadStartModule("dvemgr.prx", PSP_MEMORY_PARTITION_KERNEL);

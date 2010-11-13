@@ -715,6 +715,8 @@ void PSPRenderer::RenderUsingRenderSettings( const CBlendStates * states, Daedal
 //*****************************************************************************
 void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num_vertices, ERenderMode mode, bool disable_zbuffer )
 {
+	static bool Zfight_IsOn = false;
+
 	DAEDALUS_PROFILE( "PSPRenderer::RenderUsingCurrentBlendMode" );
 
 	// Hack for nascar games..to be honest I don't know why these games are so different...might be tricky to have a proper fix..
@@ -744,11 +746,17 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 					if( gRemoveZFighting )
 					{
 						if( IsZModeDecal() )
+						{
+							Zfight_IsOn = true;						
 							sceGuDepthRange(65535,80);
 							//sceGuDepthOffset(50);	// We need atleast 40 to fix Mario 64's z-fighting issues.
-						else
+						}
+						else if( Zfight_IsOn )
+						{
+							Zfight_IsOn = false;						
 							sceGuDepthRange(65535,0);
 							//sceGuDepthOffset(0);
+						}
 					}
  				}
 				else

@@ -273,6 +273,7 @@ IGlobalSettingsComponent::IGlobalSettingsComponent( CUIContext * p_context )
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.HighlightInexactBlendModes, "Highlight Inexact Blend Modes",	"Replace inexact blend modes with a placeholder texture.", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.BatteryWarning, "Low Battery Warning",	"Whether to allow Daedalus to notify when the battery is low.", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.SkipSplash, "Skip Splash Screen",	"Whether or not to skip the logo screen.", "Yes", "No" ) );
+	mElements.Add( new CBoolSetting( &gGlobalPreferences.MenuStyle, "Use Classic GUI",	"Use new or classic GUI", "Yes", "No" ) );
 
 
 #ifndef DAEDALUS_PUBLIC_RELEASE

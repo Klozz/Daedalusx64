@@ -150,14 +150,17 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		BOOL_SETTING( gGlobalPreferences, DisplayFramerate, defaults );
 		BOOL_SETTING( gGlobalPreferences, SoftwareClipping, defaults );
 		BOOL_SETTING( gGlobalPreferences, HighlightInexactBlendModes, defaults );
-		BOOL_SETTING( gGlobalPreferences, CustomBlendModes, defaults );
 		BOOL_SETTING( gGlobalPreferences, BatteryWarning, defaults );
-		BOOL_SETTING( gGlobalPreferences, SkipSplash, defaults );
 		BOOL_SETTING( gGlobalPreferences, MenuStyle, defaults );
-		BOOL_SETTING( gGlobalPreferences, LogMicrocodes, defaults );
 		BOOL_SETTING( gGlobalPreferences, LargeROMBuffer, defaults );
 		FLOAT_SETTING( gGlobalPreferences, StickMinDeadzone, defaults );
 		FLOAT_SETTING( gGlobalPreferences, StickMaxDeadzone, defaults );
+
+#ifndef DAEDALUS_PUBLIC_RELEASE
+		BOOL_SETTING( gGlobalPreferences, CustomBlendModes, defaults );
+		BOOL_SETTING( gGlobalPreferences, SkipSplash, defaults );
+		BOOL_SETTING( gGlobalPreferences, LogMicrocodes, defaults );
+#endif
 
 		if( section->FindProperty( "GuiColor", &property ) )
 		{
@@ -344,11 +347,8 @@ void IPreferences::Commit()
 		OUTPUT_BOOL( gGlobalPreferences, DisplayFramerate, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, SoftwareClipping, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, HighlightInexactBlendModes, defaults );
-		OUTPUT_BOOL( gGlobalPreferences, CustomBlendModes, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, BatteryWarning, defaults );
-		OUTPUT_BOOL( gGlobalPreferences, SkipSplash, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, MenuStyle, defaults );
-		OUTPUT_BOOL( gGlobalPreferences, LogMicrocodes, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, LargeROMBuffer, defaults );
 		OUTPUT_INT( gGlobalPreferences, GuiColor, defaults )
 		OUTPUT_INT( gGlobalPreferences, ForceTextureFilter, defaults );
@@ -358,6 +358,12 @@ void IPreferences::Commit()
 		OUTPUT_BOOL( gGlobalPreferences, TVEnable, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, TVLaced, defaults );
 		OUTPUT_INT( gGlobalPreferences, TVType, defaults );
+
+#ifndef DAEDALUS_PUBLIC_RELEASE
+		OUTPUT_BOOL( gGlobalPreferences, CustomBlendModes, defaults );
+		OUTPUT_BOOL( gGlobalPreferences, SkipSplash, defaults );
+		OUTPUT_BOOL( gGlobalPreferences, LogMicrocodes, defaults );
+#endif
 
 		fprintf( fh, "\n\n" ); //Spacer to go before Rom Settings
 
@@ -414,11 +420,8 @@ SGlobalPreferences::SGlobalPreferences()
 :	DisplayFramerate( false )
 ,	SoftwareClipping( true )
 ,	HighlightInexactBlendModes( false )
-,	CustomBlendModes( true )
 ,	BatteryWarning( false )
-,	SkipSplash( false )
 ,	MenuStyle( false )
-,	LogMicrocodes( false )
 ,	LargeROMBuffer( true )
 ,	ForceTextureFilter( FORCE_DEFAULT_FILTER )
 ,	GuiColor( BLACK )
@@ -428,6 +431,11 @@ SGlobalPreferences::SGlobalPreferences()
 ,	TVEnable( false )
 ,	TVLaced( false )
 ,	TVType( TT_4_3 )
+#ifndef DAEDALUS_PUBLIC_RELEASE
+,	CustomBlendModes( true )
+,	SkipSplash( false )
+,	LogMicrocodes( false )
+#endif
 {
 }
 

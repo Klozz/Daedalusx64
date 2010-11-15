@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <pspiofilemgr.h>
 #include <sys/stat.h>
+#include <dirent.h>
 
 namespace IO
 {
@@ -186,6 +187,62 @@ namespace IO
 			strcat( p_path, p_ext );
 			return true;
 		}
+
+		
+		int DeleteRecursive(char * p_path, char * p_extension) 
+		{
+
+			DIR *fh;
+			//FILE * fh;
+			//struct SceIoDirent *ep;
+			struct dirent *ep;
+
+			char file[MAX_PATH + 1];
+
+			//fopen( p_path, "rb" );
+
+			fh = opendir (p_path);
+			if(fh)
+			{
+				while(ep = readdir ( fh ))
+				//while(fread(ep, sizeof(ep), 1, fh);
+				{
+					struct stat stFileInfo;
+
+					snprintf(file, FILENAME_MAX, "%s/%s", p_path, ep->d_name);
+
+					if(stat(file, &stFileInfo) < 0)	
+						DAEDALUS_ERROR("Error");
+
+					if(S_ISDIR(stFileInfo.st_mode)) 
+					{
+						if(strcmp(ep->d_name, ".") && strcmp(ep->d_name, "..")) 
+						{
+							printf("%s Directory\n",file);
+						}
+					} 
+					else 
+					{
+
+						if (_strcmpi(FindExtension( file ), p_extension) == 0)
+						{ 
+							printf("Deleting : %s\n",file);
+							sceIoRemove(file);
+						}
+
+					}
+				}
+				(void) closedir ( fh );
+				//fclose(fp)
+			}
+			else
+				DAEDALUS_ASSERT("Couldn't open the dir");
+
+
+			// sceIoRemove(dirname);
+			return 0;
+
+		}
 	}
 
 
@@ -235,7 +292,6 @@ namespace IO
 
 		return ( sceIoDclose( handle ) >= 0 );
 	}
-
 
 }
 

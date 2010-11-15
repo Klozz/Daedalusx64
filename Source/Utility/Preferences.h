@@ -98,12 +98,14 @@ struct SGlobalPreferences
 	bool						DisplayFramerate;
 	bool						SoftwareClipping;
 	bool						HighlightInexactBlendModes;
-	bool						CustomBlendModes;
 	bool						BatteryWarning;
-	bool						SkipSplash;
 	bool						MenuStyle;
-	bool						LogMicrocodes;
 	bool						LargeROMBuffer;
+#ifndef DAEDALUS_PUBLIC_RELEASE
+	bool						CustomBlendModes;
+	bool						SkipSplash;
+	bool						LogMicrocodes;
+#endif
 	EForceTextureFilter			ForceTextureFilter;
 	EGuiColor					GuiColor;
 

@@ -4511,8 +4511,9 @@ void BlendMode_0x00ffe7ffffcd92c9LL (BLEND_MODE_ARGS) {} // Paper Mario Figure T
 
 OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 {
+#ifndef DAEDALUS_PUBLIC_RELEASE
 	if(!gGlobalPreferences.CustomBlendModes) return NULL;
-
+#endif
 	switch(mux)
 	{
 #define BLEND_MODE( x )		case (x):	return BlendMode_##x;

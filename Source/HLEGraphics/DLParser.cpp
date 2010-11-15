@@ -1028,6 +1028,7 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 		//#define NUML(n)		(((n)+1)*32 + 0x80000000)
 		{
 			u32 num_lights = ((command.mw1.value-0x80000000)/32) - 1;
+
 			DL_PF("    G_MW_NUMLIGHT: Val:%d", num_lights);
 
 			gAmbientLightIdx = num_lights;
@@ -1112,7 +1113,7 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 	case G_MW_POINTS:	// Used in FIFA 98
 		{
 			u32 vtx = command.mw1.offset/40;
-			u32 offset = command.mw1.offset - vtx*40;
+			u32 offset = command.mw1.offset%40;
 			u32 val = command.mw1.value;
 
 			DL_PF("    G_MW_POINTS");
@@ -1303,8 +1304,9 @@ void DLParser_GBI1_MoveMem( MicroCodeCommand command )
 			break;
 		case G_MV_MATRIX_1:
 			RDP_Force_Matrix(address);
+			gDisplayListStack.back().addr += 24;	// Next 3 cmds are part of ForceMtx, skip 'em
 			break;
-		//Next 3 MATRIX commands should be ignored, since they were in the previous command.
+		//Next 3 MATRIX commands should not appear, since they were in the previous command.
 		case G_MV_MATRIX_2:	/*IGNORED*/	DL_PF("     G_MV_MATRIX_2");											break;
 		case G_MV_MATRIX_3:	/*IGNORED*/	DL_PF("     G_MV_MATRIX_3");											break;
 		case G_MV_MATRIX_4:	/*IGNORED*/	DL_PF("     G_MV_MATRIX_4");											break;

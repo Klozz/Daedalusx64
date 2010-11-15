@@ -27,11 +27,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SysPSP/Graphics/DrawText.h"
 #include "Graphics/ColourValue.h"
 
+#include "SysPSP/Utility/PathsPSP.h"
+#include "Utility/Thread.h"
 #include "Utility/FramerateLimiter.h"
 #include "Utility/Preferences.h"
+#include "Utility/IO.h"
 
 #include "Input/InputManager.h"
 
+#include <pspkernel.h>
 #include <pspctrl.h>
 #include <pspgu.h>
 
@@ -50,6 +54,8 @@ namespace
 	const s32		DESCRIPTION_AREA_BOTTOM = 272-10;
 	const s32		DESCRIPTION_AREA_LEFT = 16;
 	const s32		DESCRIPTION_AREA_RIGHT = 480-16;
+
+	static bool		CUIReset = false;
 
 	class CViewPortSetting : public CUISetting
 	{
@@ -180,6 +186,38 @@ namespace
 		}
 	};
 
+	class CResetSetting : public CUISetting
+	{
+	public:
+		CResetSetting(  const char * name, const char * description )
+			:	CUISetting( name, description )
+		{
+		}
+
+		virtual	void			OnSelected()
+		{
+			CUIReset = true;
+
+			SceCtrlData pad;
+			sceCtrlPeekBufferPositive(&pad, 1);
+			
+			if( pad.Buttons & PSP_CTRL_SQUARE )
+			{
+				IO::Path::DeleteRecursive("SaveGames",".hle");
+				remove(DAEDALUS_PSP_PATH("preferences.ini"));
+				remove(DAEDALUS_PSP_PATH("rom.db"));
+				ThreadSleepMs(1000);	//safety wait for s
+				sceKernelExitGame();
+			}
+		}
+
+		virtual const char *	GetSettingName() const
+		{
+			const char *gStatus[2]  = {"Press (X) Reset","Reset Required - Hold (X) + [ ] to Proceed"};
+			return gStatus[CUIReset];
+		}
+	};
+
 	class CColorSetting : public CUISetting
 	{
 	public:
@@ -195,7 +233,7 @@ namespace
 		{
 			switch ( gGlobalPreferences.GuiColor )
 			{
-				case BLACK:		return "Black ( Default )";
+				case BLACK:		return "Black";
 				case RED:		return "Red";
 				case GREEN:		return "Green";
 				case MAGENTA:	return "Magenta";
@@ -266,22 +304,22 @@ IGlobalSettingsComponent::IGlobalSettingsComponent( CUIContext * p_context )
 	}
 	else
 		gGlobalPreferences.TVEnable = false;
-	mElements.Add( new CColorSetting( "GUI Color", "Change GUI Color" ) );
 	mElements.Add( new CFilterSetting( "Texture Filter", "N64 Filtering Type: Default( Fast, Average Quality), Nearest Filter (Faster, Low Quality), Linear Filter (Slower, Best Quality)" ) );
 	mElements.Add( new CAdjustDeadzoneSetting( mpContext, "Stick Deadzone", "Adjust the size of the deadzone applied to the PSP stick while playing. Press Start/X to edit." ) );
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.SoftwareClipping, "Software Clipping",	"Enable software clipping of vertices. Disable this for a small speedup, at the expense of image quality.", "Enabled", "Disabled" ) );
+	if (PSP_IS_SLIM) mElements.Add( new CBoolSetting( &gGlobalPreferences.LargeROMBuffer, "Use Large ROM Buffer", "Disable this for faster loading with a small slowdown during scene changes on large ROMs. Takes effect only when loading ROM.", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.HighlightInexactBlendModes, "Highlight Inexact Blend Modes",	"Replace inexact blend modes with a placeholder texture.", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.BatteryWarning, "Low Battery Warning",	"Whether to allow Daedalus to notify when the battery is low.", "Yes", "No" ) );
-	mElements.Add( new CBoolSetting( &gGlobalPreferences.SkipSplash, "Skip Splash Screen",	"Whether or not to skip the logo screen.", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.MenuStyle, "Use Classic GUI",	"Use new or classic GUI", "Yes", "No" ) );
-
+	mElements.Add( new CColorSetting( "GUI Color", "Change GUI Color" ) );
+	mElements.Add( new CResetSetting( "Reset Settings", "Resets all preferences to default, and removes rom.db and all *.hle* cache files." ) );
 
 #ifndef DAEDALUS_PUBLIC_RELEASE
+	mElements.Add( new CBoolSetting( &gGlobalPreferences.SkipSplash, "Skip Splash Screen",	"Whether or not to skip the logo screen.", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.CustomBlendModes, "Use Custom Blend Modes",	"Debugging tool to disable custom blendmodes.", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.LogMicrocodes, "Log Microcodes",	"Debugging tool to log Microcodes to ucodes.txt.", "Yes", "No" ) );
 #endif
 
-	if (PSP_IS_SLIM) mElements.Add( new CBoolSetting( &gGlobalPreferences.LargeROMBuffer, "Use Large ROM Buffer", "Disable this for faster loading with a small slowdown during scene changes on large ROMs. Takes effect only when loading ROM.", "Yes", "No" ) );
 }
 
 //*************************************************************************************

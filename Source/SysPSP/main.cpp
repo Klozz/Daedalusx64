@@ -93,6 +93,13 @@ u32 getbuttons();
 // Input style for either kernel or non-kernel button
 u32	num_buttons[2]   = {0x010000, 0x000001};
 
+#ifdef DAEDALUS_PSP_GPROF
+extern "C" 
+{
+	void gprof_cleanup();
+}
+#endif
+
 bool PSP_IS_SLIM = false;
 bool PSP_NO_KBUTTONS = false;
 //*************************************************************************************
@@ -206,6 +213,9 @@ static void DaedalusFWCheck()
 //*************************************************************************************
 static int ExitCallback( int arg1, int arg2, void * common )
 {
+#ifdef DAEDALUS_PSP_GPROF
+	gprof_cleanup();
+#endif
 	sceKernelExitGame();
 	return 0;
 }
@@ -275,6 +285,9 @@ static int PanicThread( SceSize args, void * argp )
 	return 0;
 }
 
+//*************************************************************************************
+//
+//*************************************************************************************
 static int SetupPanic()
 {
 	int thidf = sceKernelCreateThread( "PanicThread", PanicThread, 0x11, 0xFA0, PSP_THREAD_ATTR_USER, 0 );
@@ -330,6 +343,10 @@ static bool	Initialize()
 		printf( "Couldn't load kernelbuttons.prx: %08X\n", Get_Kernel_Buttons );
 		PSP_NO_KBUTTONS = true;
 	}
+
+#ifdef DAEDALUS_PSP_GPROF
+	PSP_NO_KBUTTONS = true;
+#endif
 
 	//Init Panic button thread
 	SetupPanic();

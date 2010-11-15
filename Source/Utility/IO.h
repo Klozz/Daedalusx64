@@ -51,6 +51,7 @@ namespace IO
 		bool				RemoveFileSpec( char * p_path );
 		void				RemoveExtension( char * p_path );
 		bool				AddExtension( char * p_path, const char * p_ext );
+		int					DeleteRecursive(char* p_path, char * p_extension);
 	}
 
 	struct FindDataT

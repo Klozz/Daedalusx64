@@ -51,8 +51,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <map>
 #include <algorithm>
 
-#include "../Utility/Thread.h"
-
 /* Kernel Buttons functions */
 extern "C" {
 int getbuttons();
@@ -237,11 +235,11 @@ class IRomSelectorComponent : public CRomSelectorComponent
 
 		// CUIComponent
 		virtual void				Update( float elapsed_time, const v2 & stick, u32 old_buttons, u32 new_buttons );
-		virtual void				Update_old( float elapsed_time, const v2 & stick, u32 old_buttons, u32 new_buttons );
 		virtual void				Render();
-		virtual void				Render_old();
 
 	private:
+				void				Update_old( float elapsed_time, const v2 & stick, u32 old_buttons, u32 new_buttons );
+				void				Render_old();
 				void				RenderPreview();
 				void				RenderPreview_old();
 				void				RenderRomList();
@@ -272,8 +270,8 @@ class IRomSelectorComponent : public CRomSelectorComponent
 		float						mPreviewLoadedTime;		// How long the preview has been loaded (so we can fade in)
 		float						mTimeSinceScroll;		// 
 
+		bool						mRomDelete;
 		bool						mDeleteRom;
-		bool						mRomDeleted;
 		bool						mQuitTriggered;
 };
 
@@ -313,8 +311,8 @@ IRomSelectorComponent::IRomSelectorComponent( CUIContext * p_context, CFunctor1<
 ,	mPreviewIdx( u32(-1) )
 ,	mPreviewLoadedTime( 0.0f )
 ,	mTimeSinceScroll( 0.0f )
-,	mDeleteRom(true)
-,	mRomDeleted(false)
+,	mRomDelete(false)
+,	mDeleteRom(false)
 ,	mQuitTriggered(false)
 {
 	for( u32 i = 0; i < ARRAYSIZE( gRomsDirectories ); ++i )
@@ -1151,7 +1149,7 @@ void IRomSelectorComponent::RenderRomList_old()
 	sceGuEnable(GU_SCISSOR_TEST);
 	sceGuScissor(TEXT_AREA_LEFT, TEXT_AREA_TOP, TEXT_AREA_LEFT+TEXT_AREA_WIDTH, TEXT_AREA_TOP+TEXT_AREA_HEIGHT);
 
-	const char * const	ptr_text( "o " );
+	const char * const	ptr_text( ">>" );
 	u32					ptr_text_width( mpContext->GetTextWidth( ptr_text ) );
 
 	for(u32 i = 0; i < mRomsList.size(); ++i)
@@ -1573,6 +1571,15 @@ void IRomSelectorComponent::RenderCategoryList()
 //*************************************************************************************
 void IRomSelectorComponent::Render_old()
 {
+	static u32 count=0;
+
+	const char * const		message[] =
+	{	"([ ]) ROM Settings",
+		"(/\\) Show File Names",
+		"(X) Load ROM",
+		"(HOME) To Quit",
+		"(SELECT) To Delete ROM",};
+
 	ICON_AREA_TOP = 32;
 	ICON_AREA_LEFT = 10;
 	ICON_AREA_WIDTH = 220;
@@ -1586,7 +1593,7 @@ void IRomSelectorComponent::Render_old()
 	CATEGORY_AREA_TOP = TEXT_AREA_TOP + TEXT_AREA_HEIGHT + 5;
 	CATEGORY_AREA_LEFT = 20;
 
-	PREVIEW_SCROLL_WAIT = 0.075f;		// seconds to wait for scrolling to stop before loading preview (prevent thrashing)
+	PREVIEW_SCROLL_WAIT = 0.075f;	// seconds to wait for scrolling to stop before loading preview (prevent thrashing)
 	PREVIEW_FADE_TIME = 0.050f;		// seconds
 
 	RenderPreview_old();
@@ -1607,6 +1614,27 @@ void IRomSelectorComponent::Render_old()
 
 	RenderCategoryList_old();
 
+	/*if(mRomDelete)
+	{
+		mpContext->DrawRect( 100, 230, 280, 15, c32::Gold ); 
+		mpContext->DrawTextAlign(0,480,AT_CENTRE,242,"Press O to Confirm ROM Deletion", DrawTextUtilities::TextWhite);
+
+		SceCtrlData pad;
+		sceCtrlPeekBufferPositive(&pad, 1);
+		if (pad.Buttons & PSP_CTRL_CIRCLE)
+		{
+			remove( mSelectedRom.c_str() );
+			mRomDelete = false;	
+			mDeleteRom = true;
+		}
+	}*/
+
+	//Show tool tip
+	c32 color;
+	if(count & 0x80) color = c32( ~count<<1, 0, 0, 255);
+	else color = c32( count<<1, 0, 0, 255);
+
+	mpContext->DrawTextAlign(0,470,AT_RIGHT,CATEGORY_AREA_TOP + mpContext->GetFontHeight(),	message[(count++ >> 8) & 3], color);
 }
 //*************************************************************************************
 //
@@ -1632,7 +1660,7 @@ void IRomSelectorComponent::Render()
 	CATEGORY_AREA_TOP = 255;
 	CATEGORY_AREA_LEFT = 240;
 
-	PREVIEW_SCROLL_WAIT = 0.65f;		// seconds to wait for scrolling to stop before loading preview (prevent thrashing)
+	PREVIEW_SCROLL_WAIT = 0.65f;	// seconds to wait for scrolling to stop before loading preview (prevent thrashing)
 	PREVIEW_FADE_TIME = 0.50f;		// seconds
 
 	if(mQuitTriggered)
@@ -1671,9 +1699,9 @@ void IRomSelectorComponent::Render()
 			       	DrawTextUtilities::TextRed);
 	}
 	
-	if(mRomDeleted)
+	if(mRomDelete)
 	{
-		mpContext->DrawTextAlign(0,480,AT_CENTRE,242,"Restart now.",
+		mpContext->DrawTextAlign(0,480,AT_CENTRE,242,"Press X to Confirm ROM Deletion",
 			       	DrawTextUtilities::TextRed);
 	}
 }
@@ -1766,10 +1794,19 @@ void	IRomSelectorComponent::Update_old( float elapsed_time, const v2 & stick, u3
 				}
 			}
 		}
-	}
 
-	// ToDo : Add a GUI tooltip, dialog, or option to exit, so users can be aware on how to exit.
-	//
+		/*if(new_buttons & PSP_CTRL_SELECT)
+		{
+			if(mCurrentSelection < mRomsList.size())
+			{
+				mSelectedRom = mRomsList[ mCurrentSelection ]->mFilename;
+				{
+					mRomDelete = true;
+				}
+			}
+		}*/
+	}
+#ifndef DAEDALUS_PSP_GPROF	
 	// Init our kernel buttons, ex HOME button
 	new_kbuttons = getbuttons();
 
@@ -1780,6 +1817,7 @@ void	IRomSelectorComponent::Update_old( float elapsed_time, const v2 & stick, u3
 			sceKernelExitGame();
 		}
 	}
+#endif
 
 	//
 	//	Apply the selection accumulator
@@ -1914,7 +1952,8 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 	ECategory current_category( GetCurrentCategory() );
 
 	u32	initial_selection( mCurrentSelection );
-		
+
+#ifndef DAEDALUS_PSP_GPROF		
 	if( mQuitTriggered)
 	{
 		mDeleteRom = false;
@@ -1926,7 +1965,7 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 			return;
 		}
 	}
-
+#endif
 	mDisplayFilenames = (new_buttons & PSP_CTRL_TRIANGLE) != 0;		
 
 	mDisplayInfo = (new_buttons & PSP_CTRL_SQUARE) != 0;		
@@ -2003,16 +2042,15 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 			}
 		}	
 		
-			if(new_buttons & PSP_CTRL_SELECT)
+		if(new_buttons & PSP_CTRL_SELECT)
 		{
 			if(mCurrentSelection < mRomsList.size())
 			{
 				mSelectedRom = mRomsList[ mCurrentSelection ]->mFilename;
-				
 				{
 					remove( mSelectedRom.c_str() );
 					mDeleteRom = false;
-					mRomDeleted = true;
+					mRomDelete = true;
 				}
 			}
 		}

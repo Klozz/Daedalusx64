@@ -1,7 +1,7 @@
 #
 #	Specify :
 #		DEBUG=y				# for a debug build
-# 
+#		PSPGPROF=y			# for profiling with psp gprof
 #
 #		CONFIG=<configname>		# Build using Source/Configs/<configname> as config
 #
@@ -160,7 +160,10 @@ DAED_AUDIO_SRCS =  	Source/HLEAudio/ABI1.cpp \
 DAED_OSHLE_SRCS = 	Source/OSHLE/OS.cpp \
 			Source/OSHLE/patch.cpp
 
-DAED_RELEASE_SRCS = 	Source/SysPSP/UI/RomSelectorComponent.cpp 
+DAED_RELEASE_SRCS 	= 	Source/SysPSP/UI/RomSelectorComponent.cpp 
+
+DAED_GPROF_SRCS 	= 	Source/SysPSP/Debug/prof.c \
+					=	Source/SysPSP/Debug/mcount.S
 
 ADDITIONAL_DEBUG_SRCS = Source/SysPSP/UI/RomSelectorComponentdebug.cpp
 
@@ -169,7 +172,14 @@ ADDITIONAL_SYNC_SRCS  = Source/Utility/Synchroniser.cpp Source/Utility/ZLibWrapp
 CORE_SRCS = $(DAED_MAIN_SRCS) $(DAED_DEBUG_SRCS) $(DAED_CORE_SRCS) $(DAED_INTERFACE_SRCS) \
 	    $(DAED_INPUT_SRCS) $(DAED_DYNREC_SRCS) $(DAED_UTILITY_SRCS) $(DAED_PSP_SRCS) \
 	    $(DAED_HLEGFX_SRCS) $(DAED_AUDIO_SRCS) $(DAED_OSHLE_SRCS)
+		
+ifdef PSPGPROF	
+	CONFIG=Profile
+	
+	CFLAGS			= -pg -g -O2 -G0 -D_DEBUG -Wall -MD -ffast-math -fsingle-precision-constant
 
+	SRCS			= $(CORE_SRCS) $(DAED_RELEASE_SRCS)	$(DAED_GPROF_SRCS) 
+else 
 ifdef DEBUG
 	CONFIG=Dev #default config in Debug build is "Dev"
 
@@ -186,7 +196,7 @@ else
 
 	SRCS			= $(CORE_SRCS) $(DAED_RELEASE_SRCS)
 endif
-
+endif
 
 ifndef CONFIG
 	CONFIG=Release

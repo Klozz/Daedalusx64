@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../../Math/Vector2.h"
 #include "../../Math/Vector3.h"
 
+#include <stdarg.h>
 #include <pspgu.h>
 #include <pspdebug.h>
 
@@ -95,6 +96,29 @@ u32	CDrawText::Render( EFont font_type, s32 x, s32 y, float scale, const char * 
 	return strlen( p_str ) * 16;		// Guess. Better off just returning 0?
 }
 
+f32	CDrawText::IntrPrintf( f32 x, f32 y, f32 scale, c32 colour, const char * p_text, ... )
+{
+	DAEDALUS_ASSERT( font_type >= 0 && font_type < (s32)NUM_FONTS, "Invalid font" );
+
+	intraFont * font( gFonts[ F_REGULAR ] );
+
+	if( font )
+	{
+		// Was borrowed from intrafont.c to simulate our own intraFontPrintf..
+		char buffer[256];
+		va_list ap;
+		
+		va_start(ap, p_text);
+		vsnprintf(buffer, 256, p_text, ap);
+		va_end(ap);
+		buffer[255] = 0;
+	
+		intraFontSetStyle( font, scale, colour.GetColour(), 0, 0);	
+		return intraFontPrint(font, x, y, buffer);
+	}
+	// Give space just in case !
+	return GetFontHeight( F_REGULAR );
+}
 //*************************************************************************************
 //
 //*************************************************************************************

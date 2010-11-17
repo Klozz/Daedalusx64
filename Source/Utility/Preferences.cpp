@@ -151,7 +151,6 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		BOOL_SETTING( gGlobalPreferences, SoftwareClipping, defaults );
 		BOOL_SETTING( gGlobalPreferences, HighlightInexactBlendModes, defaults );
 		BOOL_SETTING( gGlobalPreferences, BatteryWarning, defaults );
-		BOOL_SETTING( gGlobalPreferences, MenuStyle, defaults );
 		BOOL_SETTING( gGlobalPreferences, LargeROMBuffer, defaults );
 		FLOAT_SETTING( gGlobalPreferences, StickMinDeadzone, defaults );
 		FLOAT_SETTING( gGlobalPreferences, StickMaxDeadzone, defaults );
@@ -161,6 +160,15 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		BOOL_SETTING( gGlobalPreferences, SkipSplash, defaults );
 		BOOL_SETTING( gGlobalPreferences, LogMicrocodes, defaults );
 #endif
+		
+		if( section->FindProperty( "GuiType", &property ) )
+		{
+			u32 value( property->GetIntValue(defaults.GuiType) );
+			if( value < 2 ) //value >= 0 && not needed as it's always True
+			{
+				gGlobalPreferences.GuiType = EGuiType( value );
+			}
+		}
 
 		if( section->FindProperty( "GuiColor", &property ) )
 		{
@@ -348,7 +356,7 @@ void IPreferences::Commit()
 		OUTPUT_BOOL( gGlobalPreferences, SoftwareClipping, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, HighlightInexactBlendModes, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, BatteryWarning, defaults );
-		OUTPUT_BOOL( gGlobalPreferences, MenuStyle, defaults );
+		OUTPUT_BOOL( gGlobalPreferences, GuiType, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, LargeROMBuffer, defaults );
 		OUTPUT_INT( gGlobalPreferences, GuiColor, defaults )
 		OUTPUT_INT( gGlobalPreferences, ForceTextureFilter, defaults );
@@ -421,9 +429,9 @@ SGlobalPreferences::SGlobalPreferences()
 ,	SoftwareClipping( true )
 ,	HighlightInexactBlendModes( false )
 ,	BatteryWarning( false )
-,	MenuStyle( false )
 ,	LargeROMBuffer( true )
 ,	ForceTextureFilter( FORCE_DEFAULT_FILTER )
+,	GuiType( COVERFLOW )
 ,	GuiColor( BLACK )
 ,	StickMinDeadzone( 0.28f )
 ,	StickMaxDeadzone( 1.0f )

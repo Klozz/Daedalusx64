@@ -55,8 +55,6 @@ namespace
 	const s32		DESCRIPTION_AREA_LEFT = 16;
 	const s32		DESCRIPTION_AREA_RIGHT = 480-16;
 
-	static bool		CUIReset = false;
-
 	class CViewPortSetting : public CUISetting
 	{
 	public:
@@ -196,14 +194,24 @@ namespace
 
 		virtual	void			OnSelected()
 		{
-			CUIReset = true;
-
 			SceCtrlData pad;
 			sceCtrlPeekBufferPositive(&pad, 1);
 			
 			if( pad.Buttons & PSP_CTRL_SQUARE )
 			{
-				IO::Path::DeleteRecursive("SaveGames",".hle");
+				IO::Path::DeleteRecursive((char*)"SaveGames",(char*)".hle");
+				remove(DAEDALUS_PSP_PATH("preferences.ini"));
+				remove(DAEDALUS_PSP_PATH("rom.db"));
+				ThreadSleepMs(1000);	//safety wait for s
+				sceKernelExitGame();
+			}
+			else if( pad.Buttons & PSP_CTRL_CIRCLE )
+			{
+				IO::Path::DeleteRecursive((char*)"SaveGames",(char*)".hle");
+				ThreadSleepMs(1000);	//safety wait for s
+			}
+			else if( pad.Buttons & PSP_CTRL_TRIANGLE )
+			{
 				remove(DAEDALUS_PSP_PATH("preferences.ini"));
 				remove(DAEDALUS_PSP_PATH("rom.db"));
 				ThreadSleepMs(1000);	//safety wait for s
@@ -213,10 +221,44 @@ namespace
 
 		virtual const char *	GetSettingName() const
 		{
-			const char *gStatus[2]  = {"Press (X) Reset","Reset Required - Hold (X) + [ ] to Proceed"};
-			return gStatus[CUIReset];
+			// Below was borrowed from Corn's tooltip code <3
+			static u32 count=0;
+			const char * const		status[] =
+			{"The emulator will exit if resetting settings",
+			"No need to exit if resetting only hle cache",
+			"Hold (X) + ([]) to reset settings + hle cache",
+			"Hold (X) + (/\\) to only reset settings",
+			"Hold (X) + (O) to only reset hle cache"};
+			count++;
+			return status[(count >> 8) % ARRAYSIZE( status )];
 		}
 	};
+
+	class CGuiType : public CUISetting
+	{
+	public:
+		CGuiType(  const char * name, const char * description )
+			:	CUISetting( name, description )
+		{
+		}
+
+
+		virtual	void		OnNext()		{ gGlobalPreferences.GuiType = EGuiType( (gGlobalPreferences.GuiType+1) % 2 ); }
+		virtual	void		OnPrevious()	{ gGlobalPreferences.GuiType = EGuiType( (gGlobalPreferences.GuiType + 2 - 1) % 2 ); }
+
+		virtual const char *	GetSettingName() const
+		{
+			switch ( gGlobalPreferences.GuiType )
+			{
+				case COVERFLOW:		return "Cover Flow";
+				case CLASSIC:		return "Classic";
+			}
+			DAEDALUS_ERROR( "Unknown Style" );
+			return "?";
+		}
+	};
+
+
 
 	class CColorSetting : public CUISetting
 	{
@@ -243,6 +285,7 @@ namespace
 			return "?";
 		}
 	};
+
 
 }
 
@@ -310,9 +353,9 @@ IGlobalSettingsComponent::IGlobalSettingsComponent( CUIContext * p_context )
 	if (PSP_IS_SLIM) mElements.Add( new CBoolSetting( &gGlobalPreferences.LargeROMBuffer, "Use Large ROM Buffer", "Disable this for faster loading with a small slowdown during scene changes on large ROMs. Takes effect only when loading ROM.", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.HighlightInexactBlendModes, "Highlight Inexact Blend Modes",	"Replace inexact blend modes with a placeholder texture.", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.BatteryWarning, "Low Battery Warning",	"Whether to allow Daedalus to notify when the battery is low.", "Yes", "No" ) );
-	mElements.Add( new CBoolSetting( &gGlobalPreferences.MenuStyle, "Use Classic GUI",	"Use new or classic GUI", "Yes", "No" ) );
+	mElements.Add( new CGuiType( "Gui Style",	"Select Gui Type either CoverFlow Style or Classic Style" ) );
 	mElements.Add( new CColorSetting( "GUI Color", "Change GUI Color" ) );
-	mElements.Add( new CResetSetting( "Reset Settings", "Resets all preferences to default, and removes rom.db and all *.hle* cache files." ) );
+	mElements.Add( new CResetSetting( "Reset Settings", "Resets all preferences to default, and removes rom.db and all *.hle* cache files. Note : Will exit emulator if resetting settings" ) );
 
 #ifndef DAEDALUS_PUBLIC_RELEASE
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.SkipSplash, "Skip Splash Screen",	"Whether or not to skip the logo screen.", "Yes", "No" ) );

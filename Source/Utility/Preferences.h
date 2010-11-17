@@ -26,6 +26,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "ConfigOptions.h"
 
+enum EGuiType
+{
+	COVERFLOW=0,
+	CLASSIC,
+};
+
 enum ETextureHashFrequency
 {
 	THF_DISABLED = 0,
@@ -99,13 +105,13 @@ struct SGlobalPreferences
 	bool						SoftwareClipping;
 	bool						HighlightInexactBlendModes;
 	bool						BatteryWarning;
-	bool						MenuStyle;
 	bool						LargeROMBuffer;
 #ifndef DAEDALUS_PUBLIC_RELEASE
 	bool						CustomBlendModes;
 	bool						SkipSplash;
 	bool						LogMicrocodes;
 #endif
+	EGuiType					GuiType;
 	EForceTextureFilter			ForceTextureFilter;
 	EGuiColor					GuiColor;
 

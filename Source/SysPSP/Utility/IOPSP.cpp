@@ -204,7 +204,7 @@ namespace IO
 			fh = opendir (p_path);
 			if(fh)
 			{
-				while(ep = readdir ( fh ))
+				while((ep = readdir ( fh )))
 				//while(fread(ep, sizeof(ep), 1, fh);
 				{
 					struct stat stFileInfo;
@@ -212,13 +212,15 @@ namespace IO
 					snprintf(file, FILENAME_MAX, "%s/%s", p_path, ep->d_name);
 
 					if(stat(file, &stFileInfo) < 0)	
-						DAEDALUS_ERROR("Error");
+					{
+						//printf("Error");
+					}
 
 					if(S_ISDIR(stFileInfo.st_mode)) 
 					{
 						if(strcmp(ep->d_name, ".") && strcmp(ep->d_name, "..")) 
 						{
-							printf("%s Directory\n",file);
+							//printf("%s Directory\n",file);
 						}
 					} 
 					else 
@@ -226,7 +228,7 @@ namespace IO
 
 						if (_strcmpi(FindExtension( file ), p_extension) == 0)
 						{ 
-							printf("Deleting : %s\n",file);
+							//printf("Deleting : %s\n",file);
 							sceIoRemove(file);
 						}
 
@@ -236,10 +238,10 @@ namespace IO
 				//fclose(fp)
 			}
 			else
-				DAEDALUS_ASSERT("Couldn't open the dir");
-
-
-			// sceIoRemove(dirname);
+			{
+				//printf("Couldn't open the dir");
+			}
+			//sceIoRemove(p_path);
 			return 0;
 
 		}

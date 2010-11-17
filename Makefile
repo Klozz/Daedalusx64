@@ -163,7 +163,7 @@ DAED_OSHLE_SRCS = 	Source/OSHLE/OS.cpp \
 DAED_RELEASE_SRCS 	= 	Source/SysPSP/UI/RomSelectorComponent.cpp 
 
 DAED_GPROF_SRCS 	= 	Source/SysPSP/Debug/prof.c \
-					=	Source/SysPSP/Debug/mcount.S
+			Source/SysPSP/Debug/mcount.S
 
 ADDITIONAL_DEBUG_SRCS = Source/SysPSP/UI/RomSelectorComponentdebug.cpp
 

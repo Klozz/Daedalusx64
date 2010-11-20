@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility/IO.h"
 #include "Utility/ROMFile.h"
 
+#include "SysPSP/Utility/Buttons.h"
 #include "SysPSP/Utility/PathsPSP.h"
 
 #include "Math/MathUtil.h"
@@ -50,13 +51,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <vector>
 #include <map>
 #include <algorithm>
-
-/* Kernel Buttons functions */
-extern "C" {
-int getbuttons();
-}
-extern u32 num_buttons[2];
-extern bool PSP_NO_KBUTTONS;
 
 int romselmenuani = 0;
 int romselmenufs = 31;
@@ -79,8 +73,6 @@ namespace
 		"host1:/",
 #endif
 	};
-
-	u32 new_kbuttons;
 
 	const char		gCategoryLetters[] = "#abcdefghijklmnopqrstuvwxyz?";
 
@@ -1697,9 +1689,7 @@ void IRomSelectorComponent::Render()
 
 	if(mQuitTriggered)
 	{
-		if(PSP_NO_KBUTTONS)
-					mpContext->DrawTextAlign(0,480,AT_CENTRE,120,"Hold Select First..", DrawTextUtilities::TextRed);
-
+		mpContext->DrawTextAlign(0,480,AT_CENTRE,120,"Keep Holding Home", DrawTextUtilities::TextRed);
 		mpContext->DrawTextAlign(0,480,AT_CENTRE,135,"Press X to confirm you want to quit",
 			       	DrawTextUtilities::TextRed);
 		mpContext->DrawTextAlign(0,480,AT_CENTRE,150,"Any other key will cancel",
@@ -1812,7 +1802,12 @@ void	IRomSelectorComponent::Update_old( float elapsed_time, const v2 & stick, u3
 				mCurrentSelection++;
 			}
 		}
-
+#ifndef DAEDALUS_PSP_GPROF	
+		if(new_buttons & PSP_CTRL_HOME) 
+		{
+			sceKernelExitGame();
+		}
+#endif
 		if(new_buttons & PSP_CTRL_CROSS && mRomDelete)	// DONT CHANGE ORDER
 		{
 			remove( mSelectedRom.c_str() );
@@ -1843,20 +1838,6 @@ void	IRomSelectorComponent::Update_old( float elapsed_time, const v2 & stick, u3
 			}
 		}
 	}
-
-#ifndef DAEDALUS_PSP_GPROF	
-	// Init our kernel buttons, ex HOME button
-	new_kbuttons = getbuttons();
-
-	if(old_buttons != new_kbuttons)
-	{
-		if(new_kbuttons & PSP_CTRL_HOME) 
-		{
-			sceKernelExitGame();
-		}
-	}
-#endif
-
 	//
 	//	Apply the selection accumulator
 	//
@@ -1973,7 +1954,6 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 		return;
 	}
 
-	u32 kernel_buttons = getbuttons();
 	static const float	SCROLL_RATE_PER_SECOND = 25.0f;		// 25 roms/second
 	
 	/*Apply stick deadzone preference in the RomSelector menu*/
@@ -2044,8 +2024,10 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 	}
 	else { sortbyletter = 0; }
 		
-	if (old_buttons != new_buttons)	{
-		if (!(new_buttons & PSP_CTRL_CIRCLE)) {
+	if (old_buttons != new_buttons)	
+	{
+		if (!(new_buttons & PSP_CTRL_CIRCLE)) 
+		{
 			if (new_buttons & PSP_CTRL_LEFT)
 			{
 				if(mCurrentSelection > 0)
@@ -2067,7 +2049,12 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 				}
 			}
 		}
-
+#ifndef DAEDALUS_PSP_GPROF	
+		if(new_buttons & PSP_CTRL_HOME)
+		{
+			mQuitTriggered=true;
+		}
+#endif
 		if(new_buttons & PSP_CTRL_CROSS && mRomDelete)	// DONT CHANGE ORDER
 		{
 			remove( mSelectedRom.c_str() );
@@ -2098,16 +2085,6 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 			}
 		}
 
-	}
-
-	u32 set_buttons = (PSP_NO_KBUTTONS == 0) ? kernel_buttons : new_buttons;
-
-	if(old_buttons != set_buttons)
-	{
-		if(set_buttons & num_buttons[PSP_NO_KBUTTONS])
-		{
-			mQuitTriggered=true;
-		}
 	}
 	//
 	//	Apply the selection accumulator

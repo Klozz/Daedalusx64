@@ -57,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SysPSP/UI/SplashScreen.h"
 #include "SysPSP/Graphics/DrawText.h"
 #include "SysPSP/Utility/PathsPSP.h"
+#include "SysPSP/Utility/Buttons.h"
 
 #include "HLEGraphics/TextureCache.h"
 
@@ -85,13 +86,6 @@ int pspDveMgrSetVideoOut(int, int, int, int, int, int, int);
 extern int HAVE_DVE;
 extern int PSP_TV_CABLE;
 extern int PSP_TV_LACED;
-
-/* Kernel Buttons functions */
-extern "C" {
-u32 getbuttons();
-}
-// Input style for either kernel or non-kernel button
-u32	num_buttons[2]   = {0x010000, 0x000001};
 
 #ifdef DAEDALUS_PSP_GPROF
 extern "C" 
@@ -155,13 +149,13 @@ void loaderInit()
 //*************************************************************************************
 static void DaedalusFWCheck()
 {
-	SceCtrlData pad;
 
 	u32 ver = sceKernelDevkitVersion();
 
 	//if(ver < 0x05050010)
 	if(ver < 0x04000110)
 	{
+		SceCtrlData pad;
 		pspDebugScreenInit();
 		pspDebugScreenSetTextColor(0xffffff);
 		pspDebugScreenSetBackColor(0x000000);
@@ -260,19 +254,17 @@ static int PanicThread( SceSize args, void * argp )
 
 	u32 count = 0;
 
-	DAEDALUS_ERROR("PANIC THREAD STARTED\n");
-
 	//Loop 4 ever
 	while(1)
 	{
-		//if( getbuttons() & PSP_CTRL_NOTE )
-		if( (getbuttons() & MASK) == MASK )
+		SceCtrlData pad;
+		sceCtrlPeekBufferPositive(&pad, 1);
+		if( (pad.Buttons & MASK) == MASK )
 		{
 			if(++count > 5)		//If button presse for more that 2sec we return to main menu
 			{
 				count = 0;
 				CGraphicsContext::Get()->ClearAllSurfaces();
-				DAEDALUS_ERROR("Detected panic");
 				CPU_Halt("Panic");
 			}
 		}
@@ -332,27 +324,18 @@ static bool	Initialize()
 	_DisableFPUExceptions();
 
 	// Set up our Kernel Buttons : Home, Vol- +, etc
-	int Get_Kernel_Buttons = pspSdkLoadStartModule("kernelbuttons.prx", PSP_MEMORY_PARTITION_KERNEL);
+	InitButtons();
 
-	if (Get_Kernel_Buttons >= 0)
-	{
-		printf( "Successfully loaded kernelbuttons.prx: %08X\n", Get_Kernel_Buttons );
-	}
-	else
-	{
-		printf( "Couldn't load kernelbuttons.prx: %08X\n", Get_Kernel_Buttons );
-		PSP_NO_KBUTTONS = true;
-	}
-
+	// Force non-kernelbuttons when profiling
 #ifdef DAEDALUS_PSP_GPROF
-	PSP_NO_KBUTTONS = true;
+	gKernelButtons.mode = false;
 #endif
 
 	//Init Panic button thread
 	SetupPanic();
 
-	// We have to kill our Callbacks if we hook succesfully "home" button...
-	if( PSP_NO_KBUTTONS )
+	// We have to Callbacks if kernelbuttons.prx failed
+	if( gKernelButtons.mode == false )
 	{
 #ifdef DAEDALUS_CALLBACKS
 		//Set up callback for our thread
@@ -360,8 +343,7 @@ static bool	Initialize()
 #endif
 	}
 
-	//Set up the DveMgr (TV Display) and Detect PSP Slim
-	//if ( kuKernelGetModel() == PSP_MODEL_SLIM_AND_LITE )
+	//Set up the DveMgr (TV Display) and Detect PSP Slim or newer models
 	if ( kuKernelGetModel() != PSP_MODEL_STANDARD )
 	{
 		PSP_IS_SLIM = true;
@@ -553,30 +535,22 @@ void HandleEndOfFrame()
 	//
 	// If kernelbuttons.prx couldn't be loaded, allow select button to be used instead
 	//
-
-	// Init our kernel buttons, ex HOME button
-	u32 kernel_buttons = getbuttons();
-
-	// This isn't needed for kernel_buttons..
 	SceCtrlData pad; 
-
 	static u32 oldButtons = 0;
 
-	// This isn't needed for kernel_buttons..
-	sceCtrlPeekBufferPositive(&pad, 1); 
+	if( gKernelButtons.mode )
+		KernelPeekBufferPositive(&pad, 1); 
+	else
+		sceCtrlPeekBufferPositive(&pad, 1); 
 
-	// Check only once, since the status of the button won't change
-	u32 button_status = (PSP_NO_KBUTTONS == 0) ? kernel_buttons : pad.Buttons;
-
-	if(oldButtons != button_status)
+	if(oldButtons != pad.Buttons)
 	{
-		 // Check to be sure default button would be only used when kernelbuttons.prx failed!
-		if(button_status & num_buttons[PSP_NO_KBUTTONS])
+		if(pad.Buttons & gKernelButtons.style)
 		{
 			activate_pause_menu = true;
 		}
 	}
-	oldButtons = button_status;
+	oldButtons = pad.Buttons;
 
 	if(activate_pause_menu)
 	{

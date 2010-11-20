@@ -26,10 +26,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility/Timer.h"
 #include "Graphics/GraphicsContext.h"
 
+#include "SysPSP/Utility/Buttons.h"
+
 #include <pspctrl.h>
 
-const u32 PSP_BUTTONS_MASK( 0xffff );		// Mask off e.g. PSP_CTRL_HOME, PSP_CTRL_HOLD etc
-
+//const u32 PSP_BUTTONS_MASK( 0xffff );		// Mask off e.g. PSP_CTRL_HOME, PSP_CTRL_HOLD etc
 //*************************************************************************************
 //
 //*************************************************************************************
@@ -53,8 +54,14 @@ void	CUIScreen::Run()
 	DAEDALUS_ASSERT( mpContext != NULL, "No context" );
 
 	SceCtrlData		pad;
-	sceCtrlPeekBufferPositive(&pad, 1);
-	u32		old_buttons = (pad.Buttons & PSP_BUTTONS_MASK);
+
+	// If kernelbuttons.prx wasn't loaded allow usermode func instead.
+	if( gKernelButtons.mode )
+		KernelPeekBufferPositive(&pad, 1); 
+	else
+		sceCtrlPeekBufferPositive(&pad, 1); 
+
+	u32		old_buttons = pad.Buttons;
 
 	static const s32	STICK_DEADZONE = 20;
 
@@ -65,8 +72,11 @@ void	CUIScreen::Run()
 	{
 		float		elapsed_time( timer.GetElapsedSeconds() );
 
-		old_buttons = (pad.Buttons & PSP_BUTTONS_MASK);
-		sceCtrlPeekBufferPositive(&pad, 1);
+		old_buttons = pad.Buttons;
+		if( gKernelButtons.mode )
+			KernelPeekBufferPositive(&pad, 1); 
+		else
+			sceCtrlPeekBufferPositive(&pad, 1); 
 
 		s32		stick_x( pad.Lx - 128 );
 		s32		stick_y( pad.Ly - 128 );
@@ -86,7 +96,7 @@ void	CUIScreen::Run()
 
 		mpContext->Update( elapsed_time );
 
-		Update( elapsed_time, stick, old_buttons, (pad.Buttons & PSP_BUTTONS_MASK) );
+		Update( elapsed_time, stick, old_buttons, pad.Buttons );
 		
 		mpContext->BeginRender();
 
@@ -98,9 +108,13 @@ void	CUIScreen::Run()
 	//
 	//	Wait until all buttons are release before continuing
 	//
-	while( (pad.Buttons & PSP_BUTTONS_MASK) != 0 )
+	
+	/*while( (pad.Buttons & PSP_BUTTONS_MASK) != 0 )
 	{
-		sceCtrlPeekBufferPositive(&pad, 1);
-	}
+		if( gKernelButtons.mode )
+			KernelPeekBufferPositive(&pad, 1); 
+		else
+			sceCtrlPeekBufferPositive(&pad, 1); 
+	}*/
 
 }

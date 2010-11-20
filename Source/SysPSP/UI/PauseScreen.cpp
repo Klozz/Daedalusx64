@@ -38,19 +38,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility/Functor.h"
 
 #include "SysPSP/Utility/Batteryinfos.h"
+#include "SysPSP/Utility/Buttons.h"
 
 #include <pspctrl.h>
 #include <pspgu.h>
 
 #include <string>
-
-/* Kernel Buttons functions */
-extern "C" {
-u32 getbuttons();
-}
-extern u32 num_buttons[2];
-extern bool PSP_NO_KBUTTONS;
-
 
 namespace
 {
@@ -219,7 +212,6 @@ bool	IPauseScreen::IsOptionValid( EMenuOption option ) const
 //*************************************************************************************
 void	IPauseScreen::Update( float elapsed_time, const v2 & stick, u32 old_buttons, u32 new_buttons )
 {
-	u32 kernel_buttons = getbuttons();
 
 	if(old_buttons != new_buttons)
 	{
@@ -233,17 +225,12 @@ void	IPauseScreen::Update( float elapsed_time, const v2 & stick, u32 old_buttons
 			mCurrentOption = GetNextValidOption();
 			new_buttons &= ~PSP_CTRL_RTRIGGER;
 		}
+		if(new_buttons & gKernelButtons.style)
+		{
+			mIsFinished = true;
+			new_buttons &= ~gKernelButtons.style;
+		}
 	}
-	// Bah will make this prettier later :/
-	u32 set_buttons = (PSP_NO_KBUTTONS == 0) ? kernel_buttons : new_buttons;
-
-	if(set_buttons & num_buttons[PSP_NO_KBUTTONS])
-	{
-		mIsFinished = true;
-		set_buttons &= ~num_buttons[PSP_NO_KBUTTONS];
-	}
-	// Restore to default input, to avoid interfering with non-kernel buttons..
-	set_buttons = new_buttons;
 
 	mOptionComponents[ mCurrentOption ]->Update( elapsed_time, stick, old_buttons, new_buttons );
 }

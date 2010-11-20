@@ -95,10 +95,12 @@ u32	CDrawText::Render( EFont font_type, s32 x, s32 y, float scale, const char * 
 
 	return strlen( p_str ) * 16;		// Guess. Better off just returning 0?
 }
-
+//*************************************************************************************
+//
+//*************************************************************************************
 f32	CDrawText::IntrPrintf( f32 x, f32 y, f32 scale, c32 colour, const char * p_text, ... )
 {
-	DAEDALUS_ASSERT( font_type >= 0 && font_type < (s32)NUM_FONTS, "Invalid font" );
+	//DAEDALUS_ASSERT( font_type >= 0 && font_type < (s32)NUM_FONTS, "Invalid font" );
 
 	intraFont * font( gFonts[ F_REGULAR ] );
 

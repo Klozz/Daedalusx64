@@ -17,7 +17,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include <pspdebug.h>
 #include <psppower.h>
 #include <psprtc.h>
 
@@ -31,25 +30,24 @@ void battery_infos()
 {	
     pspTime time;
     sceRtcGetCurrentClockLocalTime(&time);
+	s32 bat = scePowerGetBatteryLifePercent();
 
-	if (scePowerIsBatteryExist())
-	{		
-		s32 bat = scePowerGetBatteryLifePercent();
+	CDrawText::IntrPrintf( 22, 43, 0.9f, DrawTextUtilities::TextWhite,"Time:  %d:%02d%c%02d", time.hour, time.minutes, (time.seconds&1?':':' '), time.seconds );
+
+	if(!scePowerIsBatteryCharging())
+	{
 		s32 batteryLifeTime = scePowerGetBatteryLifeTime();
 
-		CDrawText::IntrPrintf( 22, 43, 0.9f, DrawTextUtilities::TextWhite,"Time:  %d:%02d%c%02d", time.hour, time.minutes, (time.seconds&1?':':' '), time.seconds );
-		CDrawText::IntrPrintf( 140, 43, 0.9f, DrawTextUtilities::TextWhite,"# Battery:  %d%% %0.2fV %dC", bat, (f32) scePowerGetBatteryVolt() / 1000.0f, scePowerGetBatteryTemp() );
-		CDrawText::IntrPrintf( 332, 43, 0.9f, DrawTextUtilities::TextWhite,"# Remaining:  2dh%2dm", batteryLifeTime / 60, batteryLifeTime - 60 * (batteryLifeTime / 60) );
+		CDrawText::IntrPrintf( 140, 43, 0.9f, DrawTextUtilities::TextWhite,"Battery:  %d%% | %0.2fV | %dC", bat, (f32) scePowerGetBatteryVolt() / 1000.0f, scePowerGetBatteryTemp());
+		CDrawText::IntrPrintf( 332, 43, 0.9f, DrawTextUtilities::TextWhite,"Remaining: %2dh %2dm", batteryLifeTime / 60, batteryLifeTime - 60 * (batteryLifeTime / 60));
 	}
 	else
 	{
-		// Not really tested :p might need aligning
-		CDrawText::IntrPrintf( 22, 43, 0.9f, DrawTextUtilities::TextWhite,"Time:  %d:%02d%c%02d", time.hour, time.minutes, (time.seconds&1?':':' '), time.seconds );
-		CDrawText::IntrPrintf( 140, 43, 0.9f, DrawTextUtilities::TextWhite,"# Charging...");
-		CDrawText::IntrPrintf( 332, 43, 0.9f, DrawTextUtilities::TextWhite,"# --h--m");
+		CDrawText::IntrPrintf( 22, 43, 0.9f, DrawTextUtilities::TextWhite,"Battery:  %d%% | %0.2fV | %dC", bat, (f32) scePowerGetBatteryVolt() / 1000.0f, scePowerGetBatteryTemp());
+		CDrawText::IntrPrintf( 140, 43, 0.9f, DrawTextUtilities::TextWhite,"Charging...");
+		CDrawText::IntrPrintf( 332, 43, 0.9f, DrawTextUtilities::TextWhite,"Remaining: --h--m");
 	}
 }
-
 //*****************************************************************************
 //
 //*****************************************************************************

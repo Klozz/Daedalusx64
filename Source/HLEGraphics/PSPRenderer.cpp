@@ -557,19 +557,27 @@ bool			gNeedZBufferUdate = false;
 
 PSPRenderer::SBlendStateEntry	PSPRenderer::LookupBlendState( u64 mux, bool two_cycles )
 {
-	DAEDALUS_PROFILE( "LookupBlendState" );
+	DAEDALUS_PROFILE( "PSPRenderer::LookupBlendState" );
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	mRecordedCombinerStates.insert( mux );
 #endif
 
-	u64		key( mux );
-
-	if( two_cycles )
+	union
 	{
-		key |= u64(1)<<63;			// Top 8 bits are never set - use the very top one to differentiate between 1/2 cycles
-	}
+		u64		key;
+		u32		kpart[2];
+	}un;
 
-	BlendStatesMap::const_iterator	it( mBlendStatesMap.find( key ) );
+	un.key = mux;
+
+	// Top 8 bits are never set - use the very top one to differentiate between 1/2 cycles
+#if 1	//1->faster, 0->old
+	un.kpart[1] |= (two_cycles << 31);
+#else
+	if( two_cycles ) un.key |= u64(1)<<63;
+#endif
+	
+	BlendStatesMap::const_iterator	it( mBlendStatesMap.find( un.key ) );
 	if( it != mBlendStatesMap.end() )
 	{
 		return it->second;
@@ -593,7 +601,7 @@ PSPRenderer::SBlendStateEntry	PSPRenderer::LookupBlendState( u64 mux, bool two_c
 #endif
 	}
 
-	mBlendStatesMap[ key ] = entry;
+	mBlendStatesMap[ un.key ] = entry;
 	return entry;
 }
 
@@ -721,7 +729,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 
 	// Hack for nascar games..to be honest I don't know why these games are so different...might be tricky to have a proper fix..
 	// Hack accuracy : works 100%
-	if ( disable_zbuffer || (g_ROM.GameHacks == NASCAR && gRDPOtherMode.depth_source) )
+	if ( disable_zbuffer || (gRDPOtherMode.depth_source && g_ROM.GameHacks == NASCAR) )
 	{
 		sceGuDisable(GU_DEPTH_TEST);
 		sceGuDepthMask( GL_TRUE );	// GL_TRUE to disable z-writes
@@ -860,8 +868,8 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	{
 		case CYCLE_COPY:		blend_entry.States = mCopyBlendStates; break;
 		case CYCLE_FILL:		blend_entry.States = mFillBlendStates; break;
-		case CYCLE_1CYCLE:		blend_entry = LookupBlendState( gRDPMux._u64, 1 ); break;
-		case CYCLE_2CYCLE:		blend_entry = LookupBlendState( gRDPMux._u64, 2 ); break;
+		case CYCLE_1CYCLE:		blend_entry = LookupBlendState( gRDPMux._u64, false ); break;
+		case CYCLE_2CYCLE:		blend_entry = LookupBlendState( gRDPMux._u64, true ); break;
 	}
 
 	u32		render_flags( DAEDALUS_VERTEX_FLAGS );
@@ -1367,7 +1375,7 @@ u32 clip_tri_to_frustum_vfpu( DaedalusVtx4 * v0, DaedalusVtx4 * v1 )
 //*****************************************************************************
 bool PSPRenderer::FlushTris()
 {
-	DAEDALUS_PROFILE( "FlushTris" );
+	DAEDALUS_PROFILE( "PSPRenderer::FlushTris" );
 
 	if (m_dwNumIndices == 0)	return true;
 

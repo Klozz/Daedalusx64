@@ -959,8 +959,7 @@ void DLParser_GBI1_Line3D( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_Tri1( MicroCodeCommand command )
 {
-    DAEDALUS_PROFILE( "DLParser_GBI1_Tri1_T" );
-
+    //DAEDALUS_PROFILE( "DLParser_GBI1_Tri1_T" );
     // While the next command pair is Tri1, add vertices
     u32 pc = gDisplayListStack.back().addr;
     u32 * pCmdBase = (u32 *)( g_pu8RamBase + pc );
@@ -1002,8 +1001,7 @@ void DLParser_GBI1_Tri1( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI0_Tri4( MicroCodeCommand command )
 {
-	DAEDALUS_ERROR("GBI0_Tri4 ");
-
+	//DAEDALUS_ERROR("GBI0_Tri4 ");
     // While the next command pair is Tri2, add vertices
     u32 pc = gDisplayListStack.back().addr;
 

@@ -257,7 +257,7 @@ static int PanicThread( SceSize args, void * argp )
 	{
 		SceCtrlData pad;
 
-		if( gKernelButtons.mode )
+		if( gButtons.mode )
 			KernelPeekBufferPositive(&pad, 1); 
 		else
 			sceCtrlPeekBufferPositive(&pad, 1); 

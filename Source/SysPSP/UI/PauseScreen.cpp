@@ -225,10 +225,10 @@ void	IPauseScreen::Update( float elapsed_time, const v2 & stick, u32 old_buttons
 			mCurrentOption = GetNextValidOption();
 			new_buttons &= ~PSP_CTRL_RTRIGGER;
 		}
-		if(new_buttons & gKernelButtons.style)
+		if(new_buttons & gButtons.style)
 		{
 			mIsFinished = true;
-			new_buttons &= ~gKernelButtons.style;
+			new_buttons &= ~gButtons.style;
 		}
 	}
 

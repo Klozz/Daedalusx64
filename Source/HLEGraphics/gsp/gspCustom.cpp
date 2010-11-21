@@ -247,7 +247,8 @@ void DLParser_MtxDKR( MicroCodeCommand command )
 	}
 
 	// Load matrix from address
-	MatrixFromN64FixedPoint( address );
+	Matrix4x4 mat;
+	MatrixFromN64FixedPoint( mat, address );
 
 	//mat.m[3][0] = mat.m[3][1] = mat.m[3][2] = 0;
 	//mat.m[3][3] = 1;

@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SysPSP/Graphics/DrawText.h"
 #include "Graphics/ColourValue.h"
 
+#include "SysPSP/Utility/Buttons.h"
 #include "SysPSP/Utility/PathsPSP.h"
 #include "Utility/Thread.h"
 #include "Utility/FramerateLimiter.h"
@@ -43,6 +44,7 @@ extern u32 HAVE_DVE;
 extern u32 PSP_TV_CABLE;
 extern u32 PSP_TV_LACED;
 extern bool PSP_IS_SLIM;
+
 
 namespace
 {
@@ -194,10 +196,8 @@ namespace
 
 		virtual	void			OnSelected()
 		{
-			SceCtrlData pad;
-			sceCtrlPeekBufferPositive(&pad, 1);
-			
-			if( pad.Buttons & PSP_CTRL_SQUARE )
+
+			if( gButtons.type & PSP_CTRL_SQUARE )
 			{
 				IO::Path::DeleteRecursive((char*)"SaveGames",(char*)".hle");
 				remove(DAEDALUS_PSP_PATH("preferences.ini"));
@@ -205,12 +205,12 @@ namespace
 				ThreadSleepMs(1000);	//safety wait for s
 				sceKernelExitGame();
 			}
-			else if( pad.Buttons & PSP_CTRL_CIRCLE )
+			else if( gButtons.type & PSP_CTRL_CIRCLE )
 			{
 				IO::Path::DeleteRecursive((char*)"SaveGames",(char*)".hle");
 				ThreadSleepMs(1000);	//safety wait for s
 			}
-			else if( pad.Buttons & PSP_CTRL_TRIANGLE )
+			else if( gButtons.type & PSP_CTRL_TRIANGLE )
 			{
 				remove(DAEDALUS_PSP_PATH("preferences.ini"));
 				remove(DAEDALUS_PSP_PATH("rom.db"));
@@ -242,9 +242,8 @@ namespace
 		{
 		}
 
-
-		virtual	void		OnNext()		{ gGlobalPreferences.GuiType = EGuiType( (gGlobalPreferences.GuiType+1) % 2 ); }
-		virtual	void		OnPrevious()	{ gGlobalPreferences.GuiType = EGuiType( (gGlobalPreferences.GuiType + 2 - 1) % 2 ); }
+		virtual	void		OnNext()		{ gGlobalPreferences.GuiType = EGuiType( (gGlobalPreferences.GuiType+1) % NUM_GUI_TYPES ); }
+		virtual	void		OnPrevious()	{ gGlobalPreferences.GuiType = EGuiType( (gGlobalPreferences.GuiType + NUM_GUI_TYPES - 1) % NUM_GUI_TYPES ); }
 
 		virtual const char *	GetSettingName() const
 		{

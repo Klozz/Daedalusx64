@@ -27,7 +27,7 @@ typedef void(*MicroCodeInstruction)(MicroCodeCommand command);
 
 extern const MicroCodeInstruction gInstructionLookup[13][256];
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+#if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
 extern const char * gInstructionName[3][256];
 //DKR: 00229BA8: 05710080 001E4AF0 CMD G_DMATRI  Triangles 9 at 801E4AF0
 #endif

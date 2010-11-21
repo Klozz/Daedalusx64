@@ -53,15 +53,7 @@ void	CUIScreen::Run()
 {
 	DAEDALUS_ASSERT( mpContext != NULL, "No context" );
 
-	SceCtrlData		pad;
-
-	// If kernelbuttons.prx wasn't loaded allow usermode func instead.
-	if( gKernelButtons.mode )
-		KernelPeekBufferPositive(&pad, 1); 
-	else
-		sceCtrlPeekBufferPositive(&pad, 1); 
-
-	u32		old_buttons = pad.Buttons;
+	u32		old_buttons = gButtons.type;
 
 	static const s32	STICK_DEADZONE = 20;
 
@@ -70,16 +62,15 @@ void	CUIScreen::Run()
 	// Simple rom chooser
 	while( !IsFinished() )
 	{
+		// Only stick reading is needed.
+		SceCtrlData		pad2;
+		sceCtrlPeekBufferPositive(&pad2, 1);
+
 		float		elapsed_time( timer.GetElapsedSeconds() );
 
-		old_buttons = pad.Buttons;
-		if( gKernelButtons.mode )
-			KernelPeekBufferPositive(&pad, 1); 
-		else
-			sceCtrlPeekBufferPositive(&pad, 1); 
+		s32		stick_x( pad2.Lx - 128 );
+		s32		stick_y( pad2.Ly - 128 );
 
-		s32		stick_x( pad.Lx - 128 );
-		s32		stick_y( pad.Ly - 128 );
 
 		if(stick_x >= -STICK_DEADZONE && stick_x <= STICK_DEADZONE)
 		{
@@ -91,13 +82,16 @@ void	CUIScreen::Run()
 		}
 
 		v2	stick;
-		stick.x = float(stick_x) / 128.0f;
-		stick.y = float(stick_y) / 128.0f;
+		stick.x = f32(stick_x) / 128.0f;
+		stick.y = f32(stick_y) / 128.0f;
 
 		mpContext->Update( elapsed_time );
 
-		Update( elapsed_time, stick, old_buttons, pad.Buttons );
-		
+		Update( elapsed_time, stick, old_buttons, gButtons.type );
+
+		// Otherwise gButtons.type will fail
+		old_buttons = gButtons.type;
+
 		mpContext->BeginRender();
 
 		Render();

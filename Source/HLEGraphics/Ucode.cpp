@@ -1124,7 +1124,7 @@ const MicroCodeInstruction gInstructionLookup[13][256] =
 	},
 };
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+#if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
 const char * gInstructionName[3][256] =
 {
 	// uCode 0 - RSP SW 2.0X

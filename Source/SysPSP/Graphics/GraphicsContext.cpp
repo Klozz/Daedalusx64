@@ -502,7 +502,12 @@ void IGraphicsContext::DumpScreenShot()
 	char szFilePath[MAX_PATH+1];
 	char szDumpDir[MAX_PATH+1];
 
+// Do not combine more than one dir for release, since pic will be saved in ms0:/PICTURE/
+#ifndef DAEDALUS_PUBLIC_RELEASE
 	IO::Path::Combine(szDumpDir, g_ROM.settings.GameName.c_str(), gScreenDumpRootPath);
+#else
+	strcpy(szDumpDir, g_ROM.settings.GameName.c_str());
+#endif
 
 	Dump_GetDumpDirectory(szFilePath, szDumpDir);
 

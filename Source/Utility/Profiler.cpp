@@ -257,7 +257,7 @@ void	CProfilerImpl::Update()
 //	const char * const TERMINAL_TOP_LEFT			= "\033[2A\033[2K";
 	const char * const TERMINAL_TOP_LEFT			= "\033[H";
 	const char * const TERMINAL_ERASE_TO_EOL		= "\033[K";
-	const char * const TERMINAL_ERASE_TO_EOS		= "\033[J";
+//	const char * const TERMINAL_ERASE_TO_EOS		= "\033[J";
 
 	printf( TERMINAL_SAVE_CURSOR );
 	printf( TERMINAL_TOP_LEFT );
@@ -276,7 +276,7 @@ void	CProfilerImpl::Update()
 
 	//       0         1         2         3         4         5         6         7         8
 	//       012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-	printf( " Function                                                            Time   %%Parent  %%Overall    Hits\n" );
+	printf( " Function                                                        Time   %%Parent  %%Overall    Hits\n" );
 
 	for( u32 i = 0; i < active_callstacks.size(); ++i )
 	{
@@ -310,11 +310,12 @@ void	CProfilerImpl::Update()
 		char line[ 1024 ];
 		sprintf( line, "\033[2K%x %*s %s" , depth, depth*2, "", callstack->GetBack()->GetName() );
 		Pad( line, 64 );
-		printf( "%s %3d,%03dus   %6.2f%%   %6.2f%%   %5d%s\n", line, total_us / 1000, total_us % 1000, percent_parent_time, percent_total_time, hit_count, TERMINAL_ERASE_TO_EOL );
+		printf( "%s %6.2fus   %6.1f%%   %6.1f%%   %5d%s\n", line, (f32)total_us / 1000.0f, percent_parent_time, percent_total_time, hit_count, TERMINAL_ERASE_TO_EOL );
 		//DBGConsole_Msg( 0, "%*s %s %d,%03dms (%d calls)", depth, "", p_item->GetName(), total_us / 1000, total_us % 1000, hit_count );
 	}
 
-	printf( "\033[2K----------------\n%s\n", TERMINAL_ERASE_TO_EOS );
+	printf( "<*>");
+	//printf( "\033[2K----------------\n%s\n", TERMINAL_ERASE_TO_EOS );
 	//printf( TERMINAL_RESTORE_CURSOR );
 	fflush( stdout );
 

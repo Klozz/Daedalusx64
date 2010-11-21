@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../stdafx.h"
 
+#include "../DList.h"
 #include "../PSPRenderer.h"
 #include "../RDP.h"
 #include "../RDPStateManager.h"
@@ -52,8 +53,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 struct DList
 {
-    u32 addr;
-    u32 limit;
+	u32 addr;
+	u32 limit;
+	// Push/pop?
 };
 
 extern u32 gSegments[16];
@@ -64,7 +66,6 @@ extern u32 gOtherModeH;
 extern u32 gTextureLevel;
 extern u32 gRDPHalf1;
 extern u32 gAmbientLightIdx;
-extern Matrix4x4 mat;
 
 extern std::vector< DList > gDisplayListStack;
 
@@ -75,7 +76,7 @@ extern std::vector< DList > gDisplayListStack;
 #define RDP_NOIMPL_WARN(op)             DAEDALUS_DL_ERROR( op )
 #define RDP_NOIMPL( op, cmd0, cmd1 )    DAEDALUS_DL_ERROR( "Not Implemented: %s 0x%08x 0x%08x", op, cmd0, cmd1 )
 
-void MatrixFromN64FixedPoint( u32 address );
+void MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address );
 void DLParser_PushDisplayList( const DList & dl );
 void DLParser_CallDisplayList( const DList & dl );
 void DLParser_PopDL();

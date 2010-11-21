@@ -164,7 +164,7 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		if( section->FindProperty( "GuiType", &property ) )
 		{
 			u32 value( property->GetIntValue(defaults.GuiType) );
-			if( value < 2 ) //value >= 0 && not needed as it's always True
+			if( value < NUM_GUI_TYPES ) //value >= 0 && not needed as it's always True
 			{
 				gGlobalPreferences.GuiType = EGuiType( value );
 			}
@@ -356,8 +356,8 @@ void IPreferences::Commit()
 		OUTPUT_BOOL( gGlobalPreferences, SoftwareClipping, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, HighlightInexactBlendModes, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, BatteryWarning, defaults );
-		OUTPUT_BOOL( gGlobalPreferences, GuiType, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, LargeROMBuffer, defaults );
+		OUTPUT_INT( gGlobalPreferences, GuiType, defaults );
 		OUTPUT_INT( gGlobalPreferences, GuiColor, defaults )
 		OUTPUT_INT( gGlobalPreferences, ForceTextureFilter, defaults );
 		OUTPUT_FLOAT( gGlobalPreferences, StickMinDeadzone, defaults );

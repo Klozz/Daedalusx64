@@ -55,22 +55,24 @@ EFrameskipValue		gFrameskipValue = FV_DISABLED;
 
 namespace
 {
-	u32					gTotalFrames = 0;
-	u32					gVblCount = 0;
+	//u32					gVblCount = 0;
 	u32					gFlipCount = 0;
-	float				gCurrentVblrate = 0.0f;
+	//float				gCurrentVblrate = 0.0f;
 	float				gCurrentFramerate = 0.0f;
 	u64					gLastFramerateCalcTime = 0;
 	u64					gTicksPerSecond = 0;
 
 #ifdef DAEDALUS_FRAMERATE_ANALYSIS
+	u32					gTotalFrames = 0;
 	u64					gFirstFrameTime = 0;
 	FILE *				gFramerateFile = NULL;
 #endif
 
-void	UpdateFramerate()
+static void	UpdateFramerate()
 {
+#ifdef DAEDALUS_FRAMERATE_ANALYSIS
 	gTotalFrames++;
+#endif
 	gFlipCount++;
 
 	u64			now;
@@ -98,10 +100,10 @@ void	UpdateFramerate()
 	u64		ticks_since_recalc( now - gLastFramerateCalcTime );
 	if(ticks_since_recalc > gTicksPerSecond)
 	{
-		gCurrentVblrate = float( gVblCount * gTicksPerSecond ) / float( ticks_since_recalc );
+		//gCurrentVblrate = float( gVblCount * gTicksPerSecond ) / float( ticks_since_recalc );
 		gCurrentFramerate = float( gFlipCount * gTicksPerSecond ) / float( ticks_since_recalc );
 
-		gVblCount = 0;
+		//gVblCount = 0;
 		gFlipCount = 0;
 		gLastFramerateCalcTime = now;
 
@@ -207,7 +209,7 @@ void CGraphicsPluginPsp::ProcessDList()
 //*****************************************************************************
 void CGraphicsPluginPsp::UpdateScreen()
 {
-	gVblCount++;
+	//gVblCount++;
 
 	static u32		last_origin = 0;
 	u32 current_origin = Memory_VI_GetRegister(VI_ORIGIN_REG);

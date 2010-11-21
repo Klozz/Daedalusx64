@@ -1236,13 +1236,11 @@ void BlendMode_0x00147e2844fe7b3dLL( BLEND_MODE_ARGS )
 //aA1  : (0            - 0           ) * 0            + Shade
 void BlendMode_0x00147e2844fe793cLL( BLEND_MODE_ARGS )
 {
-#ifdef CHECK_FIRST_CYCLE	
 	if( num_cycles == 1 )
 	{
 		sceGuTexFunc(GU_TFX_DECAL,GU_TCC_RGBA);
 	}
 	else
-#endif
 	{
 		sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 	}
@@ -2407,14 +2405,13 @@ void BlendMode_0x0026a0041ffc93e0LL( BLEND_MODE_ARGS )
 //case 0x0025fe6014fcf73bLL:
 //aRGB0: (Texel1       - Texel0      ) * Shade_Alpha  + Texel0
 //aA0  : (0            - 0           ) * 0            + Primitive
-//aRGB1: (Primitive    - Shade       ) * Combined     + Shade
+//aRGBe1: (Primitive    - Shade       ) * Combined     + Shade
 //aA1  : (0            - 0           ) * 0            + Primitive
 
 void BlendMode_0x0025fe6014fcf73bLL (BLEND_MODE_ARGS)
 {
 	details.ColourAdjuster.SetA( details.PrimColour );
-	details.ColourAdjuster.SetAOpaque();
-	sceGuTexEnvColor( details.EnvColour.GetColour() );
+	//sceGuTexEnvColor( details.EnvColour.GetColour() );
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
 //Silicon valley - Waterfalls looks trasparent now

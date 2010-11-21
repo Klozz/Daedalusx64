@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 /****** Wrapper for Kernel Buttons functions ******/
 //
 
-KernelButtons gKernelButtons;
+PSPButtons gButtons;
 //*****************************************************************************
 //	Init our buttons, various stats etc
 //*****************************************************************************
@@ -40,17 +40,19 @@ void InitButtons()
 
 	// Start our stack for either kernel or usermode buttons
 	//
-	gKernelButtons.mode			=  ( gGetKernelButtons >= 0 )	  ? true : false;
-	gKernelButtons.style		=  ( gKernelButtons.mode == true ) ? PSP_CTRL_HOME : PSP_CTRL_SELECT;
+	gButtons.mode			=  ( gGetKernelButtons >= 0 )	  ? true : false;
+	gButtons.style			=  ( gButtons.mode == true ) ? PSP_CTRL_HOME : PSP_CTRL_SELECT;
 
 	printf( "%s to load kernelbuttons.prx: %08X\n", 
-			gKernelButtons.mode ? "Successfully" : "Failed",
+			gButtons.mode ? "Successfully" : "Failed",
 			gGetKernelButtons );
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
+
+
 
 
 

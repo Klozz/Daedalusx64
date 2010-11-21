@@ -28,24 +28,33 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //*****************************************************************************
 extern "C" 
 {
-	u32 KernelPeekBufferPositive(SceCtrlData* ctrl, u32 count);
+	u32 KernelPeekBufferPositive(SceCtrlData * ctrl, u32 count);
 }
 
 //*************************************************************************************
 //
 //*************************************************************************************
-struct KernelButtons
+struct PSPButtons
 {
+	u32		type;			// input type of our buttons, X,O,[] etc, kernel inputs supported too.
 	u32		style;			// input style for either kernel or non-kernel button	
 	bool	mode;			// returns true if kernelbuttons.prx loaded correctly
 };
+
+
+// Extern
+//
+extern PSPButtons gButtons;
+//*************************************************************************************
+//
+//*************************************************************************************
 
 // Function to init our buttons funcs etc
 
 void InitButtons();
 
-// Extern
-//
-extern KernelButtons gKernelButtons;
+// Function to read our buttons
+
+inline void DaedalusReadButtons(u32 buttons)	{ gButtons.type = buttons; }
 
 #endif	//BUTTONS_H

@@ -182,7 +182,8 @@ void DLParser_GBI1_Mtx( MicroCodeCommand command )
 		command.mtx1.len, address);
 
 	// Load matrix from address
-	MatrixFromN64FixedPoint( address );
+	Matrix4x4 mat;
+	MatrixFromN64FixedPoint( mat, address );
 
 	if (command.mtx1.projection)
 	{
@@ -216,7 +217,8 @@ void DLParser_GBI2_Mtx( MicroCodeCommand command )
 	}
 
 	// Load matrix from address
-	MatrixFromN64FixedPoint( address );
+	Matrix4x4 mat;
+	MatrixFromN64FixedPoint( mat, address );
 
 	if (command.mtx2.projection)
 	{
@@ -334,13 +336,19 @@ void DLParser_GBI2_DL_Count( MicroCodeCommand command )
 
 	// This cmd is likely to execute number of ucode at the given address
 	u32 address  = RDPSegAddr(command.inst.cmd1);
+	u32 count	 = command.inst.cmd0 & 0xFFFF;
+
+	if (address == 0)
+	{
+		printf("invalid count\n");
+		return;
+	}
 
 	DList dl;
 	dl.addr = address;
-	dl.limit = ((command.inst.cmd0)&0xFFFF);
+	dl.limit = count + 1;
 	gDisplayListStack.push_back(dl);
 }
-
 //*****************************************************************************
 // When the depth is less than the z value provided, branch to given address
 //*****************************************************************************
@@ -637,14 +645,25 @@ void DLParser_GBI1_Texture( MicroCodeCommand command )
     gTextureTile  = command.texture.tile;
 
     bool enable = command.texture.enable_gbi0;                        // Seems to use 0x01
-    f32 scale_s = f32(command.texture.scaleS) * (1.0f / (65536.0f * 32.0f));
-    f32 scale_t = f32(command.texture.scaleT) * (1.0f / (65536.0f * 32.0f));
 
-    DL_PF("    Level: %d Tile: %d %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
-    DL_PF("    ScaleS: %f, ScaleT: %f", scale_s*32.0f, scale_t*32.0f);
+	if(enable)
+	{
+		f32 scale_s = f32(command.texture.scaleS) * (1.0f / (65536.0f * 32.0f));
+		f32 scale_t = f32(command.texture.scaleT) * (1.0f / (65536.0f * 32.0f));
 
-    PSPRenderer::Get()->SetTextureEnable( enable );
-    PSPRenderer::Get()->SetTextureScale( scale_s, scale_t );
+		DL_PF("    Level: %d Tile: %d %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
+		DL_PF("    ScaleS: %f, ScaleT: %f", scale_s*32.0f, scale_t*32.0f);
+
+		PSPRenderer::Get()->SetTextureScale( scale_s, scale_t );
+	}
+	else
+	{
+		//printf("texture is disabled -> **skip**\n");
+	}
+
+	//printf("    %s\n", enable ? "enabled":"disabled");
+
+	PSPRenderer::Get()->SetTextureEnable( enable );
 }
 
 //*****************************************************************************

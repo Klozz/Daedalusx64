@@ -75,62 +75,7 @@ const char *	gDisplayListDumpPathFormat = "dl%04d.txt";
 #define N64COL_GETB_F( col )	(N64COL_GETB(col) * (1.0f/255.0f))
 #define N64COL_GETA_F( col )	(N64COL_GETA(col) * (1.0f/255.0f))
 
-Matrix4x4 mat;
-//*************************************************************************************
-// 
-//*************************************************************************************
-void MatrixFromN64FixedPoint( u32 address )
-{
-	const u8 *	base( g_pu8RamBase );
-
-	int i, j;
-
-	for (i = 0; i < 4; i++)
-	{
-		for (j = 0; j < 4; j++) 
-		{
-			int hi = *(s16 *)(base + ((address+(i<<3)+(j<<1)     )^0x2));
-			u16 lo = *(u16 *)(base + ((address+(i<<3)+(j<<1) + 32)^0x2));
-
-			mat.m[i][j] = (f32)((hi<<16) | (lo)) * (1.0f / 65536.0f);
-		}
-	}
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-    if (gDisplayListFile != NULL)
-    {
-            DL_PF(
-                    " %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-                    " %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-                    " %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-                    " %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n",
-                    mat.m[0][0], mat.m[0][1], mat.m[0][2], mat.m[0][3],
-                    mat.m[1][0], mat.m[1][1], mat.m[1][2], mat.m[1][3],
-                    mat.m[2][0], mat.m[2][1], mat.m[2][2], mat.m[2][3],
-                    mat.m[3][0], mat.m[3][1], mat.m[3][2], mat.m[3][3]);
-    }
-#endif
-}
-
-//*************************************************************************************
-//
-//*************************************************************************************
-// Arrrg this isn't right, need to implement it correctly...
-// Donald Duck, Tarzan, all wrestling games use this
-//
-static void RDP_Force_Matrix(u32 address)
-{
-	// Fix me !
-	
-	if (address + 64 > MAX_RAM_ADDRESS)
-	{
-		DBGConsole_Msg(0, "ForceMtx: Address invalid (0x%08x)", address);
-		return;
-	}
-
-	MatrixFromN64FixedPoint(address);
-	PSPRenderer::Get()->SetProjection(mat, true, true);
-}
-
+static void RDP_Force_Matrix(u32 address);
 //*************************************************************************************
 //
 //*************************************************************************************
@@ -171,7 +116,7 @@ u32 gRDPHalf1 = 0;
 // For GBI0, it is 10.
 // For GBI1/2 it is 2.
 //u32 gVertexStride = 10; 
-u32 VertexStride[] =
+const u32 VertexStride[] =
 {
 	10,		// Super Mario 64, Tetrisphere, Demos
 	2,		// Mario Kart, Star Fox
@@ -188,7 +133,7 @@ u32 VertexStride[] =
 	2		// Kirby 64
 };
 u32 gVertexStride;
-static u32 ucode_ver;
+static s32 ucode_ver;
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
 //                      Dumping                         //
@@ -469,49 +414,16 @@ void DLParser_PopDL()
 //*****************************************************************************
 // Reads the next command from the display list, updates the PC.
 //*****************************************************************************
-bool	DLParser_FetchNextCommand( MicroCodeCommand * p_command )
+inline void	DLParser_FetchNextCommand( MicroCodeCommand * p_command )
 {
-	if( gDisplayListStack.empty() )
-		return false;
-
-	// This really important otherwise our ucode detector will pass lots of junk
-	// Also to avoid the passing any invalid detection , see Golden Eye or Conker for example
-	//
-	if( ucode_ver > GBI_0_UNK || ucode_ver < GBI_0 )
-		return false;
-
 	// Current PC is the last value on the stack
 	DList &		entry( gDisplayListStack.back() );
 	u32			pc( entry.addr );
-
-	if ( pc > MAX_RAM_ADDRESS )
-	{
-		DBGConsole_Msg(0, "Display list PC is out of range: 0x%08x", pc );
-		return false;
-	}
 
 	p_command->inst.cmd0 = g_pu32RamBase[(pc>>2)+0];
 	p_command->inst.cmd1 = g_pu32RamBase[(pc>>2)+1];
 
 	entry.addr = pc + 8;
-
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	//use the gInstructionName table for fecthing names.
-	//we use the table as is for GBI0, GBI1 and GBI2
-	//we fallback to GBI0 for custom ucodes (ucode_ver>2)
-	DL_PF("[%05d] 0x%08x: %08x %08x %-10s", gCurrentInstructionCount, pc, p_command->inst.cmd0, p_command->inst.cmd1, gInstructionName[ucode_ver<=2?ucode_ver:0][p_command->inst.cmd ]);
-	gCurrentInstructionCount++;
-
-	if( gInstructionCountLimit != UNLIMITED_INSTRUCTION_COUNT )
-	{
-		if( gCurrentInstructionCount >= gInstructionCountLimit )
-		{
-			return false;
-		}
-	}
-#endif
-
-	return true;
 }
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
@@ -562,19 +474,25 @@ void	DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 da
 
 	// Pass detection to to be used by the dlist loop
 	ucode_ver = gbi_version;
+
+	//DAEDALUS_ERROR("Switching ucode table to %d", ucode_ver);
+
+	//Pass -1 for illegal values since it cheaper to check for //Corn
+	if( ucode_ver > GBI_0_UNK || ucode_ver < GBI_0 ) ucode_ver = -1;
 }
 
 
 //*****************************************************************************
 //
 //*****************************************************************************
+//if ucode verion is other than 0,1 or 2 then default to 0 (with non valid function names) //Corn 
 #ifdef DAEDALUS_ENABLE_PROFILING
 SProfileItemHandle * gpProfileItemHandles[ 256 ];
 
 #define PROFILE_DL_CMD( cmd )								\
 	if(gpProfileItemHandles[ (cmd) ] == NULL)				\
 	{														\
-		gpProfileItemHandles[ (cmd) ] = new SProfileItemHandle( CProfiler::Get()->AddItem( gInstructionName[ (cmd) ] ) );		\
+		gpProfileItemHandles[ (cmd) ] = new SProfileItemHandle( CProfiler::Get()->AddItem( gInstructionName[(ucode_ver > 2 || ucode_ver < 0) ? 0:ucode_ver ][ (cmd) ] ) );		\
 	}														\
 	CAutoProfile		_auto_profile( *gpProfileItemHandles[ (cmd) ] )
 
@@ -591,34 +509,69 @@ static void	DLParser_ProcessDList()
 {
 	MicroCodeCommand command;
 
+	//Clean frame buffer
 	if( gCleanSceneEnabled && CGraphicsContext::CleanScene )
 	{
 		CGraphicsContext::Get()->Clear(true, false);
 		CGraphicsContext::CleanScene = false;
 	}
 
-	while (DLParser_FetchNextCommand(&command))
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+	//Check if address is outside legal RDRAM
+	DList &		entry( gDisplayListStack.back() );
+	u32			pc( entry.addr );
+
+	if ( pc > MAX_RAM_ADDRESS )
 	{
-//		PROFILE_DL_CMD( command.inst.cmd );
+		DBGConsole_Msg(0, "Display list PC is out of range: 0x%08x", pc );
+		return;
+	}
+#endif
 
-		//DAEDALUS_ERROR("Switching ucode table to %d", ucode_ver);
+	//Set up correct vertex stride
+	gVertexStride = VertexStride[ucode_ver];
 
-		gVertexStride = VertexStride[ucode_ver]; // Set up correct vertex stride
-		gInstructionLookup[ucode_ver][command.inst.cmd0>>24](command); //Set up selected ucode table
+	// This really important otherwise our ucode detector will pass lots of junk
+	// Also to avoid the passing any invalid detection , see Golden Eye or Conker for example
+	// Fast Ucode check for -1, skipping illegal Ucodes //Corn
+	while(ucode_ver >= 0)
+	{
+		DLParser_FetchNextCommand(&command);
+
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+		//use the gInstructionName table for fecthing names.
+		//we use the table as is for GBI0, GBI1 and GBI2
+		//we fallback to GBI0 for custom ucodes (ucode_ver>2)
+		DL_PF("[%05d] 0x%08x: %08x %08x %-10s", gCurrentInstructionCount, pc, p_command->inst.cmd0, p_command->inst.cmd1, gInstructionName[ucode_ver<=2?ucode_ver:0][p_command->inst.cmd ]);
+		gCurrentInstructionCount++;
+
+		if( gInstructionCountLimit != UNLIMITED_INSTRUCTION_COUNT )
+		{
+			if( gCurrentInstructionCount >= gInstructionCountLimit )
+			{
+				return;
+			}
+		}
+#endif
+
+		//Profile current Ucode
+		PROFILE_DL_CMD( command.inst.cmd );
+
+		//Run Ucode command
+		gInstructionLookup[ucode_ver][command.inst.cmd0>>24](command); 
 
 		// Check limit
-		if (!gDisplayListStack.empty())
+		if ( !gDisplayListStack.empty() )
 		{
-			gDisplayListStack.back().limit--;
-			if (gDisplayListStack.back().limit == u32(~0))
+			if ( --gDisplayListStack.back().limit < 0 )
 			{
 				DL_PF("**EndDLInMem");
 				gDisplayListStack.pop_back();
 			}	
 		}
+		else return;
 	}
 }
-
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -707,6 +660,7 @@ void DLParser_Process()
 		DLParser_ProcessDList();
 		PSPRenderer::Get()->EndScene();
 	}
+
 	gGraphicsPlugin->UpdateScreen();
 
 	// Do this regardless!
@@ -734,13 +688,13 @@ void DLParser_Process()
 //*****************************************************************************
 void RDP_MoveMemLight(u32 light_idx, u32 address)
 {
-/*
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	if( light_idx >= 16 )
 	{
 		DBGConsole_Msg(0, "Warning: invalid light # = %d", light_idx);
 		return;
 	}
-*/
+#endif
 	s8 * pcBase = g_ps8RamBase + address;
 	u32 * pdwBase = (u32 *)pcBase;
 
@@ -797,13 +751,13 @@ void RDP_MoveMemLight(u32 light_idx, u32 address)
 
 void RDP_MoveMemViewport(u32 address)
 {
-/*
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	if( address+16 >= MAX_RAM_ADDRESS )
 	{
 		DBGConsole_Msg(0, "MoveMem Viewport, invalid memory");
 		return;
 	}
-*/
+#endif
 	s16 scale[4];
 	s16 trans[4];
 
@@ -1438,6 +1392,7 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 		RDP_NOIMPL_WARN("Zelda Move Point Not Implemented");
 		break;
 	case G_GBI2_MVO_LOOKATX:
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		if( (command.inst.cmd0) == 0xDC170000 && ((command.inst.cmd1)&0xFF000000) == 0x80000000 )
 		{
 			// Ucode for Evangelion.v64, the ObjMatrix cmd
@@ -1445,18 +1400,22 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 			// XXX DLParser_S2DEX_ObjMoveMem not implemented yet anyways..
 			RDP_NOIMPL_WARN("G_GBI2_MVO_LOOKATX Not Implemented");
 		}
+#endif
 		break;
 	case G_GBI2_MVO_LOOKATY:
 		RDP_NOIMPL_WARN("Not implemented ZeldaMoveMem LOOKATY");
 		break;
 	case 0x02:
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		if( (command.inst.cmd0) == 0xDC070002 && ((command.inst.cmd1)&0xFF000000) == 0x80000000 )
 		{
 			// DLParser_S2DEX_ObjMoveMem(command);
 			// XXX DLParser_S2DEX_ObjMoveMem not implemented yet anyways..
 			RDP_NOIMPL_WARN("G_GBI2_MV_0x02 Not Implemented");
-			break;
+			
 		}
+#endif
+		break;
 	default:
 		DL_PF("    GBI2 MoveMem Type: Unknown");
 		DBGConsole_Msg(0, "GBI2 MoveMem: Unknown Type. 0x%08x 0x%08x", command.inst.cmd0, command.inst.cmd1);
@@ -1784,9 +1743,8 @@ void DLParser_TexRect( MicroCodeCommand command )
 	//
 	// Fetch the next two instructions
 	//
-	if( !DLParser_FetchNextCommand( &command2 ) ||
-		!DLParser_FetchNextCommand( &command3 ) )
-		return;
+	DLParser_FetchNextCommand( &command2 );
+	DLParser_FetchNextCommand( &command3 );
 
 	RDP_TexRect tex_rect;
 	tex_rect.cmd0 = command.inst.cmd0;
@@ -1839,9 +1797,8 @@ void DLParser_TexRectFlip( MicroCodeCommand command )
 	//
 	// Fetch the next two instructions
 	//
-	if( !DLParser_FetchNextCommand( &command2 ) ||
-		!DLParser_FetchNextCommand( &command3 ) )
-		return;
+	DLParser_FetchNextCommand( &command2 );
+	DLParser_FetchNextCommand( &command3 );
 
 	RDP_TexRect tex_rect;
 	tex_rect.cmd0 = command.inst.cmd0;
@@ -2111,4 +2068,42 @@ void DLParser_SetInstructionCountLimit( u32 limit )
 //*****************************************************************************
 void DLParser_TriRSP( MicroCodeCommand command ){ DL_PF("RSP Tri: (Ignored)"); }
 
+//*************************************************************************************
+// 
+//*************************************************************************************
+void MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address )
+{
+	const f32	fRecip = 1.0f / 65536.0f;
+	const u8 *	base( g_pu8RamBase );
 
+	for (u32 i = 0; i < 4; i++)
+	{
+		for (u32 j = 0; j < 4; j++) 
+		{
+			s16 hi = *(s16 *)(base + ((address+(i<<3)+(j<<1)     )^0x2));
+			u16 lo = *(u16 *)(base + ((address+(i<<3)+(j<<1) + 32)^0x2));
+
+			mat.m[i][j] = ((hi<<16) | (lo)) * fRecip;
+		}
+	}
+}
+//*************************************************************************************
+//
+//*************************************************************************************
+// Arrrg this isn't right, need to implement it correctly...
+// Donald Duck, Tarzan, all wrestling games use this
+//
+static void RDP_Force_Matrix(u32 address)
+{
+	// Fix me !
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST	
+	if (address + 64 > MAX_RAM_ADDRESS)
+	{
+		DBGConsole_Msg(0, "ForceMtx: Address invalid (0x%08x)", address);
+		return;
+	}
+#endif
+	Matrix4x4 mat;
+	MatrixFromN64FixedPoint(mat,address);
+	PSPRenderer::Get()->SetProjection(mat, true, true);
+}

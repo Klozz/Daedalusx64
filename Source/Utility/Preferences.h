@@ -32,6 +32,8 @@ enum EGuiType
 	CLASSIC,
 };
 
+const u32 NUM_GUI_TYPES = CLASSIC+1;
+
 enum ETextureHashFrequency
 {
 	THF_DISABLED = 0,

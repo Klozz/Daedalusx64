@@ -39,13 +39,13 @@ void battery_infos()
 		s32 batteryLifeTime = scePowerGetBatteryLifeTime();
 
 		CDrawText::IntrPrintf( 140, 43, 0.9f, DrawTextUtilities::TextWhite,"Battery:  %d%% | %0.2fV | %dC", bat, (f32) scePowerGetBatteryVolt() / 1000.0f, scePowerGetBatteryTemp());
-		CDrawText::IntrPrintf( 332, 43, 0.9f, DrawTextUtilities::TextWhite,"Remaining: %2dh %2dm", batteryLifeTime / 60, batteryLifeTime - 60 * (batteryLifeTime / 60));
+		CDrawText::IntrPrintf( 335, 43, 0.9f, DrawTextUtilities::TextWhite,"Remaining: %2dh %2dm", batteryLifeTime / 60, batteryLifeTime - 60 * (batteryLifeTime / 60));
 	}
 	else
 	{
-		CDrawText::IntrPrintf( 22, 43, 0.9f, DrawTextUtilities::TextWhite,"Battery:  %d%% | %0.2fV | %dC", bat, (f32) scePowerGetBatteryVolt() / 1000.0f, scePowerGetBatteryTemp());
-		CDrawText::IntrPrintf( 140, 43, 0.9f, DrawTextUtilities::TextWhite,"Charging...");
-		CDrawText::IntrPrintf( 332, 43, 0.9f, DrawTextUtilities::TextWhite,"Remaining: --h--m");
+		//CDrawText::IntrPrintf( 140, 43, 0.9f, DrawTextUtilities::TextWhite,"Battery:  %d%% | %0.2fV | %dC", bat, (f32) scePowerGetBatteryVolt() / 1000.0f, scePowerGetBatteryTemp());
+		CDrawText::IntrPrintf( 210, 43, 0.9f, DrawTextUtilities::TextWhite,"Charging...");
+		CDrawText::IntrPrintf( 335, 43, 0.9f, DrawTextUtilities::TextWhite,"Remaining: --h--m");
 	}
 }
 //*****************************************************************************

@@ -240,20 +240,40 @@ int intraFontGetGlyph(unsigned char *data, unsigned long *b, unsigned char glyph
     return 1;
 }
 
+// Moved loop within statement, was using lotsa of cpu -Salvy
+
+/* 
+ %   cumulative   self              self     total           
+ time   seconds   seconds    calls   s/call   s/call  name    
+ 31.88     34.47    34.47  5665392     0.00     0.00  intraFontGetID (as is)
+  4.78     48.61     4.55  1727916     0.00     0.00  intraFontGetID( moving loop inside statement)
+ */
+
 unsigned short intraFontGetID(intraFont* font, cccUCS2 ucs) {
-	unsigned short j, id = 0;
+	unsigned short j = 0;
+	unsigned short id = 0;
 	char found = 0;
-	for (j = 0; j < font->charmap_compr_len && !found; j++) {
-		if ((ucs >= font->charmap_compr[j*2]) && (ucs < (font->charmap_compr[j*2]+font->charmap_compr[j*2+1]))) {
+	
+	if ((ucs >= font->charmap_compr[j*2]) && (ucs < (font->charmap_compr[j*2]+font->charmap_compr[j*2+1])))
+	{
+		for (j = 0; j < font->charmap_compr_len && !found; j++)
+		{
 			id += ucs - font->charmap_compr[j*2];
-			found = 1;			
-		} else {
+			found = 1;		
+		}
+	} 
+	else 
+	{
+		for (j = 0; j < font->charmap_compr_len && !found; j++)
+		{
 			id += font->charmap_compr[j*2+1];
 		}
 	}
-	if (!found) return 65535;	//char not in charmap
+	if ( !found || id >= font->n_chars )	return 65535;
 	if (font->fileType == FILETYPE_PGF) id = font->charmap[id]; //BWFON has right id already
-	if (id >= font->n_chars) return 65535; //char not in fontdata or not in ASCII-cache
+
+	//if (!found) return 65535;	//char not in charmap
+	//if (id >= font->n_chars) return 65535; //char not in fontdata or not in ASCII-cache
 	//if (font->glyph[id].width == 0 || font->glyph[id].height == 0) return 65535; //char has no valid glyph
 	return id;
 }

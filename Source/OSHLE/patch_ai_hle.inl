@@ -6,12 +6,17 @@
 u32 Patch_osAiGetLength()
 {
 TEST_DISABLE_AI_FUNCS
-	return PATCH_RET_NOT_PROCESSED;
-	u32 len = Read32Bits(PHYS_TO_K1(AI_LEN_REG));
+	//return PATCH_RET_NOT_PROCESSED;
+	//u32 len = Read32Bits(PHYS_TO_K1(AI_LEN_REG));
 
 	//DBGConsole_Msg(0, "osAiGetLength()");
 
-	gGPR[REG_v0]._s64 = (s64)(s32)len;
+	//gGPR[REG_v0]._s64 = (s64)(s32)len;
+
+	// See ReadLength @ AudioPluginPSP.cpp
+	//
+	gGPR[REG_v0]._s64 = 0; // Should this be signed?
+
 	return PATCH_RET_JR_RA;
 }
 

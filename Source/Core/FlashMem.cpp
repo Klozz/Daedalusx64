@@ -63,7 +63,7 @@ bool DMA_FLASH_CopyToDRAM(u32 dest, u32 StartOffset, u32 len)
 	}
 }
 
-bool DMA_FLASH_CopyFromDRAM(u32 dest, u32 StartOffset, u32 len) 
+bool DMA_FLASH_CopyFromDRAM(u32 dest, u32 len) 
 {
 	if(FlashFlag == FLASHRAM_MODE_WRITE )
 	{

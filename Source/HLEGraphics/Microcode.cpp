@@ -31,6 +31,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility/IO.h"
 #include "Utility/Preferences.h"
 
+
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+//                    uCode Config                      //
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+
 // NoN			No Near clipping
 // Rej			Reject polys with one or more points outside screenspace
 
@@ -39,6 +46,28 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //F3DLX.Rej: No clipping, rejection instead. Vertex cache is 64
 //F3FLP.Rej: Like F3DLX.Rej. Vertex cache is 80
 //L3DEX: Line processing, Vertex cache is 32.
+
+//
+// This is the multiplier applied to vertex indices. 
+//
+const u32 vertex_stride[] =
+{
+	10,		// Super Mario 64, Tetrisphere, Demos
+	2,		// Mario Kart, Star Fox
+	2,		// Zelda, and newer games
+	5,		// Wave Racer USA
+	10,		// Diddy Kong Racing
+	10,		// Gemini and Mickey
+	2,		// Last Legion, Toukon, Toukon 2
+	5,		// Shadows of the Empire (SOTE)
+	10,		// Golden Eye
+	2,		// Conker BFD
+	10,		// Perfect Dark
+	2,		// Yoshi's Story, Pokemon Puzzle League
+	2		// Kirby 64
+};
+
+u32 gVertexStride;
  
 struct MicrocodeData
 {
@@ -266,8 +295,10 @@ void	GBIMicrocode_DetectVersion( u32 code_base, u32 code_size,
 		microcode.rom_name = title;
 		microcode.code_hash = code_hash;
 
-	}
+		// Detect Correct Vtx Stride
+		gVertexStride = vertex_stride[microcode.gbi_version];
 
+	}
 
 	DBGConsole_Msg(0, "Detected Ucode is: [M{ %u, %u, 0x%08x, \"%s\", \"%s\"}] \n", microcode.gbi_version, microcode.ucode_version, code_hash, str, title );
 #ifndef DAEDALUS_PUBLIC_RELEASE

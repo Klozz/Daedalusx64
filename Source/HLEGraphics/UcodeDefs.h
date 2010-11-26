@@ -378,7 +378,7 @@ union MicroCodeCommand
 	SetLoadTile		loadtile;
 	SetFillRect		fillrect;
 
-	u64	force_structure_alignment;
+	//u64	force_structure_alignment;
 };
 
 

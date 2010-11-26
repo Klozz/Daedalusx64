@@ -106,33 +106,6 @@ u32 gOtherModeL   = 0;
 u32 gOtherModeH   = 0;
 u32 gRDPHalf1 = 0;
 
-//////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////
-//                    uCode Config                      //
-//////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////
-
-// This is the multiplier applied to vertex indices. 
-// For GBI0, it is 10.
-// For GBI1/2 it is 2.
-//u32 gVertexStride = 10; 
-const u32 VertexStride[] =
-{
-	10,		// Super Mario 64, Tetrisphere, Demos
-	2,		// Mario Kart, Star Fox
-	2,		// Zelda, and newer games
-	5,		// Wave Racer USA
-	10,		// Diddy Kong Racing
-	10,		// Gemini and Mickey
-	2,		// Last Legion, Toukon, Toukon 2
-	5,		// Shadows of the Empire (SOTE)
-	10,		// Golden Eye
-	2,		// Conker BFD
-	10,		// Perfect Dark
-	2,		// Yoshi's Story, Pokemon Puzzle League
-	2		// Kirby 64
-};
-u32 gVertexStride;
 static s32 ucode_ver;
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
@@ -527,10 +500,6 @@ static void	DLParser_ProcessDList()
 		return;
 	}
 #endif
-
-	//Set up correct vertex stride
-	gVertexStride = VertexStride[ucode_ver];
-
 	// This really important otherwise our ucode detector will pass lots of junk
 	// Also to avoid the passing any invalid detection , see Golden Eye or Conker for example
 	// Fast Ucode check for -1, skipping illegal Ucodes //Corn
@@ -542,7 +511,7 @@ static void	DLParser_ProcessDList()
 		//use the gInstructionName table for fecthing names.
 		//we use the table as is for GBI0, GBI1 and GBI2
 		//we fallback to GBI0 for custom ucodes (ucode_ver>2)
-		DL_PF("[%05d] 0x%08x: %08x %08x %-10s", gCurrentInstructionCount, pc, p_command->inst.cmd0, p_command->inst.cmd1, gInstructionName[ucode_ver<=2?ucode_ver:0][p_command->inst.cmd ]);
+		DL_PF("[%05d] 0x%08x: %08x %08x %-10s", gCurrentInstructionCount, pc, command.inst.cmd0, command.inst.cmd1, gInstructionName[ucode_ver<=2?ucode_ver:0][command.inst.cmd ]);
 		gCurrentInstructionCount++;
 
 		if( gInstructionCountLimit != UNLIMITED_INSTRUCTION_COUNT )
@@ -1941,25 +1910,30 @@ bool bConkerHideShadow = false;
 //*****************************************************************************
 void DLParser_SetCombine( MicroCodeCommand command )
 {
-	u32 mux0 = command.inst.cmd0&0x00FFFFFF;
-	u32 mux1 = command.inst.cmd1;
+	union
+	{
+		u64		mux;
+		u32		mpart[2];
+	}un;
 
-	u64 mux = (((u64)mux0) << 32) | (u64)mux1;
+	un.mpart[0] = command.inst.cmd1;
+	un.mpart[1] = command.inst.cmd0 & 0x00FFFFFF;
+
 
 	if( g_ROM.GameHacks == CONKER )
 	{
-		if( mux1 == 0xffd21f0f && mux0 == 0x00ffe9ff )
+		if( un.mpart[0] == 0xffd21f0f && un.mpart[1] == 0x00ffe9ff )
 			bConkerHideShadow = true;
 		else
 			bConkerHideShadow = false;
 	}
 
-	RDP_SetMux( mux );
+	RDP_SetMux( un.mux );
 	
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	if (gDisplayListFile != NULL)
 	{
-		DLParser_DumpMux( (((u64)mux0) << 32) | (u64)mux1 );
+		DLParser_DumpMux( un.mux );
 	}
 #endif
 }

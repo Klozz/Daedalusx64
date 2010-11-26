@@ -645,24 +645,16 @@ void DLParser_GBI1_Texture( MicroCodeCommand command )
     gTextureTile  = command.texture.tile;
 
     bool enable = command.texture.enable_gbi0;                        // Seems to use 0x01
-
-	if(enable)
+	if( enable )
 	{
 		f32 scale_s = f32(command.texture.scaleS) * (1.0f / (65536.0f * 32.0f));
 		f32 scale_t = f32(command.texture.scaleT) * (1.0f / (65536.0f * 32.0f));
 
-		DL_PF("    Level: %d Tile: %d %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
 		DL_PF("    ScaleS: %f, ScaleT: %f", scale_s*32.0f, scale_t*32.0f);
-
 		PSPRenderer::Get()->SetTextureScale( scale_s, scale_t );
 	}
-	else
-	{
-		//printf("texture is disabled -> **skip**\n");
-	}
 
-	//printf("    %s\n", enable ? "enabled":"disabled");
-
+	DL_PF("    Level: %d Tile: %d %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
 	PSPRenderer::Get()->SetTextureEnable( enable );
 }
 
@@ -675,14 +667,17 @@ void DLParser_GBI2_Texture( MicroCodeCommand command )
     gTextureTile  = command.texture.tile;
 
     bool enable = command.texture.enable_gbi2;                        // Seems to use 0x02
-    f32 scale_s = f32(command.texture.scaleS) * (1.0f / (65536.0f * 32.0f));
-    f32 scale_t = f32(command.texture.scaleT) * (1.0f / (65536.0f * 32.0f));
+	if( enable )
+	{
+		f32 scale_s = f32(command.texture.scaleS) * (1.0f / (65536.0f * 32.0f));
+		f32 scale_t = f32(command.texture.scaleT) * (1.0f / (65536.0f * 32.0f));
 
-    DL_PF("    Level: %d Tile: %d %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
-    DL_PF("    ScaleS: %f, ScaleT: %f", scale_s*32.0f, scale_t*32.0f);
+		DL_PF("    ScaleS: %f, ScaleT: %f", scale_s*32.0f, scale_t*32.0f);
+		PSPRenderer::Get()->SetTextureScale( scale_s, scale_t );
+	}
 
+	DL_PF("    Level: %d Tile: %d %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
     PSPRenderer::Get()->SetTextureEnable( enable );
-    PSPRenderer::Get()->SetTextureScale( scale_s, scale_t );
 }
 
 //*****************************************************************************

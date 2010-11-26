@@ -26,6 +26,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 namespace IO
 {
+	struct SceIoDirentGuarded
+	{
+		SceIoDirent Dirent;
+		char Guard[256];			// Not sure, but it looks like SceIoDirent is somehow mis-declared in the pspsdk, so it ends up scribbling over stack?
+	};
+	SceIoDirentGuarded	gDirEntry;
+
 	const char gPathSeparator( '/' );
 	namespace File
 	{
@@ -191,59 +198,44 @@ namespace IO
 		
 		int DeleteRecursive(char * p_path, char * p_extension) 
 		{
-
-			DIR *fh;
-			//FILE * fh;
-			//struct SceIoDirent *ep;
-			struct dirent *ep;
+			SceUID fh;
 
 			char file[MAX_PATH + 1];
+			fh = sceIoDopen(p_path);
 
-			//fopen( p_path, "rb" );
-
-			fh = opendir (p_path);
-			if(fh)
+			if( fh )
 			{
-				while((ep = readdir ( fh )))
-				//while(fread(ep, sizeof(ep), 1, fh);
+				while(sceIoDread( fh, &gDirEntry.Dirent ))
 				{
-					struct stat stFileInfo;
+					SceIoStat stat;
+					snprintf(file, Path::MAX_PATH_LEN, "%s/%s", p_path, gDirEntry.Dirent.d_name);
 
-					snprintf(file, FILENAME_MAX, "%s/%s", p_path, ep->d_name);
-
-					if(stat(file, &stFileInfo) < 0)	
+					sceIoGetstat( file, &stat );
+					if( (stat.st_mode & 0x1000) == 0x1000 )
 					{
-						//printf("Error");
-					}
-
-					if(S_ISDIR(stFileInfo.st_mode)) 
-					{
-						if(strcmp(ep->d_name, ".") && strcmp(ep->d_name, "..")) 
+						if(strcmp(gDirEntry.Dirent.d_name, ".") && strcmp(gDirEntry.Dirent.d_name, "..")) 
 						{
-							//printf("%s Directory\n",file);
+							//printf("Found directory\n");
 						}
 					} 
 					else 
 					{
-
 						if (_strcmpi(FindExtension( file ), p_extension) == 0)
 						{ 
-							//printf("Deleting : %s\n",file);
-							sceIoRemove(file);
+							//DBGConsole_Msg(0, "Deleting [C%s]",file);
+							sceIoRemove( file );
 						}
 
 					}
 				}
-				(void) closedir ( fh );
-				//fclose(fp)
+				sceIoDclose( fh );
 			}
 			else
 			{
-				//printf("Couldn't open the dir");
+				//DBGConsole_Msg(0, "Couldn't open the directory");
 			}
-			//sceIoRemove(p_path);
-			return 0;
 
+			return 0;
 		}
 	}
 
@@ -266,13 +258,6 @@ namespace IO
 
 		return false;
 	}
-
-	struct SceIoDirentGuarded
-	{
-		SceIoDirent Dirent;
-		char Guard[256];			// Not sure, but it looks like SceIoDirent is somehow mis-declared in the pspsdk, so it ends up scribbling over stack?
-	};
-	SceIoDirentGuarded	gDirEntry;
 
 	bool	FindFileNext( FindHandleT handle, FindDataT & data )
 	{

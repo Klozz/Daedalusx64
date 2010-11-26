@@ -65,91 +65,49 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "ConfigOptions.h"
 
-//#define DAEDALUS_KERNEL_MODE
+/* Undef to kill Exit Callback */
 #define DAEDALUS_CALLBACKS
 
-char						gDaedalusExePath[MAX_PATH+1] = DAEDALUS_PSP_PATH( "" );
+char gDaedalusExePath[MAX_PATH+1] = DAEDALUS_PSP_PATH( "" );
 
+extern "C" 
+{ 
+	/* Disable FPU exceptions */
+	void _DisableFPUExceptions(); 
 
-extern "C" { 
-void _DisableFPUExceptions(); }
+	/* Video Manager functions */
+	int pspDveMgrCheckVideoOut();
+	int pspDveMgrSetVideoOut(int, int, int, int, int, int, int);
+
+#ifdef DAEDALUS_PSP_GPROF
+	/* Profile with psp-gprof */
+	void gprof_cleanup();
+#endif
+}
 
 /* Kernel Exception Handler functions */
 extern void initExceptionHandler();
 
 /* Video Manager functions */
-extern "C" {
-int pspDveMgrCheckVideoOut();
-int pspDveMgrSetVideoOut(int, int, int, int, int, int, int);
-}
-
 extern int HAVE_DVE;
 extern int PSP_TV_CABLE;
 extern int PSP_TV_LACED;
 
-#ifdef DAEDALUS_PSP_GPROF
-extern "C" 
-{
-	void gprof_cleanup();
-}
-#endif
 
 bool PSP_IS_SLIM = false;
-bool PSP_NO_KBUTTONS = false;
 //*************************************************************************************
 //Set up our initial eviroment settings for the PSP
 //*************************************************************************************
-#ifdef DAEDALUS_KERNEL_MODE
-
-PSP_MODULE_INFO( DaedalusX64 Alpha, 0x1000, 1, 1 );
-PSP_MAIN_THREAD_ATTR( 0 | PSP_THREAD_ATTR_VFPU );
-
-#else
-
 PSP_MODULE_INFO( DaedalusX64 Alpha, 0, 1, 1 );
 PSP_MAIN_THREAD_ATTR( PSP_THREAD_ATTR_USER | PSP_THREAD_ATTR_VFPU );
 //PSP_HEAP_SIZE_KB(20000);// Set Heapsize to 18.5mb
 PSP_HEAP_SIZE_KB(-256);
-#endif
-
-#ifdef DAEDALUS_KERNEL_MODE
-//*************************************************************************************
-//Set up our exception handler for Kernel mode
-//*************************************************************************************
-static void DaedalusExceptionHandler( PspDebugRegBlock * regs )
-{
-	pspDebugScreenPrintf("\n\n");
-	pspDebugDumpException(regs);
-}
-#endif
-
-#ifdef DAEDALUS_KERNEL_MODE
-//*************************************************************************************
-// Function that is called from _init in kernelmode before the
-// main thread is started in usermode.
-//*************************************************************************************
-__attribute__ ((constructor))
-void loaderInit()
-{
-    pspKernelSetKernelPC();
-#ifndef DAEDALUS_SCRN_16BIT
-	pspDebugScreenInit();
-#else
-	pspDebugScreenInitEx( NULL , GU_PSM_5650, 1); //Sets debug output to 16bit mode
-#endif
-	pspDebugInstallKprintfHandler(NULL);
-	pspDebugInstallErrorHandler(DaedalusExceptionHandler);
-	pspSdkInstallNoDeviceCheckPatch();
-	pspSdkInstallNoPlainModuleCheckPatch();
-}
-#endif
 
 //*************************************************************************************
 //Used to check for compatible FW, we don't allow anything lower than 4.01
 //*************************************************************************************
 static void DaedalusFWCheck()
 {
-
 	u32 ver = sceKernelDevkitVersion();
 
 	//if(ver < 0x05050010)
@@ -383,58 +341,6 @@ static void Finalise()
 	System_Finalize();
 }
 
-//*************************************************************************************
-//
-//*************************************************************************************
-#ifdef DAEDALUS_KERNEL_MODE
-bool	gProfileNextFrame = false;
-bool	gWasProfilingFrame = false;
-bool	gShowProfilerResults = false;
-#endif
-
-#ifdef DAEDALUS_KERNEL_MODE
-//*************************************************************************************
-//
-//*************************************************************************************
-static void	DisplayProfilerResults() 			// ..... unused code
-{
-	if(gShowProfilerResults)
-	{
-		bool menu_button_pressed( false );
-
-		pspDebugScreenSetTextColor( 0xffffffff );
-
-		CGraphicsContext::Get()->SetDebugScreenTarget( CGraphicsContext::TS_FRONTBUFFER );
-
-		// Remain paused until the Select button is pressed again
-		while(!menu_button_pressed)
-		{
-			sceDisplayWaitVblankStart();
-			pspDebugScreenSetXY(0, 0);
-			pspDebugScreenPrintf( "                                 Paused\n" );
-			pspDebugScreenPrintf( "                                 ------\n" );
-			pspDebugScreenPrintf( "                   Press Select to resume emulation\n" );
-			pspDebugScreenPrintf( "\n\n" );
-
-			pspDebugProfilerPrint();
-
-			pspDebugScreenPrintf( "\n" );
-
-			// Init our kernel buttons, ex HOME button
-			kernel_buttons = getbuttons();
-
-			if(kernel_buttons & PSP_CTRL_HOME)
-			{
-				menu_button_pressed = true;
-			}
-		}
-	}
-
-	CGraphicsContext::Get()->SetDebugScreenTarget( CGraphicsContext::TS_BACKBUFFER );
-}
-#endif
-
-
 #ifdef DAEDALUS_PROFILE_EXECUTION
 //*************************************************************************************
 //
@@ -508,34 +414,10 @@ void HandleEndOfFrame()
 	DPF( DEBUG_FRAME, "********************************************" );
 
 	bool		activate_pause_menu( false );
-
-#ifdef DAEDALUS_KERNEL_MODE
-	//
-	//	Update the profiling stats
-	//
-	if(gWasProfilingFrame)
-	{
-		// Show results
-		pspDebugProfilerDisable();
-		gShowProfilerResults = true;
-		gWasProfilingFrame = false;
-
-		// Drop back into the menu
-		activate_pause_menu = true;
-	}
-#endif
-
 	//
 	//	Figure out how long the last frame took
 	//
 #ifdef DAEDALUS_PROFILE_EXECUTION	
-	float		elapsed_time( gTimer.GetElapsedSeconds() );
-	float		framerate( 0.0f );
-	if(elapsed_time > 0)
-	{
-		framerate = 1.0f / elapsed_time;
-	}
-
 	DumpDynarecStats( elapsed_time );
 #endif
 	//
@@ -573,7 +455,8 @@ void HandleEndOfFrame()
 
 		if(p_context != NULL)
 		{
-			p_context->SetBackgroundColour( c32( 94, 188, 94 ) );		// Nice green :)
+			// Already set in ClearBackground() @ UIContext.h 
+			//p_context->SetBackgroundColour( c32( 94, 188, 94 ) );		// Nice green :)
 
 			CPauseScreen *	pause( CPauseScreen::Create( p_context ) );
 			pause->Run();
@@ -588,27 +471,13 @@ void HandleEndOfFrame()
 		//
 		CPreferences::Get()->Commit();
 	}
-
 	//
 	//	Reset the elapsed time to avoid glitches when we restart
 	//
 #ifdef DAEDALUS_PROFILE_EXECUTION	
 	gTimer.Reset();
 #endif
-	//
-	//	Check whether to profile the next frame
-	//
-#ifdef DAEDALUS_KERNEL_MODE
-	gShowProfilerResults = false;
-	if(gProfileNextFrame)
-	{
-		gProfileNextFrame = false;
-		gWasProfilingFrame = true;
 
-		pspDebugProfilerClear();
-		pspDebugProfilerEnable();
-	}
-#endif
 }
 
 //*************************************************************************************
@@ -625,12 +494,13 @@ static void DisplayRomsAndChoose()
 
 	if(p_context != NULL)
 	{
+		// Already set in ClearBackground() @ UIContext.h 
 		//const c32		BACKGROUND_COLOUR = c32( 107, 188, 255 );		// blue
 		//const c32		BACKGROUND_COLOUR = c32( 92, 162, 219 );		// blue
-		const c32		BACKGROUND_COLOUR = c32( 1, 1, 127 );			// dark blue
+		//const c32		BACKGROUND_COLOUR = c32( 1, 1, 127 );			// dark blue
 		//const c32		BACKGROUND_COLOUR = c32( 1, 127, 1 );			// dark green
 
-		p_context->SetBackgroundColour( BACKGROUND_COLOUR );
+		//p_context->SetBackgroundColour( BACKGROUND_COLOUR );
 
 		CSplashScreen *		p_splash( CSplashScreen::Create( p_context ) );
 		p_splash->Run();

@@ -42,14 +42,15 @@ void DLParser_GBI0_Vtx( MicroCodeCommand command )
 
     DL_PF("    Address 0x%08x, v0: %d, Num: %d, Length: 0x%04x", address, v0, n, len);
 
-    if ((v0 + n) > 80)
+    //Crash doom
+	if ((v0 + n) > 80)
     {
         DL_PF("        Warning, attempting to load into invalid vertex positions");
         DBGConsole_Msg(0, "DLParser_GBI0_Vtx: Warning, attempting to load into invalid vertex positions");
 		n = 32 - v0;
     }
 
-    // Check that address is valid...
+    // Check that address is valid... mario golf/tennis
     if ( (address + (n*16)) > MAX_RAM_ADDRESS )
     {
         DBGConsole_Msg( 0, "SetNewVertexInfoVFPU: Address out of range (0x%08x)", address );
@@ -210,11 +211,13 @@ void DLParser_GBI2_Mtx( MicroCodeCommand command )
 		command.mtx2.nopush == 0 ? "Push" : "No Push",
 		command.mtx2.len, address);
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	if (address + 64 > MAX_RAM_ADDRESS)
 	{
 		DBGConsole_Msg(0, "ZeldaMtx: Address invalid (0x%08x)", address);
 		return;
 	}
+#endif
 
 	// Load matrix from address
 	Matrix4x4 mat;
@@ -390,19 +393,10 @@ void DLParser_GBI1_BranchZ( MicroCodeCommand command )
 //
 void DLParser_GBI1_LoadUCode( MicroCodeCommand command ) 
 { 
-	u32 code_base = (u32)(command.inst.cmd1 & 0x1fffffff);
+	u32 code_base = (command.inst.cmd1 & 0x1fffffff);
     u32 code_size = 0x1000; 
     u32 data_base = gRDPHalf1 & 0x1fffffff;         // Preceeding RDP_HALF1 sets this up
-    u32 data_size = command.inst.cmd0 + 1;
-
-	// For SSSV, needs more testing
-	/*
-	if (((code_base + 4096) > MAX_RAM_ADDRESS) || ((data_base + data_size) > MAX_RAM_ADDRESS))
-	{
-		DBGConsole_Msg(0, "[YLoading invalid LoadUCode] : 0x%08X, 0x%08X ", code_base, data_base );
-		return;
-	}*/
-
+    u32 data_size = (command.inst.cmd0 & 0xFFFF) + 1; // set into range otherwise can go loco (SSV) as -1358952448.. which misses our expected 4096 size...
 
 	DLParser_InitMicrocode( code_base, code_size, data_base, data_size ); 
 }
@@ -410,36 +404,31 @@ void DLParser_GBI1_LoadUCode( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-static void DLParser_InitGeometryMode()
+inline void DLParser_InitGeometryMode()
 {
+	// CULL_BACK has priority, Fixes Mortal Kombat 4
 	bool bCullFront         = (gGeometryMode & G_CULL_FRONT)		? true : false;
 	bool bCullBack          = (gGeometryMode & G_CULL_BACK)			? true : false;
-	if( bCullFront && bCullBack )
-	{
-		// Fixes Mortal Kombat 4
-		bCullFront = false; // Should never cull front
-	}
 	PSPRenderer::Get()->SetCullMode(bCullFront, bCullBack);
 
 	bool bShade				= (gGeometryMode & G_SHADE)				? true : false;
-	bool bShadeSmooth       = (gGeometryMode & G_SHADING_SMOOTH)	? true : false;
-
-	bool bFog				= (gGeometryMode & G_FOG)				? true : false;
-	bool bTextureGen        = (gGeometryMode & G_TEXTURE_GEN)		? true : false;
-
-	bool bLighting			= (gGeometryMode & G_LIGHTING)			? true : false;
-	bool bZBuffer           = (gGeometryMode & G_ZBUFFER)			? true : false;
-
 	PSPRenderer::Get()->SetSmooth( bShade );
+
+	bool bShadeSmooth       = (gGeometryMode & G_SHADING_SMOOTH)	? true : false;
 	PSPRenderer::Get()->SetSmoothShade( bShadeSmooth );
 
+	bool bFog				= (gGeometryMode & G_FOG)				? true : false;
 	PSPRenderer::Get()->SetFogEnable( bFog );
+
+	bool bTextureGen        = (gGeometryMode & G_TEXTURE_GEN)		? true : false;
 	PSPRenderer::Get()->SetTextureGen(bTextureGen);
 
+	bool bLighting			= (gGeometryMode & G_LIGHTING)			? true : false;
 	PSPRenderer::Get()->SetLighting( bLighting );
+
+	bool bZBuffer           = (gGeometryMode & G_ZBUFFER)			? true : false;
 	PSPRenderer::Get()->ZBufferEnable( bZBuffer );
 }
-
 
 //***************************************************************************** 
 // 

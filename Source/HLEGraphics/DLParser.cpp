@@ -106,7 +106,9 @@ u32 gOtherModeL   = 0;
 u32 gOtherModeH   = 0;
 u32 gRDPHalf1 = 0;
 
-static s32 ucode_ver;
+static s32 ucode_ver=0;
+const MicroCodeInstruction *gUcode = gInstructionLookup[0];
+
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
 //                      Dumping                         //
@@ -167,7 +169,7 @@ static u32					gTotalInstructionCount = 0;
 static u32					gInstructionCountLimit = UNLIMITED_INSTRUCTION_COUNT;
 #endif
 
-static bool gFirstCall = true;										// Used to keep track of when we're processing the first display list
+static bool gFirstCall = true;	// Used to keep track of when we're processing the first display list
 
 u32 gAmbientLightIdx = 0;
 u32 gTextureTile = 0;
@@ -175,6 +177,8 @@ u32 gTextureLevel = 0;
 
 static u32 gFillColor		= 0xFFFFFFFF;
 
+u32 gVertexStride;
+ 
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
 //                      Strings                         //
@@ -440,6 +444,26 @@ static void HandleDumpDisplayList( OSTask * pTask )
 //*****************************************************************************
 void	DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 data_size )
 {
+//
+// This is the multiplier applied to vertex indices. 
+//
+const u32 vertex_stride[] =
+{
+	10,		// Super Mario 64, Tetrisphere, Demos
+	2,		// Mario Kart, Star Fox
+	2,		// Zelda, and newer games
+	5,		// Wave Racer USA
+	10,		// Diddy Kong Racing
+	10,		// Gemini and Mickey
+	2,		// Last Legion, Toukon, Toukon 2
+	5,		// Shadows of the Empire (SOTE)
+	10,		// Golden Eye
+	2,		// Conker BFD
+	10,		// Perfect Dark
+	2,		// Yoshi's Story, Pokemon Puzzle League
+	2		// Kirby 64
+};
+
 	GBIVersion gbi_version;
 	UCodeVersion ucode_version;
 
@@ -448,12 +472,17 @@ void	DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 da
 	// Pass detection to to be used by the dlist loop
 	ucode_ver = gbi_version;
 
-	//DAEDALUS_ERROR("Switching ucode table to %d", ucode_ver);
-
 	//Pass -1 for illegal values since it cheaper to check for //Corn
 	if( ucode_ver > GBI_0_UNK || ucode_ver < GBI_0 ) ucode_ver = -1;
-}
+	else
+	{
+		gUcode = gInstructionLookup[ ucode_ver ];
+		// Detect Correct Vtx Stride
+		gVertexStride = vertex_stride[ ucode_ver ];
+	}
 
+	DAEDALUS_ERROR("Switching ucode table to %d", ucode_ver);
+}
 
 //*****************************************************************************
 //
@@ -482,7 +511,7 @@ static void	DLParser_ProcessDList()
 {
 	MicroCodeCommand command;
 
-	//Clean frame buffer
+	//Clean frame buffer at DList start if selected
 	if( gCleanSceneEnabled && CGraphicsContext::CleanScene )
 	{
 		CGraphicsContext::Get()->Clear(true, false);
@@ -500,12 +529,19 @@ static void	DLParser_ProcessDList()
 		return;
 	}
 #endif
+
 	// This really important otherwise our ucode detector will pass lots of junk
 	// Also to avoid the passing any invalid detection , see Golden Eye or Conker for example
-	// Fast Ucode check for -1, skipping illegal Ucodes //Corn
+	// Fast Ucode check for -1, skipping all illegal Ucodes versions //Corn
 	while(ucode_ver >= 0)
 	{
-		DLParser_FetchNextCommand(&command);
+		//This lets us skip DLParser_RDPLoadSync, DLParser_RDPPipeSync & DLParser_RDPTileSync
+		//early and saves us wasted time jumping for empty functions (worth since they happen a lot)
+		do
+		{
+			DLParser_FetchNextCommand(&command);
+		}
+		while( (command.inst.cmd > 0xE5) && (command.inst.cmd < 0xE9) ); 
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		//use the gInstructionName table for fecthing names.
@@ -527,7 +563,8 @@ static void	DLParser_ProcessDList()
 		PROFILE_DL_CMD( command.inst.cmd );
 
 		//Run Ucode command
-		gInstructionLookup[ucode_ver][command.inst.cmd0>>24](command); 
+		//gInstructionLookup[ ucode_ver ][ command.inst.cmd ]( command ); 
+		gUcode[ command.inst.cmd ]( command ); 
 
 		// Check limit
 		if ( !gDisplayListStack.empty() )
@@ -2045,6 +2082,77 @@ void DLParser_TriRSP( MicroCodeCommand command ){ DL_PF("RSP Tri: (Ignored)"); }
 //*************************************************************************************
 // 
 //*************************************************************************************
+#if 1 //1->unrolled, 0->looped //Corn
+void MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address )
+{
+	struct N64Fmat
+	{
+		s16	mh01;
+		s16	mh00;
+		s16	mh03;
+		s16	mh02;
+
+		s16	mh11;
+		s16	mh10;
+		s16	mh13;
+		s16	mh12;
+
+		s16	mh21;
+		s16	mh20;
+		s16	mh23;
+		s16	mh22;
+
+		s16	mh31;
+		s16	mh30;
+		s16	mh33;
+		s16	mh32;
+
+		u16	ml01;
+		u16	ml00;
+		u16	ml03;
+		u16	ml02;
+
+		u16	ml11;
+		u16	ml10;
+		u16	ml13;
+		u16	ml12;
+
+		u16	ml21;
+		u16	ml20;
+		u16	ml23;
+		u16	ml22;
+
+		u16	ml31;
+		u16	ml30;
+		u16	ml33;
+		u16	ml32;
+	};
+
+	const u8 * base( g_pu8RamBase );
+	const N64Fmat * Imat = (N64Fmat *)(base + address);
+	const f32 fRecip = 1.0f / 65536.0f;
+
+	mat.m[0][0] = (f32)((Imat->mh00 << 16) | (Imat->ml00)) * fRecip;
+	mat.m[0][1] = (f32)((Imat->mh01 << 16) | (Imat->ml01)) * fRecip;
+	mat.m[0][2] = (f32)((Imat->mh02 << 16) | (Imat->ml02)) * fRecip;
+	mat.m[0][3] = (f32)((Imat->mh03 << 16) | (Imat->ml03)) * fRecip;
+
+	mat.m[1][0] = (f32)((Imat->mh10 << 16) | (Imat->ml10)) * fRecip;
+	mat.m[1][1] = (f32)((Imat->mh11 << 16) | (Imat->ml11)) * fRecip;
+	mat.m[1][2] = (f32)((Imat->mh12 << 16) | (Imat->ml12)) * fRecip;
+	mat.m[1][3] = (f32)((Imat->mh13 << 16) | (Imat->ml13)) * fRecip;
+
+	mat.m[2][0] = (f32)((Imat->mh20 << 16) | (Imat->ml20)) * fRecip;
+	mat.m[2][1] = (f32)((Imat->mh21 << 16) | (Imat->ml21)) * fRecip;
+	mat.m[2][2] = (f32)((Imat->mh22 << 16) | (Imat->ml22)) * fRecip;
+	mat.m[2][3] = (f32)((Imat->mh23 << 16) | (Imat->ml23)) * fRecip;
+
+	mat.m[3][0] = (f32)((Imat->mh30 << 16) | (Imat->ml30)) * fRecip;
+	mat.m[3][1] = (f32)((Imat->mh31 << 16) | (Imat->ml31)) * fRecip;
+	mat.m[3][2] = (f32)((Imat->mh32 << 16) | (Imat->ml32)) * fRecip;
+	mat.m[3][3] = (f32)((Imat->mh33 << 16) | (Imat->ml33)) * fRecip;
+}
+#else
 void MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address )
 {
 	const f32	fRecip = 1.0f / 65536.0f;
@@ -2061,6 +2169,7 @@ void MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address )
 		}
 	}
 }
+#endif
 //*************************************************************************************
 //
 //*************************************************************************************

@@ -73,7 +73,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <vector>
 
-f32 DECAL_Z_OFFSET = +3.14f;		// Found through trial an error for the PSP
+//f32 DECAL_Z_OFFSET = +3.14f;		// Found through trial an error for the PSP
 
 #include "PushStructPack1.h"
 
@@ -996,7 +996,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 //*****************************************************************************
 namespace
 {
-inline	v2	GetEdgeForCycleMode( u32 cycle_type )
+inline	v2	GetEdgeForCycleMode( void )
 	{
 		v2 edge( 0.f, 0.f );
 
@@ -1022,7 +1022,7 @@ bool PSPRenderer::TexRect( u32 tile_idx, const v2 & xy0, const v2 & xy1, const v
 {
 	EnableTexturing( tile_idx );
 
-	v2 edge( GetEdgeForCycleMode( gRDPOtherMode.cycle_type ) );
+	v2 edge( GetEdgeForCycleMode() );
 	v2 screen0( ConvertN64ToPsp( xy0 ) );
 	v2 screen1( ConvertN64ToPsp( xy1 + edge ) );
 	v2 tex_uv0( uv0 - mTileTopLeft[ 0 ] );
@@ -1070,7 +1070,7 @@ bool PSPRenderer::TexRectFlip( u32 tile_idx, const v2 & xy0, const v2 & xy1, con
 {
 	EnableTexturing( tile_idx );
 
-	v2 edge( GetEdgeForCycleMode( gRDPOtherMode.cycle_type ) );
+	v2 edge( GetEdgeForCycleMode() );
 	v2 screen0( ConvertN64ToPsp( xy0 ) );
 	v2 screen1( ConvertN64ToPsp( xy1 + edge ) );
 	v2 tex_uv0( uv0 - mTileTopLeft[ 0 ] );
@@ -1112,7 +1112,7 @@ bool PSPRenderer::TexRectFlip( u32 tile_idx, const v2 & xy0, const v2 & xy1, con
 //*****************************************************************************
 bool PSPRenderer::FillRect( const v2 & xy0, const v2 & xy1, u32 color )
 {
-	if ( (gRDPOtherMode._u64 & 0xffff0000) == 0x5f500000 )
+	if ( (gRDPOtherMode._u64 & 0xffff0000) == 0x5f500000 )	//Used by Wave Racer
 	{
 		// this blend mode is mem*0 + mem*1, so we don't need to render it... Very odd!
 		DAEDALUS_ERROR("	mem*0 + mem*1 - skipped");
@@ -1125,7 +1125,7 @@ bool PSPRenderer::FillRect( const v2 & xy0, const v2 & xy1, u32 color )
 	//
 	// In Fill/Copy mode the coordinates are inclusive (i.e. add 1.0f to the w/h)
 	//
-	v2 edge( GetEdgeForCycleMode( gRDPOtherMode.cycle_type ) );
+	v2 edge( GetEdgeForCycleMode() );
 	v2 screen0( ConvertN64ToPsp( xy0 ) );
 	v2 screen1( ConvertN64ToPsp( xy1 + edge ) );
 
@@ -1488,7 +1488,7 @@ bool PSPRenderer::FlushTris()
 	//	Render out our vertices
 	//	XXXX Should be using GetWorldProject()?
 	//
-	Matrix4x4 &	projection( mProjectionStack[mProjectionTop] );
+	const Matrix4x4 &	projection( mProjectionStack[mProjectionTop] );
 
 	//If decal polys, we shift near/far plane a bit with projection matrix to eliminate z-fight //Corn
 	//Works well in most games and is practically "free", however OOT does not work :(
@@ -2139,14 +2139,14 @@ inline void PSPRenderer::SetVtxColor( u32 vert, c32 color )
 //*****************************************************************************
 //
 //*****************************************************************************
-void PSPRenderer::SetVtxTextureCoord( u32 vert, short tu, short tv )
-{
-	//if ( vert < MAX_VERTS )
-	//{
-	mVtxProjected[vert].Texture.x = (f32)tu * (1.0f / 32.0f);
-	mVtxProjected[vert].Texture.y = (f32)tv * (1.0f / 32.0f);
-	//}
-}
+//void PSPRenderer::SetVtxTextureCoord( u32 vert, short tu, short tv )
+//{
+//	//if ( vert < MAX_VERTS )
+//	//{
+//	mVtxProjected[vert].Texture.x = (f32)tu * (1.0f / 32.0f);
+//	mVtxProjected[vert].Texture.y = (f32)tv * (1.0f / 32.0f);
+//	//}
+//}
 
 //*****************************************************************************
 //
@@ -2311,20 +2311,20 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 //*****************************************************************************
 //
 //*****************************************************************************
-void	PSPRenderer::SetCullMode( bool bCullFront, bool bCullBack )
-{
-	if( bCullFront )
-	{
-		m_bCull = true;
-		m_bCull_mode = GU_CW;
-	}
-	else if( bCullBack )
-	{
-		m_bCull = true;
-		m_bCull_mode = GU_CCW;
-	}
-	else m_bCull = false;
-}
+//void	PSPRenderer::SetCullMode( bool bCullFront, bool bCullBack )
+//{
+//	if( bCullBack )	//CULL_BACK has priority Mortal Kombat 4
+//	{
+//		m_bCull = true;
+//		m_bCull_mode = GU_CCW;
+//	}
+//	else if( bCullFront )
+//	{
+//		m_bCull = true;
+//		m_bCull_mode = GU_CW;
+//	}
+//	else m_bCull = false;
+//}
 
 //*****************************************************************************
 //
@@ -2452,29 +2452,29 @@ void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace)
 //*****************************************************************************
 //
 //*****************************************************************************
-void PSPRenderer::PopProjection()
-{
-	if (mProjectionTop > 0)
-		--mProjectionTop;
-
-	mWorldProjectValid = false;
-}
+//void PSPRenderer::PopProjection()
+//{
+//	if (mProjectionTop > 0)
+//		--mProjectionTop;
+//
+//	mWorldProjectValid = false;
+//}
 
 //*****************************************************************************
 //
 //*****************************************************************************
-void PSPRenderer::PopWorldView()
-{
-	if (mModelViewTop > 0)
-		--mModelViewTop;
-
-	mWorldProjectValid = false;
-}
+//void PSPRenderer::PopWorldView()
+//{
+//	if (mModelViewTop > 0)
+//		--mModelViewTop;
+//
+//	mWorldProjectValid = false;
+//}
 
 //*****************************************************************************
 //
 //*****************************************************************************
-const Matrix4x4 & PSPRenderer::GetWorldProject() const
+inline Matrix4x4 & PSPRenderer::GetWorldProject() const
 {
 	if( !mWorldProjectValid )
 	{
@@ -2554,22 +2554,22 @@ void PSPRenderer::SetFogMinMax(float fMin, float fMax)
 //*****************************************************************************
 //
 //*****************************************************************************
-void PSPRenderer::SetFogEnable(bool bEnable)
-{
-	bool bFogEnabled = bEnable && gFogEnabled;
-	
-	if(bFogEnabled)
-	{
-#ifndef NO_VFPU_FOG
-		mTnLModeFlags|=TNL_FOG;
-#endif
-		sceGuEnable(GU_FOG);
-	}
-	else
-	{
-#ifndef NO_VFPU_FOG
-		mTnLModeFlags&=~TNL_FOG;
-#endif
-		sceGuDisable(GU_FOG);
-	}
-}
+//void PSPRenderer::SetFogEnable(bool Enable)
+//{
+//	bool bFogEnabled = Enable && gFogEnabled;
+//	
+//	if(bFogEnabled)
+//	{
+//#ifndef NO_VFPU_FOG
+//		mTnLModeFlags|=TNL_FOG;
+//#endif
+//		sceGuEnable(GU_FOG);
+//	}
+//	else
+//	{
+//#ifndef NO_VFPU_FOG
+//		mTnLModeFlags&=~TNL_FOG;
+//#endif
+//		sceGuDisable(GU_FOG);
+//	}
+//}

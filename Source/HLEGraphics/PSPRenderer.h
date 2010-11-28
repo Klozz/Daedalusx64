@@ -29,7 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "DaedalusVtx.h"
 #include "Graphics/ColourValue.h"
 #include "BlendModes.h"
+#include "Utility/Preferences.h"
 
+#include <pspgu.h>
 #include <set>
 #include <map>
 
@@ -88,7 +90,6 @@ ALIGNED_TYPE(struct, TnLParams, 16)
 };
 DAEDALUS_STATIC_ASSERT( sizeof( TnLParams ) == 32 );
 
-
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -108,26 +109,26 @@ public:
 	void				Reset();
 
 	// Verious rendering states
-	void				SetTextureEnable(bool enable)			{ if( enable ) mTnLModeFlags |= TNL_TEXTURE; else mTnLModeFlags &= ~TNL_TEXTURE; }
-	void				SetLighting(bool enable)				{ if( enable ) mTnLModeFlags |= TNL_LIGHT;	 else mTnLModeFlags &= ~TNL_LIGHT; }
-	void				SetTextureGen(bool enable)				{ if( enable ) mTnLModeFlags |= TNL_TEXGEN;  else mTnLModeFlags &= ~TNL_TEXGEN; }
+	inline void			SetTextureEnable(bool enable)			{ if( enable ) mTnLModeFlags |= TNL_TEXTURE; else mTnLModeFlags &= ~TNL_TEXTURE; }
+	inline void			SetLighting(bool enable)				{ if( enable ) mTnLModeFlags |= TNL_LIGHT;	 else mTnLModeFlags &= ~TNL_LIGHT; }
+	inline void			SetTextureGen(bool enable)				{ if( enable ) mTnLModeFlags |= TNL_TEXGEN;  else mTnLModeFlags &= ~TNL_TEXGEN; }
 
-	void				SetPrimitiveColour( c32 colour )		{ mPrimitiveColour = colour; }
-	void				SetEnvColour( c32 colour )				{ mEnvColour = colour; }
-	void				ZBufferEnable(bool bZBuffer)			{ m_bZBuffer = bZBuffer; }
+	inline void			SetPrimitiveColour( c32 colour )		{ mPrimitiveColour = colour; }
+	inline void			SetEnvColour( c32 colour )				{ mEnvColour = colour; }
+	inline void			ZBufferEnable(bool bZBuffer)			{ m_bZBuffer = bZBuffer; }
 
 	inline void			SetNumLights(u32 dwNumLights)			{ m_dwNumLights = dwNumLights; }
 	void				SetLightCol(u32 light, u32 colour);
 	void				SetLightDirection(u32 l, float x, float y, float z);
 	inline void			SetAmbientLight( const v4 & colour )	{ mTnLParams.Ambient = colour; }
 
-	void				SetCullMode( bool bCullFront, bool bCullBack );
-	void				SetSmooth( bool bSmooth )				{ mSmooth = bSmooth; }
-	void				SetSmoothShade( bool bSmoothShade )		{ mSmoothShade = bSmoothShade; }
-	void				SetAlphaRef(u32 dwAlpha)				{ mAlphaThreshold = dwAlpha; }
+	inline void			SetSmooth( bool bSmooth )				{ mSmooth = bSmooth; }
+	inline void			SetSmoothShade( bool bSmoothShade )		{ mSmoothShade = bSmoothShade; }
+	inline void			SetAlphaRef(u32 dwAlpha)				{ mAlphaThreshold = dwAlpha; }
+	inline void			SetCullMode(bool bCullFront, bool bCullBack)	{ m_bCull = bCullFront | bCullBack; if( bCullBack ) m_bCull_mode = GU_CCW; else m_bCull_mode = GU_CW; }
 
 	// Texture stuff
-	void				SetTextureScale(float fScaleX, float fScaleY)	{ mTnLParams.TextureScaleX = fScaleX; mTnLParams.TextureScaleY = fScaleY; }
+	inline void			SetTextureScale(float fScaleX, float fScaleY)	{ mTnLParams.TextureScaleX = fScaleX; mTnLParams.TextureScaleY = fScaleY; }
 	void                Draw2DTexture(float, float, float, float, float, float, float, float);
 
 	// Viewport stuff
@@ -136,7 +137,7 @@ public:
 	void				SetScissor( u32 x0, u32 y0, u32 x1, u32 y1 );
 
 	// Fog stuff
-	void				SetFogEnable(bool enable);
+	inline void			SetFogEnable(bool Enable)				{ if(Enable & gFogEnabled) sceGuEnable(GU_FOG); else sceGuDisable(GU_FOG); }
 	void				SetFogMinMax(float fMin, float fMax);
 	void				SetFogColour( c32 colour )				{ mFogColour = colour; }
 	// Unused.. will remove soon
@@ -155,8 +156,8 @@ public:
 	void				PrintActive();
 	void				SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace);
 	void				SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace);
-	void				PopProjection();
-	void				PopWorldView();
+	inline void			PopProjection() {if (mProjectionTop > 0) --mProjectionTop;	mWorldProjectValid = false;}
+	inline void			PopWorldView()	{if (mModelViewTop > 0)	 --mModelViewTop;	mWorldProjectValid = false;}
 
 	// Vertex stuff	
 	void				SetNewVertexInfoConker(u32 address, u32 v0, u32 n);	// For conker..	
@@ -164,7 +165,7 @@ public:
 	void				ModifyVertexInfo(u32 whered, u32 vert, u32 val);
 	void				SetNewVertexInfoDKR(u32 dwAddress, u32 dwV0, u32 dwNum);	// Assumes dwAddress has already been checked!	
 	void				SetVtxColor( u32 vert, c32 color );
-	void				SetVtxTextureCoord( u32 vert, short tu, short tv );
+	inline void			SetVtxTextureCoord( u32 vert, short tu, short tv ) {mVtxProjected[vert].Texture.x = (f32)tu * (1.0f / 32.0f); mVtxProjected[vert].Texture.y = (f32)tv * (1.0f / 32.0f);}
 	void				SetVtxXY( u32 vert, float x, float y );
 
 	// TextRect stuff
@@ -305,7 +306,7 @@ private:
 	//Max is 32 but can be lower, does it matter? Maybe in SSV? //Corn
 	static const u32 MATRIX_STACK_SIZE = 32; 
 
-	const Matrix4x4 &	GetWorldProject() const;
+	inline Matrix4x4 &	GetWorldProject() const;
 
 	mutable Matrix4x4	mWorldProject;
 	Matrix4x4			mProjectionStack[MATRIX_STACK_SIZE];

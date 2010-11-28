@@ -107,9 +107,8 @@ void	CAudioPluginPsp::StopEmulation()
 //*****************************************************************************
 void	CAudioPluginPsp::DacrateChanged( ESystemType system_type )
 {
-	//if( gAudioPluginEnabled == APM_DISABLED ) return;
-	if( gAudioPluginEnabled > APM_DISABLED )
-	{
+
+	// XXX only checked one mostly when scene changes
 #ifndef DAEDALUS_SILENT
 		printf( "DacrateChanged( %d )\n", system_type );
 #endif
@@ -125,12 +124,6 @@ void	CAudioPluginPsp::DacrateChanged( ESystemType system_type )
 		}
 
 		mAudioCode->SetFrequency( frequency );
-	}
-	else
-	{
-		// Do nothing as sound is disabled
-	}
-
 }
 
 //*****************************************************************************

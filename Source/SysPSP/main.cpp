@@ -483,7 +483,7 @@ void HandleEndOfFrame()
 //*************************************************************************************
 // Here's where we load up the GUI
 //*************************************************************************************
-static void DisplayRomsAndChoose()
+static void DisplayRomsAndChoose(bool show_splash)
 {
 	// switch back to the LCD display
 	CGraphicsContext::Get()->SwitchToLcdDisplay();
@@ -502,9 +502,12 @@ static void DisplayRomsAndChoose()
 
 		//p_context->SetBackgroundColour( BACKGROUND_COLOUR );
 
-		CSplashScreen *		p_splash( CSplashScreen::Create( p_context ) );
-		p_splash->Run();
-		delete p_splash;
+		if( show_splash )
+		{
+			CSplashScreen *		p_splash( CSplashScreen::Create( p_context ) );
+			p_splash->Run();
+			delete p_splash;
+		}
 
 		CMainMenuScreen *	p_main_menu( CMainMenuScreen::Create( p_context ) );
 		p_main_menu->Run();
@@ -530,11 +533,27 @@ int main(int argc, char* argv[])
 		{
 			BatchTestMain( argc, argv );
 		}
+#else
+		//Makes it possible to load a ROM directly without using the GUI
+		//There are no checks for wrong file name so be careful!!!
+		//Ex. from PSPLink -> ./Daedalus.prx "Roms/StarFox 64.v64" //Corn
+		if( argc > 1 )
+		{
+			printf("Loading %s\n", (char*)argv[1] );
+			System_Open( (char*)argv[1] );
+			CPU_Run();
+			System_Close();
+			Finalise();
+			sceKernelExitGame();
+			return 0;
+		}
 #endif
 
+		bool show_splash = true;
 		for(;;)
 		{
-			DisplayRomsAndChoose();
+			DisplayRomsAndChoose( show_splash );
+			show_splash = false;
 
 			//
 			// Commit the preferences and roms databases before starting to run

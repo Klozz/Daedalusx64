@@ -40,8 +40,6 @@ namespace
 	const float				MAX_TIME = 0.8f;
 }
 
-	bool mIsFinished( false );
-
 //*************************************************************************************
 //
 //*************************************************************************************
@@ -61,7 +59,7 @@ class ISplashScreen : public CSplashScreen, public CUIScreen
 		virtual bool				IsFinished() const									{ return mIsFinished; }
 
 	private:
-//		bool						mIsFinished;
+		bool						mIsFinished;
 		float						mElapsedTime;
 		CRefPtr<CNativeTexture>		mpTexture;
 };
@@ -86,7 +84,7 @@ CSplashScreen *	CSplashScreen::Create( CUIContext * p_context )
 //*************************************************************************************
 ISplashScreen::ISplashScreen( CUIContext * p_context )
 :	CUIScreen( p_context )
-//,	mIsFinished( false )
+,	mIsFinished( false )
 ,	mElapsedTime( 0.0f )
 ,	mpTexture( CNativeTexture::CreateFromPng( LOGO_FILENAME, TexFmt_8888 ) )
 {

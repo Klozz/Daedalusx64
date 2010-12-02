@@ -30,9 +30,9 @@ public:
 
 	virtual bool			Alloc( u32 size, void ** data, bool * isvidmem ) = 0;
 	virtual void			Free( void * ptr ) = 0;
-
+#ifdef DAEDALUS_DEBUG_MEMORY
 	virtual void			DisplayDebugInfo() = 0;
-
+#endif
 };
 
 

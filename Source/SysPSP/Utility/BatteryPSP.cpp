@@ -17,16 +17,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include <psppower.h>
+#include "stdafx.h"
+
+#include "SysPSP/Graphics/DrawText.h"
+
+#include <pspdebug.h>
 #include <psprtc.h>
-
-#ifndef BATTERYINFOS_H_
-#define BATTERYINFOS_H_
-
+#include <psppower.h>
 //*****************************************************************************
 //
 //*****************************************************************************
-void battery_infos()
+void battery_info()
 {	
     pspTime time;
     sceRtcGetCurrentClockLocalTime(&time);
@@ -43,14 +44,34 @@ void battery_infos()
 	}
 	else
 	{
-		//CDrawText::IntrPrintf( 140, 43, 0.9f, DrawTextUtilities::TextWhite,"Battery:  %d%% | %0.2fV | %dC", bat, (f32) scePowerGetBatteryVolt() / 1000.0f, scePowerGetBatteryTemp());
 		CDrawText::IntrPrintf( 210, 43, 0.9f, DrawTextUtilities::TextWhite,"Charging...");
 		CDrawText::IntrPrintf( 335, 43, 0.9f, DrawTextUtilities::TextWhite,"Remaining: --h--m");
 	}
 }
+
 //*****************************************************************************
 //
 //*****************************************************************************
+void battery_warning()
+{
+	if( scePowerIsBatteryCharging() ) return;
+	int bat = scePowerGetBatteryLifePercent();
+	if (bat > 9) return;	//No warning unless battery is under 10%
 
-#endif // BATTERYINFOS_H_
+	static u32 counter = 0;
 
+	if ((++counter & 63) < 50)	// Make it flash
+	{
+		const u32 red	=	0x000000ff;	//  Red..
+		const u32 white =	0xffffffff;	//  White..
+
+		pspDebugScreenSetXY(50, 0);		// Allign to the left, becareful not touch the edges
+		pspDebugScreenSetBackColor( red );
+		pspDebugScreenSetTextColor( white );
+		pspDebugScreenPrintf( " Battery Low: %d%% ", bat);
+	}
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************

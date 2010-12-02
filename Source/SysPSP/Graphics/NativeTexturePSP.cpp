@@ -313,6 +313,7 @@ void	CNativeTexture::InstallTexture() const
 {
 	sceGuEnable(GU_TEXTURE_2D);
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	if( !HasData() )
 	{
 		// Use the placeholder texture
@@ -320,18 +321,18 @@ void	CNativeTexture::InstallTexture() const
 		sceGuTexImage( 0, gPlaceholderTextureWidth, gPlaceholderTextureHeight, gPlaceholderTextureWidth, gWhiteTexture );
 	}
 	else
+#endif
 	{
 		EPspTextureFormat	psp_texture_format( GetPspTextureFormat( mTextureFormat ) );
 		sceGuTexMode( psp_texture_format, 0, 0, mIsSwizzled ? 1 : 0 );		// maxmips/a2/swizzle = 0
 		sceGuTexImage( 0, mCorrectedWidth, mCorrectedHeight, mTextureBlockWidth, mpData );
 
-	#ifdef DAEDALUS_ENABLE_ASSERTS
+#ifdef DAEDALUS_ENABLE_ASSERTS
 		DAEDALUS_ASSERT( !IsTextureFormatPalettised( mTextureFormat ) || mPaletteSet, "The palette has not been set" );
-	#endif
 
 		DAEDALUS_ASSERT( ((u32)mpData & 0xf) == 0, "Palette not 16-byte aligned" )
 		DAEDALUS_ASSERT( ((u32)mpPalette & 0xf) == 0, "Palette not 16-byte aligned" )
-
+#endif
 		switch( mTextureFormat )
 		{
 		case TexFmt_CI4_8888:

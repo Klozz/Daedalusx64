@@ -149,7 +149,9 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 
 		BOOL_SETTING( gGlobalPreferences, DisplayFramerate, defaults );
 		BOOL_SETTING( gGlobalPreferences, SoftwareClipping, defaults );
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		BOOL_SETTING( gGlobalPreferences, HighlightInexactBlendModes, defaults );
+#endif
 		BOOL_SETTING( gGlobalPreferences, BatteryWarning, defaults );
 		BOOL_SETTING( gGlobalPreferences, LargeROMBuffer, defaults );
 		FLOAT_SETTING( gGlobalPreferences, StickMinDeadzone, defaults );
@@ -262,7 +264,7 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		}
 		if( section->FindProperty( "RemoveZFighting", &property ) ) 	 
 		{ 	 
-            preferences.RemoveZFighting = property->GetBooleanValue( false ); 	 
+            preferences.RemoveZFighting = property->GetBooleanValue( true ); 	 
 		}
 		if( section->FindProperty( "AudioRateMatch", &property ) ) 	 
 		{ 	 
@@ -354,7 +356,9 @@ void IPreferences::Commit()
 
 		OUTPUT_BOOL( gGlobalPreferences, DisplayFramerate, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, SoftwareClipping, defaults );
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		OUTPUT_BOOL( gGlobalPreferences, HighlightInexactBlendModes, defaults );
+#endif
 		OUTPUT_BOOL( gGlobalPreferences, BatteryWarning, defaults );
 		OUTPUT_BOOL( gGlobalPreferences, LargeROMBuffer, defaults );
 		OUTPUT_INT( gGlobalPreferences, GuiType, defaults );
@@ -427,7 +431,9 @@ void	IPreferences::SetRomPreferences( const RomID & id, const SRomPreferences & 
 SGlobalPreferences::SGlobalPreferences()
 :	DisplayFramerate( false )
 ,	SoftwareClipping( true )
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 ,	HighlightInexactBlendModes( false )
+#endif
 ,	BatteryWarning( false )
 ,	LargeROMBuffer( true )
 ,	ForceTextureFilter( FORCE_DEFAULT_FILTER )
@@ -470,7 +476,7 @@ SRomPreferences::SRomPreferences()
 	,	IncreaseVI_Event( false )
 	,	CheckN64FPUsageDisable( false )
 	,   TMEMemulation( false )
-	,   RemoveZFighting( false )
+	,   RemoveZFighting( true )
 	,	AudioRateMatch( false )
 	,	FogEnabled( false )
 	,	CheckTextureHashFrequency( THF_DISABLED )
@@ -497,7 +503,7 @@ void SRomPreferences::Reset()
 	IncreaseVI_Event = false;
 	CheckN64FPUsageDisable = false;
 	TMEMemulation = false;
-	RemoveZFighting = false;
+	RemoveZFighting = true;
 	AudioRateMatch = false;
 	FogEnabled = false;
 	CheckTextureHashFrequency = THF_DISABLED;

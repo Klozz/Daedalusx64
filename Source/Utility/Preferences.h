@@ -105,7 +105,9 @@ struct SGlobalPreferences
 {
 	bool						DisplayFramerate;
 	bool						SoftwareClipping;
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	bool						HighlightInexactBlendModes;
+#endif
 	bool						BatteryWarning;
 	bool						LargeROMBuffer;
 #ifndef DAEDALUS_PUBLIC_RELEASE

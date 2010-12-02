@@ -36,14 +36,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Math/MathUtil.h"
 #include "Utility/Functor.h"
-
-#include "SysPSP/Utility/Batteryinfos.h"
 #include "SysPSP/Utility/Buttons.h"
 
 #include <pspctrl.h>
 #include <pspgu.h>
 
 #include <string>
+
+extern void battery_info();
 
 namespace
 {
@@ -253,7 +253,7 @@ void	IPauseScreen::Render()
 	EMenuOption		current( GetCurrentOption() );
 	EMenuOption		next( GetNextOption() );
 
-	battery_infos();
+	battery_info();
 
 	p_option_text = gMenuOptionNames[ previous ];
 	mpContext->DrawTextAlign( TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_LEFT, y + mpContext->GetFontHeight(), p_option_text, IsOptionValid( previous ) ? valid_colour : invalid_colour );

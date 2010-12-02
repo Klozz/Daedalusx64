@@ -172,7 +172,7 @@ inline float vfpu_sinf(float rad) {
         : "=r"(result) : "r"(rad));
     return result;
 }
-
+/*
 inline s32 vfpu_round(float x)
 {
 	s32 result;
@@ -185,7 +185,7 @@ inline s32 vfpu_round(float x)
 	
 	return result;
 }
-/*
+
 inline float vfpu_fmaxf(float x, float y) {
 	float result;
 	__asm__ volatile (

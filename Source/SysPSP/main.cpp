@@ -234,8 +234,8 @@ static int PanicThread( SceSize args, void * argp )
 		}
 		else count = 0;
 
-		//Idle here, only check button 16.5 times/sec not to hog CPU time from EMU
-		ThreadSleepMs(67);	
+		//Idle here, only check button 17.5 times/sec not to hog CPU time from EMU
+		ThreadSleepMs(77);	
 	}
 
 	return 0;
@@ -440,8 +440,9 @@ void HandleEndOfFrame()
 	{
 		// See how much texture memory we're using
 		//CTextureCache::Get()->DropTextures();
+//#ifdef DAEDALUS_DEBUG_MEMORY
 		//CVideoMemoryManager::Get()->DisplayDebugInfo();
-
+//#endif
 		Save::Flush(true);
 		// switch back to the LCD display
 		CGraphicsContext::Get()->SwitchToLcdDisplay();

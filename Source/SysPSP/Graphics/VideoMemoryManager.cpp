@@ -27,9 +27,9 @@ public:
 
 	virtual bool	Alloc( u32 size, void ** data, bool * isvidmem );
 	virtual void	Free(void * ptr);
-
+#ifdef DAEDALUS_DEBUG_MEMORY
 	virtual void	DisplayDebugInfo();
-
+#endif
 private:
 	CMemoryHeap *	mVideoMemoryHeap;
 	CMemoryHeap *	mRamMemoryHeap;
@@ -127,7 +127,7 @@ void  IVideoMemoryManager::Free(void * ptr)
 	}
 }
 
-
+#ifdef DAEDALUS_DEBUG_MEMORY
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -139,3 +139,4 @@ void IVideoMemoryManager::DisplayDebugInfo()
 	printf( "RAM\n" );
 	mRamMemoryHeap->DisplayDebugInfo();
 }
+#endif

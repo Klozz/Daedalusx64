@@ -106,6 +106,7 @@ DAED_PSP_SRCS =		Source/SysPSP/Graphics/DrawText.cpp \
 			Source/SysPSP/UI/PauseScreen.cpp \
 			Source/SysPSP/UI/SplashScreen.cpp \
 			Source/SysPSP/Utility/AtomicPrimitives.S \
+			Source/SysPSP/Utility/BatteryPSP.cpp \
 			Source/SysPSP/Utility/JobManager.cpp \
 			Source/SysPSP/Utility/DebugMemory.cpp \
 			Source/SysPSP/Utility/DisableFPUExceptions.S \
@@ -166,7 +167,7 @@ DAED_RELEASE_SRCS 	= 	Source/SysPSP/UI/RomSelectorComponent.cpp
 DAED_GPROF_SRCS 	= 	Source/SysPSP/Debug/prof.c \
 			Source/SysPSP/Debug/mcount.S
 
-ADDITIONAL_DEBUG_SRCS = Source/SysPSP/UI/RomSelectorComponentdebug.cpp
+ADDITIONAL_DEBUG_SRCS = Source/SysPSP/UI/RomSelectorComponent.cpp
 
 ADDITIONAL_SYNC_SRCS  = Source/Utility/Synchroniser.cpp Source/Utility/ZLibWrapper.cpp
 

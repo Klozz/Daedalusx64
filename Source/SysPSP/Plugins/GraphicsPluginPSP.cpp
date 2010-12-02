@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Graphics/GraphicsContext.h"
 #include "SysPSP/Graphics/VideoMemoryManager.h"
 
-#include "Utility/LowBattery.h"
 #include "Utility/Profiler.h"
 #include "Utility/FramerateLimiter.h"
 #include "Utility/Preferences.h"
@@ -44,12 +43,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Core/Memory.h"
 
 //#define DAEDALUS_FRAMERATE_ANALYSIS
-
+extern void battery_warning();
 extern void HandleEndOfFrame();
 
 bool	gFrameskipActive = false;
 bool	gTakeScreenshot = false;
+
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 bool	gDebugDisplayList = false;
+#endif
 
 EFrameskipValue		gFrameskipValue = FV_DISABLED;
 
@@ -107,12 +109,12 @@ static void	UpdateFramerate()
 		gFlipCount = 0;
 		gLastFramerateCalcTime = now;
 
-	#ifdef DAEDALUS_FRAMERATE_ANALYSIS
+#ifdef DAEDALUS_FRAMERATE_ANALYSIS
 		if( gFramerateFile != NULL )
 		{
 			fflush( gFramerateFile );
 		}
-	#endif
+#endif
 	}
 
 }
@@ -216,7 +218,8 @@ void CGraphicsPluginPsp::UpdateScreen()
 	if( current_origin != last_origin )
 	{
 		//printf( "Flip (%08x, %08x)\n", current_origin, last_origin );
-		UpdateFramerate();
+		if( gGlobalPreferences.DisplayFramerate )
+			UpdateFramerate();
 	
 		f32 Fsync = FramerateLimiter_GetSync();
 
@@ -231,7 +234,7 @@ void CGraphicsPluginPsp::UpdateScreen()
 			}
 			if( gGlobalPreferences.BatteryWarning )
 			{
-				low_battery_warning();
+				battery_warning();
 			}
 			if(gTakeScreenshot)
 			{

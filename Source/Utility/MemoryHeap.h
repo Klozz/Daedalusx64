@@ -36,10 +36,10 @@ public:
 	virtual void		Free( void * ptr ) = 0;
 
 	virtual bool		IsFromHeap( void * ptr ) const = 0;			// Does this chunk of memory belong to this heap?
-
+#ifdef DAEDALUS_DEBUG_MEMORY
 	//virtual u32		GetAvailableMemory() const = 0;
 	virtual void		DisplayDebugInfo() const = 0;
-
+#endif
 };
 
 #endif // MEMORYHEAP_H_

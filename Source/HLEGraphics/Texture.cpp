@@ -345,7 +345,7 @@ namespace
 
 	// Assumes width p_dst = 2*width p_src and height p_dst = 2*height p_src
 	template< typename T, bool MirrorS, bool MirrorT >
-	void	MirrorTexelsST( void * dst, u32 dst_stride, const void * src, u32 src_stride, ETextureFormat tex_fmt, u32 width, u32 height )
+	void	MirrorTexelsST( void * dst, u32 dst_stride, const void * src, u32 src_stride, u32 width, u32 height )
 	{
 		T *			p_dst( reinterpret_cast< T * >( dst ) );
 		const T *	p_src( reinterpret_cast< const T * >( src ) );
@@ -391,13 +391,13 @@ namespace
 
 		switch(tex_fmt)
 		{
-		case TexFmt_5650:		MirrorTexelsST< Psp::Pf5650, MirrorS, MirrorT >( dst, dst_stride, src, src_stride, tex_fmt, width, height ); handled = true; break;
-		case TexFmt_5551:		MirrorTexelsST< Psp::Pf5551, MirrorS, MirrorT >( dst, dst_stride, src, src_stride, tex_fmt, width, height ); handled = true; break;
-		case TexFmt_4444:		MirrorTexelsST< Psp::Pf4444, MirrorS, MirrorT >( dst, dst_stride, src, src_stride, tex_fmt, width, height ); handled = true; break;
-		case TexFmt_8888:		MirrorTexelsST< Psp::Pf8888, MirrorS, MirrorT >( dst, dst_stride, src, src_stride, tex_fmt, width, height ); handled = true; break;
+		case TexFmt_5650:		MirrorTexelsST< Psp::Pf5650, MirrorS, MirrorT >( dst, dst_stride, src, src_stride, width, height ); handled = true; break;
+		case TexFmt_5551:		MirrorTexelsST< Psp::Pf5551, MirrorS, MirrorT >( dst, dst_stride, src, src_stride, width, height ); handled = true; break;
+		case TexFmt_4444:		MirrorTexelsST< Psp::Pf4444, MirrorS, MirrorT >( dst, dst_stride, src, src_stride, width, height ); handled = true; break;
+		case TexFmt_8888:		MirrorTexelsST< Psp::Pf8888, MirrorS, MirrorT >( dst, dst_stride, src, src_stride, width, height ); handled = true; break;
 
-		case TexFmt_CI4_8888:	MirrorTexelsST< Psp::PfCI44, MirrorS, MirrorT >( dst, dst_stride, src, src_stride, tex_fmt, width, height ); handled = true; break;
-		case TexFmt_CI8_8888:	MirrorTexelsST< Psp::PfCI8 , MirrorS, MirrorT >( dst, dst_stride, src, src_stride, tex_fmt, width, height ); handled = true; break;
+		case TexFmt_CI4_8888:	MirrorTexelsST< Psp::PfCI44, MirrorS, MirrorT >( dst, dst_stride, src, src_stride, width, height ); handled = true; break;
+		case TexFmt_CI8_8888:	MirrorTexelsST< Psp::PfCI8 , MirrorS, MirrorT >( dst, dst_stride, src, src_stride, width, height ); handled = true; break;
 		}
 
 		DAEDALUS_ASSERT( handled, "Unhandled format" );

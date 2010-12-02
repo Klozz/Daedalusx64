@@ -57,10 +57,10 @@ public:
 	virtual void		Free( void * ptr );
 
 	virtual bool		IsFromHeap( void * ptr ) const;
-
+#ifdef DAEDALUS_DEBUG_MEMORY
 	//virtual u32		GetAvailableMemory() const;
 	virtual void		DisplayDebugInfo() const;
-
+#endif
 private:
 	void *				InsertNew( u32 idx, u8 * adr, u32 size );
 
@@ -247,6 +247,7 @@ void  IMemoryHeap::Free( void * ptr )
 #endif
 }
 
+#ifdef DAEDALUS_DEBUG_MEMORY
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -265,4 +266,4 @@ void IMemoryHeap::DisplayDebugInfo() const
 		printf( "\n" );
 	}
 }
-
+#endif

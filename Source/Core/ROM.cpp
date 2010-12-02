@@ -59,7 +59,6 @@ const char *gGameHackNames[12] =
 	"Viewport Hack", 
 	"Conker's Flushtris Hack", 
 	"Pilot Wings' Flushtris Hack",
-	"GBI0 CullDl Disabled Hack",
 	"Zelda OOT Hacks", 
 	"Zelda MM Hacks",
 	"Flat Shade Disabled Hack",
@@ -120,7 +119,7 @@ static void ROM_RunPIFBoot( ECicType cic_chip )
 //*****************************************************************************
 //
 //*****************************************************************************
-static void ROM_SimulatePIFBoot( ECicType cic_chip, u32 nSystemType, u32 Country )
+static void ROM_SimulatePIFBoot( ECicType cic_chip, u32 Country )
 {
 	// gCPUState.CPUControl[C0_SR]		= 0x34000000;	//*SR_FR |*/ SR_ERL | SR_CU2|SR_CU1|SR_CU0;
 	R4300_SetSR(0x34000000);
@@ -414,7 +413,7 @@ void ROM_ReBoot()
 	}
 	else
 	{
-		ROM_SimulatePIFBoot( g_ROM.cic_chip, g_ROM.TvType, g_ROM.rh.CountryID );
+		ROM_SimulatePIFBoot( g_ROM.cic_chip, g_ROM.rh.CountryID );
 	}
 
 	//CPU_AddBreakPoint( 0xA4000040 );
@@ -443,7 +442,6 @@ void SpecificGameHacks( const ROMHeader & id )
 	case 0x5742: g_ROM.GameHacks = SUPER_BOWLING;		break;
 	case 0x5546: g_ROM.GameHacks = CONKER;				break;
 	case 0x5750: g_ROM.GameHacks = PILOT_WINGS;			break;
-	case 0x4157: g_ROM.GameHacks = WAR_GODS;			break;
 	case 0x4c5a: g_ROM.GameHacks = ZELDA_OOT;			break;
 	case 0x535a: g_ROM.GameHacks = ZELDA_MM;			break;
 	case 0x3954: g_ROM.GameHacks = TIGERS_HONEY_HUNT;	break;

@@ -181,6 +181,8 @@ extern u64									gTotalInstructionsEmulated;
 extern u32									g_HardwareInterrupt;
 #endif
 
+#ifdef DAEDALUS_ENABLE_SYNCHRONISATION
 extern u32 CPU_ProduceRegisterHash();
+#endif 
 
 #endif // CPU_H_

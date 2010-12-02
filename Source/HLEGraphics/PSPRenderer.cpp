@@ -145,11 +145,11 @@ static const float gTexRectDepth( 0.0f );
 
 bool bStarOrigin = false;
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST	
 ALIGNED_GLOBAL(u32,gWhiteTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ], DATA_ALIGN);
 ALIGNED_GLOBAL(u32,gPlaceholderTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ], DATA_ALIGN);
 ALIGNED_GLOBAL(u32,gSelectedTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ], DATA_ALIGN);
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST //DEBUG_DISPLAYLIST needed for PrintMux
 extern void		PrintMux( FILE * fh, u64 mux );
 #endif
 
@@ -216,6 +216,7 @@ PSPRenderer::PSPRenderer()
 
 	gRDPMux._u64 = 0;
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	memset( gWhiteTexture, 0xff, sizeof(gWhiteTexture) );
 
 	u32	texel_idx( 0 );
@@ -232,7 +233,7 @@ PSPRenderer::PSPRenderer()
 			texel_idx++;
 		}
 	}
-
+#endif
 	//
 	//	Set up RGB = T0, A = T0
 	//
@@ -463,7 +464,7 @@ void PSPRenderer::EndScene()
 		mpTexture[ i ] = NULL;
 	}
 }
-
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST	
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -479,7 +480,7 @@ void	PSPRenderer::SelectPlaceholderTexture( EPlaceholderTextureType type )
 		break;
 	}
 }
-
+#endif
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -531,19 +532,15 @@ void	PSPRenderer::UpdateViewport()
 //*****************************************************************************
 //
 //*****************************************************************************
-inline v2	PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
+inline v2 PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
 {
-	v2	psp_coords;
-
 	//
 	// We round these value here, so that when we scale up the coords to our screen
 	// coords we don't get any gaps.
+	// Avoid rounding twice + temporary object
 	//
-	// rounding twice needed, otherwise it brakes the main menu in GoldenEye
-	psp_coords.x = vfpu_round( vfpu_round( n64_coords.x ) * mN64ToPSPScale.x + mN64ToPSPTranslate.x );
-	psp_coords.y = vfpu_round( vfpu_round( n64_coords.y ) * mN64ToPSPScale.y + mN64ToPSPTranslate.y );
-
-	return psp_coords;
+	return (v2 (( pspFpuRound( n64_coords.x ) * mN64ToPSPScale.x + mN64ToPSPTranslate.x ), 
+				( pspFpuRound( n64_coords.y ) * mN64ToPSPScale.y + mN64ToPSPTranslate.y )));
 }
 
 //*****************************************************************************
@@ -943,9 +940,9 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	}
 	else if( blend_entry.States != NULL )
 	{
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST	
 		bool	inexact( blend_entry.States->IsInexact() );
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST //DEBUG_DISPLAYLIST needed for PrintMux
 		if( inexact )
 		{
 			if(mUnhandledCombinderStates.find( gRDPMux._u64 ) == mUnhandledCombinderStates.end())
@@ -966,7 +963,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 				mUnhandledCombinderStates.insert( gRDPMux._u64 );
 			}
 		}
-#endif
+
 		if(inexact && gGlobalPreferences.HighlightInexactBlendModes)
 		{
 			sceGuEnable( GU_TEXTURE_2D );
@@ -978,6 +975,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 			sceGuDrawArray( DRAW_MODE, render_flags, num_vertices, NULL, p_vertices );
 		}
 		else
+#endif
 		{
 			RenderUsingRenderSettings( blend_entry.States, p_vertices, num_vertices, render_flags );
 		}

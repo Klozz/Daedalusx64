@@ -73,7 +73,39 @@ CFragmentCache::~CFragmentCache()
 //*************************************************************************************
 CFragment * CFragmentCache::LookupFragment( u32 address ) const
 {
-	CFragment * p = LookupFragmentQ( address );
+	DAEDALUS_PROFILE( "CFragmentCache::LookupFragment" );
+
+	if( address != mCachedFragmentAddress )
+	{
+		mCachedFragmentAddress = address;
+
+		// check if in hash table
+		u32 ix = MakeHashIdx( address );
+
+		if ( address != mpCacheHashTable[ix][0] )
+		{
+			SFragmentEntry				entry( address, NULL );
+			FragmentVec::const_iterator	it( std::lower_bound( mFragments.begin(), mFragments.end(), entry ) );
+			if( it != mFragments.end() && it->Address == address )
+			{
+				mpCachedFragment = it->Fragment;
+			}
+			else
+			{
+				mpCachedFragment = NULL;
+			}
+
+			// put in hash table
+			mpCacheHashTable[ix][0] = address;
+			mpCacheHashTable[ix][1] = reinterpret_cast< u32 >( mpCachedFragment );
+		}
+		else
+		{
+			mpCachedFragment = reinterpret_cast< CFragment * >( mpCacheHashTable[ix][1] );
+		}
+	}
+
+	CFragment * p = mpCachedFragment;
 
 	DYNAREC_PROFILE_LOGLOOKUP( address, p );
 
@@ -347,10 +379,7 @@ void CFragmentCache::DumpStats( const char * outputdir ) const
 //*************************************************************************************
 //
 //*************************************************************************************
-u32 CFragmentCacheCoverage::AddressToIndex( u32 address )
-{
-	return (address - BASE_ADDRESS) >> MEM_USAGE_SHIFT;
-}
+#define AddressToIndex( addr ) ((addr - BASE_ADDRESS) >> MEM_USAGE_SHIFT)
 
 //*************************************************************************************
 //

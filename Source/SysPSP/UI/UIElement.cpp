@@ -54,11 +54,14 @@ CUIElementBag::~CUIElementBag()
 //*************************************************************************************
 void CUIElementBag::Draw( CUIContext * context, s32 min_x, s32 max_x, EAlignType halign, s32 y ) const
 {
+	const s32 MINTOP = 25; //Only draw text below
+	const s32 MAXBOT = 247;	//Only draw text above
+
 	for( u32 i = 0; i < mElements.size(); ++i )
 	{
 		const CUIElement *	element( mElements[ i ] );
 
-		element->Draw( context, min_x, max_x, halign, y, i == mSelectedIdx );
+		if (y > MINTOP && y < MAXBOT ) element->Draw( context, min_x, max_x, halign, y, i == mSelectedIdx );
 		y += element->GetHeight( context );
 	}
 }

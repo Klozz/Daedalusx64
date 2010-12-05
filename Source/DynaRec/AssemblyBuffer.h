@@ -38,7 +38,7 @@ class CAssemblyBuffer
 
 		inline void	PadTo16Bytes()
 		{
-			mCurrentPos = ((mCurrentPos - 1) & 0xfffffff0) + 0x10; // align to 16-byte boundary
+			mCurrentPos = (--mCurrentPos & 0xfffffff0) + 0x10; // align to 16-byte boundary
 		}
 
 		inline void EmitBYTE(u8 byte)

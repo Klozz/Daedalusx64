@@ -532,15 +532,15 @@ void	PSPRenderer::UpdateViewport()
 //*****************************************************************************
 //
 //*****************************************************************************
-inline v2 PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
+v2 PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
 {
-	//
+	// GE 007 and Megaman can act up on this
 	// We round these value here, so that when we scale up the coords to our screen
 	// coords we don't get any gaps.
-	// Avoid rounding twice + temporary object
+	// Avoid temporary object
 	//
-	return (v2 (( pspFpuRound( n64_coords.x ) * mN64ToPSPScale.x + mN64ToPSPTranslate.x ), 
-				( pspFpuRound( n64_coords.y ) * mN64ToPSPScale.y + mN64ToPSPTranslate.y )));
+	return (v2 (vfpu_round( vfpu_round( n64_coords.x ) * mN64ToPSPScale.x + mN64ToPSPTranslate.x ), 
+				vfpu_round( vfpu_round( n64_coords.y ) * mN64ToPSPScale.y + mN64ToPSPTranslate.y )));
 }
 
 //*****************************************************************************

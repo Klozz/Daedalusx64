@@ -932,6 +932,27 @@ void MemoryUpdateMI( u32 value )
 
 	//bool interrupts_live_before((mi_intr_mask_reg & mi_intr_reg) != 0);
 
+#if 1 //1->pipelined, 0->branch version //Corn
+	u32 SET_MASK;
+	u32 CLR_MASK;
+
+	CLR_MASK  = (value & MI_INTR_MASK_CLR_SP) >> 0;
+	SET_MASK  = (value & MI_INTR_MASK_SET_SP) >> 1;
+	CLR_MASK |= (value & MI_INTR_MASK_CLR_SI) >> 1;
+	SET_MASK |= (value & MI_INTR_MASK_SET_SI) >> 2;
+	CLR_MASK |= (value & MI_INTR_MASK_CLR_AI) >> 2;
+	SET_MASK |= (value & MI_INTR_MASK_SET_AI) >> 3;
+	CLR_MASK |= (value & MI_INTR_MASK_CLR_VI) >> 3;
+	SET_MASK |= (value & MI_INTR_MASK_SET_VI) >> 4;
+	CLR_MASK |= (value & MI_INTR_MASK_CLR_PI) >> 4;
+	SET_MASK |= (value & MI_INTR_MASK_SET_PI) >> 5;
+	CLR_MASK |= (value & MI_INTR_MASK_CLR_DP) >> 5;
+	SET_MASK |= (value & MI_INTR_MASK_SET_DP) >> 6;
+
+	mi_intr_mask_reg &= ~CLR_MASK;
+	mi_intr_mask_reg |= SET_MASK;
+
+#else
 	if((value & MI_INTR_MASK_SET_SP)) mi_intr_mask_reg |= MI_INTR_MASK_SP;
 	else if((value & MI_INTR_MASK_CLR_SP)) mi_intr_mask_reg &= ~MI_INTR_MASK_SP;
 
@@ -949,7 +970,7 @@ void MemoryUpdateMI( u32 value )
 
 	if((value & MI_INTR_MASK_SET_DP)) mi_intr_mask_reg |= MI_INTR_MASK_DP;
     else if((value & MI_INTR_MASK_CLR_DP)) mi_intr_mask_reg &= ~MI_INTR_MASK_DP;
-
+#endif
 	// Looks suspicious
 	//Memory_MI_SetRegister( MI_INTR_REG, mi_intr_reg );	
 	Memory_MI_SetRegister( MI_INTR_MASK_REG, mi_intr_mask_reg );

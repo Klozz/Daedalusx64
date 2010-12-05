@@ -57,12 +57,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <algorithm>
 #include <string>
 
-#include "Utility/SpinLock.h"
+//#include "Utility/SpinLock.h"
 
 // Take advantage of the cooperative multitasking
 //    of the PSP to make locking/unlocking as fast as possible.
-static volatile u32 eventQueueLocked;
-#define LOCK_EVENT_QUEUE() CSpinLock _lock( &eventQueueLocked )
+//static volatile u32 eventQueueLocked;
+//#define LOCK_EVENT_QUEUE() CSpinLock _lock( &eventQueueLocked )
 #define RESET_EVENT_QUEUE_LOCK() eventQueueLocked = 0;
 
 
@@ -86,8 +86,8 @@ std::vector< DBG_BreakPoint > g_BreakPoints;
 
 
 static bool		gCPURunning				= false;			// CPU is actively running
-static u32		gLastPC = 0xffffffff;
-static u8 *		gLastAddress = NULL;
+//static u32		gLastPC = 0xffffffff;
+//static u8 *		gLastAddress = NULL;
 
 namespace
 {
@@ -128,14 +128,14 @@ void (* g_pCPUCore)();
 //*****************************************************************************
 //
 //*****************************************************************************
-bool CPU_ProcessEventCycles( u32 cycles )
-{
-	LOCK_EVENT_QUEUE();
-
-	DAEDALUS_ASSERT( gCPUState.NumEvents > 0, "There are no events" );
-	gCPUState.Events[ 0 ].mCount -= cycles;
-	return gCPUState.Events[ 0 ].mCount <= 0;
-}
+//bool CPU_ProcessEventCycles( u32 cycles )
+//{
+//	LOCK_EVENT_QUEUE();
+//
+//	DAEDALUS_ASSERT( gCPUState.NumEvents > 0, "There are no events" );
+//	gCPUState.Events[ 0 ].mCount -= cycles;
+//	return gCPUState.Events[ 0 ].mCount <= 0;
+//}
 
 //*****************************************************************************
 //
@@ -892,33 +892,33 @@ void CPU_UpdateCounterNoInterrupt( u32 ops_executed )
 }
 }
 
-static bool CPU_FetchInstruction_Refill( u32 pc, OpCode * opcode )
-{
-	gLastAddress = (u8 *)ReadAddress( pc );
-	gLastPC = pc;
-	*opcode = *(OpCode *)gLastAddress;
-	return gCPUState.GetStuffToDo() == 0;
+//static bool CPU_FetchInstruction_Refill( u32 pc, OpCode * opcode )
+//{
+//	gLastAddress = (u8 *)ReadAddress( pc );
+//	gLastPC = pc;
+//	*opcode = *(OpCode *)gLastAddress;
+//	return gCPUState.GetStuffToDo() == 0;
+//
+//}
 
-}
-
-bool CPU_FetchInstruction( u32 pc, OpCode * opcode )
-{
-	const u32 PAGE_MASK_BITS = 12;		// 1<<12 == 4096
-
-	if( (pc>>PAGE_MASK_BITS) == (gLastPC>>PAGE_MASK_BITS) )
-	{
-		s32		offset( pc - gLastPC );
-
-		gLastAddress += offset;
-		DAEDALUS_ASSERT( gLastAddress == ReadAddress(pc), "Cached Instruction Pointer base is out of sync" );
-		gLastPC = pc;
-		*opcode = *(OpCode *)gLastAddress;
-		return true;
-	}
-
-	return CPU_FetchInstruction_Refill( pc, opcode );
-}
-
+//bool CPU_FetchInstruction( u32 pc, OpCode * opcode )
+//{
+//	const u32 PAGE_MASK_BITS = 12;		// 1<<12 == 4096
+//
+//	if( (pc>>PAGE_MASK_BITS) == (gLastPC>>PAGE_MASK_BITS) )
+//	{
+//		s32		offset( pc - gLastPC );
+//
+//		gLastAddress += offset;
+//		DAEDALUS_ASSERT( gLastAddress == ReadAddress(pc), "Cached Instruction Pointer base is out of sync" );
+//		gLastPC = pc;
+//		*opcode = *(OpCode *)gLastAddress;
+//		return true;
+//	}
+//
+//	return CPU_FetchInstruction_Refill( pc, opcode );
+//}
+//
 
 //*****************************************************************************
 //

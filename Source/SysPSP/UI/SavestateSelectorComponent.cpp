@@ -45,7 +45,7 @@ namespace
 	const char * const		SAVING_STATUS_TEXT  = "Saving...";
 	const char * const		LOADING_STATUS_TEXT = "Loading...";
 
-	const u32				TEXT_AREA_TOP = 32;
+	const u32				TEXT_AREA_TOP = 272 / 2;
 	const u32				TEXT_AREA_LEFT = 20;
 	const u32				TEXT_AREA_RIGHT = 460;
 
@@ -411,10 +411,12 @@ void	ISavestateSelectorComponent::Render()
 
 	if( mSelectedSlot == INVALID_SLOT )
 	{
-		if( mElements.GetSelectedIndex() > 14 )
+		mElements.Draw( mpContext, TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_LEFT, TEXT_AREA_TOP - mElements.GetSelectedIndex()*(font_height+2) );
+
+		/*if( mElements.GetSelectedIndex() > 0 )
 			mElements.Draw( mpContext, TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_LEFT, TEXT_AREA_TOP - mElements.GetSelectedIndex()*11 );
 		else
-			mElements.Draw( mpContext, TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_LEFT, TEXT_AREA_TOP);
+			mElements.Draw( mpContext, TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_LEFT, TEXT_AREA_TOP);*/
 
 		CUIElement *	element( mElements.GetSelectedElement() );
 		if( element != NULL )

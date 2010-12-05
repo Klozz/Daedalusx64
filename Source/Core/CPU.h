@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "R4300OpCode.h"
 #include "Memory.h"
 #include "TLB.h"
+#include "Utility/SpinLock.h"
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -169,11 +170,60 @@ extern "C"
 }
 
 extern	void (* g_pCPUCore)();
-extern bool CPU_FetchInstruction( u32 pc, OpCode * opcode );
+
+//***********************************************
+//These two functions gets called *alot* //Corn
+//CPU_FetchInstruction
+//CPU_FetchInstruction_Refill
+//***********************************************
+static u32		gLastPC = 0xffffffff;
+static u8 *		gLastAddress = NULL;
+
+inline bool CPU_FetchInstruction_Refill( u32 pc, OpCode * opcode )
+{
+	gLastAddress = (u8 *)ReadAddress( pc );
+	gLastPC = pc;
+	*opcode = *(OpCode *)gLastAddress;
+	return gCPUState.GetStuffToDo() == 0;
+}
+
+//extern bool CPU_FetchInstruction( u32 pc, OpCode * opcode );
+inline bool CPU_FetchInstruction( u32 pc, OpCode * opcode )
+{
+	const u32 PAGE_MASK_BITS = 12;		// 1<<12 == 4096
+
+	if( (pc>>PAGE_MASK_BITS) == (gLastPC>>PAGE_MASK_BITS) )
+	{
+		s32		offset( pc - gLastPC );
+
+		gLastAddress += offset;
+		DAEDALUS_ASSERT( gLastAddress == ReadAddress(pc), "Cached Instruction Pointer base is out of sync" );
+		gLastPC = pc;
+		*opcode = *(OpCode *)gLastAddress;
+		return true;
+	}
+
+	return CPU_FetchInstruction_Refill( pc, opcode );
+}
+
 
 #define COUNTER_INCREMENT_PER_OP			1
-extern bool CPU_ProcessEventCycles( u32 cycles );
 
+//***********************************************
+//This function gets called *alot* //Corn
+//CPU_ProcessEventCycles
+//***********************************************
+//extern bool CPU_ProcessEventCycles( u32 cycles );
+static volatile u32 eventQueueLocked;
+#define LOCK_EVENT_QUEUE() CSpinLock _lock( &eventQueueLocked )
+inline bool CPU_ProcessEventCycles( u32 cycles )
+{
+	LOCK_EVENT_QUEUE();
+
+	DAEDALUS_ASSERT( gCPUState.NumEvents > 0, "There are no events" );
+	gCPUState.Events[ 0 ].mCount -= cycles;
+	return gCPUState.Events[ 0 ].mCount <= 0;
+}
 
 #ifdef DAEDALUS_PROFILE_EXECUTION
 extern u64									gTotalInstructionsExecuted;

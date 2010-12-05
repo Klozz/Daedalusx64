@@ -114,11 +114,9 @@ private:
 	static const u32 HASH_TABLE_BITS = 8;
 	static const u32 HASH_TABLE_SIZE = 1<<HASH_TABLE_BITS;
 
-	inline static u32 MakeHashIdx( u32 address )
-	{
-		address >>= 2;	// Low 2 bits will always be 0, remove this redundancy
-		return ((address >> 16) ^ (address >> 8) ^ address ) & (HASH_TABLE_SIZE-1);
-	}
+	//Low 2 bits will always be 0, remove this redundancy
+	#define MakeHashIdx( addr ) ((addr >> 2) & (HASH_TABLE_SIZE-1))
+	//#define MakeHashIdx( addr ) (((addr >> 18) ^ (addr >> 10) ^ addr >> 2 ) & (HASH_TABLE_SIZE-1))
 
 	mutable u32				mpCacheHashTable[HASH_TABLE_SIZE][2];
 

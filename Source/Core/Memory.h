@@ -294,10 +294,26 @@ inline bool Memory_GetInternalReadAddress(u32 address, void ** p_translated)
 extern u8 * g_pu8RamBase_8000;
 extern u8 * g_pu8RamBase_A000;
 
+#if 1	//inline vs macro
 inline u64 Read64Bits( u32 address )				{ MEMORY_CHECK_ALIGN( address, 8 ); u64 data = *(u64 *)ReadAddress( address ); data = (data>>32) + (data<<32); return data; }
 inline u32 Read32Bits( u32 address )				{ MEMORY_CHECK_ALIGN( address, 4 ); return *(u32 *)ReadAddress( address ); }
 inline u16 Read16Bits( u32 address )				{ MEMORY_CHECK_ALIGN( address, 2 ); return *(u16 *)ReadAddress( address ^ U16_TWIDDLE ); }
 inline u8 Read8Bits( u32 address )					{                                   return *(u8  *)ReadAddress( address ^ U8_TWIDDLE ); }
+#else
+inline u64 Read64Bits( u32 address )
+{
+	MEMORY_CHECK_ALIGN( address, 8 );
+	union
+	{
+		u64 data;
+		u32 dpart[2];
+	}uni = {*(u64 *)ReadAddress( address )};
+	return ((u64)uni.dpart[0] << 32) | uni.dpart[1];
+}
+#define Read32Bits( addr )							( *(u32 *)ReadAddress( (addr) ))
+#define Read16Bits( addr )							( *(u16 *)ReadAddress( (addr) ^ U16_TWIDDLE ))
+#define Read8Bits( addr )							( *(u8  *)ReadAddress( (addr) ^ U8_TWIDDLE ))
+#endif
 
 inline void Write64Bits( u32 address, u64 data )	{ MEMORY_CHECK_ALIGN( address, 8 ); *(u64 *)WriteAddress( address ) = (data>>32) + (data<<32); }
 inline void Write32Bits( u32 address, u32 data )	{ MEMORY_CHECK_ALIGN( address, 4 ); WriteValueAddress(address, data); }

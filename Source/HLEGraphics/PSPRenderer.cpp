@@ -73,8 +73,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <vector>
 
-//f32 DECAL_Z_OFFSET = +3.14f;		// Found through trial an error for the PSP
-
 #include "PushStructPack1.h"
 
 #include "PopStructPack.h"
@@ -141,11 +139,15 @@ static f32 fViHeight = 240.0f;
 static u32 uViWidth = 320;
 static u32 uViHeight = 240;
 
+f32 gZoomX;	//Default is 1.0f
+
 static const float gTexRectDepth( 0.0f );
 
 bool bStarOrigin = false;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST	
+f32 DECAL_Z_OFFSET = +3.14f;		// Found through trial an error for the PSP
+
 ALIGNED_GLOBAL(u32,gWhiteTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ], DATA_ALIGN);
 ALIGNED_GLOBAL(u32,gPlaceholderTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ], DATA_ALIGN);
 ALIGNED_GLOBAL(u32,gSelectedTexture[gPlaceholderTextureWidth * gPlaceholderTextureHeight ], DATA_ALIGN);
@@ -329,15 +331,13 @@ bool PSPRenderer::RestoreRenderStates()
 //*****************************************************************************
 void PSPRenderer::SetVIScales()
 {
-	const f32 sRatio = 0.75f;	// NTSC
-
 	u32 width = Memory_VI_GetRegister( VI_WIDTH_REG );
 
 	u32 ScaleX = Memory_VI_GetRegister( VI_X_SCALE_REG ) & 0xFFF;
 	u32 ScaleY = Memory_VI_GetRegister( VI_Y_SCALE_REG ) & 0xFFF;
 
-	f32 fScaleX = (f32)ScaleX / 1024.0f;
-	f32 fScaleY = (f32)ScaleY / 1024.0f;
+	f32 fScaleX = (f32)ScaleX / (1<<10);
+	f32 fScaleY = (f32)ScaleY / (1<<10);
 
 	//DBGConsole_Msg(DEBUG_VI, "VI_X_SCALE_REG set to 0x%08x (%f)", dwValue, 1/fScale);
 	//DBGConsole_Msg(DEBUG_VI, "VI_Y_SCALE_REG set to 0x%08x (%f)", dwValue, 1/fScale);
@@ -346,38 +346,39 @@ void PSPRenderer::SetVIScales()
 	u32 VStartReg = Memory_VI_GetRegister( VI_V_START_REG );
 
 	u32	hstart = HStartReg >> 16;
-	u32	hend   = HStartReg & 0xffff;
+	u32	hend = HStartReg & 0xffff;
 	//DBGConsole_Msg( 0, "h start/end %x %x", hstart, hend );		// 128 725 - 597
 
 	u32	vstart = VStartReg >> 16;
-	u32	vend   = VStartReg & 0xffff;
+	u32	vend = VStartReg & 0xffff;
 	//DBGConsole_Msg( 0, "v start/end %x %x", vstart, vend );		// 56 501 - 445
 
-	fViWidth  = (u32)((f32) (hend-hstart)    * fScaleX);
-	fViHeight = (u32)((f32)((vend-vstart)/2) * fScaleY);
+	fViWidth  =  (hend-hstart)    * fScaleX;
+	fViHeight = ((vend-vstart)/2) * fScaleY;
+
 	
 	//If we are close to 240 in height then set to 240 //Corn
-	if( abs(240 - (u32)fViHeight) < 4 ) fViHeight = 240.0f;
+	if( abs(240 - fViHeight) < 4 ) 
+		fViHeight = 240.0f;
 	
 	// XXX Need to check PAL games.
 	//if(g_ROM.TvType != OS_TV_NTSC) sRatio = 9/11.0f;
 
-	if( ScaleY == 0 )
+	/*if( ScaleY == 0 )
 	{
 		fViHeight = fViWidth * sRatio;
-	}
-	else
-	{
-		if( width > 0x300 )			//This sets the correct height in various games
-			fViHeight *= 2.0f;		//ex : Megaman 64
-	}
+	}*/
+
+	//This sets the correct height in various games ex : Megaman 64
+	if( width > 0x300 )	
+		fViHeight *= 2.0f;
 
 	//Sometimes HStartReg and VStartReg are zero
 	//This fixes gaps is some games ex: CyberTiger
 	if( (fViHeight < 100) || (fViWidth < 100) )
 	{
-		fViWidth = (f32)width;
-		fViHeight = fViWidth * sRatio;
+		fViWidth = (f32)Memory_VI_GetRegister( VI_WIDTH_REG );
+		fViHeight = fViWidth * 0.75f; //sRatio
 	}
 
 	// With recent fixes, this doesn't seem to be used anymore ~ Salvy
@@ -486,11 +487,11 @@ void	PSPRenderer::SelectPlaceholderTexture( EPlaceholderTextureType type )
 //*****************************************************************************
 void PSPRenderer::SetPSPViewport( s32 x, s32 y, u32 w, u32 h )
 {
-	mN64ToPSPScale.x = f32( w ) / fViWidth;
-	mN64ToPSPScale.y = f32( h ) / fViHeight;
+	mN64ToPSPScale.x = gZoomX * f32( w ) / fViWidth;
+	mN64ToPSPScale.y = gZoomX * f32( h ) / fViHeight;
 
-	mN64ToPSPTranslate.x  = f32( x );
-	mN64ToPSPTranslate.y  = f32( y );
+	mN64ToPSPTranslate.x  = f32( x ) - 0.5f * (gZoomX - 1.0f) * fViWidth;
+	mN64ToPSPTranslate.y  = f32( y ) - 0.5f * (gZoomX - 1.0f) * fViHeight;
 
 	UpdateViewport();
 }
@@ -532,17 +533,25 @@ void	PSPRenderer::UpdateViewport()
 //*****************************************************************************
 //
 //*****************************************************************************
-v2 PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
-{
 	// GE 007 and Megaman can act up on this
 	// We round these value here, so that when we scale up the coords to our screen
 	// coords we don't get any gaps.
 	// Avoid temporary object
 	//
-	return (v2 (vfpu_round( vfpu_round( n64_coords.x ) * mN64ToPSPScale.x + mN64ToPSPTranslate.x ), 
-				vfpu_round( vfpu_round( n64_coords.y ) * mN64ToPSPScale.y + mN64ToPSPTranslate.y )));
+#if 1
+v2 PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
+{
+	v2 answ;
+	vfpu_N64_2_PSP( &answ.x, &n64_coords.x, &mN64ToPSPScale.x, &mN64ToPSPTranslate.x);
+	return answ;
 }
-
+#else
+inline v2 PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
+{
+	return (v2 (pspFpuRound( pspFpuRound( n64_coords.x ) * mN64ToPSPScale.x + mN64ToPSPTranslate.x ), 
+				pspFpuRound( pspFpuRound( n64_coords.y ) * mN64ToPSPScale.y + mN64ToPSPTranslate.y )));
+}
+#endif
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -1110,12 +1119,14 @@ bool PSPRenderer::TexRectFlip( u32 tile_idx, const v2 & xy0, const v2 & xy1, con
 //*****************************************************************************
 bool PSPRenderer::FillRect( const v2 & xy0, const v2 & xy1, u32 color )
 {
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	if ( (gRDPOtherMode._u64 & 0xffff0000) == 0x5f500000 )	//Used by Wave Racer
 	{
 		// this blend mode is mem*0 + mem*1, so we don't need to render it... Very odd!
 		DAEDALUS_ERROR("	mem*0 + mem*1 - skipped");
 		return true;
 	}
+#endif
 
 	// This if for C&C - It might break other stuff (I'm not sure if we should allow alpha or not..)
 //	color |= 0xff000000;
@@ -2340,8 +2351,9 @@ void	PSPRenderer::SetScissor( u32 x0, u32 y0, u32 x1, u32 y1 )
 	v2		psp_coords_br( ConvertN64ToPsp( n64_coords_br ) );
 
 	// N.B. Think the arguments are x0,y0,x1,y1, and not x,y,w,h as the docs describe
+	//Clamp TOP and LEFT values to 0 if < 0 , needed for zooming //Corn
 	//printf("%d %d %d %d\n", s32(psp_coords_tl.x),s32(psp_coords_tl.y),s32(psp_coords_br.x),s32(psp_coords_br.y));
-	sceGuScissor( s32(psp_coords_tl.x), s32(psp_coords_tl.y),
+	sceGuScissor( s32(psp_coords_tl.x) < 0 ? 0 : s32(psp_coords_tl.x), s32(psp_coords_tl.y) < 0 ? 0 : s32(psp_coords_tl.y),
 				  s32(psp_coords_br.x), s32(psp_coords_br.y) );
 }
 

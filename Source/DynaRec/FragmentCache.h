@@ -62,7 +62,9 @@ public:
 	CFragmentCache();
 	~CFragmentCache();
 
+#if DAEDALUS_DEBUG_DYNAREC
 	CFragment *				LookupFragment( u32 address ) const;
+#endif
 	CFragment *				LookupFragmentQ( u32 address ) const;
 	void					InsertFragment( CFragment * p_fragment );
 

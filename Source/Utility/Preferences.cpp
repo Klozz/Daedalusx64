@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <map>
 
 extern EFrameskipValue gFrameskipValue;
+extern f32 gZoomX;
 
 //*****************************************************************************
 //
@@ -295,6 +296,10 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 //		{
 //			preferences.AudioAdaptFrequency = property->GetBooleanValue( false );
 //		}
+		if( section->FindProperty( "ZoomX", &property ) )
+		{
+			preferences.ZoomX = (float) atof( property->GetValue() );
+		}
 		if( section->FindProperty( "Controller", &property ) )
 		{
 			preferences.ControllerIndex = CInputManager::Get()->GetConfigurationFromName( property->GetValue() );
@@ -336,6 +341,7 @@ void IPreferences::OutputSectionDetails( const RomID & id, const SRomPreferences
 	fprintf(fh, "CheckTextureHashFrequency=%d\n", ROM_GetTexureHashFrequencyAsFrames( preferences.CheckTextureHashFrequency ) );
 	fprintf(fh, "Frameskip=%d\n", ROM_GetFrameskipValueAsInt( preferences.Frameskip ) );
 	fprintf(fh, "AudioEnabled=%d\n", preferences.AudioEnabled);
+	fprintf(fh, "ZoomX=%f\n", preferences.ZoomX );
 	fprintf(fh, "Controller=%s\n", CInputManager::Get()->GetConfigurationName( preferences.ControllerIndex ));
 	fprintf(fh, "\n");			// Spacer
 }
@@ -483,6 +489,7 @@ SRomPreferences::SRomPreferences()
 	,	Frameskip( FV_DISABLED )
 	,	AudioEnabled( APM_DISABLED )
 //	,	AudioAdaptFrequency( false )
+	,	ZoomX( 1.0f )
 	,	ControllerIndex( 0 )
 {
 }
@@ -510,6 +517,7 @@ void SRomPreferences::Reset()
 	Frameskip = FV_DISABLED;
 	AudioEnabled = APM_DISABLED;
 //	AudioAdaptFrequency = false;
+	ZoomX = 1.0f;
 	ControllerIndex = 0;
 }
 
@@ -534,6 +542,7 @@ void	SRomPreferences::Apply() const
 	gFogEnabled = g_ROM.settings.FogEnabled || FogEnabled;
 	gCheckTextureHashFrequency = ROM_GetTexureHashFrequencyAsFrames( CheckTextureHashFrequency );
 	gFrameskipValue = Frameskip;
+	gZoomX = ZoomX;
 
 	gAudioPluginEnabled = AudioEnabled;
 //	gAdaptFrequency = AudioAdaptFrequency;

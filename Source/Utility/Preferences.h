@@ -157,6 +157,7 @@ struct SRomPreferences
 	EFrameskipValue				Frameskip;
 	EAudioPluginMode			AudioEnabled;
 //	bool						AudioAdaptFrequency;
+	f32							ZoomX;
 	u32							ControllerIndex;
 
 	SRomPreferences();

@@ -120,6 +120,24 @@ namespace
 		EAudioPluginMode		*mSetting;
 	};
 
+	class CZoomSetting : public CUISetting
+	{
+	public:
+		CZoomSetting( f32 * setting, const char * name, const char * description )
+			:	CUISetting( name, description )
+			,	mSetting( setting )
+		{
+		}
+
+		virtual	void			OnNext()				{ *mSetting += 0.01f; *mSetting = *mSetting > 1.2f ? 1.2f : *mSetting;}
+		virtual	void			OnPrevious()			{ *mSetting -= 0.01f; *mSetting = *mSetting < 1.0f ? 1.0f : *mSetting;}
+
+		virtual const char *	GetSettingName() const	{ sprintf( (char*)mString, "%.0f%%", (double)(*mSetting*100.0f) ); return (const char*) mString; }
+
+	private:
+		float *		mSetting;
+		char 		mString[8];
+	};
 
 	class CAdjustFrequencySetting : public CUISetting
 	{
@@ -231,6 +249,7 @@ IRomPreferencesScreen::IRomPreferencesScreen( CUIContext * p_context, const RomI
 
 	mElements.Add( new CTextureHashFrequency( &mRomPreferences.CheckTextureHashFrequency, "Texture Update Check",	"Whether to check for texture updates between frames. Disable this to improve framerate, at the expense of graphics quality." ) );
 	mElements.Add( new CAdjustFrameskipSetting( &mRomPreferences.Frameskip, "Frameskip", "This determines how many frames are skipped before rendering a new frame. Increasing this value should give a small speedup, at the expense of more jerky graphics." ) );
+	mElements.Add( new CZoomSetting( &mRomPreferences.ZoomX, "Zoom", "Increase screen size, the value will override the default screen size, 100% is default" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.SpeedSyncEnabled, "Limit Framerate", "This determines whether the refresh rate is limited to 50Hz (for PAL games) or 60Hz (for NTSC games).", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.DynarecEnabled, "Dynamic Recompilation", "Whether dynamic recompilation is enabled for this rom", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.DynarecStackOptimisation, "Dynamic Stack Optimisation", "Whether the dynarec stack optimisation is enabled for this rom", "Enabled", "Disabled" ) );

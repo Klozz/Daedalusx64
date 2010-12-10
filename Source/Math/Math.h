@@ -186,6 +186,27 @@ inline float vfpu_round(float x)
 	
 	return result;
 }
+
+inline void vfpu_N64_2_PSP(float *Pcoord, const float *Ncoord, const float *Pscale, const float *Ptrans)
+{
+	__asm__ volatile (
+		"lv.s     S000, 0 + %1\n"	//load Ncord.x
+		"lv.s     S001, 4 + %1\n"	//load Ncord.y
+		"vf2in.p  C000, C000, 0\n"	//conv Ncord -> int
+		"lv.s     S010, 0 + %2\n"	//load Pscale.x
+		"lv.s     S011, 4 + %2\n"	//load Pscale.y
+		"vi2f.p	  C000, C000, 0\n"	//conv Ncord -> float
+		"lv.s     S020, 0 + %3\n"	//load Ptrans.x
+		"lv.s     S021, 4 + %3\n"	//load Ptrans.y
+		"vmul.p	  C000, C000, C010\n"	//Ncord * Pscale
+		"vadd.p   C000, C000, C020\n"	// + Ptrans
+		"vf2in.p  C000, C000, 0\n"	//conv result -> int
+		"vi2f.p	  C000, C000, 0\n"	//conv result -> float
+		"sv.s     S000, 0 + %0\n"	//save result.x
+		"sv.s     S001, 4 + %0\n"	//save result.y
+		: "=m"(*Pcoord) : "m"(*Ncoord), "m"(*Pscale), "m"(*Ptrans) : "memory" );
+}
+
 /*
 inline float vfpu_fmaxf(float x, float y) {
 	float result;
@@ -540,7 +561,7 @@ inline f32 pspFpuDoubleToFloat(f64 *f)
 	"mtc1	v0, %0\n"			/* fv0 = v0 */
 "dtof_zero:\n"
 	"sll	t0, %1 + 4, 12\n"		/* t0 = a1 << 12 */
-	"or	t0, t0, a0\n"		/* t0 = t0 | a0 */
+	"or	t0, t0, %1 + 0\n"		/* t0 = t0 | a0 */
 "dtof_min:\n"
 	"li	v0, 0x00000001\n"		/* v0 = 0x00000001 */
 	"movz	v0, zero, t0\n"		/* v0 = (t0==0) ? zero : v0 */

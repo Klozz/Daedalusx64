@@ -71,6 +71,7 @@ CFragmentCache::~CFragmentCache()
 //*************************************************************************************
 //
 //*************************************************************************************
+#if DAEDALUS_DEBUG_DYNAREC
 CFragment * CFragmentCache::LookupFragment( u32 address ) const
 {
 	DAEDALUS_PROFILE( "CFragmentCache::LookupFragment" );
@@ -111,13 +112,13 @@ CFragment * CFragmentCache::LookupFragment( u32 address ) const
 
 	return p;
 }
-
+#endif
 //*************************************************************************************
 //
 //*************************************************************************************
 CFragment * CFragmentCache::LookupFragmentQ( u32 address ) const
 {
-	DAEDALUS_PROFILE( "CFragmentCache::LookupFragment" );
+	DAEDALUS_PROFILE( "CFragmentCache::LookupFragmentQ" );
 
 	if( address != mCachedFragmentAddress )
 	{
@@ -196,7 +197,11 @@ void CFragmentCache::InsertFragment( CFragment * p_fragment )
 
 		if( jump.IsSet() )
 		{
+#if DAEDALUS_DEBUG_DYNAREC
 			CFragment * p_fragment( LookupFragment( target_address ) );
+#else
+			CFragment * p_fragment( LookupFragmentQ( target_address ) );
+#endif
 			if( p_fragment != NULL )
 			{
 				PatchJumpLongAndFlush( jump, p_fragment->GetEntryTarget() );

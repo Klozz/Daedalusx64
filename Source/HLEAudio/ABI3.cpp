@@ -43,7 +43,7 @@ static void SPNOOP( AudioHLECommand command )
 }
 
 /*
-void SETVOL3( AudioHLECommand command )
+static void SETVOL3( AudioHLECommand command )
 {
 	// Swapped Rate_Left and Vol
 	u8 Flags = (u8)(command.cmd0 >> 0x10);
@@ -62,7 +62,7 @@ void SETVOL3( AudioHLECommand command )
 	}
 }
 */
-void SETVOL3( AudioHLECommand command )
+static void SETVOL3( AudioHLECommand command )
 {
 	u8 Flags = (u8)(command.cmd0 >> 0x10);
 	if (Flags & 0x4) { // 288
@@ -81,7 +81,7 @@ void SETVOL3( AudioHLECommand command )
 	}
 }
 
-void ENVMIXER3( AudioHLECommand command )
+static void ENVMIXER3( AudioHLECommand command )
 {
 	u8 flags = (u8)((command.cmd0 >> 16) & 0xff);
 	u32 addy = (command.cmd1 & 0xFFFFFF);
@@ -235,241 +235,15 @@ void ENVMIXER3( AudioHLECommand command )
 	//*(u32 *)(gAudioHLEState.MixerWorkArea + 24) = 0x13371337; // 22-23
 	memcpy(rdram+addy, (u8 *)gAudioHLEState.MixerWorkArea,80);
 }
-//*/
-void ENVMIXER3o( AudioHLECommand command )
-{
-	u8 flags = (u8)((command.cmd0 >> 16) & 0xff);
-	u32 addy = (command.cmd1 & 0xFFFFFF);// + gAudioHLEState.Segments[(command.cmd1>>24)&0xf];
-	//static FILE *dfile = fopen ("d:\\envmix.txt", "wt");
-// ********* Make sure these conditions are met... ***********
-#ifndef DAEDALUS_SILENT
-	if ((gAudioHLEState.InBuffer | gAudioHLEState.OutBuffer | gAudioHLEState.AuxA | gAudioHLEState.AuxC | gAudioHLEState.AuxE | gAudioHLEState.Count) & 0x3)
-	{
-		DAEDALUS_ERROR( "Unaligned EnvMixer... please report this to Azimer with the following information: RomTitle, Place in the rom it occurred, and any save state just before the error" );
-	}
-#endif
-// ------------------------------------------------------------
- 	s16 *inp=(s16 *)(gAudioHLEState.Buffer+0x4F0);
-	s16 *out=(s16 *)(gAudioHLEState.Buffer+0x9D0);
-	s16 *aux1=(s16 *)(gAudioHLEState.Buffer+0xB40);
-	s16 *aux2=(s16 *)(gAudioHLEState.Buffer+0xCB0);
-	s16 *aux3=(s16 *)(gAudioHLEState.Buffer+0xE20);
 
-	s32 MainR;
-	s32 MainL;
-	s32 AuxR;
-	s32 AuxL;
-	s32 i1,o1,a1,a2=0,a3=0;
-	u16 AuxIncRate=1;
-	s16 zero[8];
-	memset(zero,0,16);
-	s32 LVol, RVol;
-	s32 LAcc, RAcc;
-	s32 LTrg, RTrg;
-	s16 Wet, Dry;
-
-	//fprintf (dfile, "\n----------------------------------------------------\n");
-	gAudioHLEState.VolRight = (s16)command.cmd0;
-	if (flags & A_INIT) {
-		LVol = (((s32)gAudioHLEState.VolLeft * gAudioHLEState.VolRampLeft) - ((s32)gAudioHLEState.VolLeft << 16)) >> 3; 
-		RVol = (((s32)gAudioHLEState.VolRight * gAudioHLEState.VolRampRight) - ((s32)gAudioHLEState.VolRight << 16)) >> 3;
-		LAcc = ((s32)gAudioHLEState.VolLeft << 16);
-		RAcc = ((s32)gAudioHLEState.VolRight << 16);
-		Wet = gAudioHLEState.EnvWet;
-		Dry = gAudioHLEState.EnvDry; // Save Wet/Dry values
-		//LTrg = (gAudioHLEState.VolTrgLeft << 16); RTrg = (gAudioHLEState.VolTrgRight << 16); // Save Current Left/Right Targets
-		LTrg = gAudioHLEState.VolTrgLeft*0x10000; RTrg = gAudioHLEState.VolTrgRight*0x10000;
-		//fprintf (dfile, "gAudioHLEState.VolLeft = %08X LVol = %08X\n", gAudioHLEState.VolLeft, LVol);
-	} else {
-		// Load LVol, RVol, LAcc, and RAcc (all 32bit)
-		// Load Wet, Dry, LTrg, RTrg
-		memcpy((u8 *)gAudioHLEState.MixerWorkArea, (rdram+addy), 80);
-		Wet  = *(s16 *)(gAudioHLEState.MixerWorkArea +  0); // 0-1
-		Dry  = *(s16 *)(gAudioHLEState.MixerWorkArea +  2); // 2-3
-		LTrg = *(s32 *)(gAudioHLEState.MixerWorkArea +  4); // 4-5
-		RTrg = *(s32 *)(gAudioHLEState.MixerWorkArea +  6); // 6-7
-		LVol = *(s32 *)(gAudioHLEState.MixerWorkArea +  8); // 8-9 (gAudioHLEState.MixerWorkArea is a 16bit pointer)
-		RVol = *(s32 *)(gAudioHLEState.MixerWorkArea + 10); // 10-11
-		LAcc = *(s32 *)(gAudioHLEState.MixerWorkArea + 12); // 12-13
-		RAcc = *(s32 *)(gAudioHLEState.MixerWorkArea + 14); // 14-15
-	}
-
-	if(!(flags&A_AUX)) {
-		AuxIncRate=0;
-		aux2=aux3=zero;
-	}
-
-	//fprintf (dfile, "LTrg = %08X, LVol = %08X\n", LTrg, LVol);
-
-	for (s32 x=0; x<(0x170/2); x++) {
-		i1=(s32)inp[x^1];
-		o1=(s32)out[x^1];
-		a1=(s32)aux1[x^1];
-		if (AuxIncRate) {
-			a2=(s32)aux2[x^1];
-			a3=(s32)aux3[x^1];
-		}
-		// TODO: here...
-		//LAcc = (LTrg << 16);
-		//RAcc = (RTrg << 16);
-		
-		LAcc += LVol;
-		RAcc += RVol;
-
-		if (LVol < 0) { // Decrementing
-			if (LAcc < LTrg) {
-				LAcc = LTrg;
-				LVol = 0;
-			}
-		} else {
-			if (LAcc > LTrg) {
-				LAcc = LTrg;
-				LVol = 0;
-			}
-		}
-
-		if (RVol < 0) { // Decrementing
-			if (RAcc < RTrg) {
-				RAcc = RTrg;
-				RVol = 0;
-			}
-		} else {
-			if (RAcc > RTrg) {
-				RAcc = RTrg;
-				RVol = 0;
-			}
-		}
-
-		//fprintf (dfile, "%04X ", (LAcc>>16));
-
-		MainL = ((Dry * (LAcc>>16)) + 0x4000) >> 15; 
-		MainR = ((Dry * (RAcc>>16)) + 0x4000) >> 15; 
-		AuxL  = ((Wet * (LAcc>>16)) + 0x4000) >> 15; 
-		AuxR  = ((Wet * (RAcc>>16)) + 0x4000) >> 15;
-		/*
-		MainL = Saturate<s16>( MainL );
-		MainR = Saturate<s16>( MainR );
-		AuxL = Saturate<s16>( AuxL );
-		AuxR = Saturate<s16>( AuxR );
-		*/
-		/*
-		MainR = (Dry * RTrg + 0x10000) >> 15;
-		MainL = (Dry * LTrg + 0x10000) >> 15;
-		AuxR  = (Wet * RTrg + 0x8000)  >> 16;
-		AuxL  = (Wet * LTrg + 0x8000)  >> 16;*/
-
-		o1+=(/*(o1*0x7fff)+*/(i1*MainR)+0x4000)>>15;
-
-		a1+=(/*(a1*0x7fff)+*/(i1*MainL)+0x4000)>>15;
-
-		o1 = Saturate<s16>( o1 );
-		a1 = Saturate<s16>( a1 );
-
-		out[x^1]=o1;
-		aux1[x^1]=a1;
-		if (AuxIncRate) {
-			a2+=(/*(a2*0x7fff)+*/(i1*AuxR)+0x4000)>>15;
-			a3+=(/*(a3*0x7fff)+*/(i1*AuxL)+0x4000)>>15;
-			
-			a2 = Saturate<s16>( a2 );
-			a3 = Saturate<s16>( a3 );
-
-			aux2[x^1]=a2;
-			aux3[x^1]=a3;
-		}
-	}
-
-	*(s16 *)(gAudioHLEState.MixerWorkArea +  0) = Wet; // 0-1
-	*(s16 *)(gAudioHLEState.MixerWorkArea +  2) = Dry; // 2-3
-	*(s32 *)(gAudioHLEState.MixerWorkArea +  4) = LTrg; // 4-5
-	*(s32 *)(gAudioHLEState.MixerWorkArea +  6) = RTrg; // 6-7
-	*(s32 *)(gAudioHLEState.MixerWorkArea +  8) = LVol; // 8-9 (gAudioHLEState.MixerWorkArea is a 16bit pointer)
-	*(s32 *)(gAudioHLEState.MixerWorkArea + 10) = RVol; // 10-11
-	*(s32 *)(gAudioHLEState.MixerWorkArea + 12) = LAcc; // 12-13
-	*(s32 *)(gAudioHLEState.MixerWorkArea + 14) = RAcc; // 14-15
-	memcpy(rdram+addy, (u8 *)gAudioHLEState.MixerWorkArea,80);
-}
-/*
-void ENVMIXER3 ( AudioHLECommand command ) { // Borrowed from RCP...
-	u8  flags = (u8)((command.cmd0 >> 16) & 0xff);
-	u32 addy = (command.cmd1 & 0xffffff);// + gAudioHLEState.Segments[(command.cmd1>>24)&0xf];
-
- 	s16 *inp=(s16 *)(gAudioHLEState.Buffer+0x4F0);
-	s16 *out=(s16 *)(gAudioHLEState.Buffer+0x9D0);
-	s16 *aux1=(s16 *)(gAudioHLEState.Buffer+0xB40);
-	s16 *aux2=(s16 *)(gAudioHLEState.Buffer+0xCB0);
-	s16 *aux3=(s16 *)(gAudioHLEState.Buffer+0xE20);
-
-	gAudioHLEState.VolRight = (command.cmd0 & 0xffff); // Needed for future references
-
-	s32 i1,o1,a1,a2,a3;
-	s32 MainR;
-	s32 MainL;
-	s32 AuxR;
-	s32 AuxL;
-
-	u16 AuxIncRate=1;
-	s16 zero[8];
-	memset(zero,0,16);
-	if(flags & A_INIT) {
-		MainR = (gAudioHLEState.EnvDry * gAudioHLEState.VolTrgRight + 0x10000) >> 15;
-		MainL = (gAudioHLEState.EnvDry * gAudioHLEState.VolTrgLeft  + 0x10000) >> 15;
-		AuxR  = (gAudioHLEState.EnvWet * gAudioHLEState.VolTrgRight + 0x8000)  >> 16;
-		AuxL  = (gAudioHLEState.EnvWet * gAudioHLEState.VolTrgLeft  + 0x8000)  >> 16;
-	} else {
-		memcpy((u8 *)gAudioHLEState.MixerWorkArea, (rdram+addy), 80);
-		MainR=gAudioHLEState.MixerWorkArea[0];
-		MainL=gAudioHLEState.MixerWorkArea[2];
-		AuxR=gAudioHLEState.MixerWorkArea[4];
-		AuxL=gAudioHLEState.MixerWorkArea[6];
-	}
-	if(!(flags&A_AUX))
-	{
-		AuxIncRate=0;
-		aux2=aux3=zero;
-	}
-	for(s32 i=0;i<(0x170/2);i++)
-	{
-		i1=(s32)*(inp++);
-		o1=(s32)*out;
-		a1=(s32)*aux1;
-		a2=(s32)*aux2;
-		a3=(s32)*aux3;
-
-		o1=((o1*0x7fff)+(i1*MainR)+0x10000)>>15;
-		a2=((a2*0x7fff)+(i1*AuxR)+0x8000)>>16;
-
-		a1=((a1*0x7fff)+(i1*MainL)+0x10000)>>15;
-		a3=((a3*0x7fff)+(i1*AuxL)+0x8000)>>16;
-
-		o1 = Saturate<s16>( o1 );
-		a1 = Saturate<s16>( a1 );
-		a2 = Saturate<s16>( a2 );
-		a3 = Saturate<s16>( a3 );
-
-		*(out++)=o1;
-		*(aux1++)=a1;
-		*aux2=a2;
-		*aux3=a3;
-		aux2+=AuxIncRate;
-		aux3+=AuxIncRate;
-	}
-	gAudioHLEState.MixerWorkArea[0]=MainR;
-	gAudioHLEState.MixerWorkArea[2]=MainL;
-	gAudioHLEState.MixerWorkArea[4]=AuxR;
-	gAudioHLEState.MixerWorkArea[6]=AuxL;
-	memcpy(rdram+addy, (u8 *)gAudioHLEState.MixerWorkArea,80);
-}*/
-
-
-void CLEARBUFF3( AudioHLECommand command )
+static void CLEARBUFF3( AudioHLECommand command )
 {
 	u16 addr = (u16)(command.cmd0 & 0xffff);
 	u16 count = (u16)(command.cmd1 & 0xffff);
 	memset(gAudioHLEState.Buffer+addr+0x4f0, 0, count);
 }
 
-void MIXER3( AudioHLECommand command )
+static void MIXER3( AudioHLECommand command )
 {
 	// Needs accuracy verification...
 	u16 dmemin  = (u16)(command.cmd1 >> 0x10)  + 0x4f0;
@@ -480,7 +254,7 @@ void MIXER3( AudioHLECommand command )
 	gAudioHLEState.Mixer( dmemout, dmemin, gain, 0x170 );		// NB - did mult gain by 2 above, then shifted by 16 inside mixer.
 }
 
-void LOADBUFF3( AudioHLECommand command )
+static void LOADBUFF3( AudioHLECommand command )
 {
 	u32 v0;
 	u32 cnt = (((command.cmd0 >> 0xC)+3)&0xFFC);
@@ -489,7 +263,7 @@ void LOADBUFF3( AudioHLECommand command )
 	memcpy (gAudioHLEState.Buffer+src, rdram+v0, cnt);
 }
 
-void SAVEBUFF3( AudioHLECommand command ) 
+static void SAVEBUFF3( AudioHLECommand command ) 
 {
 	u32 v0;
 	u32 cnt = (((command.cmd0 >> 0xC)+3)&0xFFC);
@@ -498,7 +272,7 @@ void SAVEBUFF3( AudioHLECommand command )
 	memcpy (rdram+v0, gAudioHLEState.Buffer+src, cnt);
 }
 
-void LOADADPCM3( AudioHLECommand command )
+static void LOADADPCM3( AudioHLECommand command )
 {
 	// Loads an ADPCM table - Works 100% Now 03-13-01
 	u32 v0;
@@ -523,7 +297,7 @@ void LOADADPCM3( AudioHLECommand command )
 	}
 }
 
-void DMEMMOVE3( AudioHLECommand command )
+static void DMEMMOVE3( AudioHLECommand command )
 {
 	// Needs accuracy verification...
 	u32 v0, v1;
@@ -539,13 +313,13 @@ void DMEMMOVE3( AudioHLECommand command )
 	}
 }
 
-void SETLOOP3( AudioHLECommand command )
+static void SETLOOP3( AudioHLECommand command )
 {
 	gAudioHLEState.LoopVal = (command.cmd1 & 0xffffff);
 }
 
 // Verified to be 100% Accurate...
-void ADPCM3( AudioHLECommand command )
+static void ADPCM3( AudioHLECommand command )
 { 
 	u8 Flags=(u8)(command.cmd1>>0x1c)&0xff;
 	//u16 Gain=(u16)(command.cmd0&0xffff);
@@ -798,7 +572,7 @@ void ADPCM3( AudioHLECommand command )
 }
 
 #if 1 //1->fast, 0->original Azimer //Corn 
-void RESAMPLE3( AudioHLECommand command )
+static void RESAMPLE3( AudioHLECommand command )
 {
 	u8 Flags=(u8)((command.cmd1>>0x1e));
 	u32 Pitch=((command.cmd1>>0xe)&0xffff) << 1;
@@ -841,7 +615,7 @@ void RESAMPLE3( AudioHLECommand command )
 }
 
 #else
-void RESAMPLE3( AudioHLECommand command )
+static void RESAMPLE3( AudioHLECommand command )
 {
 	u8 Flags=(u8)((command.cmd1>>0x1e));
 	u32 Pitch=((command.cmd1>>0xe)&0xffff)<<1;
@@ -930,7 +704,7 @@ void RESAMPLE3( AudioHLECommand command )
 }
 #endif
 
-void INTERLEAVE3( AudioHLECommand command )
+static void INTERLEAVE3( AudioHLECommand command )
 {
 	// Needs accuracy verification...
 	//inR = command.cmd1 & 0xFFFF;
@@ -939,7 +713,6 @@ void INTERLEAVE3( AudioHLECommand command )
 	gAudioHLEState.Interleave( 0x4f0, 0x9d0, 0xb40, 0x170 );
 }
 
-void UNKNOWN( AudioHLECommand command );
 /*
 typedef struct {
 	u8 sync;
@@ -965,13 +738,13 @@ mp3struct mp3;
 FILE *mp3dat;
 */
 
-void WHATISTHIS( AudioHLECommand command )
+static void WHATISTHIS( AudioHLECommand command )
 {
 }
 
 //static FILE *fp = fopen ("d:\\mp3info.txt", "wt");
 u32 setaddr;
-void MP3ADDY( AudioHLECommand command )
+static void MP3ADDY( AudioHLECommand command )
 {
 	setaddr = (command.cmd1 & 0xffffff);
 	//__asm int 3;
@@ -1036,7 +809,7 @@ achieve near-CD quality, an important specification to enable dual-channel ISDN
 (integrated-services-digital-network) to be the future high-bandwidth pipe to the home. 
 
 */
-void DISABLE( AudioHLECommand command )
+static void DISABLE( AudioHLECommand command )
 {
 	//MessageBox (NULL, "Help", "ABI 3 Command 0", MB_OK);
 	//ChangeABI (5);

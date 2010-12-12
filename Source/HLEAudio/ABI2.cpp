@@ -51,7 +51,7 @@ inline u16 Sample_Mask( u32 x )
 
 
 
-void LOADADPCM2( AudioHLECommand command )
+static void LOADADPCM2( AudioHLECommand command )
 {
 	// Loads an ADPCM table - Works 100% Now 03-13-01
 	u32		address(command.Abi2LoadADPCM.Address );// + gAudioHLEState.Segments[(command.cmd1>>24)&0xf];
@@ -60,14 +60,14 @@ void LOADADPCM2( AudioHLECommand command )
 	gAudioHLEState.LoadADPCM( address, count );
 }
 
-void SETLOOP2( AudioHLECommand command )
+static void SETLOOP2( AudioHLECommand command )
 {
 	u32	loopval( command.Abi2SetLoop.LoopVal );// + gAudioHLEState.Segments[(command.cmd1>>24)&0xf];
 
 	gAudioHLEState.SetLoop( loopval );
 }
 
-void SETBUFF2( AudioHLECommand command )
+static void SETBUFF2( AudioHLECommand command )
 {
 	u16		in( command.Abi2SetBuffer.In );
 	u16		out( command.Abi2SetBuffer.Out );
@@ -204,7 +204,7 @@ static void ADPCM2_Loop( s32 (&a)[8], int (&i1)[8], const s16 * b1, const s16 * 
 	}
 }
 
-void ADPCM2( AudioHLECommand command )
+static void ADPCM2( AudioHLECommand command )
 {
 	// Verified to be 100% Accurate...
 	u8 Flags=(u8)((command.cmd0>>16)&0xff);
@@ -269,7 +269,7 @@ void ADPCM2( AudioHLECommand command )
 	memcpy(&rdram[Address],out,32);
 }
 
-void CLEARBUFF2( AudioHLECommand command )
+static void CLEARBUFF2( AudioHLECommand command )
 {
 	u16 addr( command.Abi2ClearBuffer.Address );
 	u16 count( command.Abi2ClearBuffer.Count );
@@ -277,7 +277,7 @@ void CLEARBUFF2( AudioHLECommand command )
 	gAudioHLEState.ClearBuffer( addr, count );
 }
 
-void LOADBUFF2( AudioHLECommand command )
+static void LOADBUFF2( AudioHLECommand command )
 {
 	// Needs accuracy verification...
 	u32 src( command.Abi2LoadBuffer.SrcAddr );// + gAudioHLEState.Segments[(command.cmd1>>24)&0xf];
@@ -287,7 +287,7 @@ void LOADBUFF2( AudioHLECommand command )
 	gAudioHLEState.LoadBuffer( dst, src, count );
 }
 
-void SAVEBUFF2( AudioHLECommand command ) 
+static void SAVEBUFF2( AudioHLECommand command ) 
 {
 	// Needs accuracy verification...
 	u32 dst( command.Abi2SaveBuffer.DstAddr );// + gAudioHLEState.Segments[(command.cmd1>>24)&0xf];
@@ -297,7 +297,7 @@ void SAVEBUFF2( AudioHLECommand command )
 	gAudioHLEState.SaveBuffer( dst, src, count );
 }
 
-void MIXER2( AudioHLECommand command ) 
+static void MIXER2( AudioHLECommand command ) 
 {
 	// Needs accuracy verification...
 	u16 dmemin( command.Abi2Mixer.DmemIn );
@@ -310,7 +310,7 @@ void MIXER2( AudioHLECommand command )
 	gAudioHLEState.Mixer( dmemout, dmemin, gain, count );		// NB - did mult gain by 2 above, then shifted by 16 inside mixer.
 }
 
-void RESAMPLE2( AudioHLECommand command )
+static void RESAMPLE2( AudioHLECommand command )
 {
 	u8 flags(command.Abi2Resample.Flags);
 	u32 pitch(command.Abi2Resample.Pitch);
@@ -319,7 +319,7 @@ void RESAMPLE2( AudioHLECommand command )
 	gAudioHLEState.Resample( flags, pitch, address );
 }
 
-void DMEMMOVE2( AudioHLECommand command ) 
+static void DMEMMOVE2( AudioHLECommand command ) 
 {
 	// Needs accuracy verification...
 	u16 src( command.Abi2DmemMove.Src );
@@ -329,7 +329,7 @@ void DMEMMOVE2( AudioHLECommand command )
 	gAudioHLEState.DmemMove( dst, src, count );
 }
 
-void ENVSETUP1( AudioHLECommand command )
+static void ENVSETUP1( AudioHLECommand command )
 {
 	//fprintf (dfile, "ENVSETUP1: cmd0 = %08X, cmd1 = %08X\n", command.cmd0, command.cmd1);
 	gEnv_t3 = command.cmd0 & 0xFFFF;
@@ -341,7 +341,7 @@ void ENVSETUP1( AudioHLECommand command )
 	//fprintf (dfile, "	gEnv_t3 = %X / gEnv_s5 = %X / gEnv_s6 = %X / env[4] = %X / env[5] = %X\n", gEnv_t3, gEnv_s5, gEnv_s6, env[4], env[5]);
 }
 
-void ENVSETUP2( AudioHLECommand command )
+static void ENVSETUP2( AudioHLECommand command )
 {
 	//fprintf (dfile, "ENVSETUP2: cmd0 = %08X, cmd1 = %08X\n", command.cmd0, command.cmd1);
 	u32 tmp1 = (command.cmd1 >> 0x10);
@@ -354,7 +354,7 @@ void ENVSETUP2( AudioHLECommand command )
 	//fprintf (dfile, "	env[0] = %X / env[1] = %X / env[2] = %X / env[3] = %X\n", env[0], env[1], env[2], env[3]);
 }
 
-void ENVMIXER2( AudioHLECommand command )
+static void ENVMIXER2( AudioHLECommand command )
 {
 	//fprintf (dfile, "ENVMIXER: cmd0 = %08X, cmd1 = %08X\n", command.cmd0, command.cmd1);
 	s16 vec9, vec10;
@@ -455,7 +455,7 @@ void ENVMIXER2( AudioHLECommand command )
 	}
 }
 
-void DUPLICATE2( AudioHLECommand command )
+static void DUPLICATE2( AudioHLECommand command )
 {
 	u32 Count = (command.cmd0 >> 16) & 0xff;
 	u32 In  = command.cmd0&0xffff;
@@ -473,7 +473,7 @@ void DUPLICATE2( AudioHLECommand command )
 	}
 }
 
-void DEINTERLEAVE2( AudioHLECommand command )
+static void DEINTERLEAVE2( AudioHLECommand command )
 {
 	u16 count( command.Abi2Deinterleave.Count );
 	u16 out( command.Abi2Deinterleave.Out );
@@ -482,7 +482,7 @@ void DEINTERLEAVE2( AudioHLECommand command )
 	gAudioHLEState.Deinterleave( out, in, count );
 }
 
-void INTERLEAVE2( AudioHLECommand command )  // Needs accuracy verification...
+static void INTERLEAVE2( AudioHLECommand command )  // Needs accuracy verification...
 {
 	u16	inR( command.Abi2Interleave.RAddr );
 	u16	inL( command.Abi2Interleave.LAddr);
@@ -500,7 +500,7 @@ void INTERLEAVE2( AudioHLECommand command )  // Needs accuracy verification...
 }
 
 // XXXX Doesn't seem to do anything!
-void ADDMIXER( AudioHLECommand command )
+static void ADDMIXER( AudioHLECommand command )
 {
 	DAEDALUS_ERROR( "ADDMIXER - broken?" );
 	u32 Count     = (command.cmd0 >> 12) & 0x00ff0;
@@ -517,7 +517,7 @@ void ADDMIXER( AudioHLECommand command )
 	}
 }
 
-void HILOGAIN( AudioHLECommand command )
+static void HILOGAIN( AudioHLECommand command )
 {
 	u32 count = command.cmd0 & 0xffff;
 	s32 hi  = (s16)((command.cmd0 >> 4) & 0xf000);
@@ -535,7 +535,7 @@ void HILOGAIN( AudioHLECommand command )
 	}
 }
 
-void FILTER2( AudioHLECommand command )
+static void FILTER2( AudioHLECommand command )
 {
 	static int cnt = 0;
 	static s16 *lutt6;
@@ -662,7 +662,7 @@ void FILTER2( AudioHLECommand command )
 	memcpy (gAudioHLEState.Buffer+(command.cmd0&0xffff), outbuff, cnt);
 }
 
-void SEGMENT2( AudioHLECommand command ) {
+static void SEGMENT2( AudioHLECommand command ) {
 	if (isZeldaABI) {
 		FILTER2( command );
 		return;
@@ -677,7 +677,7 @@ void SEGMENT2( AudioHLECommand command ) {
 	}
 }
 
-void UNKNOWN( AudioHLECommand command )
+static void UNKNOWN( AudioHLECommand command )
 {
 }
 

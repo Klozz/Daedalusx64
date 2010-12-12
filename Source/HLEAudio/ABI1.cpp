@@ -81,7 +81,7 @@ void CLEARBUFF( AudioHLECommand command )
 
 //FILE *dfile = fopen ("d:\\envmix.txt", "wt");
 
-void ENVMIXER( AudioHLECommand command )
+static void ENVMIXER( AudioHLECommand command )
 {
 	//static int envmixcnt = 0;
 	u8	flags( command.Abi1EnvMixer.Flags );
@@ -90,7 +90,7 @@ void ENVMIXER( AudioHLECommand command )
 	gAudioHLEState.EnvMixer( flags, address );
 }
 
-void RESAMPLE( AudioHLECommand command )
+static void RESAMPLE( AudioHLECommand command )
 {
 	u8 flags(command.Abi1Resample.Flags);
 	u32 pitch(command.Abi1Resample.Pitch);
@@ -99,7 +99,7 @@ void RESAMPLE( AudioHLECommand command )
 	gAudioHLEState.Resample( flags, pitch, address );
 }
 
-void SETVOL( AudioHLECommand command )
+static void SETVOL( AudioHLECommand command )
 {
 // Might be better to unpack these depending on the flags...
 	u8 flags = (u8)((command.cmd0 >> 16) & 0xff);
@@ -142,16 +142,18 @@ void SETVOL( AudioHLECommand command )
 	}
 }
 
-void UNKNOWN( AudioHLECommand command );
+static void UNKNOWN( AudioHLECommand command )
+{
+}
 
-void SETLOOP( AudioHLECommand command )
+static void SETLOOP( AudioHLECommand command )
 {
 	u32	loopval( command.Abi1SetLoop.LoopVal );// + gAudioHLEState.Segments[(command.cmd1>>24)&0xf];
 
 	gAudioHLEState.SetLoop( loopval );
 }
 
-void ADPCM( AudioHLECommand command ) // Work in progress! :)
+static void ADPCM( AudioHLECommand command ) // Work in progress! :)
 {
 	u8		flags( command.Abi1ADPCM.Flags );
 	//u16	gain( command.Abi1ADPCM.Gain );		// Not used?
@@ -161,7 +163,7 @@ void ADPCM( AudioHLECommand command ) // Work in progress! :)
 }
 
 // memcpy causes static... endianess issue :(
-void LOADBUFF( AudioHLECommand command )
+static void LOADBUFF( AudioHLECommand command )
 {
 	u32 addr(command.Abi1LoadBuffer.Address );// + gAudioHLEState.Segments[(command.cmd1>>24)&0xf];
 
@@ -169,7 +171,7 @@ void LOADBUFF( AudioHLECommand command )
 }
 
 // memcpy causes static... endianess issue :(
-void SAVEBUFF( AudioHLECommand command )
+static void SAVEBUFF( AudioHLECommand command )
 { 
 	u32 addr(command.Abi1SaveBuffer.Address );// + gAudioHLEState.Segments[(command.cmd1>>24)&0xf];
 
@@ -177,16 +179,17 @@ void SAVEBUFF( AudioHLECommand command )
 }
 
 // Should work
-void SEGMENT( AudioHLECommand command )
+/*
+static void SEGMENT( AudioHLECommand command )
 {
 	u8	segment( command.Abi1SetSegment.Segment & 0xf );
 	u32	address( command.Abi1SetSegment.Address );
 
 	gAudioHLEState.SetSegment( segment, address );
 }
-
+*/
 // Should work ;-)
-void SETBUFF( AudioHLECommand command )
+static void SETBUFF( AudioHLECommand command )
 {
 	u8		flags( command.Abi1SetBuffer.Flags );
 	u16		in( command.Abi1SetBuffer.In );
@@ -197,7 +200,7 @@ void SETBUFF( AudioHLECommand command )
 }
 
 // Doesn't sound just right?... will fix when HLE is ready - 03-11-01
-void DMEMMOVE( AudioHLECommand command )
+static void DMEMMOVE( AudioHLECommand command )
 { 
 	u16 src( command.Abi1DmemMove.Src );
 	u16 dst( command.Abi1DmemMove.Dst );
@@ -207,7 +210,7 @@ void DMEMMOVE( AudioHLECommand command )
 }
 
 // Loads an ADPCM table - Works 100% Now 03-13-01
-void LOADADPCM( AudioHLECommand command )
+static void LOADADPCM( AudioHLECommand command )
 {
 	u32		address(command.Abi1LoadADPCM.Address );// + gAudioHLEState.Segments[(command.cmd1>>24)&0xf];
 	u16		count( command.Abi1LoadADPCM.Count );
@@ -216,7 +219,7 @@ void LOADADPCM( AudioHLECommand command )
 }
 
 // Works... - 3-11-01
-void INTERLEAVE( AudioHLECommand command )
+static void INTERLEAVE( AudioHLECommand command )
 { 
 	u16 inL( command.Abi1Interleave.LAddr );
 	u16 inR( command.Abi1Interleave.RAddr );
@@ -225,7 +228,7 @@ void INTERLEAVE( AudioHLECommand command )
 }
 
 // Fixed a sign issue... 03-14-01
-void MIXER( AudioHLECommand command )
+static void MIXER( AudioHLECommand command )
 {
 	u16 dmemin( command.Abi1Mixer.DmemIn );
 	u16 dmemout( command.Abi1Mixer.DmemOut );

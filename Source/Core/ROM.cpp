@@ -108,6 +108,7 @@ void DumpROMInfo( const ROMHeader & header )
 //*****************************************************************************
 //
 //*****************************************************************************
+/*
 static void ROM_RunPIFBoot( ECicType cic_chip )
 {
 	CPU_SetPC(0xBFC00000);
@@ -115,7 +116,7 @@ static void ROM_RunPIFBoot( ECicType cic_chip )
 	// Set up CIC value in 0xbfc007e4
 	*(u32*)((u8*)g_pMemoryBuffers[MEM_PIF_RAM] + 0x7C0 + 0x24) = ROM_GetCicValue( cic_chip );
 }
-
+*/
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -315,6 +316,7 @@ static const char * ROM_GetPIFName( u32 tv_type )
 //*****************************************************************************
 // Load pif bootcode if it is available
 //*****************************************************************************
+/*
 static bool ROM_LoadPIF( u32 tv_type )
 {
 	const char * pif_name;
@@ -353,7 +355,7 @@ static bool ROM_LoadPIF( u32 tv_type )
 		return false;
 	}
 }
-
+*/
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -406,15 +408,17 @@ void ROM_ReBoot()
 	Patch_Reset();
 #endif
 
-
-	if ( ROM_LoadPIF( g_ROM.TvType ) )
+	// This will always return false since we always simulate boot code instead of loading from file
+	//
+	/*if ( ROM_LoadPIF( g_ROM.TvType ) )
 	{
 		ROM_RunPIFBoot( g_ROM.cic_chip );
 	}
 	else
 	{
 		ROM_SimulatePIFBoot( g_ROM.cic_chip, g_ROM.rh.CountryID );
-	}
+	}*/
+	ROM_SimulatePIFBoot( g_ROM.cic_chip, g_ROM.rh.CountryID );
 
 	//CPU_AddBreakPoint( 0xA4000040 );
 	//CPU_AddBreakPoint( 0xbfc00000 );

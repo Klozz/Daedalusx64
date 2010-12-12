@@ -313,15 +313,15 @@ void	CNativeTexture::InstallTexture() const
 {
 	sceGuEnable(GU_TEXTURE_2D);
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+	// This needed otherwise we'll crash if running out of memory
 	if( !HasData() )
 	{
+		// Todo : Fix placeholder
 		// Use the placeholder texture
 		sceGuTexMode( GU_PSM_4444, 0, 0, 1 );		// maxmips/a2/swizzle = 0
-		sceGuTexImage( 0, gPlaceholderTextureWidth, gPlaceholderTextureHeight, gPlaceholderTextureWidth, gWhiteTexture );
+		//sceGuTexImage( 0, gPlaceholderTextureWidth, gPlaceholderTextureHeight, gPlaceholderTextureWidth, gWhiteTexture );
 	}
 	else
-#endif
 	{
 		EPspTextureFormat	psp_texture_format( GetPspTextureFormat( mTextureFormat ) );
 		sceGuTexMode( psp_texture_format, 0, 0, mIsSwizzled ? 1 : 0 );		// maxmips/a2/swizzle = 0

@@ -41,7 +41,9 @@
 
 namespace
 {
+#ifndef DAEDALUS_PUBLIC_RELEASE
 	const char *	gScreenDumpRootPath = "ScreenShots";
+#endif
 	const char *	gScreenDumpDumpPathFormat = "sd%04d.png";
 }
 
@@ -194,12 +196,13 @@ IGraphicsContext::~IGraphicsContext()
 //*****************************************************************************
 void IGraphicsContext::ClearAllSurfaces()
 {
-	//sceGuStart(GU_CALL,list[0]);
-	//sceGuFinish();
-	//sceGuStart(GU_CALL,list[1]);
-	//sceGuFinish();
+	/*sceGuStart(GU_CALL,list[0]);
+	sceGuFinish();
+	sceGuStart(GU_CALL,list[1]);
+	sceGuFinish();*/
 
-	if(gDoubleDisplayEnabled) sceGuStart(GU_CALL,list[listNum]); //Begin other Display List	return;
+	if(gDoubleDisplayEnabled) 
+		sceGuStart(GU_CALL,list[listNum]); //Begin other Display List	return;
 
 	for( u32 i = 0; i < 2; ++i )
 	{
@@ -263,22 +266,27 @@ void IGraphicsContext::ClearZBuffer(float depth)
 //*****************************************************************************
 void IGraphicsContext::BeginFrame()
 {
-	if(!gDoubleDisplayEnabled) sceGuStart(GU_DIRECT,list[0]);
-	//else
-	//{
-		//sceGuOffset(2048 - (SCR_WIDTH/2),2048 - (SCR_HEIGHT/2));
-		//sceGuViewport(2048,2048,SCR_WIDTH,SCR_HEIGHT);
-		//sceGuScissor(0,0,SCR_WIDTH,SCR_HEIGHT);	//Make sure we clean the whole screen
-		//sceGuClearDepth(0);	//Clear Zbuffer to infinity
-		//sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT | GU_FAST_CLEAR_BIT);	//Clear both screen & Zbuffer
-		//sceGuClear(GU_COLOR_BUFFER_BIT | GU_FAST_CLEAR_BIT);	//Clear screen
-		//sceGuClear(GU_DEPTH_BUFFER_BIT | GU_FAST_CLEAR_BIT);	//Clear Zbuffer
-	//}
+	if(!gDoubleDisplayEnabled) 
+		sceGuStart(GU_DIRECT,list[0]);
+	/*else
+	{
+		sceGuOffset(2048 - (SCR_WIDTH/2),2048 - (SCR_HEIGHT/2));
+		sceGuViewport(2048,2048,SCR_WIDTH,SCR_HEIGHT);
+		sceGuScissor(0,0,SCR_WIDTH,SCR_HEIGHT);	//Make sure we clean the whole screen
+		sceGuClearDepth(0);	//Clear Zbuffer to infinity
+		sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT | GU_FAST_CLEAR_BIT);	//Clear both screen & Zbuffer
+		sceGuClear(GU_COLOR_BUFFER_BIT | GU_FAST_CLEAR_BIT);	//Clear screen
+		sceGuClear(GU_DEPTH_BUFFER_BIT | GU_FAST_CLEAR_BIT);	//Clear Zbuffer
+	}*/
 
+//Toggle dither matrices between frames to smooth 16bit color even further //Corn
 #ifdef DAEDALUS_SCRN_16BIT
-	//Toggle dither matrices between frames to smooth 16bit color even further //Corn
-	if(listNum) sceGuSetDither(&dither_matrixB);
-	else sceGuSetDither(&dither_matrixA);
+
+	if(listNum)
+		sceGuSetDither(&dither_matrixB);
+	else 
+		sceGuSetDither(&dither_matrixA);
+
 #endif
 }
 
@@ -287,7 +295,8 @@ void IGraphicsContext::BeginFrame()
 //*****************************************************************************
 void IGraphicsContext::EndFrame()
 {
-	if(!gDoubleDisplayEnabled) sceGuFinish();
+	if(!gDoubleDisplayEnabled)
+		sceGuFinish();
 }
 
 //*****************************************************************************
@@ -299,15 +308,14 @@ bool IGraphicsContext::UpdateFrame( bool wait_for_vbl )
 
 	void * p_back;
 
-	if(gDoubleDisplayEnabled) sceGuFinish();
+	if(gDoubleDisplayEnabled) 
+		sceGuFinish();
 	
 	sceGuSync(0,0);
 
-	if(!gCleanSceneEnabled) sceGuClear(GU_DEPTH_BUFFER_BIT | GU_FAST_CLEAR_BIT); // Clears the Z-buffer 
-	else CleanScene = true;
-	
 	//Used for GUI menu to slow things down, in game we skip this
-	if(wait_for_vbl) sceDisplayWaitVblankStart();
+	if(wait_for_vbl) 
+		sceDisplayWaitVblankStart();
 
 	if (PSP_TV_LACED)
 	{
@@ -347,7 +355,10 @@ bool IGraphicsContext::UpdateFrame( bool wait_for_vbl )
 		listNum ^= 1;	//Toggle lists 0 & 1
 		sceGuStart(GU_CALL,list[listNum]); //Begin other Display List
 	}
-	else listNum ^= 1;	//Toggle lists 0 & 1
+	else 
+		listNum ^= 1;	//Toggle lists 0 & 1
+
+	if( gCleanSceneEnabled )	CleanScene = true;
 
 	//printf("%d %d\n",listNum,gDoubleDisplayEnabled);
 	return true;

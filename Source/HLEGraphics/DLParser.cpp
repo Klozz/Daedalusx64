@@ -445,24 +445,24 @@ static void HandleDumpDisplayList( OSTask * pTask )
 void	DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 data_size )
 {
 //
-// This is the multiplier applied to vertex indices. 
+	// This is the multiplier applied to vertex indices. 
 //
-const u32 vertex_stride[] =
-{
-	10,		// Super Mario 64, Tetrisphere, Demos
-	2,		// Mario Kart, Star Fox
-	2,		// Zelda, and newer games
-	5,		// Wave Racer USA
-	10,		// Diddy Kong Racing
-	10,		// Gemini and Mickey
-	2,		// Last Legion, Toukon, Toukon 2
-	5,		// Shadows of the Empire (SOTE)
-	10,		// Golden Eye
-	2,		// Conker BFD
-	10,		// Perfect Dark
-	2,		// Yoshi's Story, Pokemon Puzzle League
-	2		// Kirby 64
-};
+	const u32 vertex_stride[] =
+	{
+		10,		// Super Mario 64, Tetrisphere, Demos
+		2,		// Mario Kart, Star Fox
+		2,		// Zelda, and newer games
+		5,		// Wave Racer USA
+		10,		// Diddy Kong Racing
+		10,		// Gemini and Mickey
+		2,		// Last Legion, Toukon, Toukon 2
+		5,		// Shadows of the Empire (SOTE)
+		10,		// Golden Eye
+		2,		// Conker BFD
+		10,		// Perfect Dark
+		2,		// Yoshi's Story, Pokemon Puzzle League
+		2		// Kirby 64
+	};
 
 	GBIVersion gbi_version;
 	UCodeVersion ucode_version;
@@ -473,7 +473,10 @@ const u32 vertex_stride[] =
 	ucode_ver = gbi_version;
 
 	//Pass -1 for illegal values since it cheaper to check for //Corn
-	if( ucode_ver > GBI_0_UNK || ucode_ver < GBI_0 ) ucode_ver = -1;
+	if( ucode_ver > GBI_0_UNK || ucode_ver < GBI_0 ) 
+	{
+		ucode_ver = -1;
+	}
 	else
 	{
 		gUcode = gInstructionLookup[ ucode_ver ];
@@ -569,6 +572,8 @@ static void	DLParser_ProcessDList()
 		// Check limit
 		if ( !gDisplayListStack.empty() )
 		{
+			// This is broken, we never reach EndDLInMem - Fix me
+			// Also there's a warning in debug mode of this always being false
 			if ( --gDisplayListStack.back().limit < 0 )
 			{
 				DL_PF("**EndDLInMem");
@@ -656,6 +661,8 @@ void DLParser_Process()
 
 	DL_PF("DP: Firing up RDP!");
 
+	gGraphicsPlugin->UpdateScreen();
+
 	extern bool gFrameskipActive;
 	if(!gFrameskipActive)
 	{
@@ -666,8 +673,6 @@ void DLParser_Process()
 		DLParser_ProcessDList();
 		PSPRenderer::Get()->EndScene();
 	}
-
-	gGraphicsPlugin->UpdateScreen();
 
 	// Do this regardless!
 	FinishRDPJob();

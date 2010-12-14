@@ -44,8 +44,7 @@ public:
 	virtual void			DacrateChanged( ESystemType system_type ) = 0;
 	virtual void			LenChanged() = 0;
 	virtual u32				ReadLength() = 0;
-	virtual void			Update( bool wait ) = 0;
-//	virtual EProcessResult	ProcessAList() = 0;
+	virtual EProcessResult	ProcessAList() = 0;
 	virtual void			RomClosed() = 0;
 };
 

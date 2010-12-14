@@ -32,13 +32,13 @@ TEST_DISABLE_AI_FUNCS
 u32 Patch_osAiSetNextBuffer()
 {
 TEST_DISABLE_AI_FUNCS
-	//return PATCH_RET_NOT_PROCESSED;
-	u32 buffer = gGPR[REG_a0]._u32_0;
-	u32 len = gGPR[REG_a1]._u32_0;
+	return PATCH_RET_NOT_PROCESSED;
+	//u32 buffer = gGPR[REG_a0]._u32_0;
+	//u32 len = gGPR[REG_a1]._u32_0;
 
 	//DBGConsole_Msg(0, "osAiSetNextBuffer(0x%08x, %d (0x%04x))", buffer, len, len);
 
-	//gGPR[REG_v1]._u64 =  mAudioCode->AddBuffer( buffer, len );
+	//gGPR[REG_v1]._u64 =  0;
 
 	return PATCH_RET_JR_RA;
 }

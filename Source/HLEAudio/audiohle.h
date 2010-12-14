@@ -358,7 +358,6 @@ typedef void ( * AudioHLEInstruction )( AudioHLECommand command );
 
 // These must be defined...
 #include "Core/Memory.h"
-#include "OSHLE/ultra_sptask.h"
 
 // MMmm, why not use the defines from Memory.h?
 // ToDo : remove these and use the ones already provided by the core?
@@ -367,6 +366,6 @@ typedef void ( * AudioHLEInstruction )( AudioHLECommand command );
 #define rdram	((u8*)g_pMemoryBuffers[MEM_RD_RAM])
 
 // Use these functions to interface with the HLE Audio...
-int Audio_Ucode(OSTask *);
+s32 Audio_Ucode();
 
 extern const u16 ResampleLUT[0x200];

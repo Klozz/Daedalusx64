@@ -30,9 +30,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HLEAudio/AudioCode.h"
 #include "HLEAudio/audiohle.h"
 
+#include "SysPSP/Utility/JobManager.h"
+
 #include "Core/Interrupt.h"
 #include "Core/Memory.h"
 #include "Core/ROM.h"
+#include "Core/CPU.h" 	 
+#include "Core/RSP_HLE.h"
 
 #include "ConfigOptions.h"
 
@@ -50,7 +54,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 //*****************************************************************************
 EAudioPluginMode gAudioPluginEnabled( APM_DISABLED );
-bool gAdaptFrequency( false );
+//bool gAdaptFrequency( false );
 
 //*****************************************************************************
 //
@@ -58,7 +62,7 @@ bool gAdaptFrequency( false );
 CAudioPluginPsp::CAudioPluginPsp()
 :	mAudioCode( new AudioCode )
 {
-	mAudioCode->SetAdaptFrequency( gAdaptFrequency );
+	//mAudioCode->SetAdaptFrequency( gAdaptFrequency );
 	//gAudioPluginEnabled = APM_ENABLED_SYNC; // for testing
 }
 
@@ -81,11 +85,12 @@ CAudioPluginPsp *	CAudioPluginPsp::Create()
 //*****************************************************************************
 //
 //*****************************************************************************
+/*
 void	CAudioPluginPsp::SetAdaptFrequecy( bool adapt )
 {
 	mAudioCode->SetAdaptFrequency( adapt );
 }
-
+*/
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -107,21 +112,22 @@ void	CAudioPluginPsp::StopEmulation()
 //*****************************************************************************
 void	CAudioPluginPsp::DacrateChanged( ESystemType system_type )
 {
-
 	// XXX only checked one mostly when scene changes
 #ifndef DAEDALUS_SILENT
 		printf( "DacrateChanged( %d )\n", system_type );
 #endif
-
 		u32 dacrate = Memory_AI_GetRegister(AI_DACRATE_REG);
 
-		u32	frequency = DEFAULT_FREQUENCY; // Is this correct? - Salvy
+		u32		frequency;
 		switch (system_type)
 		{
 			case ST_NTSC: frequency = VI_NTSC_CLOCK / (dacrate + 1); break;
 			case ST_PAL:  frequency = VI_PAL_CLOCK  / (dacrate + 1); break;
 			case ST_MPAL: frequency = VI_MPAL_CLOCK / (dacrate + 1); break;
+			default: frequency = DEFAULT_FREQUENCY;	break;	// This shouldn't happen
 		}
+
+		DAEDALUS_ASSERT( system_type != DEFAULT_FREQUENCY || frequency != 0, "Setting unknown frequency (%d)", frequency );
 
 		mAudioCode->SetFrequency( frequency );
 }
@@ -133,7 +139,7 @@ void	CAudioPluginPsp::LenChanged()
 {
 	if( gAudioPluginEnabled > APM_DISABLED )
 	{
-		mAudioCode->SetAdaptFrequency( gAdaptFrequency );
+		//mAudioCode->SetAdaptFrequency( gAdaptFrequency );
 
 		u32		address( Memory_AI_GetRegister(AI_DRAM_ADDR_REG) & 0xFFFFFF );
 		u32		length(Memory_AI_GetRegister(AI_LEN_REG));
@@ -155,29 +161,48 @@ u32		CAudioPluginPsp::ReadLength()
 {
 	return 0;
 }
-
 //*****************************************************************************
 //
 //*****************************************************************************
-void	CAudioPluginPsp::Update( bool wait )
+
+struct SHLEStartJob : public SJob
 {
-	// if(Wait) WaitMessage();
-}
+	SHLEStartJob()
+	{ 	 
+		 InitJob = NULL; 	 
+		 DoJob = &DoHLEStartStatic; 	 
+		 FiniJob = &DoHLEFinishedStatic; 	 
+	} 	 
 
+	static int DoHLEStartStatic( SJob * arg ) 	 
+	{ 	 
+		 SHLEStartJob *  job( static_cast< SHLEStartJob * >( arg ) ); 	 
+		 return job->DoHLEStart(); 	 
+	} 	 
+
+	static int DoHLEFinishedStatic( SJob * arg ) 	 
+	{ 	 
+		 SHLEStartJob *  job( static_cast< SHLEStartJob * >( arg ) ); 	 
+		 return job->DoHLEFinish(); 	 
+	} 	 
+
+	int DoHLEStart() 	 
+	{ 	 
+		 Audio_Ucode(); 	 
+		 return 0; 	 
+	} 	 
+
+	int DoHLEFinish() 	 
+	{ 	 
+		 CPU_AddEvent(RSP_AUDIO_INTR_CYCLES, CPU_EVENT_AUDIO); 	 
+		 return 0; 	 
+	}
+};
 //*****************************************************************************
 //
 //*****************************************************************************
-// Move me?
-// We need to figure out this to get async working again..
-//
-
-/*
 EProcessResult	CAudioPluginPsp::ProcessAList()
 {
-	// Deprecated ProcessAList, is done directly in the RSP plugin now
-	// Remove me
-	//
-
 	Memory_SP_SetRegisterBits(SP_STATUS_REG, SP_STATUS_HALT);
 
 	EProcessResult	result( PR_NOT_STARTED );
@@ -187,7 +212,6 @@ EProcessResult	CAudioPluginPsp::ProcessAList()
 		case APM_DISABLED:
 			result = PR_COMPLETED;
 			break;
-		
 		case APM_ENABLED_ASYNC:
 			{
 				SHLEStartJob	job;
@@ -196,13 +220,13 @@ EProcessResult	CAudioPluginPsp::ProcessAList()
 			result = PR_STARTED;
 			break;
 		case APM_ENABLED_SYNC:
-			HLEStart();
+			Audio_Ucode();
 			result = PR_COMPLETED;
 			break;
 	}
 
 	return result;
-}*/
+}
 
 //*****************************************************************************
 //

@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "audiohle.h"
 #include "AudioHLEProcessor.h"
 
-
+#include "OSHLE/ultra_sptask.h"
 
 // Audio UCode lists
 // Dummy UCode Handler
@@ -100,8 +100,10 @@ inline void Audio_Ucode_Detect(OSTask * pTask)
 //*****************************************************************************
 //
 //*****************************************************************************
-s32 Audio_Ucode(OSTask * pTask)
+s32 Audio_Ucode()
 {
+	OSTask * pTask = (OSTask *)(g_pu8SpMemBase + 0x0FC0);
+
 	Audio_Ucode_Detect(pTask);
 
 	u32 * p_alist = (u32 *)(g_pu8RamBase + (u32)pTask->t.data_ptr);

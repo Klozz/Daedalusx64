@@ -46,7 +46,7 @@ class AudioCode
 		void				SetFrequency( u32 frequency );			// Sets the Nintendo64 Game Audio Frequency
 		u32					AddBuffer( u8 * start, u32 length );	// Uploads a new buffer and returns status
 
-		void				SetAdaptFrequency( bool adapt );
+		//void				SetAdaptFrequency( bool adapt );
 
 		// Management functions
 		void				StopAudio( );						// Stops the Audio PlayBack (as if paused)
@@ -57,8 +57,8 @@ class AudioCode
 	public:
 		void				FillBuffer( Sample * buffer, u32 num_samples );
 
-		void				DodgeBufferUnderflow();
-		void				DodgeBufferOverflow();
+		/*void				DodgeBufferUnderflow();
+		void				DodgeBufferOverflow();*/
 
 	public:
 		CAudioBuffer *		mAudioBufferUncached;
@@ -70,7 +70,7 @@ class AudioCode
 		u32					mFrequency;
 
 		u32					mOutputFrequency;
-		bool				mAdaptFrequency;
+		//bool				mAdaptFrequency;
 
 		volatile u32		mBufferLength;
 };

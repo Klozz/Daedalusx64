@@ -612,6 +612,11 @@ void DLParser_Process()
 		gFirstCall = false;
 	}
 
+	// Update Screen only when something is drawn, otehrwise several games will flash or shake.
+	// Update Screen earlier, otherwise several like Paper Mario won't work.
+	//
+	gGraphicsPlugin->UpdateScreen();
+
 	OSTask * pTask = (OSTask *)(g_pu8SpMemBase + 0x0FC0);
 	u32 code_base = (u32)pTask->t.ucode & 0x1fffffff;
 	u32 code_size = pTask->t.ucode_size;
@@ -660,8 +665,6 @@ void DLParser_Process()
 #endif
 
 	DL_PF("DP: Firing up RDP!");
-
-	gGraphicsPlugin->UpdateScreen();
 
 	extern bool gFrameskipActive;
 	if(!gFrameskipActive)

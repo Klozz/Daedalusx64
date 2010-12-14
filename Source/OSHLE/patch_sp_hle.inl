@@ -175,29 +175,26 @@ TEST_DISABLE_SP_FUNCS
 	// Translate virtual addresses to physical...
 	memcpy(pDstTask, pSrcTask, sizeof(OSTask));
 
-	/*
 	if (pDstTask->t.ucode != 0)
-		pDstTask->t.ucode = (u64 *)VirtToPhys((u32)pDstTask->t.ucode);
+		pDstTask->t.ucode = (u64 *)ConvertToPhysics((u32)pDstTask->t.ucode);
 
 	if (pDstTask->t.ucode_data != 0)
-		pDstTask->t.ucode_data = (u64 *)VirtToPhys((u32)pDstTask->t.ucode_data);
+		pDstTask->t.ucode_data = (u64 *)ConvertToPhysics((u32)pDstTask->t.ucode_data);
 
 	if (pDstTask->t.dram_stack != 0)
-		pDstTask->t.dram_stack = (u64 *)VirtToPhys((u32)pDstTask->t.dram_stack);
+		pDstTask->t.dram_stack = (u64 *)ConvertToPhysics((u32)pDstTask->t.dram_stack);
 	
 	if (pDstTask->t.output_buff != 0)
-		pDstTask->t.output_buff = (u64 *)VirtToPhys((u32)pDstTask->t.output_buff);
+		pDstTask->t.output_buff = (u64 *)ConvertToPhysics((u32)pDstTask->t.output_buff);
 	
 	if (pDstTask->t.output_buff_size != 0)
-		pDstTask->t.output_buff_size = (u64 *)VirtToPhys((u32)pDstTask->t.output_buff_size);
+		pDstTask->t.output_buff_size = (u64 *)ConvertToPhysics((u32)pDstTask->t.output_buff_size);
 	
 	if (pDstTask->t.data_ptr != 0)
-		pDstTask->t.data_ptr = (u64 *)VirtToPhys((u32)pDstTask->t.data_ptr);
+		pDstTask->t.data_ptr = (u64 *)ConvertToPhysics((u32)pDstTask->t.data_ptr);
 	
 	if (pDstTask->t.yield_data_ptr != 0)
-		pDstTask->t.yield_data_ptr = (u64 *)VirtToPhys((u32)pDstTask->t.yield_data_ptr);
-	
-	*/
+		pDstTask->t.yield_data_ptr = (u64 *)ConvertToPhysics((u32)pDstTask->t.yield_data_ptr);
 	
 	// If yielded, use the yield data info
 	if (pSrcTask->t.flags & OS_TASK_YIELDED)
@@ -231,7 +228,7 @@ TEST_DISABLE_SP_FUNCS
 	// We can load the task directly here, but this causes a few bugs
 	// when using audio/gfx plugins that expect the 0x04000fc0 to be set up
 	// correctly
-//	RDP_LoadTask(pDstTask);
+	//RSP_HLE_ProcessTask();
 
 	// We know that we're not busy!
 	Memory_SP_SetRegister(SP_MEM_ADDR_REG, 0x04001000);
@@ -257,9 +254,11 @@ TEST_DISABLE_SP_FUNCS
 
 	//DBGConsole_Msg(0, "__osSpTaskStartGo()");
 
-	Memory_SP_SetRegister(SP_STATUS_REG, (SP_SET_INTR_BREAK|SP_CLR_SSTEP|SP_CLR_BROKE|SP_CLR_HALT));
+	//Memory_SP_SetRegister(SP_STATUS_REG, (SP_SET_INTR_BREAK|SP_CLR_SSTEP|SP_CLR_BROKE|SP_CLR_HALT));
+	Write32Bits(PHYS_TO_K1(SP_STATUS_REG), (SP_SET_INTR_BREAK|SP_CLR_SSTEP|SP_CLR_BROKE|SP_CLR_HALT));
 
-	//RSP_HLE_ExecuteTask();
+
+	//RSP_HLE_ProcessTask();
 
 	return PATCH_RET_JR_RA;
 

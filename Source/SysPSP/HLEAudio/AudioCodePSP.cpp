@@ -48,7 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 static const u32	DESIRED_OUTPUT_FREQUENCY = 44100;
 static const u32	MAX_OUTPUT_FREQUENCY = DESIRED_OUTPUT_FREQUENCY * 4;
 
-static const u32	ADAPTIVE_FREQUENCY_ADJUST = 2000;
+//static const u32	ADAPTIVE_FREQUENCY_ADJUST = 2000;
 //[@Kreationz]Increased Audio Buffer to 32 Batches to Smooth Sound at slightly lower frame rates
 //32 creates huge delay on sound tho //Corn
 static const u32	BUFFER_SIZE = 1024 * 8;		// Usually have to provide 1024 samples at a time, so this gives us 8 batches of them
@@ -90,11 +90,11 @@ static int fillBuffer(SceSize args, void *argp)
 		fillbuf = pcmflip ? pcmout2 : pcmout1;
 
 		ac->mAudioBufferUncached->Fill( reinterpret_cast< Sample * >( fillbuf ), PSP_NUM_SAMPLES );
-
-		//if( ac->mAdaptFrequency && ac->mAudioBuffer->GetSize() < PSP_NUM_SAMPLES )
-		//{
-		//	ac->DodgeBufferUnderflow();
-		//}
+		/*
+		if( ac->mAdaptFrequency && ac->mAudioBuffer->GetSize() < PSP_NUM_SAMPLES )
+		{
+			ac->DodgeBufferUnderflow();
+		}*/
 
 	}
 	sceKernelExitDeleteThread(0);
@@ -189,7 +189,7 @@ AudioCode::AudioCode()
 :	mAudioPlaying( false )
 ,	mFrequency( 44100 )
 ,	mOutputFrequency( DESIRED_OUTPUT_FREQUENCY )
-,	mAdaptFrequency( false )
+//,	mAdaptFrequency( false )
 ,	mBufferLength( 0 )
 {
 	// Allocate audio buffer with malloc_64 to avoid cached/uncached aliasing
@@ -223,12 +223,13 @@ void AudioCode::SetFrequency( u32 frequency )
 //*****************************************************************************
 //
 //*****************************************************************************
+/*
 void	AudioCode::SetAdaptFrequency( bool adapt )
 {
 	mAdaptFrequency = adapt;
 	mOutputFrequency = DESIRED_OUTPUT_FREQUENCY;
 }
-
+*/
 
 struct SAddSamplesJob : public SJob
 {
@@ -274,12 +275,11 @@ struct SAddSamplesJob : public SJob
 	{
 		*mBufferLength = 0;		// Clear the length indicator
 
-		//u32	output_samples( ( PSP_NUM_SAMPLES * mOutputFreq ) / mFrequency );
-		//if( ac->mAdaptFrequency && mBuffer->GetSize() > (BUFFER_SIZE - output_samples) )
-		//{
-		//	ac->DodgeBufferOverflow();
-		//}
-
+		/*u32	output_samples( ( PSP_NUM_SAMPLES * mOutputFreq ) / mFrequency );
+		if( ac->mAdaptFrequency && mBuffer->GetSize() > (BUFFER_SIZE - output_samples) )
+		{
+			ac->DodgeBufferOverflow();
+		}*/
 		return 0;
 	}
 
@@ -304,11 +304,15 @@ u32 AudioCode::AddBuffer( u8 *start, u32 length )
 	if(gAudioRateMatch)
 	{
 		u32 rate = FramerateLimiter_GetSyncI();	//Calc audio rate according to filtered sync value
-		if(rate > 88200) mOutputFrequency = 88200;	//limit upper rate
-		else if(rate < 44100) mOutputFrequency = 44100;	//limit lower rate
-		else mOutputFrequency = rate;
+		if(rate > 88200) 
+			mOutputFrequency = 88200;	//limit upper rate
+		else if(rate < 44100)
+			mOutputFrequency = 44100;	//limit lower rate
+		else 
+			mOutputFrequency = rate;
 	}
-	else mOutputFrequency = 44100;
+	else 
+		mOutputFrequency = DESIRED_OUTPUT_FREQUENCY;
 
 	switch( gAudioPluginEnabled )
 	{
@@ -372,10 +376,10 @@ u32 AudioCode::GetReadStatus()
 	return 0;
 }
 
-
 //*****************************************************************************
 //
 //*****************************************************************************
+/*
 void	AudioCode::DodgeBufferUnderflow()
 {
 	//DAEDALUS_ASSERT( mAdaptFrequency, "Shouldn't be dodging" );
@@ -391,10 +395,11 @@ void	AudioCode::DodgeBufferUnderflow()
 		mOutputFrequency = MAX_OUTPUT_FREQUENCY;
 	}
 }
-
+*/
 //*****************************************************************************
 //
 //*****************************************************************************
+/*
 void	AudioCode::DodgeBufferOverflow()
 {
 	//DAEDALUS_ASSERT( mAdaptFrequency, "Shouldn't be dodging" );
@@ -411,3 +416,4 @@ void	AudioCode::DodgeBufferOverflow()
 	}
 
 }
+*/

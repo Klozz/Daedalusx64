@@ -1128,6 +1128,9 @@ bool PSPRenderer::FillRect( const v2 & xy0, const v2 & xy1, u32 color )
 	}
 #endif
 
+	// Unless we support fb emulation, we can safetly skip here
+	if( g_CI.Size != G_IM_SIZ_16b )	return true;
+
 	// This if for C&C - It might break other stuff (I'm not sure if we should allow alpha or not..)
 //	color |= 0xff000000;
 

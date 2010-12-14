@@ -240,7 +240,7 @@ static EProcessResult RSP_HLE_Graphics()
 //*****************************************************************************
 //
 //*****************************************************************************
-static EProcessResult RSP_HLE_Audio(OSTask * task)
+static EProcessResult RSP_HLE_Audio()
 {
 	if( gHLEAudioEnabled)
 	{
@@ -313,7 +313,7 @@ void RSP_HLE_ProcessTask()
 			break;
 
 		case M_AUDTASK:
-			result = RSP_HLE_Audio(pTask);
+			result = RSP_HLE_Audio();
 			break;
 
 		case M_VIDTASK:

@@ -612,8 +612,8 @@ void DLParser_Process()
 		gFirstCall = false;
 	}
 
-	// Update Screen only when something is drawn, otehrwise several games will flash or shake.
-	// Update Screen earlier, otherwise several like Paper Mario won't work.
+	// Update Screen only when something is drawn, otherwise several games ex Army Men will flash or shake.
+	// Update Screen earlier, otherwise several games like ex Mario won't work.
 	//
 	gGraphicsPlugin->UpdateScreen();
 
@@ -1854,9 +1854,6 @@ void DLParser_FillRect( MicroCodeCommand command )
 		return;
 	}
 
-	// Unless we support fb emulation, we can safetly skip here
-	if( g_CI.Size != G_IM_SIZ_16b )	return;
-
 	v2 xy0( command.fillrect.x0, command.fillrect.y0 );
 	v2 xy1( command.fillrect.x1, command.fillrect.y1 );
 
@@ -1896,10 +1893,10 @@ void DLParser_FillRect( MicroCodeCommand command )
 			//printf( "FillRect: %08x, %04x\n", colour.GetColour(), c.Bits );
 
 		}
-		/*else
+		else
 		{
 			colour = c32( gFillColor );
-		}*/
+		}
 
 		DL_PF("    Filling Rectangle");
 		PSPRenderer::Get()->FillRect( xy0, xy1, colour.GetColour() );

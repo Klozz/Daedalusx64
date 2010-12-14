@@ -405,7 +405,6 @@ struct SButtonNameMapping
 const SButtonNameMapping	gButtonNameMappings[] =
 {
 	{ "PSP.Start",		PSP_CTRL_START },
-	{ "PSP.Select",		PSP_CTRL_SELECT },
 	{ "PSP.Cross",		PSP_CTRL_CROSS },
 	{ "PSP.Square",		PSP_CTRL_SQUARE },
 	{ "PSP.Triangle",	PSP_CTRL_TRIANGLE },

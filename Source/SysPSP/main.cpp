@@ -148,11 +148,15 @@ static void DaedalusFWCheck()
 		pspDebugScreenPrintf( "\n" );
 		pspDebugScreenPrintf( "\n" );
 		pspDebugScreenPrintf( "\n" );
-		pspDebugScreenPrintf("\nPress O to Exit");
-		for (;;){
-			if (gButtons.type & PSP_CTRL_CIRCLE){
+		pspDebugScreenPrintf("\nPress O to Exit or [] to Ignore");
+		for (;;)
+		{
+			SceCtrlData pad;
+			sceCtrlPeekBufferPositive(&pad, 1);
+			if (pad.Buttons & PSP_CTRL_CIRCLE)
 				break;
-			}
+			if (pad.Buttons & PSP_CTRL_SQUARE)
+				return;
 		}    
 		sceKernelExitGame();
 	}
@@ -234,7 +238,7 @@ static int PanicThread( SceSize args, void * argp )
 		}
 		else count = 0;
 
-		//Idle here, only check button 17.5 times/sec not to hog CPU time from EMU
+		//Idle here, only check button 13.5 times/sec not to hog CPU time from EMU
 		ThreadSleepMs(77);	
 	}
 
@@ -262,6 +266,9 @@ extern void InitialiseJobManager();
 //*************************************************************************************
 static bool	Initialize()
 {
+	// Check for unsupported FW
+	DaedalusFWCheck();
+
 	printf( "Cpu was: %dMHz, Bus: %dMHz\n", scePowerGetCpuClockFrequency(), scePowerGetBusClockFrequency() );
 	if (scePowerSetClockFrequency(333, 333, 166) != 0)
 	{
@@ -295,9 +302,6 @@ static bool	Initialize()
 
 	//Init Panic button thread
 	SetupPanic();
-
-	// Check for unsupported FW
-	DaedalusFWCheck();
 
 	// We have to Callbacks if kernelbuttons.prx failed
 	if( gButtons.mode == false )

@@ -331,25 +331,25 @@ void DLParser_GBI1_EndDL( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-// Kirby 64 and Cruisn' Exotica use this
+// Kirby 64, SSB and Cruisn' Exotica use this
 //
 void DLParser_GBI2_DL_Count( MicroCodeCommand command )
 {
-	DAEDALUS_ERROR("DL_COUNT");
+	//DAEDALUS_ERROR("DL_COUNT");
 
 	// This cmd is likely to execute number of ucode at the given address
 	u32 address  = RDPSegAddr(command.inst.cmd1);
-	u32 count	 = command.inst.cmd0 & 0xFFFF;
+	//u32 count	 = command.inst.cmd0 & 0xFFFF;
 
-	if (address == 0)
+	/*if (address == 0)
 	{
 		printf("invalid count\n");
 		return;
-	}
+	}*/
 
 	DList dl;
 	dl.addr = address;
-	dl.limit = count + 1;
+	dl.limit = command.inst.cmd0 & 0xFFFF;
 	gDisplayListStack.push_back(dl);
 }
 //*****************************************************************************
@@ -357,23 +357,18 @@ void DLParser_GBI2_DL_Count( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_BranchZ( MicroCodeCommand command )
 {
-	u32 vtx		 = command.branchz.vtx;
+	// Seems are Z axis is inverted... Might be tricky to get it right on the PSP
+	// Games seem not to bother if we don't branch less than z
 #if 0
+	u32 vtx		 = command.branchz.vtx;
+
 	//Proper? Atleast according to Rice, but fails in OOT : Death Mountain and MM : Outside of Clock Town
 	f32 vtxdepth = PSPRenderer::Get()->GetTransformedVtxPos(vtx).y/PSPRenderer::Get()->GetTransformedVtxPos(vtx).w;
-#else
-	// Works the best.. give us a nice depth result and allow us to only branch when needed ex 9920 <= 800 != branch :).
-	// We'll see if any issue comes up...
-	FiddledVtx *pVtxBase = (FiddledVtx*)(g_pu8RamBase + RDPSegAddr(command.inst.cmd1));
-#endif
-	
-#if 0
+
 	if( vtxdepth <= (s32)command.branchz.value ) // This is still not right
-#else
-	if( pVtxBase != NULL && pVtxBase[vtx].z <= (s32)command.branchz.value )
 #endif
 	{					
-		u32 pc = gDisplayListStack.back().addr;	// This points to the next instruction
+		u32 pc = gDisplayListStack.back().addr;
 		u32 dl = *(u32 *)(g_pu8RamBase + pc-12);
 		u32 address = RDPSegAddr(dl);
 

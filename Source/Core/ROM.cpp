@@ -52,7 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //*****************************************************************************
 //
 //*****************************************************************************
-const char *gGameHackNames[12] = 
+const char *gGameHackNames[13] = 
 {
 	"No Game Specific Hack",
 	"TLB Hack", 
@@ -64,7 +64,8 @@ const char *gGameHackNames[12] =
 	"Flat Shade Disabled Hack",
 	"Rumble Pak Disabled Hack",
 	"1/2 ZBuffer Hack",
-	"Depth Hack"
+	"Depth Hack",
+	"Width Hack"
 };
 #endif
 
@@ -451,6 +452,7 @@ void SpecificGameHacks( const ROMHeader & id )
 	case 0x3954: g_ROM.GameHacks = TIGERS_HONEY_HUNT;	break;
 	case 0x5443: g_ROM.GameHacks = CHAMELEON_TWIST;		break;
 	case 0x4f52: g_ROM.GameHacks = ROAD_RASH;			break;
+	case 0x524c: g_ROM.GameHacks = LOAD_RUNNER;			break;
 	case 0x324e: 
 	case 0x4339:
 		g_ROM.GameHacks = NASCAR;

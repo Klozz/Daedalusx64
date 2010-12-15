@@ -368,6 +368,7 @@ void PSPRenderer::SetVIScales()
 	{
 		fViHeight = fViWidth * sRatio;
 	}*/
+	DAEDALUS_ASSERT( ScaleY != 0, "Warning : Height might be incorrect " );
 
 	//This sets the correct height in various games ex : Megaman 64
 	if( width > 0x300 )	
@@ -375,9 +376,17 @@ void PSPRenderer::SetVIScales()
 
 	//Sometimes HStartReg and VStartReg are zero
 	//This fixes gaps is some games ex: CyberTiger
-	if( (fViHeight < 100) || (fViWidth < 100) )
+	if( fViWidth < 100)
 	{
-		fViWidth = (f32)Memory_VI_GetRegister( VI_WIDTH_REG );
+		// Load Runner in game sets zero for fViWidth, but VI_WIDTH_REG sets 640..which is wrong
+		//
+		if( g_ROM.GameHacks == LOAD_RUNNER )
+			fViWidth = 320.0f;
+		else
+			fViWidth = (f32)Memory_VI_GetRegister( VI_WIDTH_REG );
+	}
+	if( fViHeight < 100) 
+	{
 		fViHeight = fViWidth * 0.75f; //sRatio
 	}
 

@@ -838,10 +838,12 @@ void	CCodeGeneratorPSP::FlushAllTemporaryRegisters( CN64RegisterCachePSP & cache
 		EN64Reg	n64_reg = EN64Reg( i );
 
 		if( cache.IsTemporary( n64_reg, 0 ) )
+		//if( mRegisterCache.IsDirty( n64_reg, 0 ) || mRegisterCache.IsKnownValue( n64_reg, 0 ) )
 		{
 			FlushRegister( cache, n64_reg, 0, invalidate );
 		}
 		if( cache.IsTemporary( n64_reg, 1 ) )
+		//if( mRegisterCache.IsDirty( n64_reg, 1 ) || mRegisterCache.IsKnownValue( n64_reg, 1 ) )
 		{
 			FlushRegister( cache, n64_reg, 1, invalidate );
 		}
@@ -1047,24 +1049,20 @@ void CCodeGeneratorPSP::GenerateIndirectExitCode( u32 num_instructions, CIndirec
 //*****************************************************************************
 void	CCodeGeneratorPSP::GenerateBranchHandler( CJumpLocation branch_handler_jump, RegisterSnapshotHandle snapshot )
 {
-	if(branch_handler_jump.IsSet())
-	{
-		CCodeGeneratorPSP::SetBufferA();
-		CCodeLabel	current_label( GetAssemblyBuffer()->GetLabel() );
+	DAEDALUS_ASSERT( branch_handler_jump.IsSet(), "Why is the branch handler jump not set?" );
 
-		PatchJumpLong( branch_handler_jump, current_label );
+	CCodeGeneratorPSP::SetBufferA();
+	CCodeLabel	current_label( GetAssemblyBuffer()->GetLabel() );
 
-		mRegisterCache = GetRegisterCacheFromHandle( snapshot );
+	PatchJumpLong( branch_handler_jump, current_label );
 
-		CJumpLocation	jump_to_b( J( CCodeLabel( NULL ), true ) );
-		CCodeGeneratorPSP::SetBufferB();
-		current_label = GetAssemblyBuffer()->GetLabel();
-		PatchJumpLong( jump_to_b, current_label );
-	}
-	else
-	{
-		DAEDALUS_ERROR( "Why is the branch handler jump not set?" );
-	}
+	mRegisterCache = GetRegisterCacheFromHandle( snapshot );
+
+	CJumpLocation	jump_to_b( J( CCodeLabel( NULL ), true ) );
+	CCodeGeneratorPSP::SetBufferB();
+	current_label = GetAssemblyBuffer()->GetLabel();
+	PatchJumpLong( jump_to_b, current_label );
+
 }
 
 //*****************************************************************************
@@ -2366,16 +2364,18 @@ void	CCodeGeneratorPSP::GenerateDADDU( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 void	CCodeGeneratorPSP::GenerateAND( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 {
 	//gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 & gGPR[ op_code.rt ]._u64;
-	//Note for some reason Banjo Kazooie doesn't like this...
-	/*if (mRegisterCache.IsKnownValue(rs, 0) && mRegisterCache.IsKnownValue(rs, 1)
+	//Note for some reason Banjo Kazooie doesn't like this... @Kreationz
+
+	// Errrg Banjo seems fine, maybe something else caused the reported freezes? -Salvy
+	if (mRegisterCache.IsKnownValue(rs, 0) && mRegisterCache.IsKnownValue(rs, 1)
 	&&	mRegisterCache.IsKnownValue(rt, 0) && mRegisterCache.IsKnownValue(rt, 1))
 	{
 		SetRegister64(rd, 
 			mRegisterCache.GetKnownValue(rs, 0)._u32 & mRegisterCache.GetKnownValue(rt, 0)._u32,
 			mRegisterCache.GetKnownValue(rs, 1)._u32 & mRegisterCache.GetKnownValue(rt, 1)._u32
 			);
-	}*/
-	if (rs == N64Reg_R0 || rt == N64Reg_R0)
+	}
+	else if (rs == N64Reg_R0 || rt == N64Reg_R0)
 	{
 		SetRegister64( rd, 0, 0 );
 	}

@@ -110,7 +110,8 @@ enum EGameHacks
 	TIGERS_HONEY_HUNT,
 	CHAMELEON_TWIST,
 	ROAD_RASH,
-	NASCAR
+	NASCAR,
+	LOAD_RUNNER
 };
 
 //*****************************************************************************

@@ -838,12 +838,10 @@ void	CCodeGeneratorPSP::FlushAllTemporaryRegisters( CN64RegisterCachePSP & cache
 		EN64Reg	n64_reg = EN64Reg( i );
 
 		if( cache.IsTemporary( n64_reg, 0 ) )
-		//if( mRegisterCache.IsDirty( n64_reg, 0 ) || mRegisterCache.IsKnownValue( n64_reg, 0 ) )
 		{
 			FlushRegister( cache, n64_reg, 0, invalidate );
 		}
 		if( cache.IsTemporary( n64_reg, 1 ) )
-		//if( mRegisterCache.IsDirty( n64_reg, 1 ) || mRegisterCache.IsKnownValue( n64_reg, 1 ) )
 		{
 			FlushRegister( cache, n64_reg, 1, invalidate );
 		}

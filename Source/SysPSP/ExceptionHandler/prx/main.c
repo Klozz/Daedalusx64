@@ -16,4 +16,5 @@ int module_start(SceSize args, void *argp)
    curr_handler = (PspDebugErrorHandler)((int *)argp)[0];
    exception_regs = (PspDebugRegBlock *)((int *)argp)[1];
    if(!curr_handler || !exception_regs) return -1;
+   return 0;	
 }

@@ -115,8 +115,8 @@ struct SGlobalPreferences
 	bool						SkipSplash;
 	bool						LogMicrocodes;
 #endif
-	EGuiType					GuiType;
 	EForceTextureFilter			ForceTextureFilter;
+	EGuiType					GuiType;
 	EGuiColor					GuiColor;
 
 	float						StickMinDeadzone;

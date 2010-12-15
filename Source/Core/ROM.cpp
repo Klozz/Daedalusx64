@@ -302,6 +302,7 @@ static void ROM_SimulatePIFBoot( ECicType cic_chip, u32 Country )
 //*****************************************************************************
 // Get the name of the correct pit for the region
 //*****************************************************************************
+/*
 static const char * ROM_GetPIFName( u32 tv_type )
 {
 	switch ( tv_type )
@@ -313,6 +314,7 @@ static const char * ROM_GetPIFName( u32 tv_type )
 	DAEDALUS_ERROR( "Unknown TV type" );
 	return NULL;
 }
+*/
 
 //*****************************************************************************
 // Load pif bootcode if it is available
@@ -357,6 +359,7 @@ static bool ROM_LoadPIF( u32 tv_type )
 	}
 }
 */
+
 //*****************************************************************************
 //
 //*****************************************************************************

@@ -123,6 +123,7 @@ void	CSynchroniser::HandleOutOfSynch( const char * msg )
 {
 	char			message[ 512 ];
 	sprintf( message, "Synchronisation Failed at 0x%08x: %s", gCPUState.CurrentPC, msg );
+	gCPUState.Dump();
 	CPU_Halt( message );
 	Destroy();
 }
@@ -227,6 +228,9 @@ CSynchroniser::ESynchResult	ISynchConsumer::SynchPoint( const void * data, u32 l
 
 			if( memcmp( current_ptr, buffer, bytes_to_process ) != 0 )
 			{
+				if (bytes_to_process == sizeof(u32))
+					DBGConsole_Msg(0, "Expect 0x%08x but get 0x%08x", *(u32*)buffer,
+					*(u32 *)current_ptr);
 				return SR_OUT_OF_SYNCH;
 			}
 

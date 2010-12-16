@@ -326,6 +326,31 @@ void SCPUState::ClearJob( u32 job )
 	}
 }
 
+#ifdef DAEDALUS_ENABLE_SYNCHRONISATION
+static const unsigned char regName[32][5] =
+{
+    "zr", "at", "v0", "v1", "a0", "a1", "a2", "a3",
+    "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
+    "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
+    "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"
+};
+
+void SCPUState::Dump()
+{
+	DBGConsole_Msg(0, "Emulation CPU State:");
+	{
+		for(int i=0; i<32; i+=4)
+			DBGConsole_Msg(0, "%s:%08X %s:%08X %s:%08X %s:%08X", 
+			regName[i], gCPUState.CPU[i]._u32_0, regName[i+1], gCPUState.CPU[i+1]._u32_0, 
+			regName[i+2], gCPUState.CPU[i+2]._u32_0, regName[i+3], gCPUState.CPU[i+3]._u32_0);
+
+		DBGConsole_Msg(0, "TargetPC: %08x", gCPUState.TargetPC);
+		DBGConsole_Msg(0, "CurrentPC: %08x", gCPUState.CurrentPC);
+		DBGConsole_Msg(0, "Delay: %08x", gCPUState.Delay);
+	}
+}
+#endif
+
 //*****************************************************************************
 //
 //*****************************************************************************

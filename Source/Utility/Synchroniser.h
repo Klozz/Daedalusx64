@@ -45,7 +45,7 @@ enum	ESynchFlags
 static const u32 DAED_SYNC_REGS(DAED_SYNC_REG_GPR|DAED_SYNC_REG_CCR0|
 								DAED_SYNC_REG_CPU1|DAED_SYNC_REG_CCR1);
 
-static const u32 DAED_SYNC_MASK(DAED_SYNC_FRAGMENT_PC);
+static const u32 DAED_SYNC_MASK(DAED_SYNC_FRAGMENT_PC|DAED_SYNC_REG_GPR|DAED_SYNC_REG_CCR0);
 
 //*****************************************************************************
 // Base synchronisation interface

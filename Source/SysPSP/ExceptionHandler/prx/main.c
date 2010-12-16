@@ -12,9 +12,11 @@ int sceKernelRegisterDefaultExceptionHandler(void *func);
 
 int module_start(SceSize args, void *argp)
 {
-   if(args != 8) return -1;
-   curr_handler = (PspDebugErrorHandler)((int *)argp)[0];
-   exception_regs = (PspDebugRegBlock *)((int *)argp)[1];
-   if(!curr_handler || !exception_regs) return -1;
-   return 0;	
+	if(args != 8) return -1;
+	curr_handler = (PspDebugErrorHandler)((int *)argp)[0];
+	exception_regs = (PspDebugRegBlock *)((int *)argp)[1];
+	if(!curr_handler || !exception_regs) return -1;
+
+	return sceKernelRegisterDefaultExceptionHandler((void *)_pspDebugExceptionHandler);
+
 }

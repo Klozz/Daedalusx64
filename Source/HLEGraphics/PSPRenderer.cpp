@@ -339,24 +339,18 @@ void PSPRenderer::SetVIScales()
 	f32 fScaleX = (f32)ScaleX / (1<<10);
 	f32 fScaleY = (f32)ScaleY / (1<<10);
 
-	//DBGConsole_Msg(DEBUG_VI, "VI_X_SCALE_REG set to 0x%08x (%f)", dwValue, 1/fScale);
-	//DBGConsole_Msg(DEBUG_VI, "VI_Y_SCALE_REG set to 0x%08x (%f)", dwValue, 1/fScale);
-
 	u32 HStartReg = Memory_VI_GetRegister( VI_H_START_REG );
 	u32 VStartReg = Memory_VI_GetRegister( VI_V_START_REG );
 
 	u32	hstart = HStartReg >> 16;
 	u32	hend = HStartReg & 0xffff;
-	//DBGConsole_Msg( 0, "h start/end %x %x", hstart, hend );		// 128 725 - 597
 
 	u32	vstart = VStartReg >> 16;
 	u32	vend = VStartReg & 0xffff;
-	//DBGConsole_Msg( 0, "v start/end %x %x", vstart, vend );		// 56 501 - 445
 
 	fViWidth  =  (hend-hstart)    * fScaleX;
 	fViHeight = ((vend-vstart)/2) * fScaleY;
 
-	
 	//If we are close to 240 in height then set to 240 //Corn
 	if( abs(240 - fViHeight) < 4 ) 
 		fViHeight = 240.0f;
@@ -364,10 +358,6 @@ void PSPRenderer::SetVIScales()
 	// XXX Need to check PAL games.
 	//if(g_ROM.TvType != OS_TV_NTSC) sRatio = 9/11.0f;
 
-	/*if( ScaleY == 0 )
-	{
-		fViHeight = fViWidth * sRatio;
-	}*/
 	DAEDALUS_ASSERT( ScaleY != 0, "Warning : Height might be incorrect " );
 
 	//This sets the correct height in various games ex : Megaman 64
@@ -389,13 +379,6 @@ void PSPRenderer::SetVIScales()
 	{
 		fViHeight = fViWidth * 0.75f; //sRatio
 	}
-
-	// With recent fixes, this doesn't seem to be used anymore ~ Salvy
-	//If zero: Set to defaults
-	/*
-	if ( fViWidth == 0 ) fViWidth = 320;
-	if ( fViHeight == 0 ) fViHeight = 240;
-	*/
 
 	//Used to set a limit on Scissors //Corn
 	uViWidth  = (u32)fViWidth - 1;
@@ -763,23 +746,15 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 					sceGuEnable(GU_DEPTH_TEST);
 					
 					// Fixes Zfighting issues we have on the PSP.
-					// Might need abit of tweaking though.
-					// Breaks Starfox...
-					// sceGuDepthOffset() breaks Double display list so we try sceGuDepthRange() instead //Corn 
-					if( gRemoveZFighting )
+					if( IsZModeDecal() )
 					{
-						if( IsZModeDecal() )
-						{
-							Zfight_IsOn = true;						
-							sceGuDepthRange(65535,80);
-							//sceGuDepthOffset(50);	// We need atleast 40 to fix Mario 64's z-fighting issues.
-						}
-						else if( Zfight_IsOn )
-						{
-							Zfight_IsOn = false;						
-							sceGuDepthRange(65535,0);
-							//sceGuDepthOffset(0);
-						}
+						Zfight_IsOn = true;						
+						sceGuDepthRange(65535,80);
+					}
+					else if( Zfight_IsOn )
+					{
+						Zfight_IsOn = false;						
+						sceGuDepthRange(65535,0);
 					}
  				}
 				else

@@ -531,22 +531,33 @@ void IRomSelectorComponent::RenderPreview_old()
 		}
 		else
 		{
-			if ( p_rominfo->mSettings.Comment[0] == '0' ) {
+			if ( p_rominfo->mSettings.Comment[0] == '0' ) 
+			{
 				DrawInfoText_old( mpContext, y, "Compatibility:", "" );
 				mpContext->DrawRect( ICON_AREA_LEFT + ICON_AREA_WIDTH - 10, y - 10, 10, 10, clrGREY ); y += line_height + 1;
-			}	else if ( p_rominfo->mSettings.Comment[0] == '1' ) {
+			}	
+			else if ( p_rominfo->mSettings.Comment[0] == '1' )
+			{
 				DrawInfoText_old( mpContext, y, "Compatibility:", "" );
 				mpContext->DrawRect( ICON_AREA_LEFT + ICON_AREA_WIDTH - 10, y - 10, 10, 10, c32::Red ); y += line_height + 1;
-			}	else if ( p_rominfo->mSettings.Comment[0] == '2' ) {
+			}	
+			else if ( p_rominfo->mSettings.Comment[0] == '2' )
+			{
 				DrawInfoText_old( mpContext, y, "Compatibility:", "" );
 				mpContext->DrawRect( ICON_AREA_LEFT + ICON_AREA_WIDTH - 10, y - 10, 10, 10, clrORANGE ); y += line_height + 1;
-			}	else if ( p_rominfo->mSettings.Comment[0] == '3' ) {
+			}	
+			else if ( p_rominfo->mSettings.Comment[0] == '3' )
+			{
 				DrawInfoText_old( mpContext, y, "Compatibility:", "" );
 				mpContext->DrawRect( ICON_AREA_LEFT + ICON_AREA_WIDTH - 10, y - 10, 10, 10, clrYELLOW ); y += line_height + 1;
-			}	else if ( p_rominfo->mSettings.Comment[0] == '4' ) {
+			}	
+			else if ( p_rominfo->mSettings.Comment[0] == '4' ) 
+			{
 				DrawInfoText_old( mpContext, y, "Compatibility:", "" );
 				mpContext->DrawRect( ICON_AREA_LEFT + ICON_AREA_WIDTH - 10, y - 10, 10, 10, c32::Green ); y += line_height + 1;
-			}	else if ( p_rominfo->mSettings.Comment[0] == '5' ) {
+			}	
+			else if ( p_rominfo->mSettings.Comment[0] == '5' )
+			{
 				DrawInfoText_old( mpContext, y, "Compatibility:", "" );
 				mpContext->DrawRect( ICON_AREA_LEFT + ICON_AREA_WIDTH - 10, y - 10, 10, 10, c32::Blue ); y += line_height + 1;
 			}				
@@ -555,8 +566,6 @@ void IRomSelectorComponent::RenderPreview_old()
 				//mpContext->DrawRect( TEXT_AREA_LEFT + 37, y - 7, 5, 5, c32::Black ); y += line_height + 5;
 
 			const char *compatver = p_rominfo->mSettings.Comment + 16;
-			//mpContext->DrawRect( ICON_AREA_LEFT, 40, 280, 192, c32::White );
-			//mpContext->DrawRect( ICON_AREA_LEFT, 42, 276, 188, c32::Black );
 			mpContext->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_LEFT, y, "Tested @ rev.", c32::White );					
 			mpContext->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_RIGHT, y, compatver, c32::White );	y += line_height + 1;
 
@@ -746,15 +755,45 @@ void IRomSelectorComponent::RenderPreview_old()
 					mpContext->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 1;
 				}
 			}
+			if ( p_rominfo->mSettings.Comment[15] != '0' ) 
+			{
+				mpContext->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_LEFT, y, "Notes:", c32::White );
 
-			if ( p_rominfo->mSettings.Comment[15] != '0' ) {
-				mpContext->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_LEFT, y, "Z-Fight fix:", c32::White );
-
-				if ( p_rominfo->mSettings.Comment[15] == '1' ) {
-					mpContext->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_RIGHT, y, "Enabled", c32::White );  y += line_height + 1;
+				if ( p_rominfo->mSettings.Comment[15] == '1' ) 
+				{
+					mpContext->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_RIGHT, y, "None", c32::White );  y += line_height + 1;
 				}						
-				else if ( p_rominfo->mSettings.Comment[15] == '2' ) {
-					mpContext->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_RIGHT, y, "Disabled", c32::White );  y += line_height + 1;
+				else if ( p_rominfo->mSettings.Comment[15] == '2' )
+				{
+					mpContext->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_RIGHT, y, "Crashes", c32::White );  y += line_height + 1;
+				}
+				else if ( p_rominfo->mSettings.Comment[15] == '3' )
+				{
+					mpContext->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_RIGHT, y, "Doesn't Boot", c32::White );  y += line_height + 1;
+				}
+				if ( p_rominfo->mSettings.Comment[15] == '4' ) 
+				{
+					mpContext->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_RIGHT, y, "Unplayable", c32::White );  y += line_height + 1;
+				}						
+				else if ( p_rominfo->mSettings.Comment[15] == '5' )
+				{
+					mpContext->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_RIGHT, y, "Slow", c32::White );  y += line_height + 1;
+				}
+				else if ( p_rominfo->mSettings.Comment[15] == '6' )
+				{
+					mpContext->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_RIGHT, y, "No Audio", c32::White );  y += line_height + 1;
+				}
+				else if ( p_rominfo->mSettings.Comment[15] == '7' )
+				{
+					mpContext->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_RIGHT, y, "GFX Errors", c32::White );  y += line_height + 1;
+				}
+				else if ( p_rominfo->mSettings.Comment[15] == '8' )
+				{
+					mpContext->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_RIGHT, y, "Unstable", c32::White );  y += line_height + 1;
+				}
+				else if ( p_rominfo->mSettings.Comment[15] == '9' )
+				{
+					mpContext->DrawTextAlign( ICON_AREA_LEFT, ICON_AREA_LEFT + ICON_AREA_WIDTH, AT_RIGHT, y, "No Errors", c32::White );  y += line_height + 1;
 				}
 			}
 		}

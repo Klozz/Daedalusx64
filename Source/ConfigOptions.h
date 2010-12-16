@@ -56,7 +56,6 @@ extern bool gSimulateDoubleDisabled;
 extern bool	gIncreaseVI_Event;
 extern bool gCheckN64FPUsageDisable;
 extern bool gTMEMemulation;
-extern bool gRemoveZFighting;
 extern bool gAudioRateMatch;
 extern bool gFogEnabled;
 //ToDo: Needs moving to Graphics plugin config

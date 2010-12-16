@@ -71,7 +71,6 @@ struct RomSettings
 	bool				IncreaseVI_Event;
 	bool				CheckN64FPUsageDisable;
 	bool				TMEMemulation;
-	bool				RemoveZFighting;
 	bool				AudioRateMatch;
 	bool				FogEnabled;
 

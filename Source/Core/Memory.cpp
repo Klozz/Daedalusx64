@@ -829,6 +829,34 @@ void MemoryUpdateSPStatus( u32 flags )
 		stop_rsp = true;
 	}
 
+#if 1 //1->Pipelined, 0->Branch
+	if (flags & SP_SET_INTR)				{ Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_SP); R4300_Interrupt_UpdateCause3(); }		// Shouldn't ever set this?
+	else if (flags & SP_CLR_INTR)			{ Memory_MI_ClrRegisterBits(MI_INTR_REG, MI_INTR_SP); R4300_Interrupt_UpdateCause3(); }
+
+	clr_bits |= (flags & SP_CLR_BROKE) >> 1;
+	clr_bits |= (flags & SP_CLR_SSTEP);
+	clr_bits |= (flags & SP_CLR_INTR_BREAK) >> 1;
+	clr_bits |= (flags & SP_CLR_SIG0) >> 2;
+	clr_bits |= (flags & SP_CLR_SIG1) >> 3;
+	clr_bits |= (flags & SP_CLR_SIG2) >> 4;
+	clr_bits |= (flags & SP_CLR_SIG3) >> 5;
+	clr_bits |= (flags & SP_CLR_SIG4) >> 6;
+	clr_bits |= (flags & SP_CLR_SIG5) >> 7;
+	clr_bits |= (flags & SP_CLR_SIG6) >> 8;
+	clr_bits |= (flags & SP_CLR_SIG7) >> 9;
+
+	set_bits |= (flags & SP_SET_SSTEP) >> 1;
+	set_bits |= (flags & SP_SET_INTR_BREAK) >> 2;
+	set_bits |= (flags & SP_SET_SIG0) >> 3;
+	set_bits |= (flags & SP_SET_SIG1) >> 4;
+	set_bits |= (flags & SP_SET_SIG2) >> 5;
+	set_bits |= (flags & SP_SET_SIG3) >> 6;
+	set_bits |= (flags & SP_SET_SIG4) >> 7;
+	set_bits |= (flags & SP_SET_SIG5) >> 8;
+	set_bits |= (flags & SP_SET_SIG6) >> 9;
+	set_bits |= (flags & SP_SET_SIG7) >> 10;
+
+#else
 	if (flags & SP_CLR_BROKE)				clr_bits |= SP_STATUS_BROKE;
 	// No SP_SET_BROKE
 	if (flags & SP_CLR_INTR)				{ Memory_MI_ClrRegisterBits(MI_INTR_REG, MI_INTR_SP); R4300_Interrupt_UpdateCause3(); }
@@ -853,6 +881,7 @@ void MemoryUpdateSPStatus( u32 flags )
 	if (flags & SP_SET_SIG6)				set_bits |= SP_STATUS_SIG6;
 	if (flags & SP_CLR_SIG7)				clr_bits |= SP_STATUS_SIG7;
 	if (flags & SP_SET_SIG7)				set_bits |= SP_STATUS_SIG7;
+#endif
 
 #ifdef DAEDAULUS_ENABLEASSERTS
 	u32 new_status = Memory_SP_SetRegisterBits( SP_STATUS_REG, ~clr_bits, set_bits );

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 
+#include <pspgu.h>
 #include <pspkernel.h>
 #include <pspsdk.h>
 #include <pspctrl.h>
@@ -9,6 +10,7 @@
 
 #include "ConfigOptions.h"
 #include "Core/ROM.h"
+#include "Core/RomSettings.h"
 #include "Core/CPU.h"
 
 PspDebugRegBlock *exception_regs;
@@ -92,32 +94,36 @@ static void DumpInformation(PspDebugRegBlock * regs)
 
 	}
 	fclose(fp);
-}
+}	
 
 void ExceptionHandler(PspDebugRegBlock * regs)
 {
     int i;
     SceCtrlData pad;
 
-    pspDebugScreenInit();
+	pspDebugScreenInit();
     pspDebugScreenSetBackColor(0x00FF0000);
     pspDebugScreenSetTextColor(0xFFFFFFFF);
     pspDebugScreenClear();
     pspDebugScreenPrintf("Your PSP has just crashed!\n");
     pspDebugScreenPrintf("Exception details:\n\n");
-    pspDebugScreenPrintf("Exception - %s\n", codeTxt[(regs->cause >> 2) & 31]);
+	pspDebugScreenPrintf("Game Name - %s\n\n",   g_ROM.settings.GameName.c_str());
+    pspDebugScreenPrintf("Exception - %s\n",codeTxt[(regs->cause >> 2) & 31]);
     pspDebugScreenPrintf("EPC       - %08X\n", (int)regs->epc);
     pspDebugScreenPrintf("Cause     - %08X\n", (int)regs->cause);
     pspDebugScreenPrintf("Status    - %08X\n", (int)regs->status);
     pspDebugScreenPrintf("BadVAddr  - %08X\n", (int)regs->badvaddr);
-    for(i=0; i<32; i+=4) pspDebugScreenPrintf("%s:%08X %s:%08X %s:%08X %s:%08X\n", regName[i], (int)regs->r[i], regName[i+1], (int)regs->r[i+1], regName[i+2], (int)regs->r[i+2], regName[i+3], (int)regs->r[i+3]);
+    for(i=0; i<32; i+=4) 
+	{
+		pspDebugScreenPrintf("%s:%08X %s:%08X %s:%08X %s:%08X\n", regName[i], (int)regs->r[i], regName[i+1], (int)regs->r[i+1], regName[i+2], (int)regs->r[i+2], regName[i+3], (int)regs->r[i+3]);
+	}
 
     sceKernelDelayThread(1000000);
     pspDebugScreenPrintf("\n\nPress X to dump information on file exception.log and quit");
     pspDebugScreenPrintf("\nPress O to quit");
 
     for (;;){
-        sceCtrlPeekBufferPositive(&pad, 1);
+        sceCtrlReadBufferPositive(&pad, 1);
         if (pad.Buttons & PSP_CTRL_CROSS){
 			DumpInformation(regs);
             break;

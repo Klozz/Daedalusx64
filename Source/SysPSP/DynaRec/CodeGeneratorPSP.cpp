@@ -302,8 +302,8 @@ void	CCodeGeneratorPSP::SetRegisterSpanList( const SRegisterUsageInfo & register
 		mUseFixedRegisterAllocation = true;
 		u32		cache_reg_idx( 0 );
 		u32		HiLo = 0;
-		while ( HiLo<2 )		// If there are still unused registers, assign to high part of reg
-		{
+		//while ( HiLo<2 )		// If there are still unused registers, assign to high part of reg
+		//{
 			RegisterSpanList::const_iterator span_it = mRegisterSpanList.begin();
 			while( span_it < mRegisterSpanList.end() )
 			{
@@ -316,35 +316,30 @@ void	CCodeGeneratorPSP::SetRegisterSpanList( const SRegisterUsageInfo & register
 				}
 				++span_it;
 			}
-			++HiLo;
-		}
+			//++HiLo;
+		//}
 		//
 		//	Pull all the cached registers into memory
 		//
 		// Skip r0
-		u32 i = 1;
-		while( i < NUM_N64_REGS )
+		s32 i = NUM_N64_REGS;
+		while( i > 0 )
 		{
 			EN64Reg	n64_reg = EN64Reg( i );
-			u32 lo_hi_idx = 0;
-			while( lo_hi_idx < 2)
+			if( mRegisterCache.IsCached( n64_reg, 0 ) )
 			{
-				if( mRegisterCache.IsCached( n64_reg, lo_hi_idx ) )
-				{
-					PrepareCachedRegister( n64_reg, lo_hi_idx );
+				PrepareCachedRegister( n64_reg, 0 );
 
-					//
-					//	If the register is modified anywhere in the fragment, we need
-					//	to mark it as dirty so it's flushed correctly on exit.
-					//
-					if( register_usage.IsModified( n64_reg ) )
-					{
-						mRegisterCache.MarkAsDirty( n64_reg, lo_hi_idx, true );
-					}
+				//
+				//	If the register is modified anywhere in the fragment, we need
+				//	to mark it as dirty so it's flushed correctly on exit.
+				//
+				if( register_usage.IsModified( n64_reg ) )
+				{
+					mRegisterCache.MarkAsDirty( n64_reg, 0, true );
 				}
-				++lo_hi_idx;
 			}
-			++i; 
+			--i; 
 		}
 		mLoopTop = GetAssemblyBuffer()->GetLabel();
 	} //End of Loop optimization code
@@ -721,7 +716,7 @@ EPspFloatReg	CCodeGeneratorPSP::GetFloatRegisterAndLoad( EN64FloatReg n64_reg )
 //*****************************************************************************
 //
 //*****************************************************************************
-void	CCodeGeneratorPSP::UpdateFloatRegister( EN64FloatReg n64_reg )
+void CCodeGeneratorPSP::UpdateFloatRegister( EN64FloatReg n64_reg )
 {
 	mRegisterCache.MarkFPAsDirty( n64_reg, true );
 	mRegisterCache.MarkFPAsValid( n64_reg, true );
@@ -885,8 +880,6 @@ void	CCodeGeneratorPSP::RestoreAllRegisters( CN64RegisterCachePSP & current_cach
 	}
 }
 
-
-
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -895,7 +888,7 @@ CJumpLocation CCodeGeneratorPSP::GenerateExitCode( u32 exit_address, u32 jump_ad
 	//DAEDALUS_ASSERT( exit_address != u32( ~0 ), "Invalid exit address" );
 	DAEDALUS_ASSERT( !next_fragment.IsSet() || jump_address == 0, "Shouldn't be specifying a jump address if we have a next fragment?" );
 
-	if( exit_address == mEntryAddress && mLoopTop.IsSet() )
+	if( (exit_address == mEntryAddress) & mLoopTop.IsSet() )
 	{
 		DAEDALUS_ASSERT( mUseFixedRegisterAllocation, "Have mLoopTop but unfixed register allocation?" );
 
@@ -909,15 +902,15 @@ CJumpLocation CCodeGeneratorPSP::GenerateExitCode( u32 exit_address, u32 jump_ad
 		//	Pull in any registers which may have been flushed for whatever reason.
 		//
 		// Skip r0
-		for( u32 i = 1; i < NUM_N64_REGS; ++i )
+		for( s32 i = NUM_N64_REGS-1; i >= 0; --i )
 		{
-			EN64Reg	n64_reg = EN64Reg( i );
+			EN64Reg	n64_reg = EN64Reg( i+1 );
 
-			if( mRegisterCache.IsDirty( n64_reg, 0 ) && mRegisterCache.IsKnownValue( n64_reg, 0 ) )
+			if( mRegisterCache.IsDirty( n64_reg, 0 ) & mRegisterCache.IsKnownValue( n64_reg, 0 ) )
 			{
 				FlushRegister( mRegisterCache, n64_reg, 0, false );
 			}
-			if( mRegisterCache.IsDirty( n64_reg, 1 ) && mRegisterCache.IsKnownValue( n64_reg, 1 ) )
+			if( mRegisterCache.IsDirty( n64_reg, 1 ) & mRegisterCache.IsKnownValue( n64_reg, 1 ) )
 			{
 				FlushRegister( mRegisterCache, n64_reg, 1, false );
 			}
@@ -2365,8 +2358,9 @@ void	CCodeGeneratorPSP::GenerateAND( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 	//Note for some reason Banjo Kazooie doesn't like this... @Kreationz
 
 	// Errrg Banjo seems fine, maybe something else caused the reported freezes? -Salvy
-	if (mRegisterCache.IsKnownValue(rs, 0) && mRegisterCache.IsKnownValue(rs, 1)
-	&&	mRegisterCache.IsKnownValue(rt, 0) && mRegisterCache.IsKnownValue(rt, 1))
+	//if (mRegisterCache.IsKnownValue(rs, 0) && mRegisterCache.IsKnownValue(rs, 1)
+	//&&	mRegisterCache.IsKnownValue(rt, 0) && mRegisterCache.IsKnownValue(rt, 1))
+	if (mRegisterCache.IsKnownValue(rs, 0) && mRegisterCache.IsKnownValue(rt, 0))
 	{
 		SetRegister64(rd, 
 			mRegisterCache.GetKnownValue(rs, 0)._u32 & mRegisterCache.GetKnownValue(rt, 0)._u32,
@@ -2400,8 +2394,9 @@ void	CCodeGeneratorPSP::GenerateAND( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 void	CCodeGeneratorPSP::GenerateOR( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 {
 	//gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 | gGPR[ op_code.rt ]._u64;
-	if (mRegisterCache.IsKnownValue(rs, 0) && mRegisterCache.IsKnownValue(rs, 1) 
-		&& mRegisterCache.IsKnownValue(rt, 0) && mRegisterCache.IsKnownValue(rt, 1))
+	//if (mRegisterCache.IsKnownValue(rs, 0) && mRegisterCache.IsKnownValue(rs, 1) 
+	//	&& mRegisterCache.IsKnownValue(rt, 0) && mRegisterCache.IsKnownValue(rt, 1))
+	if (mRegisterCache.IsKnownValue(rs, 0) && mRegisterCache.IsKnownValue(rt, 0))
 	{
 		SetRegister64(rd, 
 			mRegisterCache.GetKnownValue(rs, 0)._u32 | mRegisterCache.GetKnownValue(rt, 0)._u32,
@@ -2454,8 +2449,9 @@ void	CCodeGeneratorPSP::GenerateOR( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 void	CCodeGeneratorPSP::GenerateXOR( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 {
 	//gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 ^ gGPR[ op_code.rt ]._u64;
-	if (mRegisterCache.IsKnownValue(rs, 0) && mRegisterCache.IsKnownValue(rs, 1) 
-		&& mRegisterCache.IsKnownValue(rt, 0) && mRegisterCache.IsKnownValue(rt, 1))
+	//if (mRegisterCache.IsKnownValue(rs, 0) && mRegisterCache.IsKnownValue(rs, 1) 
+	//	&& mRegisterCache.IsKnownValue(rt, 0) && mRegisterCache.IsKnownValue(rt, 1))
+	if (mRegisterCache.IsKnownValue(rs, 0) && mRegisterCache.IsKnownValue(rt, 0))
 	{
 		SetRegister64(rd, 
 			mRegisterCache.GetKnownValue(rs, 0)._u32 ^ mRegisterCache.GetKnownValue(rt, 0)._u32,
@@ -2483,8 +2479,9 @@ void	CCodeGeneratorPSP::GenerateXOR( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 void	CCodeGeneratorPSP::GenerateNOR( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 {
 	//gGPR[ op_code.rd ]._u64 = ~(gGPR[ op_code.rs ]._u64 | gGPR[ op_code.rt ]._u64);
-	if (mRegisterCache.IsKnownValue(rs, 0) && mRegisterCache.IsKnownValue(rs, 1) 
-		&& mRegisterCache.IsKnownValue(rt, 0) && mRegisterCache.IsKnownValue(rt, 1))
+	//if (mRegisterCache.IsKnownValue(rs, 0) && mRegisterCache.IsKnownValue(rs, 1) 
+	//	&& mRegisterCache.IsKnownValue(rt, 0) && mRegisterCache.IsKnownValue(rt, 1))
+	if (mRegisterCache.IsKnownValue(rs, 0) && mRegisterCache.IsKnownValue(rt, 0))
 	{
 		SetRegister64(rd, 
 			~(mRegisterCache.GetKnownValue(rs, 0)._u32 | mRegisterCache.GetKnownValue(rt, 0)._u32),

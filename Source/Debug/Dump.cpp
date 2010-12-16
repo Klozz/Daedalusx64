@@ -50,7 +50,7 @@ void Dump_GetDumpDirectory(char * p_file_path, const char * p_sub_dir)
 	if (gDumpDir[0] == '\0')
 	{
 		// Initialise
-#ifndef DAEDALUS_PUBLIC_RELEASE
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		IO::Path::Combine(gDumpDir, gDaedalusExePath, "Dumps");
 #else			
 		IO::Path::Combine(gDumpDir, gDaedalusExePath, "ms0:/PICTURE/");

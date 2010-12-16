@@ -216,7 +216,7 @@ private:
 	void				EnableTexturing( u32 tile_idx );
 	void				EnableTexturing( u32 index, u32 tile_idx );
 
-	bool				RestoreRenderStates();
+	void				RestoreRenderStates();
 
 	void				UpdateViewport();
 

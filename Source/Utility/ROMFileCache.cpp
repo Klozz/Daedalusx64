@@ -31,7 +31,7 @@ extern bool PSP_IS_SLIM;
 namespace
 {
 	//ToDo: Optimize chunk size for Slim and Phat based on cache size
-	static  u32	CHUNK_SIZE = (PSP_IS_SLIM) ? 8 * 1024 : 2 * 1024;
+	static  u32	CHUNK_SIZE = (PSP_IS_SLIM) ? 32 * 1024 : 2 * 1024;
 	static  u32	CACHE_SIZE = 1024;
 
 	static  u32	STORAGE_BYTES = CACHE_SIZE * CHUNK_SIZE;

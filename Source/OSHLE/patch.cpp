@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "stdafx.h"
 #include "patch.h"
+#include <pspdebug.h>
+#include "SysPSP/Graphics/DrawText.h"
+#include "Graphics/GraphicsContext.h"
 
 #ifdef DAEDALUS_ENABLE_OS_HOOKS
 
@@ -452,6 +455,17 @@ void Patch_RecurseAndFind()
 	// Loops through all symbols, until name is null
 	for (u32 i = 0; i < nPatchSymbols && !gCPUState.IsJobSet( CPU_STOP_RUNNING ); i++)
 	{
+		//Update patching progress on PSPscreen
+		CGraphicsContext::Get()->BeginFrame();
+		CGraphicsContext::Get()->Clear(true,true);
+		//CDrawText::IntrPrintf( 0, 0, 1.0f, DrawTextUtilities::TextWhite,"PATCHING: %d%% Searching for [%s]\n", i * 100 / (nPatchSymbols-1), g_PatchSymbols[i]->szName);
+		pspDebugScreenSetTextColor( 0xffffffff );
+		pspDebugScreenSetBackColor(0);
+		pspDebugScreenSetXY(0, 0);
+		pspDebugScreenPrintf("PATCHING: %d%% Searching for [%s]", i * 100 / (nPatchSymbols-1), g_PatchSymbols[i]->szName);
+		CGraphicsContext::Get()->EndFrame();
+		CGraphicsContext::Get()->UpdateFrame( true );
+
 #ifdef DAEDALUS_DEBUG_CONSOLE
 		CDebugConsole::Get()->MsgOverwrite(0, "OS HLE: %d / %d Looking for [G%s]",
 			i, nPatchSymbols, g_PatchSymbols[i]->szName);

@@ -280,7 +280,7 @@ inline PSPRenderer::~PSPRenderer()
 //*****************************************************************************
 //
 //*****************************************************************************
-bool PSPRenderer::RestoreRenderStates()
+void PSPRenderer::RestoreRenderStates()
 {
 	// Initialise the device to our default state
 
@@ -319,11 +319,9 @@ bool PSPRenderer::RestoreRenderStates()
 	sceGuTexFilter(GU_LINEAR,GU_LINEAR);
 	sceGuTexWrap(GU_REPEAT,GU_REPEAT); 
 
-	sceGuSetMatrix( GU_PROJECTION, reinterpret_cast< const ScePspFMatrix4 * >( &gMatrixIdentity ) );
+	//sceGuSetMatrix( GU_PROJECTION, reinterpret_cast< const ScePspFMatrix4 * >( &gMatrixIdentity ) );
 	sceGuSetMatrix( GU_VIEW, reinterpret_cast< const ScePspFMatrix4 * >( &gMatrixIdentity ) );
 	sceGuSetMatrix( GU_MODEL, reinterpret_cast< const ScePspFMatrix4 * >( &gMatrixIdentity ) );
-
-	return true;
 }
 
 //*****************************************************************************
@@ -451,11 +449,11 @@ void PSPRenderer::EndScene()
 
 	//
 	//	Clear this, to ensure we're force to check for updates to it on the next frame
-	//
-	for( u32 i = 0; i < NUM_N64_TEXTURES; i++ )
+	//	Not needed anymore??? //Corn
+	/*for( u32 i = 0; i < NUM_N64_TEXTURES; i++ )
 	{
 		mpTexture[ i ] = NULL;
-	}
+	}*/
 }
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST	
 //*****************************************************************************
@@ -482,8 +480,8 @@ void PSPRenderer::SetPSPViewport( s32 x, s32 y, u32 w, u32 h )
 	mN64ToPSPScale.x = gZoomX * f32( w ) / fViWidth;
 	mN64ToPSPScale.y = gZoomX * f32( h ) / fViHeight;
 
-	mN64ToPSPTranslate.x  = f32( x ) - 0.5f * (gZoomX - 1.0f) * fViWidth;
-	mN64ToPSPTranslate.y  = f32( y ) - 0.5f * (gZoomX - 1.0f) * fViHeight;
+	mN64ToPSPTranslate.x  = f32( x - pspFpuRound(0.55f * (gZoomX - 1.0f) * fViWidth));
+	mN64ToPSPTranslate.y  = f32( y - pspFpuRound(0.55f * (gZoomX - 1.0f) * fViHeight));
 
 	UpdateViewport();
 }

@@ -52,7 +52,7 @@ namespace
 	bool		ShouldLoadAsFixed( u32 rom_size )
 	{
 		if (PSP_IS_SLIM && gGlobalPreferences.LargeROMBuffer)
-			return rom_size <= 12 * 1024 * 1024; //Can go up to 16 but that causes crashes under PSPLink when loading large multiple ROMs
+			return rom_size <= 2 * 1024 * 1024; //Can go up to 16 but that causes crashes under PSPLink when loading large multiple ROMs
 		else
 			//ToDo: Use 1MB for Phat and up the Secondary VRAM Buffer to 2MB
 			return rom_size <= 2 * 1024 * 1024;

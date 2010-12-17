@@ -469,7 +469,9 @@ void Patch_RecurseAndFind()
 		//Update patching progress on PSPscreen
 		CGraphicsContext::Get()->BeginFrame();
 		CGraphicsContext::Get()->Clear(true,true);
-		intraFontPrintf( ltn8, 480/2, 272/2, "OS HLE Patching: %d%% Looking for %s", i * 100 / (nPatchSymbols-1), g_PatchSymbols[i]->szName );
+		//intraFontPrintf( ltn8, 480/2, (272>>1)-50, "Searching for os functions. This may take several seconds...");
+		intraFontPrintf( ltn8, 480/2, (272>>1), "OS HLE Patching: %d%%", i * 100 / (nPatchSymbols-1));
+		intraFontPrintf( ltn8, 480/2, (272>>1)-50, "Searching for %s", g_PatchSymbols[i]->szName );
 		CGraphicsContext::Get()->EndFrame();
 		CGraphicsContext::Get()->UpdateFrame( true );
 #endif
@@ -552,7 +554,7 @@ void Patch_RecurseAndFind()
 		//Update patching progress on PSPscreen
 		CGraphicsContext::Get()->BeginFrame();
 		CGraphicsContext::Get()->Clear(true,true);
-		intraFontPrintf( ltn8, 480/2, 272-5, "%d/%d Symbols Identified, in Range 0x%08x -> 0x%08x",nFound, nPatchSymbols, first, last );
+		intraFontPrintf( ltn8, 480/2, 272-10, "%d/%d Symbols Identified, in Range 0x%08x -> 0x%08x",nFound, nPatchSymbols, first, last );
 		CGraphicsContext::Get()->EndFrame();
 		CGraphicsContext::Get()->UpdateFrame( true );
 #endif

@@ -293,9 +293,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define PI_DOM_PGS_OFS		0x08
 #define PI_DOM_RLS_OFS		0x0C
  
-#define	PI_STATUS_ERROR		0x04
-#define	PI_STATUS_IO_BUSY	0x02
-#define	PI_STATUS_DMA_BUSY	0x01
+#define	PI_STATUS_ERROR			0x04
+#define	PI_STATUS_IO_BUSY		0x02
+#define	PI_STATUS_DMA_BUSY		0x01
+#define PI_STATUS_DMA_IO_BUSY	0x03
 
 #define	PI_STATUS_RESET		0x01
 #define	PI_SET_RESET		PI_STATUS_RESET

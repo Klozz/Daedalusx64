@@ -39,6 +39,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility/Profiler.h"
 #include "Utility/CRC.h"
 
+#include "Plugins/AudioPlugin.h"
+
 #include "Debug/Dump.h"
 #include "Debug/DebugLog.h"
 #include "Debug/DBGConsole.h"
@@ -102,7 +104,7 @@ u32 gNumOfOSFunctions;
 #define PATCH_RET_ERET RET_JR_ERET()
 
 // Increase this number every time we changed the symbol table
-static const u32 MAGIC_HEADER = 0x80000108;
+static const u32 MAGIC_HEADER = 0x80000109;
 
 bool gPatchesInstalled = false;
 

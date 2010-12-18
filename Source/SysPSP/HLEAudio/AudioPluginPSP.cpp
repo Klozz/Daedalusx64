@@ -110,12 +110,19 @@ void	CAudioPluginPsp::StopEmulation()
 //*****************************************************************************
 //
 //*****************************************************************************
+void CAudioPluginPsp::AddBufferHLE(u8 *addr, u32 len)
+{
+	mAudioCode->AddBuffer(addr,len);
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
 void	CAudioPluginPsp::DacrateChanged( ESystemType system_type )
 {
 	// XXX only checked one mostly when scene changes
-#ifndef DAEDALUS_SILENT
-		printf( "DacrateChanged( %d )\n", system_type );
-#endif
+
+		//printf( "DacrateChanged( %d )\n", system_type );
 		u32 dacrate = Memory_AI_GetRegister(AI_DACRATE_REG);
 
 		u32		frequency;

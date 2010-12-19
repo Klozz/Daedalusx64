@@ -1102,7 +1102,7 @@ void IRomSelectorComponent::RenderPreview()
 			}
 			if (( p_rominfo->mSettings.Comment[0] == '0' ) || ( p_rominfo->mSettings.Comment[0] == '1' ) || ( p_rominfo->mSettings.Comment[0] == '2' ) || ( p_rominfo->mSettings.Comment[0] == '3' ) || ( p_rominfo->mSettings.Comment[0] == '4' ) || ( p_rominfo->mSettings.Comment[0] == '5' )) {
 				if(mDisplayInfo) {					
-					const char *compatver = p_rominfo->mSettings.Comment + 21;
+					//const char *compatver = p_rominfo->mSettings.Comment + 21;
 					y = 44 + line_height;
 					mpContext->DrawRect( 100, 40, 280, 192, c32::White );
 					mpContext->DrawRect( 102, 42, 276, 188, c32::Black );

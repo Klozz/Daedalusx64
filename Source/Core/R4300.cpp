@@ -2216,7 +2216,9 @@ static void R4300_CALL_TYPE R4300_Cop1_CFC1( R4300_CALL_SIGNATURE ) 		// move Co
 	R4300_CALL_MAKE_OP( op_code );
 
 	// Only defined for reg 0 or 31
-	if ( op_code.fs == 0 || op_code.fs == 31 )
+	//if ( op_code.fs == 0 || op_code.fs == 31 )
+	//Saves a compare //Corn
+	if( !((op_code.fs + 1) & 0x1E) )
 	{
 		//gGPR[ op_code.rt ]._s64 = (s64)gCPUState.FPUControl[ op_code.fs ]._s32_0;
 		gGPR[ op_code.rt ]._s32_0 = gCPUState.FPUControl[ op_code.fs ]._s32_0;  //copy only low part

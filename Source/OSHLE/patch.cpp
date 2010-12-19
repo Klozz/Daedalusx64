@@ -556,7 +556,8 @@ void Patch_RecurseAndFind()
 		//Update patching progress on PSPscreen
 		CGraphicsContext::Get()->BeginFrame();
 		CGraphicsContext::Get()->Clear(true,true);
-		intraFontPrintf( ltn8, 480/2, 272-10, "%d/%d Symbols Identified, in Range 0x%08x -> 0x%08x",nFound, nPatchSymbols, first, last );
+		intraFontPrintf( ltn8, 480/2, (272>>1), "Symbols Identified: %d%%",100 * nFound / (nPatchSymbols-1));
+		intraFontPrintf( ltn8, 480/2, (272>>1)+50, "Range 0x%08x -> 0x%08x", first, last );
 		CGraphicsContext::Get()->EndFrame();
 		CGraphicsContext::Get()->UpdateFrame( true );
 #endif
@@ -595,7 +596,7 @@ void Patch_RecurseAndFind()
 		//Update patching progress on PSPscreen
 		CGraphicsContext::Get()->BeginFrame();
 		CGraphicsContext::Get()->Clear(true,true);
-		intraFontPrintf( ltn8, 480/2, 272-10, "%d/%d Variables Identified", nFound, nPatchVariables );
+		intraFontPrintf( ltn8, 480/2, 272>>1, "Variables Identified: %d%%", 100 * nFound / (nPatchVariables-1) );
 		CGraphicsContext::Get()->EndFrame();
 		CGraphicsContext::Get()->UpdateFrame( true );
 #endif

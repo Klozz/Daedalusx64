@@ -129,7 +129,7 @@ namespace
 		{
 		}
 
-		virtual	void			OnNext()				{ *mSetting += 0.01f; *mSetting = *mSetting > 1.2f ? 1.2f : *mSetting;}
+		virtual	void			OnNext()				{ *mSetting += 0.01f; *mSetting = *mSetting > 1.25f ? 1.25f : *mSetting;}
 		virtual	void			OnPrevious()			{ *mSetting -= 0.01f; *mSetting = *mSetting < 1.0f ? 1.0f : *mSetting;}
 
 		virtual const char *	GetSettingName() const	{ sprintf( (char*)mString, "%.0f%%", (double)(*mSetting*100.0f) ); return (const char*) mString; }

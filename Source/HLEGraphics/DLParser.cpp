@@ -1034,8 +1034,8 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 			//f32 max = b + a;
 			//min = min * (1.0f / 16.0f);
 			//max = max * (1.0f / 4.0f);
-			f32 min = a * 0.125f;
-			f32 max = b * 0.25f;
+			f32 min = a / 256.0f;
+			f32 max = b / 6.0f;
 
 			//DL_PF(" G_MW_FOG. Mult = 0x%04x (%f), Off = 0x%04x (%f)", wMult, 255.0f * fMult, wOff, 255.0f * fOff );
 
@@ -1165,8 +1165,8 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 			//f32 max = b + a;
 			//min = min * (1.0f / 16.0f);
 			//max = max * (1.0f / 4.0f);
-			f32 min = a * 0.125f;
-			f32 max = b * 0.25f;
+			f32 min = a / 256.0f;
+			f32 max = b / 6.0f;
 
 			//DL_PF(" G_MW_FOG. Mult = 0x%04x (%f), Off = 0x%04x (%f)", wMult, 255.0f * fMult, wOff, 255.0f * fOff );
 

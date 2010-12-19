@@ -251,10 +251,6 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		{
 			preferences.CleanSceneEnabled = property->GetBooleanValue( false );
 		}
-		if( section->FindProperty( "IncreaseVI_Event", &property ) )
-		{
-			preferences.IncreaseVI_Event = property->GetBooleanValue( false );
-		}
 		if( section->FindProperty( "CheckN64FPUsageDisable", &property ) )
 		{
 			preferences.CheckN64FPUsageDisable = property->GetBooleanValue( false );
@@ -328,7 +324,6 @@ void IPreferences::OutputSectionDetails( const RomID & id, const SRomPreferences
 	fprintf(fh, "DoubleDisplayEnabled=%d\n",preferences.DoubleDisplayEnabled);
 	fprintf(fh, "SimulateDoubleDisabled=%d\n",preferences.SimulateDoubleDisabled);
 	fprintf(fh, "CleanSceneEnabled=%d\n",preferences.CleanSceneEnabled);
-	fprintf(fh, "IncreaseVI_Event=%d\n",preferences.IncreaseVI_Event);
 	fprintf(fh, "CheckN64FPUsageDisable=%d\n",preferences.CheckN64FPUsageDisable);
 	fprintf(fh, "TMEMemulation=%d\n",preferences.TMEMemulation);
 	fprintf(fh, "AudioRateMatch=%d\n",preferences.AudioRateMatch);
@@ -474,7 +469,6 @@ SRomPreferences::SRomPreferences()
 	,	DoubleDisplayEnabled( true )
 	,	SimulateDoubleDisabled( false )
 	,	CleanSceneEnabled( false )
-	,	IncreaseVI_Event( false )
 	,	CheckN64FPUsageDisable( false )
 	,   TMEMemulation( false )
 	,	AudioRateMatch( false )
@@ -501,7 +495,6 @@ void SRomPreferences::Reset()
 	DoubleDisplayEnabled = true;
 	SimulateDoubleDisabled = false;
 	CleanSceneEnabled = false;
-	IncreaseVI_Event = false;
 	CheckN64FPUsageDisable = false;
 	TMEMemulation = false;
 	AudioRateMatch = false;
@@ -527,7 +520,6 @@ void	SRomPreferences::Apply() const
 	gDoubleDisplayEnabled = g_ROM.settings.DoubleDisplayEnabled || DoubleDisplayEnabled;
 	gSimulateDoubleDisabled = g_ROM.settings.SimulateDoubleDisabled || SimulateDoubleDisabled;
 	gCleanSceneEnabled = g_ROM.settings.CleanSceneEnabled || CleanSceneEnabled;
-	gIncreaseVI_Event = g_ROM.settings.IncreaseVI_Event || IncreaseVI_Event;
 	gCheckN64FPUsageDisable = g_ROM.settings.CheckN64FPUsageDisable || CheckN64FPUsageDisable;
 	gTMEMemulation = g_ROM.settings.TMEMemulation || TMEMemulation;
 	gAudioRateMatch = g_ROM.settings.AudioRateMatch || AudioRateMatch;

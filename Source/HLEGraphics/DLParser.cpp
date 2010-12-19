@@ -142,7 +142,7 @@ struct RDP_Scissor
 
 
 u32	gSegments[16];
-static RDP_Scissor scissors;
+RDP_Scissor scissors;
 static N64Light  g_N64Lights[8];
 SImageDescriptor g_TI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
 SImageDescriptor g_CI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
@@ -1507,40 +1507,6 @@ void DLParser_SetScissor( MicroCodeCommand command )
 	{
 		// right half screen
 		RDP_MoveMemViewport( addr );
-	}
-
-	// Ok... Golden Eye correct scissor zone (in-game) should be : left=0, top=10, right=320, bottom=230
-	// Enable hack to correct scissor issues in GE...
-	// Hackish as hell D: but can't find a better way to work aorund this...
-	if (g_ROM.GameHacks == GOLDEN_EYE) 
-	{
-		if(g_ROM.rh.CountryID ==0x45)
-		{
-			// Fix bottom and top scisorring
-			if(scissors.top==0 && scissors.left==0 && scissors.right==320 && scissors.bottom ==240)
-			{
-				scissors.top=10;
-				scissors.bottom =230;
-			}
-
-			// Fix left and right scisorring
-			if(scissors.left !=0 && scissors.bottom < scissors.right ) 
-			{
-				scissors.left =0;
-				scissors.right =g_CI.Width;
-			}
-		}
-		else
-		{
-			// E version etc doesn't seem to need scissoring, nice! Fill any gaps anyways..
-			if(scissors.left==1 || scissors.top==1)
-			{
-				scissors.left--;
-				scissors.top--;
-				scissors.right++;
-				scissors.bottom++;
-			}
-		}
 	}
 
 	DL_PF("    x0=%d y0=%d x1=%d y1=%d mode=%d addr=%08X", scissors.left, scissors.top, scissors.right, scissors.bottom, mode, addr);

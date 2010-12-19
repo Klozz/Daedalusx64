@@ -25,8 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gspCommon.h"
 
 
-u32 gGeometryMode = 0;
-
+static u32 gGeometryMode = 0;
 //*****************************************************************************
 // gSPVertex( Vtx *v, u32 n, u32 v0 )
 //*****************************************************************************
@@ -169,9 +168,6 @@ void DLParser_GBI1_ModifyVtx( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-//
-// gSPMatrix
-//
 void DLParser_GBI1_Mtx( MicroCodeCommand command )
 {
 	u32 address = RDPSegAddr(command.mtx1.addr);
@@ -294,18 +290,13 @@ void DLParser_GBI1_CullDL( MicroCodeCommand command )
 }
 
 //*****************************************************************************
-// gSPDisplayList
+// 
 //*****************************************************************************
 void DLParser_GBI1_DL( MicroCodeCommand command )
 {
     u32 address = RDPSegAddr(command.dlist.addr);
 
-	// Fixes Shadow of Empire (SOTE)
-	if( address > MAX_RAM_ADDRESS )
-	{
-		DAEDALUS_DL_ERROR("DL addr out of range (0x%08x)", address);
-		address &= (MAX_RAM_ADDRESS-1);
-	}
+	DAEDALUS_ASSERT( address < MAX_RAM_ADDRESS, "DL addr out of range (0x%08x)", address );
 
     DL_PF("    Address=0x%08x Push: 0x%02x", address, command.dlist.param);
 
@@ -339,17 +330,18 @@ void DLParser_GBI2_DL_Count( MicroCodeCommand command )
 
 	// This cmd is likely to execute number of ucode at the given address
 	u32 address  = RDPSegAddr(command.inst.cmd1);
-	//u32 count	 = command.inst.cmd0 & 0xFFFF;
+	u32 count	 = command.inst.cmd0 & 0xFFFF;
 
-	/*if (address == 0)
+	// For SSB
+	if (address == 0)
 	{
-		printf("invalid count\n");
+		DAEDALUS_ERROR("Invalid DL Count");
 		return;
-	}*/
+	}
 
 	DList dl;
 	dl.addr = address;
-	dl.limit = command.inst.cmd0 & 0xFFFF;
+	dl.limit = count;
 	gDisplayListStack.push_back(dl);
 }
 //*****************************************************************************
@@ -625,8 +617,11 @@ void DLParser_GBI2_SetOtherModeH( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_Texture( MicroCodeCommand command )
 {
+	u32 tile = command.texture.tile;
+	//if (tile == 7 )	tile = 0;
+
     gTextureLevel = command.texture.level;
-    gTextureTile  = command.texture.tile;
+    gTextureTile  = tile;
 
     bool enable = command.texture.enable_gbi0;                        // Seems to use 0x01
 	if( enable )
@@ -647,8 +642,12 @@ void DLParser_GBI1_Texture( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_Texture( MicroCodeCommand command )
 {
+	u32 tile = command.texture.tile;
+	//if (tile != 7 )	tile = 0;
+
     gTextureLevel = command.texture.level;
-    gTextureTile  = command.texture.tile;
+    gTextureTile  = tile;
+
 
     bool enable = command.texture.enable_gbi2;                        // Seems to use 0x02
 	if( enable )

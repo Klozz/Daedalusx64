@@ -49,8 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Debug/DebugLog.h"
 #include "Debug/DBGConsole.h"
 
-#include "OSHLE/ultra_R4300.h"
-#include "OSHLE/patch.h"				// GetCorrectOp
+#include "OSHLE/ultra_R4300.h"	
 
 #include "ConfigOptions.h"
 
@@ -117,25 +116,12 @@ static u32			gVerticalInterrupts( 0 );
 static u32			VI_INTR_CYCLES( VI_INTR_CYCLES_INIT );
 
 ALIGNED_GLOBAL(SCPUState, gCPUState, CACHE_ALIGN);
-
 //*****************************************************************************
 //
 //*****************************************************************************
 static void HandleSaveStateOperation() DAEDALUS_ATTRIBUTE_NOINLINE;
 static void CPUMain();
 void (* g_pCPUCore)();
-
-//*****************************************************************************
-//
-//*****************************************************************************
-//bool CPU_ProcessEventCycles( u32 cycles )
-//{
-//	LOCK_EVENT_QUEUE();
-//
-//	DAEDALUS_ASSERT( gCPUState.NumEvents > 0, "There are no events" );
-//	gCPUState.Events[ 0 ].mCount -= cycles;
-//	return gCPUState.Events[ 0 ].mCount <= 0;
-//}
 
 //*****************************************************************************
 //
@@ -712,20 +698,9 @@ void CPU_HANDLE_COUNT_INTERRUPT()
 			}
 			else
 			{
-				if(gIncreaseVI_Event)
-				{	//
-					// This stops the flicker on Paper Mario..
-					// This is a bit hackish.. should be alot better to do this routine/hack on our GFX plugin..
-					// This routine brakes several games ex : Doom64 and Earthworm Jim
-					//
-					VI_INTR_CYCLES = (vertical_sync_reg+1) * 1500*2;	// Over 2 seems excessive
-				}
-				else
-				{
-					VI_INTR_CYCLES = (vertical_sync_reg+1) * 1500;
-				}
-
+				VI_INTR_CYCLES = (vertical_sync_reg+1) * 1500;
 			}
+
 			// Add another Interrupt at the next time:
 			CPU_AddEvent(VI_INTR_CYCLES, CPU_EVENT_VBL);
 
@@ -786,39 +761,31 @@ void CPU_HANDLE_COUNT_INTERRUPT()
 //*****************************************************************************
 //
 //*****************************************************************************
-void CPU_SetCompare(u64 qwNewValue)
+void CPU_SetCompare(u64 value)
 {
 	gCPUState.CPUControl[C0_CAUSE]._u64 &= ~CAUSE_IP8;
 
-	DPF( DEBUG_REGS, "COMPARE set to 0x%08x.", (u32)qwNewValue );
-	//DBGConsole_Msg(0, "COMPARE set to 0x%08x Count is 0x%08x.", (u32)qwNewValue, (u32)gCPUState.CPUControl[C0_COUNT]);
+	DPF( DEBUG_REGS, "COMPARE set to 0x%08x.", (u32)value );
+	//DBGConsole_Msg(0, "COMPARE set to 0x%08x Count is 0x%08x.", (u32)value, (u32)gCPUState.CPUControl[C0_COUNT]);
 
 	// Add an event for this compare:
-	if (qwNewValue == gCPUState.CPUControl[C0_COMPARE]._u64)
+	if (value == gCPUState.CPUControl[C0_COMPARE]._u64)
 	{
-		//	DBGConsole_Msg(0, "Clear");
+		//DBGConsole_Msg(0, "Clear");
 	}
 	else
 	{
 		// XXXX Looks very suspicious to me...was this the Oot timer fix?
-		u32		diff_32( (u32)qwNewValue - gCPUState.CPUControl[C0_COUNT]._u32_0 );
-		if ((u32)qwNewValue > gCPUState.CPUControl[C0_COUNT]._u32_0)
+		u32		diff_32( (u32)value - gCPUState.CPUControl[C0_COUNT]._u32_0 );
+		
+		// We could simplify this even more
+		if ((u32)value > gCPUState.CPUControl[C0_COUNT]._u32_0 || (value != 0))
 		{
 			CPU_SetCompareEvent( diff_32 );
 		}
-		else if (qwNewValue != 0)
-		{
-			//DBGConsole_Msg(0, "COMPARE set to 0x%08x%08x < Count is 0x%08x%08x.",
-			//	(u32)(qwNewValue>>32), (u32)qwNewValue,
-			//	(u32)(gCPUState.CPUControl[C0_COUNT]>>32), gCPUState.CPUControl[C0_COUNT]._u32_0);
 
-			CPU_SetCompareEvent( diff_32 );
-			//DBGConsole_Msg(0, "0x%08x", diff_32);
-		}
-		gCPUState.CPUControl[C0_COMPARE]._u64 = qwNewValue;
+		gCPUState.CPUControl[C0_COMPARE]._u64 = value;
 	}
-
-
 }
 
 #ifdef DAEDALUS_ENABLE_SYNCHRONISATION
@@ -894,6 +861,9 @@ void CPU_UpdateCounter( u32 ops_executed )
 	}
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 // As above, but no interrupts are fired
 void CPU_UpdateCounterNoInterrupt( u32 ops_executed )
 {
@@ -910,40 +880,14 @@ void CPU_UpdateCounterNoInterrupt( u32 ops_executed )
 		// Increment count register
 		gCPUState.CPUControl[C0_COUNT]._u32_0 += cycles;
 
+#ifdef DAEDALUS_ENABLE_ASSERTS
 		bool	ready( CPU_ProcessEventCycles( cycles ) );
 		use( ready );
 		DAEDALUS_ASSERT(!ready, "Ignoring Count interrupt");	// Just a test - remove eventually (needs to handle this)
+#endif
 	}
 }
 }
-
-//static bool CPU_FetchInstruction_Refill( u32 pc, OpCode * opcode )
-//{
-//	gLastAddress = (u8 *)ReadAddress( pc );
-//	gLastPC = pc;
-//	*opcode = *(OpCode *)gLastAddress;
-//	return gCPUState.GetStuffToDo() == 0;
-//
-//}
-
-//bool CPU_FetchInstruction( u32 pc, OpCode * opcode )
-//{
-//	const u32 PAGE_MASK_BITS = 12;		// 1<<12 == 4096
-//
-//	if( (pc>>PAGE_MASK_BITS) == (gLastPC>>PAGE_MASK_BITS) )
-//	{
-//		s32		offset( pc - gLastPC );
-//
-//		gLastAddress += offset;
-//		DAEDALUS_ASSERT( gLastAddress == ReadAddress(pc), "Cached Instruction Pointer base is out of sync" );
-//		gLastPC = pc;
-//		*opcode = *(OpCode *)gLastAddress;
-//		return true;
-//	}
-//
-//	return CPU_FetchInstruction_Refill( pc, opcode );
-//}
-//
 
 //*****************************************************************************
 //
@@ -1003,10 +947,3 @@ bool	CPU_IsRunning()
 	return gCPURunning;
 }
 
-//*****************************************************************************
-//	Return the total number of vi interrupts
-//*****************************************************************************
-/*inline u32	CPU_GetVerticalInterruptCount()
-{
-	return gVerticalInterrupts;
-}*/

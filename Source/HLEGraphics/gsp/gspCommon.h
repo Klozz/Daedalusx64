@@ -57,6 +57,8 @@ struct DList
 	// Push/pop?
 };
 
+extern SImageDescriptor g_CI;
+
 extern u32 gSegments[16];
 const  u32 MAX_RAM_ADDRESS = (8*1024*1024);
 extern u32 gVertexStride;

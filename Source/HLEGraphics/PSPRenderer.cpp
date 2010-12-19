@@ -356,8 +356,6 @@ void PSPRenderer::SetVIScales()
 	// XXX Need to check PAL games.
 	//if(g_ROM.TvType != OS_TV_NTSC) sRatio = 9/11.0f;
 
-	DAEDALUS_ASSERT( ScaleY != 0, "Warning : Height might be incorrect " );
-
 	//This sets the correct height in various games ex : Megaman 64
 	if( width > 0x300 )	
 		fViHeight *= 2.0f;
@@ -410,9 +408,6 @@ void PSPRenderer::BeginScene()
 	CGraphicsContext::Get()->BeginFrame();
 
 	RestoreRenderStates();
-
-	extern bool	gNeedZBufferUdate;
-	gNeedZBufferUdate = true;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	mRecordedCombinerStates.clear();
@@ -548,7 +543,6 @@ inline v2 PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
 RDP_OtherMode	gLastRDPOtherMode;
 
 bool			gLastUseZBuffer = false;
-bool			gNeedZBufferUdate = false;
 
 
 PSPRenderer::SBlendStateEntry	PSPRenderer::LookupBlendState( u64 mux, bool two_cycles )
@@ -733,7 +727,6 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	else
 	{
 		if ((gRDPOtherMode._u64 != gLastRDPOtherMode._u64) ||
-				gNeedZBufferUdate ||
 				(m_bZBuffer != gLastUseZBuffer) )
 		{
 			// Only update if ZBuffer is enabled
@@ -768,7 +761,6 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 				sceGuDepthMask( GL_TRUE );	// GL_TRUE to disable z-writes
 			}
 
-			gNeedZBufferUdate = false;
 			gLastUseZBuffer = m_bZBuffer;
 		}
 	}
@@ -1623,12 +1615,6 @@ void PSPRenderer::PrepareTrisUnclipped( DaedalusVtx ** p_p_vertices, u32 * p_num
 //*****************************************************************************
 bool	PSPRenderer::RenderTriangleList( const DaedalusVtx * p_verts, u32 num_verts, bool disable_zbuffer )
 {
-	//Always passed  as true
-	//if ( disable_zbuffer )
-	//{
-		gNeedZBufferUdate = true;
-	//}
-
 
 	DaedalusVtx*	p_vertices( (DaedalusVtx*)sceGuGetMemory(num_verts*sizeof(DaedalusVtx)) );
 	memcpy( p_vertices, p_verts, num_verts*sizeof(DaedalusVtx));
@@ -2133,18 +2119,6 @@ inline void PSPRenderer::SetVtxColor( u32 vert, c32 color )
 //*****************************************************************************
 //
 //*****************************************************************************
-//void PSPRenderer::SetVtxTextureCoord( u32 vert, short tu, short tv )
-//{
-//	//if ( vert < MAX_VERTS )
-//	//{
-//	mVtxProjected[vert].Texture.x = (f32)tu * (1.0f / 32.0f);
-//	mVtxProjected[vert].Texture.y = (f32)tv * (1.0f / 32.0f);
-//	//}
-//}
-
-//*****************************************************************************
-//
-//*****************************************************************************
 inline void PSPRenderer::SetVtxXY( u32 vert, float x, float y )
 {
 	//if ( vert < MAX_VERTS )
@@ -2301,25 +2275,6 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 		}
 	}
 }
-
-//*****************************************************************************
-//
-//*****************************************************************************
-//void	PSPRenderer::SetCullMode( bool bCullFront, bool bCullBack )
-//{
-//	if( bCullBack )	//CULL_BACK has priority Mortal Kombat 4
-//	{
-//		m_bCull = true;
-//		m_bCull_mode = GU_CCW;
-//	}
-//	else if( bCullFront )
-//	{
-//		m_bCull = true;
-//		m_bCull_mode = GU_CW;
-//	}
-//	else m_bCull = false;
-//}
-
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -2362,10 +2317,11 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace
 	// Projection
 	if (bPush)
 	{
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		if (mProjectionTop >= (MATRIX_STACK_SIZE-1))
 			DBGConsole_Msg(0, "Pushing past proj stack limits! %d/%d", mProjectionTop, MATRIX_STACK_SIZE);
-		else
-			++mProjectionTop;
+#endif
+		++mProjectionTop;
 
 		if (bReplace)
 			// Load projection matrix
@@ -2379,10 +2335,13 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace
 		{
 			// Load projection matrix
 			mProjectionStack[mProjectionTop] = mat;
+
 			//Hack needed to show heart in OOT & MM
 			//it renders at Z cordinate = 0.0f that gets clipped away.
 			//so we translate them a bit along Z to make them stick :) //Corn
-			if((g_ROM.GameHacks == ZELDA_OOT) || (g_ROM.GameHacks == ZELDA_MM)) mProjectionStack[mProjectionTop].mRaw[14] += 0.4f;
+			//
+			if((g_ROM.GameHacks == ZELDA_OOT) || (g_ROM.GameHacks == ZELDA_MM))
+				mProjectionStack[mProjectionTop].mRaw[14] += 0.4f;
 		}
 		else
 			mProjectionStack[mProjectionTop] = mat * mProjectionStack[mProjectionTop];
@@ -2411,10 +2370,12 @@ void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace)
 	// ModelView
 	if (bPush)
 	{
+
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		if (mModelViewTop >= (MATRIX_STACK_SIZE-1))
 			DBGConsole_Msg(0, "Pushing past modelview stack limits! %d/%d", mModelViewTop, MATRIX_STACK_SIZE);
-		else
-			++mModelViewTop;
+#endif
+		++mModelViewTop;
 
 		// We should store the current projection matrix...
 		if (bReplace)
@@ -2443,28 +2404,6 @@ void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace)
 
 	mWorldProjectValid = false;
 }
-
-//*****************************************************************************
-//
-//*****************************************************************************
-//void PSPRenderer::PopProjection()
-//{
-//	if (mProjectionTop > 0)
-//		--mProjectionTop;
-//
-//	mWorldProjectValid = false;
-//}
-
-//*****************************************************************************
-//
-//*****************************************************************************
-//void PSPRenderer::PopWorldView()
-//{
-//	if (mModelViewTop > 0)
-//		--mModelViewTop;
-//
-//	mWorldProjectValid = false;
-//}
 
 //*****************************************************************************
 //
@@ -2549,22 +2488,3 @@ void PSPRenderer::SetFogMinMax(float fMin, float fMax)
 //*****************************************************************************
 //
 //*****************************************************************************
-//void PSPRenderer::SetFogEnable(bool Enable)
-//{
-//	bool bFogEnabled = Enable && gFogEnabled;
-//	
-//	if(bFogEnabled)
-//	{
-//#ifndef NO_VFPU_FOG
-//		mTnLModeFlags|=TNL_FOG;
-//#endif
-//		sceGuEnable(GU_FOG);
-//	}
-//	else
-//	{
-//#ifndef NO_VFPU_FOG
-//		mTnLModeFlags&=~TNL_FOG;
-//#endif
-//		sceGuDisable(GU_FOG);
-//	}
-//}

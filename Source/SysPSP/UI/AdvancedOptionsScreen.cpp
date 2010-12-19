@@ -121,7 +121,6 @@ IAdvancedOptionsScreen::IAdvancedOptionsScreen( CUIContext * p_context, const Ro
 	}
 
 	mElements.Add( new CBoolSetting( &mRomPreferences.CleanSceneEnabled, "Clean Scene", "Force to clear screen before drawing any primitives", "Enabled", "Disabled" ) );
-	mElements.Add( new CBoolSetting( &mRomPreferences.IncreaseVI_Event, "Increase VI Event", "This in fact can cause a speed up or slow down on certain games, This cures the flicker on Paper Mario", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.DynarecLoopOptimisation, "Dynamic Loop Optimisation", "Whether the dynarec loop optimisation is enabled for this rom", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.DoubleDisplayEnabled, "Double Display Lists", "Whether or not Double Display Lists are enabled", "Enabled", "Disabled" ) );
 	mElements.Add( new CBoolSetting( &mRomPreferences.CheckN64FPUsageDisable, "Disable N64 FP Usage Check", "Disabling it can cause many bad side effects, on the other hand sometimes it can fix or improve some games",  "Yes", "No" ) );

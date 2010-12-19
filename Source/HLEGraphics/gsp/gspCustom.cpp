@@ -82,8 +82,6 @@ void DLParser_DumpVtxInfoDKR(u32 address, u32 v0_idx, u32 num_verts)
 #endif
 }
 
-
-
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -125,7 +123,30 @@ void DLParser_GBI0_Vtx_Gemini( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_GBI0_Vtx_ShadowOfEmpire( MicroCodeCommand command )
+void DLParser_GBI0_DL_SOTE( MicroCodeCommand command )
+{
+	// SOTE gets our of pc range, make sure to keep it in range otherwise will crash
+	//
+    u32 address = RDPSegAddr(command.dlist.addr) & (MAX_RAM_ADDRESS-1);
+
+	DAEDALUS_ASSERT( address < MAX_RAM_ADDRESS, "DL addr out of range (0x%08x)", address );
+
+    DL_PF("    Address=0x%08x Push: 0x%02x", address, command.dlist.param);
+
+    DList dl;
+    dl.addr = address;
+    dl.limit = ~0;
+
+    switch (command.dlist.param)
+    {
+        case G_DL_PUSH:                 DLParser_PushDisplayList( dl );         break;
+        case G_DL_NOPUSH:               DLParser_CallDisplayList( dl );         break;
+    }
+}
+//*****************************************************************************
+//
+//*****************************************************************************
+void DLParser_GBI0_Vtx_SOTE( MicroCodeCommand command )
 {
 	u32 address = RDPSegAddr(command.inst.cmd1);
 	u32 len = (command.inst.cmd0)&0xffff;
@@ -137,7 +158,9 @@ void DLParser_GBI0_Vtx_ShadowOfEmpire( MicroCodeCommand command )
 	DL_PF("    Address 0x%08x, v0: %d, Num: %d, Length: 0x%04x", address, v0, n, len);
 
 	if(v0 >= 32)
-	v0 = 31;
+	{
+		v0 = 31;
+	}
 
 	if ((v0 + n) > 32)
 	{
@@ -154,7 +177,7 @@ void DLParser_GBI0_Vtx_ShadowOfEmpire( MicroCodeCommand command )
 }
 
 //*****************************************************************************
-// 
+//
 //*****************************************************************************
 // BB2k
 // DKR
@@ -378,6 +401,7 @@ void DLParser_GBI0_Vtx_WRUS( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
+//DKR: 00229BA8: 05710080 001E4AF0 CMD G_DMATRI  Triangles 9 at 801E4AF0
 void DLParser_DmaTri( MicroCodeCommand command )
 {
 	bool tris_added = false;
@@ -582,7 +606,60 @@ void DLParser_RDPHalf1_GoldenEye( MicroCodeCommand command )
 	gDisplayListStack.back().addr += 312;
 }
 
-//Conker
+//*****************************************************************************
+//
+//*****************************************************************************
+// Zoom feature works around this, we might be removing this soon
+//
+void DLParser_SetScissor_GE( MicroCodeCommand command )
+{
+	// The coords are all in 8:2 fixed point
+	u32 x0   = command.scissor.x0;
+	u32 y0   = command.scissor.y0;
+	u32 x1   = command.scissor.x1;
+	u32 y1   = command.scissor.y1;
+
+	// Ok... Golden Eye correct scissor zone (in-game) should be : left=0, top=10, right=320, bottom=230
+	// Enable hack to correct scissor issues in GE...
+	// Hackish as hell D: but can't find a better way to work aorund this...
+
+	if(g_ROM.rh.CountryID ==0x45)
+	{
+		// Fix bottom and top scisorring
+		if(y0==0 && x0==0 && x1==320 && y1 ==240)
+		{
+			y0 =10;
+			y1 =230;
+		}
+
+		// Fix left and right scisorring
+		if(x0 !=0 && y1 < x1 ) 
+		{
+			x0 =0;
+			x1 =g_CI.Width;
+		}
+	}
+	else
+	{
+		// E version etc doesn't seem to need scissoring, nice! Fill any gaps anyways..
+		if(x0==1 || y0==1)
+		{
+			x0--;
+			y0--;
+			x1++;
+			y1++;
+		}
+	}
+
+	DL_PF("    x0=%d y0=%d x1=%d y1=%d ", x0, y0, x1, y1);
+
+	// Set the cliprect now...
+	if ( x0 < x1 && y0 < y1 )
+	{
+		PSPRenderer::Get()->SetScissor( x0, y0, x1, y1 );
+	}
+}
+
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -764,3 +841,87 @@ void RSP_Vtx_PD( MicroCodeCommand command )
 #endif
 
 }
+//*****************************************************************************
+//
+//*****************************************************************************
+/*
+void DLParser_GBI0_Line3D_SOTE( MicroCodeCommand command )
+{
+    u32 pc = gDisplayListStack.back().addr;
+    u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);
+
+    bool tris_added = false;
+
+    while ( command.inst.cmd == G_GBI1_LINE3D )
+    {
+        u32 v0_idx = ((command.inst.cmd1 >> 24) & 0xFF) / 5;
+		u32 v1_idx = ((command.inst.cmd1 >> 16) & 0xFF) / 5;
+		u32 v2_idx = ((command.inst.cmd1 >> 8) & 0xFF) / 5;
+
+        tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+
+		u32 v3_idx = ((command.inst.cmd1 >> 24) & 0xFF) / 5;
+		u32 v4_idx = ((command.inst.cmd1 >> 8) & 0xFF) / 5;
+		u32 v5_idx = (command.inst.cmd1 & 0xFF) / 5;
+
+		tris_added |= PSPRenderer::Get()->AddTri(v3_idx, v4_idx, v5_idx);
+
+		command.inst.cmd0			= *(u32 *)(g_pu8RamBase + pc+0);
+		command.inst.cmd1			= *(u32 *)(g_pu8RamBase + pc+4);
+		pc += 8;
+
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+        if ( command.inst.cmd == G_GBI1_LINE3D )
+        {
+                DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, gInstructionName[ command.inst.cmd ]);
+        }
+#endif			
+    }
+    gDisplayListStack.back().addr = pc-8;
+
+    if (tris_added)
+    {
+            PSPRenderer::Get()->FlushTris();
+    }
+}
+*/
+//*****************************************************************************
+//
+//*****************************************************************************
+/*
+void DLParser_GBI0_Tri1_SOTE( MicroCodeCommand command )
+{
+    u32 pc = gDisplayListStack.back().addr;
+    u32 * pCmdBase = (u32 *)( g_pu8RamBase + pc );
+
+    bool tris_added = false;
+
+    while (command.inst.cmd == G_GBI1_TRI1)
+    {
+
+        u32 v0_idx = ((command.inst.cmd1 >> 16) & 0xFF) / 5;
+        u32 v1_idx = ((command.inst.cmd1 >> 8) & 0xFF) / 5;
+        u32 v2_idx = (command.inst.cmd1 & 0xFF) / 5;
+
+        tris_added |= PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx);
+
+		command.inst.cmd0			= *(u32 *)(g_pu8RamBase + pc+0);
+		command.inst.cmd1			= *(u32 *)(g_pu8RamBase + pc+4);
+		pc += 8;
+
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+        if ( command.inst.cmd == G_GBI1_TRI1 )
+        {
+//				DL_PF("0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, gInstructionName[ command.inst.cmd ]);
+        }
+#endif
+    }
+
+    gDisplayListStack.back().addr = pc-8;
+
+    if (tris_added)
+    {
+		PSPRenderer::Get()->FlushTris();
+	}
+}
+*/

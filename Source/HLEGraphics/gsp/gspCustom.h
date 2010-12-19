@@ -27,7 +27,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // Custom
 //*****************************************************************************
 
-UcodeFunc( DLParser_GBI0_Vtx_ShadowOfEmpire );
+UcodeFunc( DLParser_SetScissor_GE );
+UcodeFunc( DLParser_GBI0_DL_SOTE );
+UcodeFunc( DLParser_GBI0_Vtx_SOTE );
+//UcodeFunc( DLParser_GBI0_Line3D_SOTE );
+//UcodeFunc( DLParser_GBI0_Tri1_SOTE );
 UcodeFunc( DLParser_RSP_Last_Legion_0x80 );
 UcodeFunc( DLParser_RSP_Last_Legion_0x00 );
 UcodeFunc( DLParser_TexRect_Last_Legion );

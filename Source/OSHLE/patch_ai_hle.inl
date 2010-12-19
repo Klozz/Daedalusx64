@@ -8,20 +8,18 @@ static u32 current_length = 0;
 u32 Patch_osAiGetLength()
 {
 TEST_DISABLE_AI_FUNCS
-	//return PATCH_RET_NOT_PROCESSED;
-	//u32 len = Read32Bits(PHYS_TO_K1(AI_LEN_REG));
-
-	//DBGConsole_Msg(0, "osAiGetLength()");
-
-	//gGPR[REG_v0]._s64 = (s64)(s32)len;
-
-	// This is faster than reading the length from memory
-	// At this point if osAiSetNextBuffer was patched, AI_LEN_REG won't work, so we'll relly for it to get length
+	// Getting length from osAiSetNextBuffer is faster than reading it from memory
+	// Also if osAiSetNextBuffer is patched, AI_LEN_REG is no longer valid
+	// Aerogauge doesn't use osAiSetNextBuffer.. so fall back to reading from memory
 	//
-	//u32	length(Memory_AI_GetRegister(AI_LEN_REG));
-	//DAEDALUS_ASSERT(current_length != 0, "osAiGetLength : Logic Error");
+	u32 len = current_length;
+	if( len == 0 )
+	{
+		len = Memory_AI_GetRegister(AI_LEN_REG);
+	}
 
-	gGPR[REG_v0]._s64 = current_length; 
+	gGPR[REG_v0]._u32_0 = len; 
+	//gGPR[REG_v0]._s64 = (s64)(s32)len;
 
 	return PATCH_RET_JR_RA;
 }
@@ -43,7 +41,7 @@ TEST_DISABLE_AI_FUNCS
 
 	if(len > 32768)
 	{
-		DAEDALUS_ERROR("Reached max DMA length (%d)");
+		DAEDALUS_ERROR("Reached max DMA length (%d)",len);
 		len=32768;
 	}
 
@@ -61,27 +59,48 @@ TEST_DISABLE_AI_FUNCS
 		inter = -1;
 	}
 
-	// I think is v0..
-	gGPR[REG_v1]._u64 = inter;
+	// I think is v0..	
+	gGPR[REG_v0]._u64 = inter;
+	//gGPR[REG_v1]._u64 = inter;
 
 	return PATCH_RET_JR_RA;
 }
 //*****************************************************************************
 //
 //*****************************************************************************
-////// FIXME: Not implemented fully
+////// FIXME: Not implemented fully, we are missing it from the symbol table :(
 u32 Patch_osAiSetFrequency()
 {
 TEST_DISABLE_AI_FUNCS
 	return PATCH_RET_NOT_PROCESSED;
 
-#ifndef DAEDALUS_SILENT
-	u32 freg = gGPR[REG_a0]._u32_0;
-	DBGConsole_Msg(0, "osAiSetFrequency(%d)", freg);
-#endif
+	//u32 freg = gGPR[REG_a0]._u32_0;
+	
+	//DBGConsole_Msg(0, "osAiSetFrequency(%d)", freg);
+	//gGPR[REG_v1]._u64 = freg;
 
-	// What does this need setting to?
-	gGPR[REG_v1]._u64 = 0;
+	//return PATCH_RET_JR_RA;
+}
 
+//*****************************************************************************
+//
+//*****************************************************************************
+inline bool IsAiDeviceBusy()
+{
+	u32 status = Memory_AI_GetRegister( AI_STATUS_REG );
+
+	if (status & (AI_STATUS_DMA_BUSY | AI_STATUS_FIFO_FULL))
+		return true;
+	else
+		return false;
+}
+//*****************************************************************************
+//
+//*****************************************************************************
+u32 Patch___osAiDeviceBusy()
+{
+	gGPR[REG_v0]._u32_0 = IsAiDeviceBusy();
+	
 	return PATCH_RET_JR_RA;
 }
+

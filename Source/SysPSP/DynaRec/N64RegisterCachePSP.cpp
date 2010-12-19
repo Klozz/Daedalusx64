@@ -144,10 +144,7 @@ void	CN64RegisterCachePSP::MarkAsValid( EN64Reg reg, u32 lo_hi_idx, bool valid )
 //*****************************************************************************
 void	CN64RegisterCachePSP::MarkAsDirty( EN64Reg reg, u32 lo_hi_idx, bool dirty )
 {
-	if( dirty )
-	{
-		DAEDALUS_ASSERT( IsKnownValue( reg, lo_hi_idx ) || IsCached( reg, lo_hi_idx ), "Setting dirty flag on unknown/uncached register?" );
-	}
+	DAEDALUS_ASSERT( !dirty && ( IsKnownValue( reg, lo_hi_idx ) || IsCached( reg, lo_hi_idx ) ), "Setting dirty flag on unknown/uncached register?" );
 
 	mRegisterCacheInfo[ reg ][ lo_hi_idx ].Dirty = dirty;
 }

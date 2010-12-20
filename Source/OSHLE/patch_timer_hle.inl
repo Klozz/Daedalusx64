@@ -1,5 +1,8 @@
 #define TEST_DISABLE_TIMER_FUNCS DAEDALUS_PROFILE(__FUNCTION__);
 
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch___osSetTimerIntr()
 {
 TEST_DISABLE_TIMER_FUNCS
@@ -19,7 +22,9 @@ TEST_DISABLE_TIMER_FUNCS
 	return PATCH_RET_JR_RA;	
 }
 
-
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch___osInsertTimer()
 {
 TEST_DISABLE_TIMER_FUNCS
@@ -94,9 +99,19 @@ TEST_DISABLE_TIMER_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch___osTimerServicesInit_Mario()
 {
 TEST_DISABLE_TIMER_FUNCS
+
+	// osTimerServicesInit causes KI not to boot. 
+	if(g_ROM.GameHacks == KILLER_INSTINCT)
+	{
+		return PATCH_RET_NOT_PROCESSED0(__osTimerServicesInit);
+	}
+
 	DBGConsole_Msg(0, "Initialising Timer Services");
 
 	Write32Bits(VAR_ADDRESS(osSystemTimeLo), 0);
@@ -119,6 +134,9 @@ TEST_DISABLE_TIMER_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 // Same as above, but optimised
 u32 Patch___osTimerServicesInit_Rugrats()
 {
@@ -126,8 +144,9 @@ TEST_DISABLE_TIMER_FUNCS
 	return Patch___osTimerServicesInit_Mario();
 }
 
-
-
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch_osSetTime()
 {
 TEST_DISABLE_TIMER_FUNCS
@@ -142,6 +161,9 @@ TEST_DISABLE_TIMER_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch_osGetTime()
 {
 TEST_DISABLE_TIMER_FUNCS
@@ -164,11 +186,13 @@ TEST_DISABLE_TIMER_FUNCS
 	gGPR[REG_v0]._s64 = (s64)(s32)TimeHi;
 	gGPR[REG_v1]._s64 = (s64)(s32)TimeLo;
 
-	
 	return PATCH_RET_JR_RA;
-	
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
+//ToDo : Implement
 u32 Patch_osSetTimer()
 {
 	return PATCH_RET_NOT_PROCESSED;

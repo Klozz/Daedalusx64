@@ -142,7 +142,7 @@ struct RDP_Scissor
 
 
 u32	gSegments[16];
-RDP_Scissor scissors;
+static RDP_Scissor scissors;
 static N64Light  g_N64Lights[8];
 SImageDescriptor g_TI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
 SImageDescriptor g_CI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };

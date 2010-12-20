@@ -456,6 +456,7 @@ void SpecificGameHacks( const ROMHeader & id )
 	case 0x5443: g_ROM.GameHacks = CHAMELEON_TWIST;		break;
 	case 0x4f52: g_ROM.GameHacks = ROAD_RASH;			break;
 	case 0x524c: g_ROM.GameHacks = LOAD_RUNNER;			break;
+	case 0x494b: g_ROM.GameHacks = KILLER_INSTINCT;		break;
 	case 0x324e: 
 	case 0x4339:
 		g_ROM.GameHacks = NASCAR;

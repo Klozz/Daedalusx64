@@ -617,11 +617,9 @@ void DLParser_GBI2_SetOtherModeH( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_Texture( MicroCodeCommand command )
 {
-	u32 tile = command.texture.tile;
-	//if (tile == 7 )	tile = 0;
 
     gTextureLevel = command.texture.level;
-    gTextureTile  = tile;
+    gTextureTile  = command.texture.tile;
 
     bool enable = command.texture.enable_gbi0;                        // Seems to use 0x01
 	if( enable )
@@ -642,11 +640,8 @@ void DLParser_GBI1_Texture( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_Texture( MicroCodeCommand command )
 {
-	u32 tile = command.texture.tile;
-	//if (tile != 7 )	tile = 0;
-
     gTextureLevel = command.texture.level;
-    gTextureTile  = tile;
+    gTextureTile  = command.texture.tile;
 
 
     bool enable = command.texture.enable_gbi2;                        // Seems to use 0x02

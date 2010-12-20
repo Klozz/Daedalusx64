@@ -609,60 +609,6 @@ void DLParser_RDPHalf1_GoldenEye( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-// Zoom feature works around this, we might be removing this soon
-//
-void DLParser_SetScissor_GE( MicroCodeCommand command )
-{
-	// The coords are all in 8:2 fixed point
-	u32 x0   = command.scissor.x0;
-	u32 y0   = command.scissor.y0;
-	u32 x1   = command.scissor.x1;
-	u32 y1   = command.scissor.y1;
-
-	// Ok... Golden Eye correct scissor zone (in-game) should be : left=0, top=10, right=320, bottom=230
-	// Enable hack to correct scissor issues in GE...
-	// Hackish as hell D: but can't find a better way to work aorund this...
-
-	if(g_ROM.rh.CountryID ==0x45)
-	{
-		// Fix bottom and top scisorring
-		if(y0==0 && x0==0 && x1==320 && y1 ==240)
-		{
-			y0 =10;
-			y1 =230;
-		}
-
-		// Fix left and right scisorring
-		if(x0 !=0 && y1 < x1 ) 
-		{
-			x0 =0;
-			x1 =g_CI.Width;
-		}
-	}
-	else
-	{
-		// E version etc doesn't seem to need scissoring, nice! Fill any gaps anyways..
-		if(x0==1 || y0==1)
-		{
-			x0--;
-			y0--;
-			x1++;
-			y1++;
-		}
-	}
-
-	DL_PF("    x0=%d y0=%d x1=%d y1=%d ", x0, y0, x1, y1);
-
-	// Set the cliprect now...
-	if ( x0 < x1 && y0 < y1 )
-	{
-		PSPRenderer::Get()->SetScissor( x0, y0, x1, y1 );
-	}
-}
-
-//*****************************************************************************
-//
-//*****************************************************************************
 void DLParser_GBI2_Conker( MicroCodeCommand command )
 {
 

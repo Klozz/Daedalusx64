@@ -5,8 +5,10 @@
 //#define DISABLE_LLFUNCS
 //#define DISABLE_CSTDFUNCS
 //#define DISABLE_SP_FUNCTIONS
+
 //#define DISABLE_MSG_FUNCTIONS
-//#define DISABLE_TIMER_FUNCTIONS
+
+//#define DISABLE_TIMER_FUNCTIONS //wont boot
 ////////////////////////////////////////////////////////////
 //                 osStartThread
 ////////////////////////////////////////////////////////////
@@ -1639,11 +1641,11 @@ BEGIN_PATCH_XREFS(__osTimerServicesInit_Mario)
   PATCH_XREF_VAR_HI(21, osTopTimer)
   PATCH_XREF_VAR_HI(22, osTopTimer)
   PATCH_XREF_VAR_LO(25, osTopTimer)
-  PATCH_XREF_VAR_LO(30, osTopTimer)
+  PATCH_XREF_VAR_LO(30, osTopTimer) // buggy, breaks Killer Instinct
   PATCH_XREF_VAR_LO(32, osTopTimer)
 END_PATCH_XREFS()
 BEGIN_PATCH_XREFS(__osTimerServicesInit_Rugrats)
-  PATCH_XREF_VAR_HI(0, osTopTimer)
+ PATCH_XREF_VAR_HI(0, osTopTimer)
   PATCH_XREF_VAR_LO(1, osTopTimer)
   PATCH_XREF_VAR_HI(4, osSystemTimeHi)
   PATCH_XREF_VAR_LO(5, osSystemTimeHi)
@@ -1962,7 +1964,7 @@ PATCH_FUNCTION_ENTRY(__osEnqueueThread)
 PATCH_FUNCTION_ENTRY(osSpTaskStartGo) //buggy, SSB (?? Seems to work fine -Salvy)
 //PATCH_FUNCTION_ENTRY(osSpTaskYield)
 //PATCH_FUNCTION_ENTRY(osSpTaskYielded)
-//PATCH_FUNCTION_ENTRY(osSpTaskLoad)
+PATCH_FUNCTION_ENTRY(osSpTaskLoad)
 //PATCH_FUNCTION_ENTRY(__osSpTaskLoadInitTask)
 PATCH_FUNCTION_ENTRY(__osSpRawStartDma)
 PATCH_FUNCTION_ENTRY(__osSpSetStatus)

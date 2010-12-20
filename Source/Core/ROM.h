@@ -111,7 +111,8 @@ enum EGameHacks
 	CHAMELEON_TWIST,
 	ROAD_RASH,
 	NASCAR,
-	LOAD_RUNNER
+	LOAD_RUNNER,
+	KILLER_INSTINCT
 };
 
 //*****************************************************************************

@@ -772,7 +772,7 @@ const MicroCodeInstruction gInstructionLookup[13][256] =
 		DLParser_Nothing, DLParser_Nothing, DLParser_Nothing, DLParser_Nothing,
 		DLParser_TexRect, DLParser_TexRectFlip, DLParser_RDPLoadSync, DLParser_RDPPipeSync,
 		DLParser_RDPTileSync, DLParser_RDPFullSync, DLParser_SetKeyGB, DLParser_SetKeyR,
-		DLParser_SetConvert, DLParser_SetScissor_GE, DLParser_SetPrimDepth, DLParser_RDPSetOtherMode,
+		DLParser_SetConvert, DLParser_SetScissor, DLParser_SetPrimDepth, DLParser_RDPSetOtherMode,
 		//f0
 		DLParser_LoadTLut, DLParser_Nothing, DLParser_SetTileSize, DLParser_LoadBlock, 
 		DLParser_LoadTile, DLParser_SetTile, DLParser_FillRect, DLParser_SetFillColor,

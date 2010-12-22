@@ -1,7 +1,8 @@
 #define TEST_DISABLE_REG_FUNCS DAEDALUS_PROFILE(__FUNCTION__);
 
-
-
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch___osDisableInt_Mario()
 {
 TEST_DISABLE_REG_FUNCS
@@ -13,6 +14,9 @@ TEST_DISABLE_REG_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch___osDisableInt_Zelda()
 {
 TEST_DISABLE_REG_FUNCS
@@ -25,22 +29,29 @@ TEST_DISABLE_REG_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
+// Todo : Optimize futher this, we can get more speed out of here :)
+//
 u32 Patch___osRestoreInt()
 {
 TEST_DISABLE_REG_FUNCS
 	gCPUState.CPUControl[C0_SR]._u64 |= gGPR[REG_a0]._u64;
 
-	// Do this check?
-	/*if (gGPR[REG_a0] & SR_IE) {
-		if (gGPR[REG_a0] & CAUSE_IPMASK) {
-			gCPUState.AddJob(CPU_CHECK_INTERRUPTS);
-		} 
-	}*/
+	// Check next interrupt, otherwise Doom64 and other games won't boot.
+	//
+	if (gCPUState.CPUControl[C0_SR]._u32_0 & gCPUState.CPUControl[C0_CAUSE]._u32_0 & CAUSE_IPMASK)
+	{
+		gCPUState.AddJob( CPU_CHECK_INTERRUPTS );
+	}
 
 	return PATCH_RET_JR_RA;
 }
 
-
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch_osGetCount()
 {
 TEST_DISABLE_REG_FUNCS
@@ -50,7 +61,9 @@ TEST_DISABLE_REG_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
-
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch___osGetCause()
 {
 TEST_DISABLE_REG_FUNCS
@@ -60,7 +73,9 @@ TEST_DISABLE_REG_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
-
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch___osSetCompare()
 {
 TEST_DISABLE_REG_FUNCS
@@ -70,7 +85,9 @@ TEST_DISABLE_REG_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
-
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch___osSetSR()
 {
 TEST_DISABLE_REG_FUNCS
@@ -82,6 +99,9 @@ TEST_DISABLE_REG_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch___osGetSR()
 {
 TEST_DISABLE_REG_FUNCS
@@ -93,6 +113,9 @@ TEST_DISABLE_REG_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch___osSetFpcCsr()
 {
 TEST_DISABLE_REG_FUNCS

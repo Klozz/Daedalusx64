@@ -5,10 +5,9 @@
 //#define DISABLE_LLFUNCS
 //#define DISABLE_CSTDFUNCS
 //#define DISABLE_SP_FUNCTIONS
-
 //#define DISABLE_MSG_FUNCTIONS
+//#define DISABLE_TIMER_FUNCTIONS 
 
-//#define DISABLE_TIMER_FUNCTIONS //wont boot
 ////////////////////////////////////////////////////////////
 //                 osStartThread
 ////////////////////////////////////////////////////////////
@@ -2019,7 +2018,7 @@ PATCH_FUNCTION_ENTRY(osSetEventMesg)
 #ifndef DISABLE_CPU_FUNCTIONS
 PATCH_FUNCTION_ENTRY(__osGetCause)
 PATCH_FUNCTION_ENTRY(__osDisableInt)
-//PATCH_FUNCTION_ENTRY(__osRestoreInt)  //buggy, breaks DOOM64
+PATCH_FUNCTION_ENTRY(__osRestoreInt)  //buggy, breaks DOOM64
 PATCH_FUNCTION_ENTRY(__osAtomicDec)
 //PATCH_FUNCTION_ENTRY(__osSetFpcCsr)
 PATCH_FUNCTION_ENTRY(__osSetCompare)
@@ -2052,7 +2051,7 @@ PATCH_FUNCTION_ENTRY(__ll_lshift)
 PATCH_FUNCTION_ENTRY(__ull_rem)
 PATCH_FUNCTION_ENTRY(__ll_div)
 PATCH_FUNCTION_ENTRY(__ull_mul)
-PATCH_FUNCTION_ENTRY(__ull_divremi)
+//PATCH_FUNCTION_ENTRY(__ull_divremi) // Is not implemented anyways
 PATCH_FUNCTION_ENTRY(__ll_mod)
 PATCH_FUNCTION_ENTRY(__ll_rshift)
 //PATCH_FUNCTION_ENTRY(__lldiv)

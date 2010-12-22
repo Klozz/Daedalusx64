@@ -136,6 +136,9 @@ inline bool	TLBEntry::FindTLBEntry( u32 address, u32 * p_idx )
 	return false;
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 TLBEntry::Translate(u32 address, bool& missing)
 {
 	u32 iMatched;
@@ -146,19 +149,19 @@ u32 TLBEntry::Translate(u32 address, bool& missing)
 		struct TLBEntry & tlb = g_TLBs[iMatched];
 
 		bool	valid;
-		bool	dirty;
+		//bool	dirty;	// Seems unused -Salvy
 		u32		physical_addr;
 
 		// Check for odd/even entry
 		if (address & tlb.checkbit)
 		{
-			dirty = (tlb.pfno & TLBLO_D) != 0;
+			//dirty = (tlb.pfno & TLBLO_D) != 0;
 			valid = (tlb.pfno & TLBLO_V) != 0;
 			physical_addr = tlb.pfnohi | (address & tlb.mask2);
 		}
 		else
 		{
-			dirty = (tlb.pfne & TLBLO_D) != 0;
+			//dirty = (tlb.pfne & TLBLO_D) != 0;
 			valid = (tlb.pfne & TLBLO_V) != 0;
 			physical_addr = tlb.pfnehi | (address & tlb.mask2);
 		}

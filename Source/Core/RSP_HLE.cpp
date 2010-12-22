@@ -189,23 +189,19 @@ void RSP_HLE_Finished()
 //*****************************************************************************
 static EProcessResult RSP_HLE_Graphics()
 {
-	EProcessResult result;
-	
 	// Skip the entire dlist if graphics are disabled
 	if( !gGraphicsEnabled )
 	{
 		Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_DP);
 		R4300_Interrupt_UpdateCause3();
-		result = PR_COMPLETED;
 #ifdef DAEDALUS_BATCH_TEST_ENABLED
 			CBatchTestEventHandler * handler( BatchTest_GetHandler() );
-			if( result == PR_COMPLETED && handler )
+			if( handler )
 				handler->OnDisplayListComplete();
 #endif
-		result = PR_COMPLETED;
+		return PR_COMPLETED;
 	}
-
-	else if ( gHLEGraphicsEnabled && gGraphicsPlugin != NULL )
+	else if ( gGraphicsPlugin != NULL )
 	{
 		DAEDALUS_PROFILE( "HLE: Graphics" );
 
@@ -224,17 +220,14 @@ static EProcessResult RSP_HLE_Graphics()
 #else
 		gGraphicsPlugin->ProcessDList();
 #endif
-		result = PR_COMPLETED;
-	}
-	else 	 
-		result = PR_NOT_STARTED; 	 
-	  	 
 #ifdef DAEDALUS_BATCH_TEST_ENABLED 	 
          CBatchTestEventHandler * handler( BatchTest_GetHandler() ); 	 
-         if( result == PR_COMPLETED && handler ) 	 
+         if( handler ) 	 
                  handler->OnDisplayListComplete(); 	 
 #endif
-		return result;
+		return PR_COMPLETED;
+	}	  	 
+		return PR_NOT_STARTED; 	 
 }
 
 //*****************************************************************************
@@ -337,29 +330,20 @@ void RSP_HLE_ProcessTask()
 
 	switch( result )
 	{
-	case PR_NOT_STARTED:
-		/*while((Memory_SP_GetRegister( SP_STATUS_REG )& SP_STATUS_HALT) == 0)
-		{
-			DAEDALUS_ERROR("PR NOT STARTED");
-			RSP_Step();
-		}*/
-		//gRSPHLEActive = false;
-		break;
-
 	case PR_STARTED:
 		// Started using HLE. No need to change cores
-		//gRSPHLEActive = true;
-		{
 #ifdef DAEDALUS_ENABLE_ASSERTS
-			u32		status( Memory_SP_GetRegister( SP_STATUS_REG ) );
-			DAEDALUS_ASSERT( !gRSPHLEActive || (status & SP_STATUS_HALT) == 0, "HLE active (%d), but HALT set (%08x - was %08x on entry)", gRSPHLEActive, status, orig_status );
+		u32		status( Memory_SP_GetRegister( SP_STATUS_REG ) );
+		DAEDALUS_ASSERT( !gRSPHLEActive || (status & SP_STATUS_HALT) == 0, "HLE active (%d), but HALT set (%08x - was %08x on entry)", gRSPHLEActive, status, orig_status );
 #endif
-		}
 		break;
 
 	case PR_COMPLETED:
 		// Started and completed. No need to change cores.
 		RSP_HLE_Finished();
+		break;
+
+	case PR_NOT_STARTED:
 		break;
 
 	default:

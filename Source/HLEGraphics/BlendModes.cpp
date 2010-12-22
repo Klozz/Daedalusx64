@@ -763,11 +763,12 @@ void BlendMode_0x00671603fffcff78LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00671604fffcff78LL (BLEND_MODE_ARGS)
 {
-	
-	details.ColourAdjuster.SetRGB( details.EnvColour );
-	details.ColourAdjuster.SetA( details.PrimColour );
-	sceGuTexEnvColor( details.PrimColour.GetColour() );
-	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
+
+	//details.ColourAdjuster.SetRGB( details.EnvColour );
+	//details.ColourAdjuster.SetA( details.PrimColour );
+	//sceGuTexEnvColor( details.PrimColour.GetColour() );
+	//sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
 
 // Duke 3D menu text and Mario 64 : Mario's 3D head

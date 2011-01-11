@@ -538,14 +538,8 @@ static void	DLParser_ProcessDList()
 	// Fast Ucode check for -1, skipping all illegal Ucodes versions //Corn
 	while(ucode_ver >= 0)
 	{
-		//This lets us skip DLParser_RDPLoadSync, DLParser_RDPPipeSync & DLParser_RDPTileSync
-		//early and saves us wasted time jumping for empty functions (worth since they happen a lot)
-		do
-		{
-			DLParser_FetchNextCommand(&command);
-		}
-		while( (command.inst.cmd > 0xE5) && (command.inst.cmd < 0xE9) ); 
-
+		DLParser_FetchNextCommand( &command );
+		
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		//use the gInstructionName table for fecthing names.
 		//we use the table as is for GBI0, GBI1 and GBI2

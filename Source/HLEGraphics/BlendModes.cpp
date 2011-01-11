@@ -111,21 +111,21 @@ void PrintMux( FILE * fh, u64 mux )
 	fprintf(fh, "\t\t//aRGB1: (%s - %s) * %s + %s\n", sc_colcombtypes16[aRGB1], sc_colcombtypes16[bRGB1], sc_colcombtypes32[cRGB1], sc_colcombtypes8[dRGB1]);		
 	fprintf(fh, "\t\t//aA1  : (%s - %s) * %s + %s\n", sc_colcombtypes8[aA1],  sc_colcombtypes8[bA1], sc_colcombtypes8[cA1],  sc_colcombtypes8[dA1]);
 }
+
 #endif
 /* To Devs,
  Once blendmodes are complete please clean up after yourself before commiting.
  
- Blending Options
-
+* Blending Options
  details.ColourAdjuster.SetRGB();
  details.ColourAdjuster.SetA();
  details.ColourAdjuster.SetRGBA();
-details.ColourAdjuster.ModulateA();
+ details.ColourAdjuster.ModulateA();
  
 **** These things go into above brackets
  
 * Primitive
- details.PrimColour()
+ details.PrimColour
  details.PrimColour.ReplicateAlpha()
  
 * Environment
@@ -137,14 +137,14 @@ details.ColourAdjuster.ModulateA();
  -- Closure of blend
  sceGuTexFunc(xx,yy); - This is used in the texture function when a constant color is needed.
  
- xx 
+* xx 
  GU_TFX_MODULATE - The texture is multiplied with the current diffuse fragment
  GU_TFX_REPLACE - The texture replaces the fragment
  GU_TFX_ADD - The texture is added on-top of the diffuse fragment
  GU_TFX_BLEND - 
  GU_TFX_DECAL - 
  
-
+* yy
  The fields TCC_RGB and TCC_RGBA specify components that differ between the two different component modes.
 
  Component-modes only !!! (TCC)
@@ -1076,6 +1076,17 @@ void BlendMode_0x0040fe8155fef97cLL (BLEND_MODE_ARGS)
 	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGB);
 }
 
+//GoldenEye 007 - Dead Enemies
+//case 0x00159a045ffefff8LL:
+//aRGB0: (Texel0       - Env         ) * Shade_Alpha  + Env
+//aA0  : (Texel0       - 0           ) * Env          + 0
+//aRGB1: (Combined     - 0           ) * Shade        + 0
+//aA1  : (0            - 0           ) * 0            + Combined
+void BlendMode_0x00159a045ffefff8LL (BLEND_MODE_ARGS)
+{
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
+}
+
 /*
   #I
 */ 
@@ -1137,12 +1148,26 @@ void BlendMode_0x00127e2455fdf8fcLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined
 void BlendMode_0x0030fe045ffefdf8LL (BLEND_MODE_ARGS)
 {
-	
-	details.ColourAdjuster.SetRGB( details.EnvColour );
-	details.ColourAdjuster.SetAOpaque();
-	sceGuTexEnvColor( details.PrimColour.GetColour() );
-	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
+	// This looks like the real deal but doesn't match with the terrain blendmode :(
+	/*details.ColourAdjuster.SetRGBA( details.EnvColour );
+	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);	*/
 }
+
+//Kirby 64 - some parts of the Ground
+//case 0x00309e045ffefdf8LL:
+//aRGB0: (Primitive    - Env         ) * Texel0       + Env         
+//aA0  : (Texel0       - 0           ) * 0            + 1           
+//aRGB1: (Combined     - 0           ) * Shade        + 0           
+//aA1  : (0            - 0           ) * 0            + Combined    
+void BlendMode_0x00309e045ffefdf8LL (BLEND_MODE_ARGS)
+{
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
+	// This looks like the real deal but doesn't match with the terrain blendmode :(
+	/*details.ColourAdjuster.SetRGBA( details.EnvColour );
+	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);	*/
+}
+
 //Kirby 64 - Flowers
 //case 0x0040fe8155fef379LL:
 //aRGB0: (Shade        - Env         ) * Texel0       + Env
@@ -1151,9 +1176,7 @@ void BlendMode_0x0030fe045ffefdf8LL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Texel0
 void BlendMode_0x0040fe8155fef379LL (BLEND_MODE_ARGS)
 {
-	
-	details.ColourAdjuster.SetRGB( details.EnvColour );
-	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
 //Kirby 64 - Far Terrain
 //case 0x0040fe8155fefd7eLL:
@@ -1164,9 +1187,7 @@ void BlendMode_0x0040fe8155fef379LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0040fe8155fefd7eLL (BLEND_MODE_ARGS)
 {
-	details.ColourAdjuster.SetRGB( details.EnvColour );
-	details.ColourAdjuster.SetAOpaque();
-	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
 }
 
 /*
@@ -1631,18 +1652,7 @@ void BlendMode_0x0010a2c3f00fd23fLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined    
 void BlendMode_0x00317fff5ffef438LL (BLEND_MODE_ARGS)
 {
-	// This blend is broken for some reasons, but nobody seems to bother to find out why.. - Salvy
-	c32		blend( details.EnvColour.Interpolate( details.PrimColour, details.EnvColour ) );
-#ifdef CHECK_FIRST_CYCLE	
-	if( num_cycles == 1 )
-	{
-		details.ColourAdjuster.SetRGB( blend );
-	}
-	else
-#endif
-	{
-		details.ColourAdjuster.SetRGB( blend );
-	}
+	//BLEND_MODE_MAKER
 }
 // Pokemon Stadium 2 - Sky Changing Effect and Bases of Stadiums.
 //case 0x00127ffffffdfe3fLL:
@@ -2450,7 +2460,27 @@ void BlendMode_0x00272c6015fc9378LL( BLEND_MODE_ARGS )
 	}
 #endif
 }
-	 
+
+//Space Station Silicon Valley - Power Spheres
+//case 0x00377fff1ffcf438LL:
+//aRGB0: (Primitive    - Texel0      ) * PrimLODFrac  + Texel0
+//aA0  : (0            - 0           ) * 0            + Texel1
+//aRGB1: (0            - 0           ) * 0            + Combined
+//aA1  : (0            - 0           ) * 0            + Combined
+void BlendMode_0x00377fff1ffcf438LL (BLEND_MODE_ARGS)
+{
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
+}
+// Space Station Silicon Valley - Cave inside Waterfalls
+// case 0x00277e041ffcf3fcLL:
+//aRGB0: (Texel1       - Texel0      ) * PrimLODFrac  + Texel0
+//aA0  : (0            - 0           ) * 0            + Texel0
+//aRGB1: (Combined     - 0           ) * Shade        + 0
+//aA1  : (0            - 0           ) * 0            + Shade
+void BlendMode_0x00277e041ffcf3fcLL (BLEND_MODE_ARGS)
+{
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
+}
 //Super Bowling 64 - Character
 //case 0x00327feffffff638LL:
 //aRGB0: (Primitive    - 0           ) * Shade        + 0
@@ -2614,7 +2644,6 @@ void BlendMode_0x00547ea833fdf2f9LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x00551aaa1134fe7fLL (BLEND_MODE_ARGS)
 {
-	
 	details.ColourAdjuster.SetRGBA( details.PrimColour.ReplicateAlpha() );
 	details.ColourAdjuster.SetA( details.EnvColour);
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
@@ -2622,6 +2651,18 @@ void BlendMode_0x00551aaa1134fe7fLL (BLEND_MODE_ARGS)
 /*
 //#T
 */
+
+//Tarzan birds wings, Marios drop shadows in SM64
+//case 0x00121824ff33ffffLL:
+//aRGB0: (Texel0       - 0           ) * Shade        + 0
+//aA0  : (Texel0       - 0           ) * Shade        + 0
+//aRGB1: (Texel0       - 0           ) * Shade        + 0
+//aA1  : (Texel0       - 0           ) * Shade        + 0
+void BlendMode_0x00121824ff33ffffLL( BLEND_MODE_ARGS )
+{
+	//details.ColourAdjuster.SetA( c32(0,0,0,0xD8) );
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
+}
 
 // Tetrissphere
 //case 0x0026a0041f0c93ffLL:
@@ -3262,9 +3303,7 @@ void BlendMode_0x0030ec045fdaedf6LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0011fffffffffc38LL (BLEND_MODE_ARGS)
 {
-	//details.ColourAdjuster.SetA( c32::White );
-	details.ColourAdjuster.SetAOpaque();
-	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
+	//BLEND_MODE_MAKER
 }
 
 // OOT - Lens of Truth
@@ -3724,9 +3763,7 @@ void BlendMode_0x00ffadfffffd9238LL( BLEND_MODE_ARGS )
 //aA1  : (0            - 0           ) * 0            + Texel0     
 void BlendMode_0x0071fee311fcf279LL (BLEND_MODE_ARGS)
 {
-	details.ColourAdjuster.ModulateRGB( details.PrimColour );
-	details.ColourAdjuster.SetAOpaque();
-	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
+	//BLEND_MODE_MAKER
 }
 
 // OOT - Effect when you get hit by enemies
@@ -4374,7 +4411,7 @@ void BlendMode_0x00177e6035fcfd78LL (BLEND_MODE_ARGS)
 }
 
 // Pokemon Stadium 2 - Pokeball
-//ZELDA - OOT - Spiritual Stone Gems
+// ZELDA - OOT - Spiritual Stone Gems
 //case 0x00272c60350c937fLL:
 //aRGB0: (Texel1       - Primitive   ) * PrimLODFrac  + Texel0
 //aA0  : (Texel1       - Texel0      ) * 1            + Texel0
@@ -4382,18 +4419,10 @@ void BlendMode_0x00177e6035fcfd78LL (BLEND_MODE_ARGS)
 //aA1  : (Combined     - 0           ) * Primitive    + 0
 void BlendMode_0x00272c60350c937fLL (BLEND_MODE_ARGS)
 {
-#ifdef CHECK_FIRST_CYCLE
-	if (num_cycles == 1)
-	{
-		details.ColourAdjuster.SetRGB( details.PrimColour );
-		sceGuTexFunc(GU_TFX_BLEND, GU_TCC_RGB);
-	}
-	else
-#endif
-	{
-		details.ColourAdjuster.SetRGBA( details.PrimColour );
-		sceGuTexFunc(GU_TFX_BLEND, GU_TCC_RGBA);
-	}
+	details.InstallTexture = true;
+	details.ColourAdjuster.SetRGB( details.EnvColour );
+	sceGuTexEnvColor( details.PrimColour.GetColour() );
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);	
 }
 
 //ZELDA - OOT - Graveyard Beam
@@ -4542,6 +4571,7 @@ OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 	BLEND_MODE(0x00121803ff5bfff8LL);
 	BLEND_MODE(0x00121804f3ffff78LL);
 	BLEND_MODE(0x001218245531feffLL);
+	BLEND_MODE(0x00121824ff33ffffLL);//Tarzan
 	BLEND_MODE(0x001218c1f0c7fe00LL);//HiddentextureforBarinade(??)
 	BLEND_MODE(0x00121a03ff5bfff8LL);
 	BLEND_MODE(0x0012680322fd7eb8LL);
@@ -4698,6 +4728,7 @@ OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 	BLEND_MODE(0x0027fe041ffcfdfeLL);
 	BLEND_MODE(0x00309661552efb7dLL);
 	BLEND_MODE(0x00309861550eff4fLL);
+	BLEND_MODE(0x00309e045ffefdf8LL);//Kirby
 	BLEND_MODE(0x0030abff5ffe9238LL);
 	BLEND_MODE(0x0030b2045ffefff8LL);//HorsedustatLonLonRanch
 	BLEND_MODE(0x0030b26144664924LL);
@@ -4771,7 +4802,10 @@ OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 	BLEND_MODE(0x00fffe04f3fcf378LL);
 	BLEND_MODE(0x00ffffffff09f63fLL);
 	BLEND_MODE(0x00fffffffffcfa7dLL);
-			
+	BLEND_MODE(0x00377fff1ffcf438LL);
+	BLEND_MODE(0x00159a045ffefff8LL);
+	BLEND_MODE(0x00277e041ffcf3fcLL); // SSV - Inside Caves
+
 #undef BLEND_MODE
 	}
 

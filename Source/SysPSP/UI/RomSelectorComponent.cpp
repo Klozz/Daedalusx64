@@ -1560,7 +1560,7 @@ void IRomSelectorComponent::RenderRomList()
 				romseltextoffset = 20 + ((mpContext->GetTextWidth( nextp_gamename ) * 1.2) / 2) + ((mpContext->GetTextWidth( p_gamename ) * 0.8) / 2);
 				romseltextrepos = (romseltextoffset / 30);
 				romseltextscale = (0.4 / 30);
-			}			
+			}
 			if (mCurrentSelection > 1)
 			{
 				colour = mpContext->GetDefaultTextColour();
@@ -1583,36 +1583,40 @@ void IRomSelectorComponent::RenderRomList()
 				colour = mpContext->GetDefaultTextColour();
 				mpContext->DrawTextScale( 280 + (((mpContext->GetTextWidth( p_gamename ) * (0.8 + (romseltextscale * romselmenufs)) / 2)) + ((mpContext->GetTextWidth( nextp_gamename )) * (1.2 - (romseltextscale * romselmenufs)))) - romseltextoffset, 260, 0.8, nex2p_gamename, colour );
 			}
-			if (mCurrentSelection < mRomsList.size() - 3)
+			//#SALVY# Look at the below statement while only having 2 roms.
+			//"if (mCurrentSelection < mRomsList.size() - 3)" is returning true when it shouldnt. 
+			//mCurrentSelection = 0 and mRomsList.size() = 2. Thus it should return false. I dont get it. if (0 < -1) = false...
+			if ((mCurrentSelection < mRomsList.size() - 3) && (mRomsList.size() > 2)) //"&& (mRomsList.size() > 2))" is a quick fix.
 			{
 				colour = mpContext->GetDefaultTextColour();
+				//printf("1-%i\n", mCurrentSelection);
+				//printf("2-%i\n", mRomsList.size());
 				mpContext->DrawTextScale( 300 + (((mpContext->GetTextWidth( p_gamename ) * (0.8 + (romseltextscale * romselmenufs)) / 2)) + ((mpContext->GetTextWidth( nextp_gamename )) * (1.2 - (romseltextscale * romselmenufs))) + (mpContext->GetTextWidth( nex2p_gamename ) * 0.8)) - romseltextoffset, 260, 0.8, nex3p_gamename, colour );
 			}
 	
 			romseltextoffset -= romseltextrepos;
 		}
-		else if (romselmenudir == 2) 
-		{
+		else if (romselmenudir == 2) {
 			
 			if (romseltextoffset == 0) {
 				romseltextoffset = 20 + ((mpContext->GetTextWidth( prevp_gamename ) * 1.2) / 2) + ((mpContext->GetTextWidth( p_gamename ) * 0.8) / 2);
 				romseltextrepos = (romseltextoffset / 30);
 				romseltextscale = (0.4 / 30);
-			}			
+			}
 			if (mCurrentSelection > 2)
 			{
 				colour = mpContext->GetDefaultTextColour();
-				mpContext->DrawTextScale( 180 - (((mpContext->GetTextWidth( p_gamename ) * (0.8 + (romseltextscale * romselmenufs)) / 2)) + (mpContext->GetTextWidth( prevp_gamename ) * 0.8) + (mpContext->GetTextWidth( pre2p_gamename ) * 0.8) + (mpContext->GetTextWidth( pre3p_gamename ) * 0.8)) + romseltextoffset, 260, 0.8, pre3p_gamename, colour );
+				mpContext->DrawTextScale( 180 - (((mpContext->GetTextWidth( p_gamename ) * (0.8 + (romseltextscale * romselmenufs)) / 2)) + (mpContext->GetTextWidth( prevp_gamename ) * (1.2 - (romseltextscale * romselmenufs))) + (mpContext->GetTextWidth( pre2p_gamename ) * 0.8) + (mpContext->GetTextWidth( pre3p_gamename ) * 0.8)) + romseltextoffset, 260, 0.8, pre3p_gamename, colour );
 			}
 			if (mCurrentSelection > 1)
 			{
 				colour = mpContext->GetDefaultTextColour();
-				mpContext->DrawTextScale( 200 - (((mpContext->GetTextWidth( p_gamename ) * (0.8 + (romseltextscale * romselmenufs)) / 2)) + (mpContext->GetTextWidth( prevp_gamename ) * 0.8) + (mpContext->GetTextWidth( pre2p_gamename ) * 0.8)) + romseltextoffset, 260, 0.8, pre2p_gamename, colour );
+				mpContext->DrawTextScale( 200 - (((mpContext->GetTextWidth( p_gamename ) * (0.8 + (romseltextscale * romselmenufs)) / 2)) + (mpContext->GetTextWidth( prevp_gamename ) * (1.2 - (romseltextscale * romselmenufs))) + (mpContext->GetTextWidth( pre2p_gamename ) * 0.8)) + romseltextoffset, 260, 0.8, pre2p_gamename, colour );
 			}			
 			if (mCurrentSelection > 0)
 			{
 				colour = mpContext->GetDefaultTextColour();
-				mpContext->DrawTextScale( 220 - (((mpContext->GetTextWidth( p_gamename ) * (0.8 + (romseltextscale * romselmenufs)) / 2)) + (mpContext->GetTextWidth( prevp_gamename ) * 0.8)) + romseltextoffset, 260, 0.8, prevp_gamename, colour );
+				mpContext->DrawTextScale( 220 - (((mpContext->GetTextWidth( p_gamename ) * (0.8 + (romseltextscale * romselmenufs)) / 2)) + (mpContext->GetTextWidth( prevp_gamename ) * (1.2 - (romseltextscale * romselmenufs)))) + romseltextoffset, 260, 1.2 - (romseltextscale * romselmenufs), prevp_gamename, colour );
 			}
 
 			colour = mpContext->GetSelectedTextColour();
@@ -1621,18 +1625,18 @@ void IRomSelectorComponent::RenderRomList()
 			if (mCurrentSelection < mRomsList.size() - 1)
 			{
 				colour = mpContext->GetDefaultTextColour();
-				mpContext->DrawTextScale( 260 + ((mpContext->GetTextWidth( p_gamename ) * (0.8 + (romseltextscale * romselmenufs)) / 2)) + romseltextoffset, 260, 1.2 - (romseltextscale * romselmenufs),nextp_gamename, colour );
+				mpContext->DrawTextScale( 260 + ((mpContext->GetTextWidth( p_gamename ) * (0.8 + (romseltextscale * romselmenufs)) / 2)) + romseltextoffset, 260, 0.8,nextp_gamename, colour );
 			}
 
 			if (mCurrentSelection < mRomsList.size() - 2)
 			{
 				colour = mpContext->GetDefaultTextColour();
-				mpContext->DrawTextScale( 280 + (((mpContext->GetTextWidth( p_gamename ) * (0.8 + (romseltextscale * romselmenufs)) / 2)) + ((mpContext->GetTextWidth( nextp_gamename )) * (1.2 - (romseltextscale * romselmenufs)))) + romseltextoffset, 260, 0.8, nex2p_gamename, colour );
+				mpContext->DrawTextScale( 280 + (((mpContext->GetTextWidth( p_gamename ) * (0.8 + (romseltextscale * romselmenufs)) / 2)) + ((mpContext->GetTextWidth( nextp_gamename )) * (0.8 + (romseltextscale * romselmenufs)))) + romseltextoffset, 260, 0.8, nex2p_gamename, colour );
 			}
 	
 			romseltextoffset -= romseltextrepos;
 		}
-	}	
+	 }	
 	else if (mRomsList.size() == 1) {
 		colour = mpContext->GetSelectedTextColour();
 		mpContext->DrawTextScale( 240 - ((mpContext->GetTextWidth( p_gamename ) * 1.2) / 2), 260, 1.2, p_gamename, colour );	
@@ -2228,21 +2232,18 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 		return;
 	}
 
-	static const float	SCROLL_RATE_PER_SECOND = 25.0f;		// 25 roms/second
+	static const float	SCROLL_RATE_PER_SECOND = 25.0f;		// 25 roms/second	
 	
-	/*Apply stick deadzone preference in the RomSelector menu*/
+	/*Apply stick deadzone preference in the RomSelector menu*/	
 	v2 stick_dead(ApplyDeadzone( stick, gGlobalPreferences.StickMinDeadzone, gGlobalPreferences.StickMaxDeadzone ));
-	
-	mSelectionAccumulator += stick_dead.x * SCROLL_RATE_PER_SECOND * elapsed_time; 
-	
-	/*Tricky thing to get the stick to work in every cases
-	  for the 100/100 case for example
-	  without it, the accumulator gets weirdly set to a NaN value and
-	  everything is blocked... So it keeps the accumulator out of a NaN value.
-	  */
-	if( !(mSelectionAccumulator<0) && !(mSelectionAccumulator>0))
-	  mSelectionAccumulator=0.0f;
-
+		
+	if ((!(new_buttons & PSP_CTRL_LEFT)) && (!(new_buttons & PSP_CTRL_RIGHT))) {
+		mSelectionAccumulator += stick_dead.x * SCROLL_RATE_PER_SECOND * elapsed_time; 
+		
+		/*Keeps the accumulator out of a NaN value. */
+		if( !(mSelectionAccumulator<0) && !(mSelectionAccumulator>0))
+		  mSelectionAccumulator=0.0f;
+	} 
 	ECategory current_category( GetCurrentCategory() );
 
 	u32	initial_selection( mCurrentSelection );
@@ -2266,7 +2267,7 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 
 	if (new_buttons & PSP_CTRL_CIRCLE) {	
 		sortbyletter = 1;		
-		if ((new_buttons & PSP_CTRL_LEFT) && !(old_buttons & PSP_CTRL_LEFT)) {	
+		if ((new_buttons & PSP_CTRL_LEFT) && !(old_buttons & PSP_CTRL_LEFT) && (!stick_dead.x)) {	
 			// Search for the next valid predecessor
 			for( int i = current_category - 1; i > -1; --i ) {
 				ECategory	category = ECategory( i );
@@ -2281,7 +2282,7 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 				}
 			}
 		}
-		if ((new_buttons & PSP_CTRL_RIGHT) && !(old_buttons & PSP_CTRL_RIGHT)) {	
+		if ((new_buttons & PSP_CTRL_RIGHT) && !(old_buttons & PSP_CTRL_RIGHT) && (!stick_dead.x)) {	
 			for( int i = current_category + 1; i < NUM_CATEGORIES - 1; ++i ) {
 				ECategory	category = ECategory( i );
 				AlphaMap::const_iterator it( mRomCategoryMap.find( category ) );
@@ -2304,7 +2305,7 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 		{
 			if (new_buttons & PSP_CTRL_LEFT)
 			{
-				if(mCurrentSelection > 0)
+				if ((mCurrentSelection > 0) && (!stick_dead.x))
 				{
 					mCurrentSelection--;
 					romselmenuani = 1;
@@ -2314,7 +2315,7 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 			}
 			if(new_buttons & PSP_CTRL_RIGHT)
 			{
-				if(mCurrentSelection < mRomsList.size() - 1)
+				if ((mCurrentSelection < mRomsList.size() - 1) && (!stick_dead.x))
 				{
 					mCurrentSelection++;
 					romselmenuani = 1;
@@ -2364,25 +2365,26 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 	//	Apply the selection accumulator
 	//
 	f32		current_vel( mSelectionAccumulator );
-	while(mSelectionAccumulator >= 1.0f)
-	{
-		if(mCurrentSelection < mRomsList.size() - 1)
+	if ((!(new_buttons & PSP_CTRL_LEFT)) && (!(new_buttons & PSP_CTRL_RIGHT))) {
+		while(mSelectionAccumulator >= 1.0f)
 		{
-			mCurrentSelection++;
+			if(mCurrentSelection < mRomsList.size() - 1)
+			{
+				mCurrentSelection++;
+			}
+			mSelectionAccumulator -= 1.0f;
+			mRomDelete = false;
 		}
-		mSelectionAccumulator -= 1.0f;
-		mRomDelete = false;
-	}
-	while(mSelectionAccumulator <= -1.0f)
-	{
-		if(mCurrentSelection > 0)
+		while(mSelectionAccumulator <= -1.0f)
 		{
-			mCurrentSelection--;
+			if(mCurrentSelection > 0)
+			{
+				mCurrentSelection--;
+			}
+			mSelectionAccumulator += 1.0f;
+			mRomDelete = false;
 		}
-		mSelectionAccumulator += 1.0f;
-		mRomDelete = false;
 	}
-
 	//
 	//	Scroll to keep things in view
 	//	We add on 'current_vel * 2' to keep the selection highlight as close to the

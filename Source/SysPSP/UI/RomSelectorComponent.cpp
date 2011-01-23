@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspkernel.h>
 #include <pspctrl.h>
 #include <pspdisplay.h>
+#include <psputility.h>
 #include <pspgu.h>
 
 #include "Math/Vector2.h"
@@ -61,6 +62,8 @@ float romseltextrepos = 0.0f;
 float romseltextscale = 0.0f;
 bool isnextset = 0;
 char catstr[85] = " #  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z  ? ";
+
+pspUtilityMsgDialogParams PopUpdialog; //Message Pop Up.
 
 namespace
 {
@@ -265,6 +268,7 @@ class IRomSelectorComponent : public CRomSelectorComponent
 
 		bool						mRomDelete;
 		bool						mQuitTriggered;
+		bool						mQuitInit;
 };
 
 //*************************************************************************************
@@ -305,6 +309,7 @@ IRomSelectorComponent::IRomSelectorComponent( CUIContext * p_context, CFunctor1<
 ,	mTimeSinceScroll( 0.0f )
 ,	mRomDelete(false)
 ,	mQuitTriggered(false)
+,	mQuitInit(false)
 {
 	for( u32 i = 0; i < ARRAYSIZE( gRomsDirectories ); ++i )
 	{
@@ -1965,44 +1970,57 @@ void IRomSelectorComponent::Render()
 	PREVIEW_SCROLL_WAIT = 0.65f;	// seconds to wait for scrolling to stop before loading preview (prevent thrashing)
 	PREVIEW_FADE_TIME = 0.50f;		// seconds
 
-	if(mQuitTriggered)
+	RenderPreview();
+
+	if( mRomsList.empty() )	{
+		s32 offset( 0 );
+		for( u32 i = 0; i < ARRAYSIZE( gNoRomsText ); ++i )	{
+			mpContext->DrawText(240 - (mpContext->GetTextWidth( gNoRomsText[ i ]) / 2 ), 75 + offset,
+					gNoRomsText[ i ], c32::White );
+			offset += 10;
+			if ((i == 0) || (i == 4)) { offset += 10; }
+		}
+	} else if (!sortbyletter) {
+		RenderRomList();
+	} else if (sortbyletter) { 
+		RenderCategoryList();
+	}
+
+	if(mRomDelete)
 	{
-		mpContext->DrawTextAlign(0,480,AT_CENTRE,120,"Keep Holding Home", DrawTextUtilities::TextRed);
-		mpContext->DrawTextAlign(0,480,AT_CENTRE,135,"Press X to confirm you want to quit",
-			       	DrawTextUtilities::TextRed);
-		mpContext->DrawTextAlign(0,480,AT_CENTRE,150,"Any other key will cancel",
-			       	DrawTextUtilities::TextRed);
+		mpContext->DrawTextAlign(0,480,AT_CENTRE,242,"Press X to Confirm ROM Deletion",
+					DrawTextUtilities::TextRed);
 	}
 	else
 	{
-
-		RenderPreview();
-
-		if( mRomsList.empty() )	{
-			s32 offset( 0 );
-			for( u32 i = 0; i < ARRAYSIZE( gNoRomsText ); ++i )	{
-				mpContext->DrawText(240 - (mpContext->GetTextWidth( gNoRomsText[ i ]) / 2 ), 75 + offset,
-						gNoRomsText[ i ], c32::White );
-				offset += 10;
-				if ((i == 0) || (i == 4)) { offset += 10; }
-			}
-		} else if (!sortbyletter) {
-			RenderRomList();
-		} else if (sortbyletter) { 
-			RenderCategoryList();
-		}
+		mpContext->DrawTextAlign(0,480,AT_CENTRE,242,"SELECT: Delete ROM",
+					DrawTextUtilities::TextRed);
+	}
 	
-		if(mRomDelete)
-		{
-			mpContext->DrawTextAlign(0,480,AT_CENTRE,242,"Press X to Confirm ROM Deletion",
-			       		DrawTextUtilities::TextRed);
-		}
-		else
-		{
-			mpContext->DrawTextAlign(0,480,AT_CENTRE,242,"SELECT: Delete ROM",
-			       		DrawTextUtilities::TextRed);
+#ifndef DAEDALUS_PSP_GPROF		
+	if (mQuitTriggered) {
+		switch(sceUtilityMsgDialogGetStatus()) {
+			case 2:
+				sceUtilityMsgDialogUpdate(1);
+				break;
+				
+			case 3:
+				sceUtilityMsgDialogShutdownStart();		
+				if (PopUpdialog.buttonPressed == PSP_UTILITY_MSGDIALOG_RESULT_YES) {
+					mQuitInit = true;
+				}					
+				break;
+				
+			case 4:
+				mQuitTriggered = false;			
+				break;
+				
+			case 0:
+				return;			
 		}
 	}
+#endif
+	
 }
 
 //*************************************************************************************
@@ -2232,12 +2250,16 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 		return;
 	}
 
+	if (mQuitInit) {
+		if (!mQuitTriggered) { sceKernelExitGame(); }
+	}
+	
 	static const float	SCROLL_RATE_PER_SECOND = 25.0f;		// 25 roms/second	
 	
 	/*Apply stick deadzone preference in the RomSelector menu*/	
 	v2 stick_dead(ApplyDeadzone( stick, gGlobalPreferences.StickMinDeadzone, gGlobalPreferences.StickMaxDeadzone ));
 		
-	if ((!(new_buttons & PSP_CTRL_LEFT)) && (!(new_buttons & PSP_CTRL_RIGHT))) {
+	if ((!(new_buttons & PSP_CTRL_LEFT)) && (!(new_buttons & PSP_CTRL_RIGHT)) && (!mQuitTriggered)) {
 		mSelectionAccumulator += stick_dead.x * SCROLL_RATE_PER_SECOND * elapsed_time; 
 		
 		/*Keeps the accumulator out of a NaN value. */
@@ -2248,124 +2270,135 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 
 	u32	initial_selection( mCurrentSelection );
 
-#ifndef DAEDALUS_PSP_GPROF		
-	if( mQuitTriggered)
-	{
-		if(new_buttons & PSP_CTRL_CROSS)
-			sceKernelExitGame();
-		else if(new_buttons != old_buttons)
-		{
-			mQuitTriggered=false;
-			return;
-		}
-	}
-#endif
-
 	mDisplayFilenames = (new_buttons & PSP_CTRL_TRIANGLE) != 0;		
 
 	mDisplayInfo = (new_buttons & PSP_CTRL_SQUARE) != 0;		
 
-	if (new_buttons & PSP_CTRL_CIRCLE) {	
-		sortbyletter = 1;		
-		if ((new_buttons & PSP_CTRL_LEFT) && !(old_buttons & PSP_CTRL_LEFT) && (!stick_dead.x)) {	
-			// Search for the next valid predecessor
-			for( int i = current_category - 1; i > -1; --i ) {
-				ECategory	category = ECategory( i );
-				AlphaMap::const_iterator it( mRomCategoryMap.find( category ) );
-				if( it != mRomCategoryMap.end() )
-				{					
-					romselmenuani = 1;
-					romselmenudir = 1;
-					romseltextoffset = 0;
-					isnextset = 0;
-					break;
+	if (!mQuitTriggered) {
+		if (new_buttons & PSP_CTRL_CIRCLE) {	
+			sortbyletter = 1;		
+			if ((new_buttons & PSP_CTRL_LEFT) && !(old_buttons & PSP_CTRL_LEFT) && (!stick_dead.x)) {	
+				// Search for the next valid predecessor
+				for( int i = current_category - 1; i > -1; --i ) {
+					ECategory	category = ECategory( i );
+					AlphaMap::const_iterator it( mRomCategoryMap.find( category ) );
+					if( it != mRomCategoryMap.end() )
+					{					
+						romselmenuani = 1;
+						romselmenudir = 1;
+						romseltextoffset = 0;
+						isnextset = 0;
+						break;
+					}
+				}
+			}
+			if ((new_buttons & PSP_CTRL_RIGHT) && !(old_buttons & PSP_CTRL_RIGHT) && (!stick_dead.x)) {	
+				for( int i = current_category + 1; i < NUM_CATEGORIES - 1; ++i ) {
+					ECategory	category = ECategory( i );
+					AlphaMap::const_iterator it( mRomCategoryMap.find( category ) );
+					if( it != mRomCategoryMap.end() )
+					{					
+						romselmenuani = 1;
+						romselmenudir = 2;
+						romseltextoffset = 0;
+						isnextset = 0;
+						break;
+					}
 				}
 			}
 		}
-		if ((new_buttons & PSP_CTRL_RIGHT) && !(old_buttons & PSP_CTRL_RIGHT) && (!stick_dead.x)) {	
-			for( int i = current_category + 1; i < NUM_CATEGORIES - 1; ++i ) {
-				ECategory	category = ECategory( i );
-				AlphaMap::const_iterator it( mRomCategoryMap.find( category ) );
-				if( it != mRomCategoryMap.end() )
-				{					
-					romselmenuani = 1;
-					romselmenudir = 2;
-					romseltextoffset = 0;
-					isnextset = 0;
-					break;
-				}
-			}
-		}
-	}
-	else { sortbyletter = 0; }
-		
-	if (old_buttons != new_buttons)	
-	{
-		if (!(new_buttons & PSP_CTRL_CIRCLE)) 
+		else { sortbyletter = 0; }
+			
+		if (old_buttons != new_buttons)	
 		{
-			if (new_buttons & PSP_CTRL_LEFT)
+			if (!(new_buttons & PSP_CTRL_CIRCLE)) 
 			{
-				if ((mCurrentSelection > 0) && (!stick_dead.x))
+				if (new_buttons & PSP_CTRL_LEFT)
 				{
-					mCurrentSelection--;
-					romselmenuani = 1;
-					romselmenudir = 1;
-					romseltextoffset = 0;
+					if ((mCurrentSelection > 0) && (!stick_dead.x))
+					{
+						mCurrentSelection--;
+						romselmenuani = 1;
+						romselmenudir = 1;
+						romseltextoffset = 0;
+					}
+				}
+				if(new_buttons & PSP_CTRL_RIGHT)
+				{
+					if ((mCurrentSelection < mRomsList.size() - 1) && (!stick_dead.x))
+					{
+						mCurrentSelection++;
+						romselmenuani = 1;
+						romselmenudir = 2;
+						romseltextoffset = 0;
+					}
 				}
 			}
-			if(new_buttons & PSP_CTRL_RIGHT)
-			{
-				if ((mCurrentSelection < mRomsList.size() - 1) && (!stick_dead.x))
-				{
-					mCurrentSelection++;
-					romselmenuani = 1;
-					romselmenudir = 2;
-					romseltextoffset = 0;
-				}
-			}
-		}
 #ifndef DAEDALUS_PSP_GPROF	
-		if(new_buttons & PSP_CTRL_HOME)
-		{
-			mQuitTriggered=true;
-		}
-#endif
-		if(new_buttons & PSP_CTRL_CROSS && mRomDelete)	// DONT CHANGE ORDER
-		{
-			remove( mSelectedRom.c_str() );
-			mRomDelete = false;
-			UpdateROMList();
-		}
-		else if((new_buttons & PSP_CTRL_START) ||
-			(new_buttons & PSP_CTRL_CROSS))
-		{
-			if(mCurrentSelection < mRomsList.size())
-			{
-				mSelectedRom = mRomsList[ mCurrentSelection ]->mFilename;
+			if((new_buttons & PSP_CTRL_HOME) && (!mQuitTriggered))
+			{ 
+				mQuitTriggered=true;
+				
+				memset(&PopUpdialog, 0, sizeof(PopUpdialog));
 
-				if(OnRomSelected != NULL)
+				PopUpdialog.base.size = sizeof(PopUpdialog);
+							
+				PopUpdialog.base.language = PSP_SYSTEMPARAM_LANGUAGE_ENGLISH;
+				PopUpdialog.base.buttonSwap = PSP_UTILITY_ACCEPT_CROSS;
+
+				PopUpdialog.base.graphicsThread = 0x11;
+				PopUpdialog.base.accessThread = 0x13;
+				PopUpdialog.base.fontThread = 0x12;
+				PopUpdialog.base.soundThread = 0x10;
+				
+				PopUpdialog.mode = PSP_UTILITY_MSGDIALOG_MODE_TEXT;
+				PopUpdialog.options = PSP_UTILITY_MSGDIALOG_OPTION_TEXT;
+				PopUpdialog.options |= PSP_UTILITY_MSGDIALOG_OPTION_YESNO_BUTTONS|PSP_UTILITY_MSGDIALOG_OPTION_DEFAULT_NO;		
+
+				strcpy(PopUpdialog.message, "Do you want to quit?");
+
+				sceUtilityMsgDialogInitStart(&PopUpdialog);
+
+			}
+#endif
+			if(new_buttons & PSP_CTRL_CROSS && mRomDelete)	// DONT CHANGE ORDER
+			{
+				remove( mSelectedRom.c_str() );
+				mRomDelete = false;
+				UpdateROMList();
+			}
+			else if((new_buttons & PSP_CTRL_START) ||
+				(new_buttons & PSP_CTRL_CROSS))
+			{
+				if(mCurrentSelection < mRomsList.size())
 				{
-					(*OnRomSelected)( mSelectedRom.c_str() );
+					mSelectedRom = mRomsList[ mCurrentSelection ]->mFilename;
+
+					if(OnRomSelected != NULL)
+					{
+						(*OnRomSelected)( mSelectedRom.c_str() );
+					}
+				}
+			}	
+
+			if(new_buttons != 0) mRomDelete = false; // DONT CHANGE ORDER clear it if any button has been pressed
+			if(new_buttons & PSP_CTRL_SELECT)
+			{
+				if(mCurrentSelection < mRomsList.size())
+				{
+					mSelectedRom = mRomsList[ mCurrentSelection ]->mFilename;
+					mRomDelete = true;
 				}
 			}
-		}	
 
-		if(new_buttons != 0) mRomDelete = false; // DONT CHANGE ORDER clear it if any button has been pressed
-		if(new_buttons & PSP_CTRL_SELECT)
-		{
-			if(mCurrentSelection < mRomsList.size())
-			{
-				mSelectedRom = mRomsList[ mCurrentSelection ]->mFilename;
-				mRomDelete = true;
-			}
 		}
-
+	
 	}
 	//
 	//	Apply the selection accumulator
 	//
 	f32		current_vel( mSelectionAccumulator );
-	if ((!(new_buttons & PSP_CTRL_LEFT)) && (!(new_buttons & PSP_CTRL_RIGHT))) {
+	if ((!(new_buttons & PSP_CTRL_LEFT)) && (!(new_buttons & PSP_CTRL_RIGHT)) && (!mQuitTriggered)) {
 		while(mSelectionAccumulator >= 1.0f)
 		{
 			if(mCurrentSelection < mRomsList.size() - 1)
@@ -2385,6 +2418,7 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 			mRomDelete = false;
 		}
 	}
+
 	//
 	//	Scroll to keep things in view
 	//	We add on 'current_vel * 2' to keep the selection highlight as close to the

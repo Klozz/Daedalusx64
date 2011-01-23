@@ -63,7 +63,7 @@ float romseltextscale = 0.0f;
 bool isnextset = 0;
 char catstr[85] = " #  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z  ? ";
 
-pspUtilityMsgDialogParams PopUpdialog; //Message Pop Up.
+pspUtilityMsgDialogParams RomSelPopUp; //Message Pop Up.
 
 namespace
 {
@@ -2006,7 +2006,7 @@ void IRomSelectorComponent::Render()
 				
 			case 3:
 				sceUtilityMsgDialogShutdownStart();		
-				if (PopUpdialog.buttonPressed == PSP_UTILITY_MSGDIALOG_RESULT_YES) {
+				if (RomSelPopUp.buttonPressed == PSP_UTILITY_MSGDIALOG_RESULT_YES) {
 					mQuitInit = true;
 				}					
 				break;
@@ -2339,25 +2339,25 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 			{ 
 				mQuitTriggered=true;
 				
-				memset(&PopUpdialog, 0, sizeof(PopUpdialog));
+				memset(&RomSelPopUp, 0, sizeof(RomSelPopUp));
 
-				PopUpdialog.base.size = sizeof(PopUpdialog);
+				RomSelPopUp.base.size = sizeof(RomSelPopUp);
 							
-				PopUpdialog.base.language = PSP_SYSTEMPARAM_LANGUAGE_ENGLISH;
-				PopUpdialog.base.buttonSwap = PSP_UTILITY_ACCEPT_CROSS;
+				RomSelPopUp.base.language = PSP_SYSTEMPARAM_LANGUAGE_ENGLISH;
+				RomSelPopUp.base.buttonSwap = PSP_UTILITY_ACCEPT_CROSS;
 
-				PopUpdialog.base.graphicsThread = 0x11;
-				PopUpdialog.base.accessThread = 0x13;
-				PopUpdialog.base.fontThread = 0x12;
-				PopUpdialog.base.soundThread = 0x10;
+				RomSelPopUp.base.graphicsThread = 0x11;
+				RomSelPopUp.base.accessThread = 0x13;
+				RomSelPopUp.base.fontThread = 0x12;
+				RomSelPopUp.base.soundThread = 0x10;
 				
-				PopUpdialog.mode = PSP_UTILITY_MSGDIALOG_MODE_TEXT;
-				PopUpdialog.options = PSP_UTILITY_MSGDIALOG_OPTION_TEXT;
-				PopUpdialog.options |= PSP_UTILITY_MSGDIALOG_OPTION_YESNO_BUTTONS|PSP_UTILITY_MSGDIALOG_OPTION_DEFAULT_NO;		
+				RomSelPopUp.mode = PSP_UTILITY_MSGDIALOG_MODE_TEXT;
+				RomSelPopUp.options = PSP_UTILITY_MSGDIALOG_OPTION_TEXT;
+				RomSelPopUp.options |= PSP_UTILITY_MSGDIALOG_OPTION_YESNO_BUTTONS|PSP_UTILITY_MSGDIALOG_OPTION_DEFAULT_NO;		
 
-				strcpy(PopUpdialog.message, "Do you want to quit?");
+				strcpy(RomSelPopUp.message, "Do you want to quit?");
 
-				sceUtilityMsgDialogInitStart(&PopUpdialog);
+				sceUtilityMsgDialogInitStart(&RomSelPopUp);
 
 			}
 #endif

@@ -282,6 +282,29 @@ namespace
 			return "?";
 		}
 	};
+	
+	class CInfoSetting : public CUISetting
+	{
+	public:
+		CInfoSetting(  const char * name, const char * description )
+			:	CUISetting( name, description )
+		{
+		}
+
+		virtual	void		OnNext()		{ (gGlobalPreferences.DisplayFramerate >= 2) ? 0 : gGlobalPreferences.DisplayFramerate++; }
+		virtual	void		OnPrevious()	{ (gGlobalPreferences.DisplayFramerate <= 0) ? 0 : gGlobalPreferences.DisplayFramerate--; }
+
+		virtual const char *	GetSettingName() const
+		{
+			switch ( gGlobalPreferences.DisplayFramerate )
+			{
+				case 0:		return "No";
+				case 1:		return "FPS";
+				case 2:		return "FPS + VB + SYNC";
+			}
+			return "?";
+		}
+	};
 
 
 }
@@ -352,7 +375,7 @@ IGlobalSettingsComponent::IGlobalSettingsComponent( CUIContext * p_context )
 ,	mQuitTriggered(false)
 ,	mQuitInit(false)
 {
-	mElements.Add( new CBoolSetting( &gGlobalPreferences.DisplayFramerate, "Display Framerate", "Whether to show the framerate while the rom is running.", "Yes", "No" ) );
+	mElements.Add( new CInfoSetting( "Display Info", "Whether to show additional info while the rom is running.") );
 	mElements.Add( new CViewPortSetting( "Viewport Size", "The size of the viewport on the PSP." ) );
 
 	if (HAVE_DVE && PSP_TV_CABLE > 0)

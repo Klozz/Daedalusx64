@@ -256,7 +256,8 @@ VERSION = $(shell svnversion -n 2> Makefile.cache)
 ifeq ($(VERSION),)
 	#Windows
 	EXTRA_TARGETS := svn $(EXTRA_TARGETS)
-	include $(PSPSDK)/lib/build.mak
+	#include $(PSPSDK)/lib/build.mak
+	include SDK/lib/build.mak
 svn:
 	@echo svnversion not found, trying SubWCRev
 	@-SubWCRev . ./Source/svnversion.txt ./Source/svnversion.h
@@ -265,7 +266,8 @@ else
 	CFLAGS += -DSVNVERSION=\"$(VERSION)\"
 	PSP_EBOOT_TITLE += $(VERSION)
 
-	include $(PSPSDK)/lib/build.mak
+	#include $(PSPSDK)/lib/build.mak
+	include SDK/lib/build.mak
 endif
 
 

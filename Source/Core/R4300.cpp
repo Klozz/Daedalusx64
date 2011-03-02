@@ -377,12 +377,12 @@ __forceinline f32 d64_to_f32( d64 x )
 //	Float -> int conversion routines
 //
 //*****************************************************************************
-static const FpuRoundMode		gNativeRoundingModes[ RM_NUM_MODES ] =
+static const PspFpuRoundMode		gNativeRoundingModes[ RM_NUM_MODES ] =
 {
-	FPU_RN,	// RM_ROUND,
-	FPU_RZ,	// RM_TRUNC,
-	FPU_RP,	// RM_CEIL,
-	FPU_RM,	// RM_FLOOR,
+	PSP_FPU_RN,	// RM_ROUND,
+	PSP_FPU_RZ,	// RM_TRUNC,
+	PSP_FPU_RP,	// RM_CEIL,
+	PSP_FPU_RM,	// RM_FLOOR,
 };
 
 inline void SET_ROUND_MODE( ERoundingMode mode )
@@ -397,26 +397,26 @@ inline s32 f32_to_s32_trunc( f32 x )				{ s32 r; asm volatile ( "trunc.w.s %1, %
 inline s32 f32_to_s32_round( f32 x )				{ s32 r; asm volatile ( "round.w.s %1, %1\nmfc1 %0,%1\n" : "=r"(r) : "f"(x) ); return r; }
 inline s32 f32_to_s32_ceil( f32 x )					{ s32 r; asm volatile ( "ceil.w.s  %1, %1\nmfc1 %0,%1\n" : "=r"(r) : "f"(x) ); return r; }
 inline s32 f32_to_s32_floor( f32 x )				{ s32 r; asm volatile ( "floor.w.s %1, %1\nmfc1 %0,%1\n" : "=r"(r) : "f"(x) ); return r; }
-inline s32 f32_to_s32( f32 x, ERoundingMode mode )	{ pspfpu_set_roundmode( gNativeRoundingModes[ mode ] ); return f32_to_s32_cvt( x ); }
+inline s32 f32_to_s32( f32 x, ERoundingMode mode )	{ pspFpuSetRoundmode( gNativeRoundingModes[ mode ] ); return f32_to_s32_cvt( x ); }
 
 inline s64 f32_to_s64_trunc( f32 x )				{ return (s64)x; }
 inline s64 f32_to_s64_round( f32 x )				{ return (s64)( x + 0.5f ); }
 inline s64 f32_to_s64_ceil( f32 x )					{ return (s64)pspFpuCeil( x ); }
 inline s64 f32_to_s64_floor( f32 x )				{ return (s64)pspFpuFloor( x ); }
-inline s64 f32_to_s64( f32 x, ERoundingMode mode )	{ pspfpu_set_roundmode( gNativeRoundingModes[ mode ] ); return (s64)x; }	// XXXX Need to do a cvt really
+inline s64 f32_to_s64( f32 x, ERoundingMode mode )	{ pspFpuSetRoundmode( gNativeRoundingModes[ mode ] ); return (s64)x; }	// XXXX Need to do a cvt really
 
 inline s32 d64_to_s32_cvt( d64 x )					{ return f32_to_s32_cvt( (f32)x ); }
 inline s32 d64_to_s32_trunc( d64 x )				{ return f32_to_s32_trunc( (f32)x ); }
 inline s32 d64_to_s32_round( d64 x )				{ return f32_to_s32_round( (f32)x ); }
 inline s32 d64_to_s32_ceil( d64 x )					{ return f32_to_s32_ceil( (f32)x ); }
 inline s32 d64_to_s32_floor( d64 x )				{ return f32_to_s32_floor( (f32)x ); }
-inline s32 d64_to_s32( d64 x, ERoundingMode mode )	{ pspfpu_set_roundmode( gNativeRoundingModes[ mode ] ); return d64_to_s32_cvt( (f32)x ); }
+inline s32 d64_to_s32( d64 x, ERoundingMode mode )	{ pspFpuSetRoundmode( gNativeRoundingModes[ mode ] ); return d64_to_s32_cvt( (f32)x ); }
 
 inline s64 d64_to_s64_trunc( d64 x )				{ return (s64)x; }
 inline s64 d64_to_s64_round( d64 x )				{ return (s64)( x + 0.5f ); }
 inline s64 d64_to_s64_ceil( d64 x )					{ return (s64)pspFpuCeil( x ); }
 inline s64 d64_to_s64_floor( d64 x )				{ return (s64)pspFpuFloor( x ); }
-inline s64 d64_to_s64( d64 x, ERoundingMode mode )	{ pspfpu_set_roundmode( gNativeRoundingModes[ mode ] ); return (s64)x; }	// XXXX Need to do a cvt really
+inline s64 d64_to_s64( d64 x, ERoundingMode mode )	{ pspFpuSetRoundmode( gNativeRoundingModes[ mode ] ); return (s64)x; }	// XXXX Need to do a cvt really
 
 
 static void R4300_CALL_TYPE R4300_Cop1_BCInstr( R4300_CALL_SIGNATURE );

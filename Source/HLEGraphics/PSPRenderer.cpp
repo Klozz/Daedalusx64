@@ -155,7 +155,6 @@ ALIGNED_GLOBAL(u32,gSelectedTexture[gPlaceholderTextureWidth * gPlaceholderTextu
 
 extern void		PrintMux( FILE * fh, u64 mux );
 
-
 //***************************************************************************
 //*General blender used for testing //Corn
 //***************************************************************************
@@ -270,7 +269,7 @@ const char *gCAdj[4] =
 	} \
 } \
 
-#endif	// DAEDALUS_DEBUG_DISPLAYLIST
+#endif
 
 //*****************************************************************************
 // Creator function for singleton
@@ -831,13 +830,14 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 {
 	static bool		gZFightingEnabled	= false;
 	bool			gLastUseZBuffer		= false;
-	mEnPDepth	= false;	//We clear this flag here for now //Corn
 
 	u32 blender				( gOtherModeL );
 	u32	gLastRDPOtherMode	( 0 );
 
 	DAEDALUS_PROFILE( "PSPRenderer::RenderUsingCurrentBlendMode" );
 
+	//SSV doesnt want us to clear it...strange...
+	if( g_ROM.GameHacks != SILICONVALLEY ) mEnPDepth = false;	//We clear SetPrimDepth flag here for now //Corn
 
 	// Hack for nascar games..to be honest I don't know why these games are so different...might be tricky to have a proper fix..
 	// Hack accuracy : works 100%
@@ -919,7 +919,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	//
 	if( (blender & 0x4000) && (gRDPOtherMode.cycle_type < CYCLE_COPY) )
 	{
-		InitBlenderMode( blender );
+		InitBlenderMode( blender >> 16 );
 	}
 	//
 	// I can't think why the hand in mario's menu screen is rendered with an opaque rendermode,
@@ -1026,14 +1026,14 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		details.ColourAdjuster.Process( p_vertices, num_vertices );
 		sceGuDrawArray( DRAW_MODE, render_flags, num_vertices, NULL, p_vertices );
 	
-#else
+	#else
 		// Use the nasty placeholder texture
 		sceGuEnable(GU_TEXTURE_2D);
 		SelectPlaceholderTexture( PTT_SELECTED );
 		sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 		sceGuTexMode(GU_PSM_8888,0,0,GL_TRUE);		// maxmips/a2/swizzle = 0
 		sceGuDrawArray( DRAW_MODE, render_flags, num_vertices, NULL, p_vertices );
-#endif
+	#endif
 	}
 	else
 #endif
@@ -1179,7 +1179,6 @@ bool PSPRenderer::TexRect( u32 tile_idx, const v2 & xy0, const v2 & xy1, const v
 	// Weird Road Rash...*sigh*
 	// Fixes 1/2 sky covering the screen issue in RR..
 	bool bIsZBuffer = (mEnPDepth || g_ROM.GameHacks == ROAD_RASH) ? false : true;
-	mEnPDepth = false;
 
 	DaedalusVtx trv[ 6 ];
 
@@ -1229,10 +1228,10 @@ bool PSPRenderer::TexRectFlip( u32 tile_idx, const v2 & xy0, const v2 & xy1, con
 
 	v3	positions[ 4 ] =
 	{
-		v3( screen0.x, screen0.y, gTexRectDepth ),
-		v3( screen1.x, screen0.y, gTexRectDepth ),
-		v3( screen1.x, screen1.y, gTexRectDepth ),
-		v3( screen0.x, screen1.y, gTexRectDepth ),
+		v3( screen0.x, screen0.y, mPrimDepth ),
+		v3( screen1.x, screen0.y, mPrimDepth ),
+		v3( screen1.x, screen1.y, mPrimDepth ),
+		v3( screen0.x, screen1.y, mPrimDepth ),
 	};
 	v2	tex_coords[ 4 ] =
 	{
@@ -1250,7 +1249,7 @@ bool PSPRenderer::TexRectFlip( u32 tile_idx, const v2 & xy0, const v2 & xy1, con
 	trv[4] = DaedalusVtx( positions[ 0 ], 0xffffffff, tex_coords[ 0 ] );
 	trv[5] = DaedalusVtx( positions[ 3 ], 0xffffffff, tex_coords[ 3 ] );
 
-	return RenderTriangleList( trv, 6, true );
+	return RenderTriangleList( trv, 6, ~mEnPDepth );
 }
 
 //*****************************************************************************
@@ -1385,12 +1384,11 @@ inline v4 PSPRenderer::LightVert( const v3 & norm ) const
 		}
 	}
 
-	//Clip to 1.0 seems to work fine without it //Corn
-
-	/*if( result.x > 1.0f ) result.x = 1.0f;
+	//Clamp to 1.0
+	if( result.x > 1.0f ) result.x = 1.0f;
 	if( result.y > 1.0f ) result.y = 1.0f;
 	if( result.z > 1.0f ) result.z = 1.0f;
-	if( result.w > 1.0f ) result.w = 1.0f;*/
+	if( result.w > 1.0f ) result.w = 1.0f;
 
 	return result;
 }

@@ -105,6 +105,7 @@ u32 gRDPFrame = 0;
 u32 gOtherModeL   = 0;
 u32 gOtherModeH   = 0;
 u32 gRDPHalf1 = 0;
+u32 gScrnUpd;	//Default is 0f
 
 extern UcodeInfo last;
 //////////////////////////////////////////////////////////
@@ -615,7 +616,7 @@ void DLParser_Process()
 	// Update Screen only when something is drawn, otherwise several games ex Army Men will flash or shake.
 	// Update Screen earlier, otherwise several games like ex Mario won't work.
 	//
-	gGraphicsPlugin->UpdateScreen();
+	if(!gScrnUpd) gGraphicsPlugin->UpdateScreen();
 
 	OSTask * pTask = (OSTask *)(g_pu8SpMemBase + 0x0FC0);
 	u32 code_base = (u32)pTask->t.ucode & 0x1fffffff;
@@ -679,6 +680,8 @@ void DLParser_Process()
 		DLParser_ProcessDList();
 		PSPRenderer::Get()->EndScene();
 	}
+
+	if(gScrnUpd == 1) gGraphicsPlugin->UpdateScreen();
 
 	// Do this regardless!
 	FinishRDPJob();
@@ -2162,12 +2165,11 @@ void MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address )
 //*************************************************************************************
 //
 //*************************************************************************************
-// Arrrg this isn't right, need to implement it correctly...
-// Donald Duck, Tarzan, all wrestling games use this
+// Rayman 2, Donald Duck, Tarzan, all wrestling games use this
 //
 static void RDP_Force_Matrix(u32 address)
 {
-	// Fix me !
+
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST	
 	if (address + 64 > MAX_RAM_ADDRESS)
 	{
@@ -2175,8 +2177,14 @@ static void RDP_Force_Matrix(u32 address)
 		return;
 	}
 #endif
+
 	Matrix4x4 mat;
+
 	MatrixFromN64FixedPoint(mat,address);
+
+#if 1	//1->hacky way A, 0->hacky way B :)
 	PSPRenderer::Get()->ForceMatrix(mat);
-	//PSPRenderer::Get()->SetProjection(mat, true, true);
+#else
+	PSPRenderer::Get()->SetProjection(mat, true, true);
+#endif
 }

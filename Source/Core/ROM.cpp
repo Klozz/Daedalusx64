@@ -52,7 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //*****************************************************************************
 //
 //*****************************************************************************
-const char *gGameHackNames[13] = 
+const char *gGameHackNames[ MAX_HACK_NAMES ] = 
 {
 	"No Game Specific Hack",
 	"TLB Hack", 
@@ -66,6 +66,13 @@ const char *gGameHackNames[13] =
 	"1/2 ZBuffer Hack",
 	"Depth Hack",
 	"Width Hack"
+	"osTimer Disabled Hack",
+	"S2DEX Palette Hack",
+	"Tarzan Misc Hacks",
+	"Force Mtx Donald Duck Hack",
+	"Force Mtx Rayman",
+	"Force Mtx StarWars Racer",
+	"Force Mtx Top Rally"
 };
 #endif
 
@@ -468,6 +475,8 @@ void SpecificGameHacks( const ROMHeader & id )
 	case 0x4154: g_ROM.GameHacks = TARZAN;				break;
 	case 0x5144: g_ROM.GameHacks = DONALD;				break;
 	case 0x3259: g_ROM.GameHacks = RAYMAN;				break;
+	case 0x5045: g_ROM.GameHacks = SWRACER;				break;
+	case 0x5247: g_ROM.GameHacks = TGRALLY;				break;
 	case 0x5653:	//SSV	
 	case 0x5547:	//Sin and punishment	
 	case 0x4641:	//Animal crossing	

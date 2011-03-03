@@ -95,6 +95,10 @@ class RomID
 
 struct SRomPreferences;
 
+// Increase this everytime you add a new hack, don't forget to add it in gGameHackNames too !!!
+//
+#define MAX_HACK_NAMES 20
+//
 //*****************************************************************************
 //	Hacks for games etc.
 //*****************************************************************************
@@ -116,7 +120,9 @@ enum EGameHacks
 	KIRBY64,
 	TARZAN,
 	DONALD,
-	RAYMAN
+	RAYMAN,
+	SWRACER,
+	TGRALLY
 };
 
 //*****************************************************************************

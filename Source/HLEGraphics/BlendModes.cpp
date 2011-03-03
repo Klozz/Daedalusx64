@@ -2652,7 +2652,7 @@ void BlendMode_0x00551aaa1134fe7fLL (BLEND_MODE_ARGS)
 //#T
 */
 
-//Tarzan birds wings, Marios drop shadows in SM64
+//Tarzan
 //case 0x00121824ff33ffffLL:
 //aRGB0: (Texel0       - 0           ) * Shade        + 0
 //aA0  : (Texel0       - 0           ) * Shade        + 0
@@ -2660,7 +2660,7 @@ void BlendMode_0x00551aaa1134fe7fLL (BLEND_MODE_ARGS)
 //aA1  : (Texel0       - 0           ) * Shade        + 0
 void BlendMode_0x00121824ff33ffffLL( BLEND_MODE_ARGS )
 {
-	//details.ColourAdjuster.SetA( c32(0,0,0,0xD8) );
+	details.ColourAdjuster.SetAOpaque();
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
 

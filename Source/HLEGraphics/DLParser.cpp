@@ -110,7 +110,7 @@ extern LastUcodeInfo UcodeInfo;
 
 const MicroCodeInstruction *gUcode = gInstructionLookup[0];
 #if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
-const MicroCodeInstruction *gUcodeName = gInstructionName[0];
+//const char gUcodeName = gInstructionName[0];
 #endif
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
@@ -453,7 +453,7 @@ void	DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 da
 
 	// Check if ucode has been set or cached
 	//
-	//if ( ucode == UCODE_CACHED )	return; // breaks LoadUcode
+	//if ( ucode == UCODE_CACHED )	return;
 
 	//
 	// This is the multiplier applied to vertex indices. 
@@ -472,19 +472,19 @@ void	DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 da
 		2,		// Conker BFD
 		10,		// Perfect Dark
 		2,		// Yoshi's Story, Pokemon Puzzle League
-		2		// Kirby 64
 	};
 
+	//DBGConsole_Msg(0, "ucode=%d", ucode);
 	// Detect correct ucode table
 	gUcode = gInstructionLookup[ ucode ];
 
 	// Detect Correct Vtx Stride
 	gVertexStride = vertex_stride[ ucode ];
-
+	
 	//if ucode version is other than 0,1 or 2 then default to 0 (with non valid function names) 
 	//
 #if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
-	gUcodeName = gUcodeName[ gbi_version <= 2 ? ucode : 0 ];
+	//gUcodeName = gUcodeName[ ucode <= 2 ? ucode : 0 ];
 #endif
 
 }
@@ -499,7 +499,7 @@ SProfileItemHandle * gpProfileItemHandles[ 256 ];
 #define PROFILE_DL_CMD( cmd )								\
 	if(gpProfileItemHandles[ (cmd) ] == NULL)				\
 	{														\
-		gpProfileItemHandles[ (cmd) ] = new SProfileItemHandle( CProfiler::Get()->AddItem(  gUcodeName[ (cmd) ] );		\
+		gpProfileItemHandles[ (cmd) ] = new SProfileItemHandle( CProfiler::Get()->AddItem( /* gUcodeName[ (cmd)*/0 ] );		\
 	}														\
 	CAutoProfile		_auto_profile( *gpProfileItemHandles[ (cmd) ] )
 
@@ -517,7 +517,7 @@ static void	DLParser_ProcessDList()
 	MicroCodeCommand command;
 
 	//Clean frame buffer at DList start if selected
-	if( gCleanSceneEnabled && CGraphicsContext::CleanScene )
+	if( gCleanSceneEnabled & CGraphicsContext::CleanScene )
 	{
 		CGraphicsContext::Get()->Clear(true, false);
 		CGraphicsContext::CleanScene = false;
@@ -538,37 +538,42 @@ static void	DLParser_ProcessDList()
 
 	while(1)
 	{
-		DLParser_FetchNextCommand( &command );
-		
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-		//use the gInstructionName table for fecthing names.
-		//we use the table as is for GBI0, GBI1 and GBI2
-		//we fallback to GBI0 for custom ucodes (ucode_ver>2)
-		DL_PF("[%05d] 0x%08x: %08x %08x %-10s", gCurrentInstructionCount, pc, command.inst.cmd0, command.inst.cmd1, gUcodeName[command.inst.cmd ]);
-		gCurrentInstructionCount++;
-
-		if( gInstructionCountLimit != UNLIMITED_INSTRUCTION_COUNT )
+		//This lets us skip DLParser_RDPLoadSync, DLParser_RDPPipeSync & DLParser_RDPTileSync
+		//early and saves us wasted time jumping for empty functions (worth since they happen a lot)
+		do
 		{
-			if( gCurrentInstructionCount >= gInstructionCountLimit )
+			DLParser_FetchNextCommand(&command);
+
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+			//use the gInstructionName table for fecthing names.
+			//we use the table as is for GBI0, GBI1 and GBI2
+			//we fallback to GBI0 for custom ucodes (ucode_ver>2)
+			//DL_PF("[%05d] 0x%08x: %08x %08x %-10s", gCurrentInstructionCount, pc, command.inst.cmd0, command.inst.cmd1, gUcodeName[command.inst.cmd ]);
+			gCurrentInstructionCount++;
+
+			if( gInstructionCountLimit != UNLIMITED_INSTRUCTION_COUNT )
 			{
-				return;
+				if( gCurrentInstructionCount >= gInstructionCountLimit )
+				{
+					return;
+				}
 			}
-		}
 #endif
+		}
+		while( (command.inst.cmd > 0xE5) && (command.inst.cmd < 0xE9) ); 
 
 		//Profile current Ucode
 		PROFILE_DL_CMD( command.inst.cmd );
 
 		//Run Ucode command
-		//gInstructionLookup[ ucode_ver ][ command.inst.cmd ]( command ); 
 		gUcode[ command.inst.cmd ]( command ); 
 
 		// Check limit
 		if ( !gDisplayListStack.empty() )
 		{
-			// This is broken, we never reach EndDLInMem - Fix me
-			// Also there's a warning in debug mode of this always being false
-			if ( --gDisplayListStack.back().limit < 0 )
+			// This is broken, we never reach EndDLInMem - Fix me (not sure why but neither did the old way //Corn)
+			// Also there's a warning in debug mode of this always being false (FIXED //Corn)
+			if ( gDisplayListStack.back().limit-- == 0)
 			{
 				DL_PF("**EndDLInMem");
 				gDisplayListStack.pop_back();
@@ -1571,6 +1576,54 @@ void DLParser_SetTImg( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
+#if 1
+void DLParser_LoadBlock( MicroCodeCommand command )
+{
+	u32 uls			= command.loadtile.sl;
+	u32 ult			= command.loadtile.tl;
+	u32 tile_idx	= command.loadtile.tile;
+	u32 lrs			= command.loadtile.sh;		// Number of bytes-1
+	u32 dxt			= command.loadtile.th;		// 1.11 fixed point
+
+	use(lrs);
+	//u32 size = lrs + 1;
+
+	bool	swapped;
+	//u32		bytes;
+
+	if (dxt == 0)
+	{
+		//bytes = 1 << 3;
+		swapped = true;
+	}
+	else
+	{
+		//bytes = ((2047 + dxt) / dxt) << 3;						// #bytes
+		swapped = false;
+	}
+
+	//u32		width( bytes2pixels( bytes, g_TI.Size ) );
+	//u32		pixel_offset( (width * ult) + uls );
+	//u32		offset( pixels2bytes( pixel_offset, g_TI.Size ) );
+	//u32		src_offset(g_TI.Address + offset);
+
+	//u32		src_offset = g_TI.Address + ult * bytes + (uls << g_TI.Size >> 1);
+	u32		src_offset = g_TI.Address + ult * (g_TI.Width << g_TI.Size >> 1) + (uls << g_TI.Size >> 1);
+
+	DL_PF("    Tile:%d (%d,%d - %d) DXT:0x%04x = %d Bytes => %d pixels/line", tile_idx, uls, ult, lrs, dxt, (g_TI.Width << g_TI.Size >> 1), width);
+	DL_PF("    Offset: 0x%08x", src_offset);
+
+	gRDPStateManager.LoadBlock( tile_idx, src_offset, swapped );
+
+	if( gTMEMemulation )
+	{
+		RDP_TileSize tile;
+		tile.cmd0 = command.inst.cmd0;
+		tile.cmd1 = command.inst.cmd1;
+		RDP_LoadBlock( tile );
+	}
+}
+#else
 void DLParser_LoadBlock( MicroCodeCommand command )
 {
 	u32 uls			= command.loadtile.sl;
@@ -1615,7 +1668,7 @@ void DLParser_LoadBlock( MicroCodeCommand command )
 		RDP_LoadBlock( tile );
 	}
 }
-
+#endif
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -1638,21 +1691,25 @@ void DLParser_LoadTile( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_LoadTLut( MicroCodeCommand command )
 {
-	u32 uls     = command.loadtile.sl/4;
-	u32 ult		= command.loadtile.tl/4;
+	u32 uls     = command.loadtile.sl >> 2;
+	u32 ult		= command.loadtile.tl >> 2;
 	u32 tile_idx= command.loadtile.tile;
-	u32 lrs     = command.loadtile.sh/4;
+	u32 lrs     = command.loadtile.sh >> 2;
 
 	//This corresponds to the number of palette entries (16 or 256)
-	u32 count = (lrs - uls)+1;
+	u32 count = (lrs - uls) + 1;
+	if(count & ~0x110) return; //bail if not 16/256, MM gives 64 on occation wich is wrong //Corn
 
 	// Format is always 16bpp - RGBA16 or IA16:
-	u32 offset = (uls + ult*g_TI.Width)*2;
+	u32 offset = ((uls + ult * g_TI.Width) * 2);
+	//offset &= 0x0FFF;
 
 	//Copy PAL to the PAL memory
 	u32 tmem = gRDPTiles[ tile_idx ].tmem << 3;
-	u16 * p_source = (u16 *)&g_pu8RamBase[ g_TI.Address + offset ];
-	u16 * p_dest = (u16*)&gTextureMemory[ tmem ];
+	u16 * p_source = (u16*)&g_pu8RamBase[ g_TI.Address + offset ];
+	u16 * p_dest   = (u16*)&gTextureMemory[ tmem ];
+
+	//printf("Addr %08X : TMEM %03X : Tile %d : P %d : Orig %d\n",g_TI.Address + offset, tmem, tile_idx, count, offset); 
 
 #if 1
 	memcpy_vfpu_BE(p_dest, p_source, count << 1);
@@ -1660,7 +1717,9 @@ void DLParser_LoadTLut( MicroCodeCommand command )
 	for (u32 i=0; i<count; i++)
 	{
 		p_dest[ i ] = p_source[ i ];
+		//if(count & 0x10) printf("%04X ",p_source[ i ]);
 	}
+	//if(count & 0x10) printf("\n");
 #endif
 
 	// Format is always 16bpp - RGBA16 or IA16:
@@ -1670,7 +1729,7 @@ void DLParser_LoadTLut( MicroCodeCommand command )
 	//gPalAddresses[ rdp_tile.tmem ] = g_TI.Address + offset;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	u32 lrt = command.loadtile.th/4;
+	u32 lrt = command.loadtile.th >> 2;
 
 	if (gDisplayListFile != NULL)
 	{

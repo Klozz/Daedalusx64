@@ -327,10 +327,10 @@ void RSP_HLE_ProcessTask()
 #endif
 			break;
 	}
-
 #ifdef DAEDALUS_ENABLE_ASSERTS
 	u32		status;
 #endif
+
 	switch( result )
 	{
 	case PR_STARTED:

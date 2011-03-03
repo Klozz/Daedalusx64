@@ -108,10 +108,6 @@ u32 gRDPHalf1 = 0;
 
 extern LastUcodeInfo UcodeInfo;
 
-const MicroCodeInstruction *gUcode = gInstructionLookup[0];
-#if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
-//const char gUcodeName = gInstructionName[0];
-#endif
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
 //                      Dumping                         //
@@ -165,6 +161,12 @@ struct DList
 };
 
 std::vector< DList > gDisplayListStack;
+
+const MicroCodeInstruction *gUcode = gInstructionLookup[0];
+
+#if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
+u32 gucode_ver=0;	//Need this global ucode version to get correct ucode names
+#endif
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 static u32					gCurrentInstructionCount = 0;			// Used for debugging display lists
@@ -484,7 +486,7 @@ void	DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 da
 	//if ucode version is other than 0,1 or 2 then default to 0 (with non valid function names) 
 	//
 #if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
-	//gUcodeName = gUcodeName[ ucode <= 2 ? ucode : 0 ];
+	gucode_ver = (ucode <= 2) ? ucode : 0;
 #endif
 
 }
@@ -499,7 +501,7 @@ SProfileItemHandle * gpProfileItemHandles[ 256 ];
 #define PROFILE_DL_CMD( cmd )								\
 	if(gpProfileItemHandles[ (cmd) ] == NULL)				\
 	{														\
-		gpProfileItemHandles[ (cmd) ] = new SProfileItemHandle( CProfiler::Get()->AddItem( /* gUcodeName[ (cmd)*/0 ] );		\
+		gpProfileItemHandles[ (cmd) ] = new SProfileItemHandle( CProfiler::Get()->AddItem( gInstructionName[ gucode_ver ][ cmd ] );		\
 	}														\
 	CAutoProfile		_auto_profile( *gpProfileItemHandles[ (cmd) ] )
 
@@ -548,7 +550,7 @@ static void	DLParser_ProcessDList()
 			//use the gInstructionName table for fecthing names.
 			//we use the table as is for GBI0, GBI1 and GBI2
 			//we fallback to GBI0 for custom ucodes (ucode_ver>2)
-			//DL_PF("[%05d] 0x%08x: %08x %08x %-10s", gCurrentInstructionCount, pc, command.inst.cmd0, command.inst.cmd1, gUcodeName[command.inst.cmd ]);
+			DL_PF("[%05d] 0x%08x: %08x %08x %-10s", gCurrentInstructionCount, pc, command.inst.cmd0, command.inst.cmd1, gInstructionName[ gucode_ver ][command.inst.cmd ]);
 			gCurrentInstructionCount++;
 
 			if( gInstructionCountLimit != UNLIMITED_INSTRUCTION_COUNT )
@@ -993,8 +995,9 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 	{
 	case G_MW_MATRIX:
 		DL_PF("    G_MW_MATRIX");
-		RDP_NOIMPL_WARN("GBI1: G_MW_MATRIX Not Implemented");
+		//RDP_NOIMPL_WARN("GBI1: G_MW_MATRIX Not Implemented");
 		// Insert Matrix is needed here !
+		PSPRenderer::Get()->InsertMatrix(command.inst.cmd0, command.inst.cmd1);
 		break;
 	case G_MW_NUMLIGHT:
 		//#define NUML(n)		(((n)+1)*32 + 0x80000000)
@@ -1118,8 +1121,9 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 	{
 	case G_MW_MATRIX:
 		DL_PF("    G_MW_MATRIX");
-		RDP_NOIMPL_WARN( "GBI2: G_MW_MATRIX not implemented" );
+		//RDP_NOIMPL_WARN( "GBI2: G_MW_MATRIX not implemented" );
 		// Insert Matrix is needed here !
+		PSPRenderer::Get()->InsertMatrix(command.inst.cmd0, command.inst.cmd1);
 		break;
 	case G_MW_NUMLIGHT:
 		{
@@ -1533,10 +1537,9 @@ void DLParser_SetTile( MicroCodeCommand command )
 	RDP_SetTile( tile );
 	gRDPStateManager.SetTile( tile.tile_idx, tile );
 
-	DL_PF("    Tile:%d  Fmt: %s/%s Line:%d TMem:0x%04x Palette:%d", tile.tile_idx, gFormatNames[tile.format], gSizeNames[tile.size], tile.line, tile.tmem, tile.palette);
-	DL_PF( "         S: Clamp: %s Mirror:%s Mask:0x%x Shift:0x%x", gOnOffNames[tile.clamp_s],gOnOffNames[tile.mirror_s], tile.mask_s, tile.shift_s );
-	DL_PF( "         T: Clamp: %s Mirror:%s Mask:0x%x Shift:0x%x", gOnOffNames[tile.clamp_t],gOnOffNames[tile.mirror_t], tile.mask_t, tile.shift_t );
-
+	DL_PF( "    Tile:%d  Fmt: %s/%s Line:%d TMem:0x%04x Palette:%d", tile.tile_idx, gFormatNames[tile.format], gSizeNames[tile.size], tile.line, tile.tmem, tile.palette);
+	DL_PF( "         S: Clamp:%s Mirror:%s Mask:0x%x Shift:0x%x", gOnOffNames[tile.clamp_s],gOnOffNames[tile.mirror_s], tile.mask_s, tile.shift_s );
+	DL_PF( "         T: Clamp:%s Mirror:%s Mask:0x%x Shift:0x%x", gOnOffNames[tile.clamp_t],gOnOffNames[tile.mirror_t], tile.mask_t, tile.shift_t );
 }
 
 //*****************************************************************************
@@ -1574,11 +1577,9 @@ void DLParser_SetTImg( MicroCodeCommand command )
 	DL_PF("    Image: 0x%08x Fmt: %s/%s Width: %d (Pitch: %d)", g_TI.Address, gFormatNames[g_TI.Format], gSizeNames[g_TI.Size], g_TI.Width, g_TI.GetPitch());
 }
 
-
 //*****************************************************************************
 //
 //*****************************************************************************
-#if 1
 void DLParser_LoadBlock( MicroCodeCommand command )
 {
 	u32 uls			= command.loadtile.sl;
@@ -1590,17 +1591,23 @@ void DLParser_LoadBlock( MicroCodeCommand command )
 	use(lrs);
 	//u32 size = lrs + 1;
 
+#if 1	//two different ways to calc offset
+	bool	swapped = (dxt)? false : true;
+
+	u32		src_offset = g_TI.Address + ult * (g_TI.Width << g_TI.Size >> 1) + (uls << g_TI.Size >> 1);
+
+#else
 	bool	swapped;
-	//u32		bytes;
+	u32		bytes;
 
 	if (dxt == 0)
 	{
-		//bytes = 1 << 3;
+		bytes = 1 << 3;
 		swapped = true;
 	}
 	else
 	{
-		//bytes = ((2047 + dxt) / dxt) << 3;						// #bytes
+		bytes = ((2047 + dxt) / dxt) << 3;						// #bytes
 		swapped = false;
 	}
 
@@ -1609,10 +1616,10 @@ void DLParser_LoadBlock( MicroCodeCommand command )
 	//u32		offset( pixels2bytes( pixel_offset, g_TI.Size ) );
 	//u32		src_offset(g_TI.Address + offset);
 
-	//u32		src_offset = g_TI.Address + ult * bytes + (uls << g_TI.Size >> 1);
-	u32		src_offset = g_TI.Address + ult * (g_TI.Width << g_TI.Size >> 1) + (uls << g_TI.Size >> 1);
+	u32		src_offset = g_TI.Address + ult * bytes + (uls << g_TI.Size >> 1);
+#endif
 
-	DL_PF("    Tile:%d (%d,%d - %d) DXT:0x%04x = %d Bytes => %d pixels/line", tile_idx, uls, ult, lrs, dxt, (g_TI.Width << g_TI.Size >> 1));
+	DL_PF("    Tile:%d (%d,%d - %d) DXT:0x%04x = %d Bytes => %d pixels/line", tile_idx, uls, ult, lrs, dxt, (g_TI.Width << g_TI.Size >> 1), bytes2pixels( (g_TI.Width << g_TI.Size >> 1), g_TI.Size ));
 	DL_PF("    Offset: 0x%08x", src_offset);
 
 	gRDPStateManager.LoadBlock( tile_idx, src_offset, swapped );
@@ -1624,51 +1631,7 @@ void DLParser_LoadBlock( MicroCodeCommand command )
 	RDP_LoadBlock( tile );
 #endif
 }
-#else
-void DLParser_LoadBlock( MicroCodeCommand command )
-{
-	u32 uls			= command.loadtile.sl;
-	u32 ult			= command.loadtile.tl;
-	u32 tile_idx	= command.loadtile.tile;
-	u32 lrs			= command.loadtile.sh;		// Number of bytes-1?
-	u32 dxt			= command.loadtile.th;		// 1.11 fixed point
 
-	use(lrs);
-
-	u32		quadwords;
-	bool	swapped;
-
-	if (dxt == 0)
-	{
-		quadwords = 1;
-		swapped = true;
-	}
-	else
-	{
-		quadwords = 2048 / dxt;						// #Quad Words
-		swapped = false;
-	}
-
-	u32		bytes( quadwords * 8 );
-	u32		width( bytes2pixels( bytes, g_TI.Size ) );
-	u32		pixel_offset( (width * ult) + uls );
-	u32		offset( pixels2bytes( pixel_offset, g_TI.Size ) );
-
-	u32		src_offset(g_TI.Address + offset);
-
-	DL_PF("    Tile:%d (%d,%d - %d) DXT:0x%04x = %d QWs => %d pixels/line", tile_idx, uls, ult, lrs, dxt, quadwords, width);
-	DL_PF("    Offset: 0x%08x", src_offset);
-
-	gRDPStateManager.LoadBlock( tile_idx, src_offset, swapped );
-
-#if RDP_EMULATE_TMEM
-	RDP_TileSize tile;
-	tile.cmd0 = command.inst.cmd0;
-	tile.cmd1 = command.inst.cmd1;
-	RDP_LoadBlock( tile );
-#endif
-}
-#endif
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -1697,7 +1660,7 @@ void DLParser_LoadTLut( MicroCodeCommand command )
 	u32 lrs     = command.loadtile.sh >> 2;
 
 	//This corresponds to the number of palette entries (16 or 256)
-	//Seems partial load of palette is alowed -> count != 16 or 256 (MM, SSB, Starfox64, MRC) //Corn
+	//Seems partial load of palette is allowed -> count != 16 or 256 (MM, SSB, Starfox64, MRC) //Corn
 	u32 count = (lrs - uls) + 1;
 
 	// Format is always 16bpp - RGBA16 or IA16:
@@ -2214,5 +2177,6 @@ static void RDP_Force_Matrix(u32 address)
 #endif
 	Matrix4x4 mat;
 	MatrixFromN64FixedPoint(mat,address);
-	PSPRenderer::Get()->SetProjection(mat, true, true);
+	PSPRenderer::Get()->ForceMatrix(mat);
+	//PSPRenderer::Get()->SetProjection(mat, true, true);
 }

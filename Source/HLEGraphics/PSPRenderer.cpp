@@ -2401,7 +2401,7 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 	mTileTopLeft[ index ] = v2( f32( tile_size.left) * (1.0f / 4.0f), f32(tile_size.top)* (1.0f / 4.0f) );
 
 	DL_PF( "     *Performing texture map load:" );
-	DL_PF( "     *  Address: 0x%08x, Pitch: %d, Format: %s, Size: %dbpp, %dx%d",
+	DL_PF( "     *Address: 0x%08x, Pitch: %d, Format: %s, Size: %dbpp, %dx%d",
 			ti.GetLoadAddress(), ti.GetPitch(),
 			ti.GetFormatName(), ti.GetSizeInBits(),
 			ti.GetWidth(), ti.GetHeight() );
@@ -2638,15 +2638,63 @@ void PSPRenderer::Draw2DTexture( float imageX, float imageY, float frameX, float
 }
 
 //*****************************************************************************
-//
+//Modify the WorldProject matrix
 //*****************************************************************************
-void PSPRenderer::SetFogMinMax(float fMin, float fMax)
+void PSPRenderer::InsertMatrix(u32 w0, u32 w1)
 {
-	//printf(" Fog %.3f..%.3f\n",fMin,fMax);
-	//printf("Set Fog: Min=%f, Max=%f",fMin,fMax);
-	sceGuFog(fMin, fMax, mFogColour.GetColour());
+	f32 fraction;
+
+	if( !mWorldProjectValid )
+	{
+		mWorldProject = mModelViewStack[mModelViewTop] * mProjectionStack[mProjectionTop];
+		mWorldProjectValid = true;
+	}
+
+	u32 x = (w0 & 0x1F) >> 1;
+	u32 y = x >> 2;
+	x &= 3;
+
+	if (w0 & 0x20)
+	{
+		//Change fraction part
+		fraction = (w1 >> 16) / 65536.0f;
+		mWorldProject.m[y][x] = (f32)(s32)mWorldProject.m[y][x];
+		mWorldProject.m[y][x] += fraction;
+
+		fraction = (w1 & 0xFFFF) / 65536.0f;
+		mWorldProject.m[y][x+1] = (f32)(s32)mWorldProject.m[y][x+1];
+		mWorldProject.m[y][x+1] += fraction;
+	}
+	else
+	{
+		//Change integer part
+		fraction = (f32)fabs(mWorldProject.m[y][x] - (s32)mWorldProject.m[y][x]);
+		mWorldProject.m[y][x]	= (f32)(s16)(w1 >> 16) + fraction;
+
+		fraction = (f32)fabs(mWorldProject.m[y][x+1] - (s32)mWorldProject.m[y][x+1]);
+		mWorldProject.m[y][x+1] = (f32)(s16)(w1 & 0xFFFF) + fraction;
+	}
 }
 
+//*****************************************************************************
+//Replaces the WorldProject matrix
+//*****************************************************************************
+void PSPRenderer::ForceMatrix(const Matrix4x4 & mat)
+{
+#if 0	//1-> show matrix, 0-> skip
+	for(u32 i=0;i<4;i++) printf("%.3f ",mat.mRaw[i]);
+	printf("\n");
+	for(u32 i=4;i<8;i++) printf("%.3f ",mat.mRaw[i]);
+	printf("\n");
+	for(u32 i=8;i<12;i++) printf("%.3f ",mat.mRaw[i]);
+	printf("\n");
+	for(u32 i=12;i<16;i++) printf("%.3f ",mat.mRaw[i]);
+	printf("\n\n");
+#endif
+
+	mWorldProject = mat;
+	mWorldProjectValid = true;
+}
 //*****************************************************************************
 //
 //*****************************************************************************

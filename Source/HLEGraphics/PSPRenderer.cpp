@@ -825,7 +825,8 @@ void PSPRenderer::RenderUsingRenderSettings( const CBlendStates * states, Daedal
 		sceGuDrawArray( DRAW_MODE, render_flags, num_vertices, NULL, p_vertices );
 	}
 }
-extern void InitBlenderMode();
+extern u32 gOtherModeL;
+extern void InitBlenderMode( u32 blender );
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -910,13 +911,15 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 			sceGuTexFilter(GU_LINEAR,GU_LINEAR);
 			break;
 	}
+
+	u32 blender( gOtherModeL );
 	//
 	// Initiate Blender
 	//
 	// Only update if 1/2CYCLE is enabled.
-	if( gRDPOtherMode.cycle_type < CYCLE_COPY )
+	if( (blender & 0x4000) && (gRDPOtherMode.cycle_type < CYCLE_COPY) )
 	{
-		InitBlenderMode();
+		InitBlenderMode( blender );
 	}
 	//
 	//

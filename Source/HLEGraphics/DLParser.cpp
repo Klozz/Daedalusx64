@@ -257,7 +257,9 @@ bool DLParser_Initialise()
 	//
 	// Reset all the RDP registers
 	//
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	gRDPOtherMode._u64 = 0;
+#endif
 	gRDPOtherMode.pad = G_RDP_RDPSETOTHERMODE;
 	gRDPOtherMode.blender = 0x0050;
 
@@ -626,13 +628,15 @@ void DLParser_Process()
 	//
 	// Not sure what to init this with. We should probably read it from the dmem
 	//
-	gRDPOtherMode._u64 = 0;
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+	gRDPOtherMode._u64 = 0;			// Use gOtherModeL instead, pretty much the same and cheap on the psp
+#endif
 	gRDPOtherMode.pad = G_RDP_RDPSETOTHERMODE;
 	gRDPOtherMode.blender = 0x0050;
 	gRDPOtherMode.alpha_compare = 1;
 
-	gOtherModeL = u32( gRDPOtherMode._u64 );
-	gOtherModeH = u32( gRDPOtherMode._u64 >> 32 );
+	gOtherModeL = 0;
+	gOtherModeH = 0;
 
 	gRDPFrame++;
 

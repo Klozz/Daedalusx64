@@ -307,6 +307,8 @@ PSPRenderer::PSPRenderer()
 ,	mProjectionTop(0)
 ,	mModelViewTop(0)
 ,	mWorldProjectValid(false)
+,	mProjisNew(true)
+,	mWPmodified(false)
 
 ,	m_dwNumIndices(0)
 ,	mVtxClipFlagsUnion( 0 )
@@ -657,11 +659,6 @@ inline v2 PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
 //*****************************************************************************
 //
 //*****************************************************************************
-RDP_OtherMode	gLastRDPOtherMode;
-
-bool			gLastUseZBuffer = false;
-
-
 PSPRenderer::SBlendStateEntry	PSPRenderer::LookupBlendState( u64 mux, bool two_cycles )
 {
 	DAEDALUS_PROFILE( "PSPRenderer::LookupBlendState" );
@@ -832,9 +829,14 @@ extern void InitBlenderMode( u32 blender );
 //*****************************************************************************
 void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num_vertices, ERenderMode mode, bool disable_zbuffer )
 {
-	static bool Zfight_IsOn = false;
+	static bool		gZFightingEnabled	= false;
+	bool			gLastUseZBuffer		= false;
+
+	u32 blender				( gOtherModeL );
+	u32	gLastRDPOtherMode	( 0 );
 
 	DAEDALUS_PROFILE( "PSPRenderer::RenderUsingCurrentBlendMode" );
+
 
 	// Hack for nascar games..to be honest I don't know why these games are so different...might be tricky to have a proper fix..
 	// Hack accuracy : works 100%
@@ -845,7 +847,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	}
 	else
 	{
-		if ((gRDPOtherMode._u64 != gLastRDPOtherMode._u64) ||
+		if ((blender != gLastRDPOtherMode) ||
 				(m_bZBuffer != gLastUseZBuffer) )
 		{
 			// Only update if ZBuffer is enabled
@@ -858,12 +860,12 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 					// Fixes Zfighting issues we have on the PSP.
 					if( IsZModeDecal() )
 					{
-						Zfight_IsOn = true;						
+						gZFightingEnabled = true;						
 						sceGuDepthRange(65535,80);
 					}
-					else if( Zfight_IsOn )
+					else if( gZFightingEnabled )
 					{
-						Zfight_IsOn = false;						
+						gZFightingEnabled = false;						
 						sceGuDepthRange(65535,0);
 					}
  				}
@@ -884,7 +886,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		}
 	}
 
-	gLastRDPOtherMode._u64 = gRDPOtherMode._u64;
+	gLastRDPOtherMode = blender;
 
 	sceGuShadeModel( mSmooth ? GU_SMOOTH : GU_FLAT );
 	//
@@ -911,17 +913,13 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 			sceGuTexFilter(GU_LINEAR,GU_LINEAR);
 			break;
 	}
-
-	u32 blender( gOtherModeL );
 	//
 	// Initiate Blender
 	//
-	// Only update if 1/2CYCLE is enabled.
 	if( (blender & 0x4000) && (gRDPOtherMode.cycle_type < CYCLE_COPY) )
 	{
 		InitBlenderMode( blender );
 	}
-	//
 	//
 	// I can't think why the hand in mario's menu screen is rendered with an opaque rendermode,
 	// and no alpha threshold. We set the alpha reference to 1 to ensure that the transparent pixels
@@ -1528,7 +1526,11 @@ bool PSPRenderer::FlushTris()
 {
 	DAEDALUS_PROFILE( "PSPRenderer::FlushTris" );
 
-	if (m_dwNumIndices == 0)	return true;
+	if ( m_dwNumIndices == 0 )
+	{
+		mVtxClipFlagsUnion = 0; // Avoid clipping non visible tris
+		return true;
+	}
 
 	u32				num_vertices;
 	DaedalusVtx *	p_vertices;
@@ -1954,8 +1956,17 @@ void PSPRenderer::SetNewVertexInfoVFPU(u32 address, u32 v0, u32 n)
 {
 	const FiddledVtx * const pVtxBase( (const FiddledVtx*)(g_pu8RamBase + address) );
 
-	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );
 	const Matrix4x4 & matWorldProject( GetWorldProject() );
+
+	//If WoldProjectmatrix has modified due to insert matrix
+	//we need to update our modelView (fixes NMEs in Kirby) //Corn
+	if( mWPmodified )
+	{
+		mWPmodified = false;
+		mModelViewStack[mModelViewTop] = mWorldProject * mProjectionStack[mProjectionTop].Inverse();
+	}
+
+	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );
 
 #ifdef NO_VFPU_FOG
 	switch( mTnLModeFlags & (TNL_TEXTURE|TNL_TEXGEN|TNL_LIGHT) )
@@ -2521,10 +2532,10 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace
 	if (gDisplayListFile != NULL)
 	{
 		DL_PF("Level = %d\n"
-			" %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-			" %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-			" %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-			" %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n",
+			" %#+12.7f %#+12.7f %#+12.7f %#+12.7f\n"
+			" %#+12.7f %#+12.7f %#+12.7f %#+12.7f\n"
+			" %#+12.7f %#+12.7f %#+12.7f %#+12.7f\n"
+			" %#+12.7f %#+12.7f %#+12.7f %#+12.7f\n",
 			mProjectionTop,
 			mat.m[0][0], mat.m[0][1], mat.m[0][2], mat.m[0][3],
 			mat.m[1][0], mat.m[1][1], mat.m[1][2], mat.m[1][3],
@@ -2567,6 +2578,7 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace
 			mProjectionStack[mProjectionTop] = mat * mProjectionStack[mProjectionTop];
 	}
 
+	mProjisNew = true;	// Note when a new P-matrix has been loaded
 	mWorldProjectValid = false;
 }
 
@@ -2713,14 +2725,10 @@ void PSPRenderer::Draw2DTexture( float imageX, float imageY, float frameX, float
 }
 
 //*****************************************************************************
-//Modify the WorldProject matrix
+//Modify the WorldProject matrix, used by Kirby mostly //Corn
 //*****************************************************************************
 void PSPRenderer::InsertMatrix(u32 w0, u32 w1)
 {
-	//Used to check if Enemy DLIST is visible or not in KIRBY64
-	//We skip it for now //Corn
-	return;
-
 	f32 fraction;
 
 	if( !mWorldProjectValid )
@@ -2754,15 +2762,7 @@ void PSPRenderer::InsertMatrix(u32 w0, u32 w1)
 		mWorldProject.m[y][x+1] = (f32)(s16)(w1 & 0xFFFF) + fraction;
 	}
 
-	//We use it to get back the modelview matrix since we need it for proper rendering //Corn
-	//The inverted projection matrix for Kirby64
-	const Matrix4x4	invKirby(	0.4656035385868933f, 0.0f, 0.0f, 0.0f,
-								0.0f, 0.2669450013213778f, 0.0f, 0.0f,
-								0.0f, 0.0f, 0.0f, -0.004960937577514649f,
-								0.0f, 0.0f, -1.0f, 0.005039072344360504f );
-	
-	mModelViewStack[mModelViewTop] = mWorldProject * invKirby;
-
+	mWPmodified = true;	//Mark that Worldproject matrix is changed
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	if (gDisplayListFile != NULL)
@@ -2781,7 +2781,7 @@ void PSPRenderer::InsertMatrix(u32 w0, u32 w1)
 }
 
 //*****************************************************************************
-//Replaces the WorldProject matrix
+//Replaces the WorldProject matrix //Corn
 //*****************************************************************************
 void PSPRenderer::ForceMatrix(const Matrix4x4 & mat)
 {
@@ -2811,12 +2811,12 @@ void PSPRenderer::ForceMatrix(const Matrix4x4 & mat)
 	}
 #endif
 
-	//We use it to get back the modelview matrix since we need it for proper rendering //Corn
+	//We use it to get back the modelview matrix since we need it for proper rendering on PSP//Corn
 	//The inverted projection matrix for Tarzan
-	const Matrix4x4	invTarzan(	0.8381105635455429f, 0.0f, 0.0f, 0.0f,
-								0.0f, -0.3838638972166029f, 0.0f, 0.0f,
-								0.0f, 0.0f, 0.0f, -0.009950865610873192f,
-								0.0f, 0.0f, 1.0f, 0.010049080654452511f );
+	const Matrix4x4	invTarzan(	0.838109861116815f, 0.0f, 0.0f, 0.0f,
+								0.0f, -0.38386429506604247f, 0.0f, 0.0f,
+								0.0f, 0.0f, 0.0f, -0.009950865175186414f,
+								0.0f, 0.0f, 1.0f, 0.010049104096541923f );
 
 	//The inverted projection matrix for Donald duck
 	const Matrix4x4	invDonald(	0.6841395918423196f, 0.0f, 0.0f, 0.0f,
@@ -2824,24 +2824,8 @@ void PSPRenderer::ForceMatrix(const Matrix4x4 & mat)
 								0.0f, 0.0f, -0.01532359917019646f, -0.01532359917019646f,
 								0.0f, 0.0f, -0.9845562638123093f, 0.015443736187690802f );
 
-	//The inverted projection matrix for Rayman2
-	const Matrix4x4	invRayman(	1.138355758941784f, 0.0f, 0.0f, 0.0f,
-								0.0f, 0.8537522410996328f, 0.0f, 0.0f,
-								0.0f, 0.0f, 0.0f, -0.00779724116453668f,
-								0.0f, 0.0f, -1.0f, 0.00782772837749002f );
-
-	//The inverted projection matrix for StarWars racer I (need to find proper inv project matrix)
-	const Matrix4x4	invSWracer(	0.9999100080992712f, 0.0f, 0.0f, 0.0f,
-								0.0f, 0.0f, 0.47363958869138123f, 0.047316594957585584f,
-								0.0f, 0.0f, 0.0f, -0.09990000009990001f,
-								0.0f, 1.0f, 0.0f, 0.10009980010009982f );
-
-	//The inverted projection matrix for Top Gear Rally (need to find proper inv project matrix)
-	const Matrix4x4	invTGrally(	0.5522878524286858f, 0.0f, 0.0f, 0.0f,
-								0.0f, 0.4142158893215144f, 0.0f, 0.0f,
-								0.0f, 0.0f, 0.0f, -0.0034482758620689655f,
-								0.0f, 0.0f, -1.0f, 0.003462068965517241f );
-
+	//Some games have permanent project matrixes so we can save CPU by storing the inverse
+	//If that fails we invert the top project matrix to figure out the model matrix //Corn
 	if( g_ROM.GameHacks == TARZAN )
 	{
 		mModelViewStack[mModelViewTop] = mat * invTarzan;
@@ -2850,17 +2834,17 @@ void PSPRenderer::ForceMatrix(const Matrix4x4 & mat)
 	{
 		mModelViewStack[mModelViewTop] = mat * invDonald;
 	}
-	else if( g_ROM.GameHacks == RAYMAN )
+	else
 	{
-		mModelViewStack[mModelViewTop] = mat * invRayman;
-	}
-	else if( g_ROM.GameHacks == SWRACER )
-	{
-		mModelViewStack[mModelViewTop] = mat * invSWracer;
-	}
-	else if( g_ROM.GameHacks == TGRALLY )
-	{
-		mModelViewStack[mModelViewTop] = mat * invTGrally;
+		//Check if current projection matrix has changed
+		//To avoid calculating the inverse more than once per frame
+		if ( mProjisNew )
+		{
+			mProjisNew = false;
+			mInvProjection = mProjectionStack[mProjectionTop].Inverse();
+		}
+
+		mModelViewStack[mModelViewTop] = mat * mInvProjection;
 	}
 	
 	mWorldProject = mat;

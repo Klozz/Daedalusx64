@@ -178,7 +178,7 @@ u32 gAmbientLightIdx = 0;
 u32 gTextureTile = 0;
 u32 gTextureLevel = 0;
 
-static u32 gFillColor		= 0xFFFFFFFF;
+u32 gFillColor		= 0xFFFFFFFF;
 
 u32 gVertexStride;
  
@@ -914,12 +914,14 @@ void DLParser_SetConvert( MicroCodeCommand command )
 void DLParser_SetPrimDepth( MicroCodeCommand command )
 {
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	u32 z  = (command.inst.cmd1 >> 16) & 0xFFFF;
+	u32 z  = (command.inst.cmd1 >> 16) & 0x7FFF;
+	//u32 z  = (command.inst.cmd1 >> 16) & 0xFFFF;
 	u32 dz = (command.inst.cmd1      ) & 0xFFFF;
 
 	DL_PF("SetPrimDepth: 0x%08x 0x%08x - z: 0x%04x dz: 0x%04x", command.inst.cmd0, command.inst.cmd1, z, dz);
 #endif	
 	// Not implemented!
+	//PSPRenderer::Get()->SetPrimitiveDepth( z );
 }
 
 //*****************************************************************************
@@ -1610,18 +1612,17 @@ void DLParser_LoadBlock( MicroCodeCommand command )
 	//u32		src_offset = g_TI.Address + ult * bytes + (uls << g_TI.Size >> 1);
 	u32		src_offset = g_TI.Address + ult * (g_TI.Width << g_TI.Size >> 1) + (uls << g_TI.Size >> 1);
 
-	DL_PF("    Tile:%d (%d,%d - %d) DXT:0x%04x = %d Bytes => %d pixels/line", tile_idx, uls, ult, lrs, dxt, (g_TI.Width << g_TI.Size >> 1), width);
+	DL_PF("    Tile:%d (%d,%d - %d) DXT:0x%04x = %d Bytes => %d pixels/line", tile_idx, uls, ult, lrs, dxt, (g_TI.Width << g_TI.Size >> 1));
 	DL_PF("    Offset: 0x%08x", src_offset);
 
 	gRDPStateManager.LoadBlock( tile_idx, src_offset, swapped );
 
-	if( gTMEMemulation )
-	{
-		RDP_TileSize tile;
-		tile.cmd0 = command.inst.cmd0;
-		tile.cmd1 = command.inst.cmd1;
-		RDP_LoadBlock( tile );
-	}
+#if RDP_EMULATE_TMEM
+	RDP_TileSize tile;
+	tile.cmd0 = command.inst.cmd0;
+	tile.cmd1 = command.inst.cmd1;
+	RDP_LoadBlock( tile );
+#endif
 }
 #else
 void DLParser_LoadBlock( MicroCodeCommand command )
@@ -1660,13 +1661,12 @@ void DLParser_LoadBlock( MicroCodeCommand command )
 
 	gRDPStateManager.LoadBlock( tile_idx, src_offset, swapped );
 
-	if( gTMEMemulation )
-	{
-		RDP_TileSize tile;
-		tile.cmd0 = command.inst.cmd0;
-		tile.cmd1 = command.inst.cmd1;
-		RDP_LoadBlock( tile );
-	}
+#if RDP_EMULATE_TMEM
+	RDP_TileSize tile;
+	tile.cmd0 = command.inst.cmd0;
+	tile.cmd1 = command.inst.cmd1;
+	RDP_LoadBlock( tile );
+#endif
 }
 #endif
 //*****************************************************************************
@@ -1697,19 +1697,18 @@ void DLParser_LoadTLut( MicroCodeCommand command )
 	u32 lrs     = command.loadtile.sh >> 2;
 
 	//This corresponds to the number of palette entries (16 or 256)
+	//Seems partial load of palette is alowed -> count != 16 or 256 (MM, SSB, Starfox64, MRC) //Corn
 	u32 count = (lrs - uls) + 1;
-	if(count & ~0x110) return; //bail if not 16/256, MM gives 64 on occation wich is wrong //Corn
 
 	// Format is always 16bpp - RGBA16 or IA16:
-	u32 offset = ((uls + ult * g_TI.Width) * 2);
-	//offset &= 0x0FFF;
+	u32 offset = (uls + ult * g_TI.Width) << 1;
 
 	//Copy PAL to the PAL memory
 	u32 tmem = gRDPTiles[ tile_idx ].tmem << 3;
 	u16 * p_source = (u16*)&g_pu8RamBase[ g_TI.Address + offset ];
 	u16 * p_dest   = (u16*)&gTextureMemory[ tmem ];
 
-	//printf("Addr %08X : TMEM %03X : Tile %d : P %d : Orig %d\n",g_TI.Address + offset, tmem, tile_idx, count, offset); 
+	//printf("Addr %08X : TMEM %03X : Tile %d : PAL %d : Offset %d\n",g_TI.Address + offset, tmem, tile_idx, count, offset); 
 
 #if 1
 	memcpy_vfpu_BE(p_dest, p_source, count << 1);

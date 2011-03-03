@@ -302,6 +302,9 @@ PSPRenderer::PSPRenderer()
 ,	mSmooth( true )
 ,	mSmoothShade( true )
 
+,	mEnPDepth( false )
+,	mPrimDepth( 0.0f )
+
 ,	mFogColour(0x00FFFFFF)
 
 ,	mProjectionTop(0)
@@ -698,12 +701,7 @@ PSPRenderer::SBlendStateEntry	PSPRenderer::LookupBlendState( u64 mux, bool two_c
 		CCombinerTree				tree( mux, two_cycles );
 		entry.States = tree.GetBlendStates();
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-		printf( "Adding %08x%08x - %d cycles", u32(mux>>32), u32(mux), two_cycles ? 2 : 1 );
-		if(entry.States->IsInexact())
-		{
-			printf( " - Inexact - bodging" );
-		}
-		printf( "\n" );
+		printf( "Adding %08x%08x - %d cycles%s", u32(mux>>32), u32(mux), two_cycles ? 2 : 1, entry.States->IsInexact() ?  " - Inexact - bodging\n" : "\n");
 #endif
 	}
 
@@ -833,6 +831,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 {
 	static bool		gZFightingEnabled	= false;
 	bool			gLastUseZBuffer		= false;
+	mEnPDepth	= false;	//We clear this flag here for now //Corn
 
 	u32 blender				( gOtherModeL );
 	u32	gLastRDPOtherMode	( 0 );
@@ -855,7 +854,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 			// Only update if ZBuffer is enabled
 			if (m_bZBuffer)
 			{
-				if(gRDPOtherMode.z_cmp)
+				if(gRDPOtherMode.z_cmp || g_ROM.GameHacks == FZERO)
 				{
 					sceGuEnable(GU_DEPTH_TEST);
 					
@@ -1179,16 +1178,17 @@ bool PSPRenderer::TexRect( u32 tile_idx, const v2 & xy0, const v2 & xy1, const v
 
 	// Weird Road Rash...*sigh*
 	// Fixes 1/2 sky covering the screen issue in RR..
-	bool bIsZBuffer = (g_ROM.GameHacks == ROAD_RASH) ? false : true;
+	bool bIsZBuffer = (mEnPDepth || g_ROM.GameHacks == ROAD_RASH) ? false : true;
+	mEnPDepth = false;
 
 	DaedalusVtx trv[ 6 ];
 
 	v3	positions[ 4 ] =
 	{
-		v3( screen0.x, screen0.y, gTexRectDepth ),
-		v3( screen1.x, screen0.y, gTexRectDepth ),
-		v3( screen1.x, screen1.y, gTexRectDepth ),
-		v3( screen0.x, screen1.y, gTexRectDepth ),
+		v3( screen0.x, screen0.y, mPrimDepth ),
+		v3( screen1.x, screen0.y, mPrimDepth ),
+		v3( screen1.x, screen1.y, mPrimDepth ),
+		v3( screen0.x, screen1.y, mPrimDepth ),
 	};
 	v2	tex_coords[ 4 ] =
 	{

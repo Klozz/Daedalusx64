@@ -106,8 +106,7 @@ u32 gOtherModeL   = 0;
 u32 gOtherModeH   = 0;
 u32 gRDPHalf1 = 0;
 
-extern LastUcodeInfo UcodeInfo;
-
+extern UcodeInfo last;
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
 //                      Dumping                         //
@@ -252,7 +251,6 @@ bool DLParser_Initialise()
 	gDisplayListFile = NULL;
 #endif
 
-	UcodeInfo.bUcodeKnown = false;
 	gFirstCall = true;
 
 	//
@@ -452,11 +450,7 @@ void	DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 da
 {
 	// Start ucode detector
 	u32 ucode = GBIMicrocode_DetectVersion( code_base, code_size, data_base, data_size );
-
-	// Check if ucode has been set or cached
-	//
-	//if ( ucode == UCODE_CACHED )	return;
-
+	
 	//
 	// This is the multiplier applied to vertex indices. 
 	//
@@ -476,19 +470,22 @@ void	DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 da
 		2,		// Yoshi's Story, Pokemon Puzzle League
 	};
 
-	//DBGConsole_Msg(0, "ucode=%d", ucode);
+	//printf("ucode=%d\n", ucode);
 	// Detect correct ucode table
 	gUcode = gInstructionLookup[ ucode ];
 
 	// Detect Correct Vtx Stride
 	gVertexStride = vertex_stride[ ucode ];
-	
-	//if ucode version is other than 0,1 or 2 then default to 0 (with non valid function names) 
-	//
-#if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
-	gucode_ver = (ucode <= 2) ? ucode : 0;
-#endif
 
+	// Retain last used ucode info
+	last.used	   = true;
+	last.code_base = code_base;
+	last.data_base = data_base;
+	last.code_size = code_size;
+
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+	gucode_ver = ucode;
+#endif
 }
 
 //*****************************************************************************
@@ -627,7 +624,7 @@ void DLParser_Process()
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	GBIMicrocode_ResetMicrocodeHistory();
 #endif
-	if ( UcodeInfo.ucStart != code_base )
+	if ( last.code_base != code_base )
 	{
 		DLParser_InitMicrocode( code_base, code_size, data_base, data_size );
 	}
@@ -1222,7 +1219,7 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 		break;
 
 	case G_MW_POINTS:
-		DL_PF("     Ignored : Force Matrix");
+		DL_PF("     G_MW_POINTS : Ignored");
 		break;
 
 	default:
@@ -1279,6 +1276,7 @@ void DLParser_GBI1_MoveMem( MicroCodeCommand command )
 			DL_PF("    G_MV_TXTATT");
 			break;
 		case G_MV_MATRIX_1:
+			DL_PF("		Force Matrix(1): addr=%08X", address);
 			RDP_Force_Matrix(address);
 			gDisplayListStack.back().addr += 24;	// Next 3 cmds are part of ForceMtx, skip 'em
 			break;
@@ -1395,7 +1393,7 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 
 		}
 	 case G_GBI2_MV_MATRIX:
-		DL_PF("		Force Matrix: addr=%08X", address);
+		DL_PF("		Force Matrix(2): addr=%08X", address);
 		RDP_Force_Matrix(address);
 		break;
 	case G_GBI2_MVO_L0:

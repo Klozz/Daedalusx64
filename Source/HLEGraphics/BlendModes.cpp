@@ -127,7 +127,7 @@ u32	gAOpaque=0;
 u32	gsceENV=0;
 
 u32	gNumCyc=3;
-u32 gTexInstall=0;
+u32 gTexInstall=1;
 
 const char *gPSPtxtFunc[10] =
 {
@@ -1770,7 +1770,7 @@ void BlendMode_0x0010a2c3f00fd23fLL (BLEND_MODE_ARGS)
 //aA1  : (0            - 0           ) * 0            + Combined    
 void BlendMode_0x00317fff5ffef438LL (BLEND_MODE_ARGS)
 {
-BLEND_MODE_MAKER
+	//BLEND_MODE_MAKER
 }
 // Pokemon Stadium 2 - Sky Changing Effect and Bases of Stadiums.
 //case 0x00127ffffffdfe3fLL:
@@ -3422,7 +3422,7 @@ void BlendMode_0x0030ec045fdaedf6LL (BLEND_MODE_ARGS)
 
 void BlendMode_0x0011fffffffffc38LL (BLEND_MODE_ARGS)
 {
-	BLEND_MODE_MAKER
+	//BLEND_MODE_MAKER
 }
 
 // OOT - Lens of Truth
@@ -3882,7 +3882,7 @@ void BlendMode_0x00ffadfffffd9238LL( BLEND_MODE_ARGS )
 //aA1  : (0            - 0           ) * 0            + Texel0     
 void BlendMode_0x0071fee311fcf279LL (BLEND_MODE_ARGS)
 {
-	BLEND_MODE_MAKER
+	//BLEND_MODE_MAKER
 }
 
 // OOT - Effect when you get hit by enemies

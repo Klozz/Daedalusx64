@@ -138,7 +138,7 @@ static f32 fViHeight = 240.0f;
 static u32 uViWidth = 320;
 static u32 uViHeight = 240;
 
-f32 gZoomX;	//Default is 1.0f
+f32 gZoomX=1.0;	//Default is 1.0f
 
 static const float gTexRectDepth( 0.0f );
 
@@ -418,8 +418,10 @@ void PSPRenderer::RestoreRenderStates()
 
 	sceGuAlphaFunc(GU_GEQUAL, 0x04, 0xff );
 	sceGuEnable(GU_ALPHA_TEST);
-	sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
-	sceGuEnable(GU_BLEND);
+
+	//sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
+	//sceGuEnable(GU_BLEND);
+	sceGuDisable( GU_BLEND );
 
 	// Default is ZBuffer disabled
 	sceGuDepthMask(GL_TRUE);	// GL_TRUE to disable z-writes
@@ -1959,11 +1961,19 @@ void PSPRenderer::SetNewVertexInfoVFPU(u32 address, u32 v0, u32 n)
 	const Matrix4x4 & matWorldProject( GetWorldProject() );
 
 	//If WoldProjectmatrix has modified due to insert matrix
-	//we need to update our modelView (fixes NMEs in Kirby) //Corn
+	//we need to update our modelView (fixes NMEs in Kirby and SSB) //Corn
 	if( mWPmodified )
 	{
 		mWPmodified = false;
-		mModelViewStack[mModelViewTop] = mWorldProject * mProjectionStack[mProjectionTop].Inverse();
+		
+		//Only calculate inverse if there is a new Projectmatrix
+		if( mProjisNew )
+		{
+			mProjisNew = false;
+			mInvProjection = mProjectionStack[mProjectionTop].Inverse();
+		}
+		
+		mModelViewStack[mModelViewTop] = mWorldProject * mInvProjection;
 	}
 
 	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );

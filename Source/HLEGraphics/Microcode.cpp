@@ -184,7 +184,7 @@ u32	GBIMicrocode_DetectVersion( u32 code_base, u32 code_size, u32 data_base, u32
 		if( used[ index ].used == false )	
 			break;
 
-		if( used[ index ].code_base == code_base && used[ index ].code_size == code_size && used[ index ].data_base == data_base )
+		if( used[ index ].code_base == code_base && used[ index ].data_base == data_base ) // code_size is always 4096, no need to check for it
 		{
 			//
 			//Retain last info for easier access
@@ -269,7 +269,7 @@ u32	GBIMicrocode_DetectVersion( u32 code_base, u32 code_size, u32 data_base, u32
 	// Todo : Redactor this
 	//
 	used[ index ].code_base = code_base;
-	used[ index ].code_size = code_size;
+	//used[ index ].code_size = code_size;
 	used[ index ].data_base = data_base;
 	used[ index ].ucode = ucode_version;
 	used[ index ].used = true;

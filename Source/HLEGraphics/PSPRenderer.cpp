@@ -135,8 +135,8 @@ extern u32 SCR_HEIGHT;
 
 static f32 fViWidth = 320.0f;
 static f32 fViHeight = 240.0f;
-static u32 uViWidth = 320;
-static u32 uViHeight = 240;
+//static u32 uViWidth = 320;
+//static u32 uViHeight = 240;
 
 f32 gZoomX=1.0;	//Default is 1.0f
 
@@ -167,11 +167,11 @@ u32	gAOpaque=0;
 
 u32	gsceENV=0;
 
-u32	gTXTFUNC=0;
+u32	gTXTFUNC=6;	//defaults to replace
 
 u32	gNumCyc=3;
 
-u32	gForceRGB=0;
+u32	gForceRGB=6;	//defaults to magenta
 
 const char *gForceColor[8] =
 {
@@ -199,12 +199,13 @@ const char *gPSPtxtFunc[10] =
 	"Decal RGBA"
 };
 
-const char *gCAdj[4] =
+const char *gCAdj[5] =
 {
 	"OFF",
 	"Prim Color",
 	"Prim Color Replicate Alpha",
-	"Env Color"
+	"Env Color",
+	"Env Color Replicate Alpha",
 };
 
 #define BLEND_MODE_MAKER \
@@ -239,24 +240,28 @@ const char *gCAdj[4] =
 			if( gSetRGB==1 ) details.ColourAdjuster.SetRGB( details.PrimColour ); \
 			else if( gSetRGB==2 ) details.ColourAdjuster.SetRGB( details.PrimColour.ReplicateAlpha() ); \
 			else if( gSetRGB==3 ) details.ColourAdjuster.SetRGB( details.EnvColour ); \
+			else if( gSetRGB==4 ) details.ColourAdjuster.SetRGB( details.EnvColour.ReplicateAlpha() ); \
 		} \
 		if( gSetA ) \
 		{ \
 			if( gSetA==1 ) details.ColourAdjuster.SetA( details.PrimColour ); \
 			else if( gSetA==2 ) details.ColourAdjuster.SetA( details.PrimColour.ReplicateAlpha() ); \
 			else if( gSetA==3 ) details.ColourAdjuster.SetA( details.EnvColour ); \
+			else if( gSetA==4 ) details.ColourAdjuster.SetA( details.EnvColour.ReplicateAlpha() ); \
 		} \
 		if( gSetRGBA ) \
 		{ \
 			if( gSetRGBA==1 ) details.ColourAdjuster.SetRGBA( details.PrimColour ); \
 			else if( gSetRGBA==2 ) details.ColourAdjuster.SetRGBA( details.PrimColour.ReplicateAlpha() ); \
 			else if( gSetRGBA==3 ) details.ColourAdjuster.SetRGBA( details.EnvColour ); \
+			else if( gSetRGBA==4 ) details.ColourAdjuster.SetRGBA( details.EnvColour.ReplicateAlpha() ); \
 		} \
 		if( gModA ) \
 		{ \
 			if( gModA==1 ) details.ColourAdjuster.ModulateA( details.PrimColour ); \
 			else if( gModA==2 ) details.ColourAdjuster.ModulateA( details.PrimColour.ReplicateAlpha() ); \
 			else if( gModA==3 ) details.ColourAdjuster.ModulateA( details.EnvColour ); \
+			else if( gModA==4 ) details.ColourAdjuster.ModulateA( details.EnvColour.ReplicateAlpha() ); \
 		} \
 		if( gAOpaque ) details.ColourAdjuster.SetAOpaque(); \
 		if( gsceENV ) \
@@ -301,7 +306,6 @@ PSPRenderer::PSPRenderer()
 ,	mSmooth( true )
 ,	mSmoothShade( true )
 
-,	mEnPDepth( false )
 ,	mPrimDepth( 0.0f )
 
 ,	mFogColour(0x00FFFFFF)
@@ -500,8 +504,8 @@ void PSPRenderer::SetVIScales()
 	}
 
 	//Used to set a limit on Scissors //Corn
-	uViWidth  = (u32)fViWidth - 1;
-	uViHeight = (u32)fViHeight - 1;
+	//uViWidth  = (u32)fViWidth - 1;
+	//uViHeight = (u32)fViHeight - 1;
 }
 
 //*****************************************************************************
@@ -836,12 +840,8 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 
 	DAEDALUS_PROFILE( "PSPRenderer::RenderUsingCurrentBlendMode" );
 
-	//SSV doesnt want us to clear it...strange...
-	if( g_ROM.GameHacks != SILICONVALLEY ) mEnPDepth = false;	//We clear SetPrimDepth flag here for now //Corn
 
-	// Hack for nascar games..to be honest I don't know why these games are so different...might be tricky to have a proper fix..
-	// Hack accuracy : works 100%
-	if ( disable_zbuffer || (gRDPOtherMode.depth_source && g_ROM.GameHacks == NASCAR) )
+	if ( disable_zbuffer )
 	{
 		sceGuDisable(GU_DEPTH_TEST);
 		sceGuDepthMask( GL_TRUE );	// GL_TRUE to disable z-writes
@@ -927,9 +927,10 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	// don't get rendered. (We also do this in Super Smash Bothers to ensure transparent pixels
 	// are not rendered. Also fixes other games - Kreationz). I hope this doesn't fuck anything up though. 
 	//
-	if ( gRDPOtherMode.alpha_compare == 0 )
+#if 1	//1->Daedalus ALPHA, 0->Rice ALPHA //Corn
+	if( gRDPOtherMode.alpha_compare == 0 )
 	{
-		if ( gRDPOtherMode.cvg_x_alpha )	// I think this implies that alpha is coming from
+		if( gRDPOtherMode.cvg_x_alpha )	// I think this implies that alpha is coming from
 		{
 			bStarOrigin = true;	// Used to enable Mario 64 star blend when alpha origs, we do this to avoid messing the text.
 			sceGuAlphaFunc(GU_GREATER, 0x70, 0xff); // Going over 0x70 brakes OOT, but going lesser than that makes lines on games visible...ex: Paper Mario.
@@ -942,7 +943,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	}
 	else
 	{
-		if( (gRDPOtherMode.alpha_cvg_sel ) && !gRDPOtherMode.cvg_x_alpha ) //We need cvg_sel for SSVN characters to display
+		if( gRDPOtherMode.alpha_cvg_sel && !gRDPOtherMode.cvg_x_alpha ) //We need cvg_sel for SSVN characters to display
 		{
 			// Use CVG for pixel alpha
 			sceGuDisable(GU_ALPHA_TEST);
@@ -950,17 +951,43 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		else
 		{
 			// G_AC_THRESHOLD || G_AC_DITHER
-			if(	mAlphaThreshold==0 )
-			{
-				sceGuAlphaFunc(GU_GREATER, 0, 0xff);
-			}
-			else
-			{
-				sceGuAlphaFunc(GU_GEQUAL, mAlphaThreshold, 0xff);
-			}
+			sceGuAlphaFunc( mAlphaThreshold ? GU_GREATER : GU_GEQUAL, mAlphaThreshold, 0xff);
 			sceGuEnable(GU_ALPHA_TEST);
 		}
 	}
+
+#else
+	if( gRDPOtherMode.alpha_compare == 0 )
+	{
+		if( gRDPOtherMode.cvg_x_alpha && ( gRDPOtherMode.alpha_cvg_sel || gRDPOtherMode.aa_en ) )
+		{
+			// Going over 0x70 brakes OOT, but going lesser than that makes lines on games visible...ex: Paper Mario.
+			bStarOrigin = true;	// Used to enable Mario 64 star blend when alpha origs, we do this to avoid messing the text.
+			sceGuAlphaFunc(GU_GREATER, 0x70, 0xff);
+			sceGuEnable(GU_ALPHA_TEST);
+		}
+		else
+		{
+			sceGuDisable(GU_ALPHA_TEST);
+		}
+	}
+    else if( gRDPOtherMode.alpha_compare == 3 )
+		{
+			//RDP_ALPHA_COMPARE_DITHER
+			sceGuDisable(GU_ALPHA_TEST);
+		}
+    else if( gRDPOtherMode.alpha_cvg_sel && !gRDPOtherMode.cvg_x_alpha )
+        {
+            // Use CVG for pixel alpha
+            sceGuDisable(GU_ALPHA_TEST);
+        }
+        else
+        {
+            // RDP_ALPHA_COMPARE_THRESHOLD || RDP_ALPHA_COMPARE_DITHER
+			sceGuAlphaFunc( mAlphaThreshold ? GU_GREATER : GU_GEQUAL, mAlphaThreshold, 0xff);
+			sceGuEnable(GU_ALPHA_TEST);
+        }
+#endif
 
 	SBlendStateEntry		blend_entry;
 
@@ -1176,18 +1203,18 @@ bool PSPRenderer::TexRect( u32 tile_idx, const v2 & xy0, const v2 & xy1, const v
 	//DL_PF( "      Screen:  %f,%f -> %f,%f", screen0.x, screen0.y, screen1.x, screen1.y );
 	//DL_PF( "      Texture: %f,%f -> %f,%f", tex_uv0.x, tex_uv0.y, tex_uv1.x, tex_uv1.y );
 
-	// Weird Road Rash...*sigh*
-	// Fixes 1/2 sky covering the screen issue in RR..
-	bool bIsZBuffer = (mEnPDepth || g_ROM.GameHacks == ROAD_RASH) ? false : true;
-
 	DaedalusVtx trv[ 6 ];
+
+	f32 depth;
+	if( gRDPOtherMode.depth_source ) depth = mPrimDepth;
+	else depth = 0.0f;
 
 	v3	positions[ 4 ] =
 	{
-		v3( screen0.x, screen0.y, mPrimDepth ),
-		v3( screen1.x, screen0.y, mPrimDepth ),
-		v3( screen1.x, screen1.y, mPrimDepth ),
-		v3( screen0.x, screen1.y, mPrimDepth ),
+		v3( screen0.x, screen0.y, depth ),
+		v3( screen1.x, screen0.y, depth ),
+		v3( screen1.x, screen1.y, depth ),
+		v3( screen0.x, screen1.y, depth ),
 	};
 	v2	tex_coords[ 4 ] =
 	{
@@ -1205,7 +1232,7 @@ bool PSPRenderer::TexRect( u32 tile_idx, const v2 & xy0, const v2 & xy1, const v
 	trv[4] = DaedalusVtx( positions[ 0 ], 0xffffffff, tex_coords[ 0 ] );
 	trv[5] = DaedalusVtx( positions[ 3 ], 0xffffffff, tex_coords[ 3 ] );
 
-	return RenderTriangleList( trv, 6, bIsZBuffer );
+	return RenderTriangleList( trv, 6, gRDPOtherMode.depth_source ? false : true );
 }
 
 //*****************************************************************************
@@ -1228,10 +1255,10 @@ bool PSPRenderer::TexRectFlip( u32 tile_idx, const v2 & xy0, const v2 & xy1, con
 
 	v3	positions[ 4 ] =
 	{
-		v3( screen0.x, screen0.y, mPrimDepth ),
-		v3( screen1.x, screen0.y, mPrimDepth ),
-		v3( screen1.x, screen1.y, mPrimDepth ),
-		v3( screen0.x, screen1.y, mPrimDepth ),
+		v3( screen0.x, screen0.y, gTexRectDepth ),
+		v3( screen1.x, screen0.y, gTexRectDepth ),
+		v3( screen1.x, screen1.y, gTexRectDepth ),
+		v3( screen0.x, screen1.y, gTexRectDepth ),
 	};
 	v2	tex_coords[ 4 ] =
 	{
@@ -1249,7 +1276,7 @@ bool PSPRenderer::TexRectFlip( u32 tile_idx, const v2 & xy0, const v2 & xy1, con
 	trv[4] = DaedalusVtx( positions[ 0 ], 0xffffffff, tex_coords[ 0 ] );
 	trv[5] = DaedalusVtx( positions[ 3 ], 0xffffffff, tex_coords[ 3 ] );
 
-	return RenderTriangleList( trv, 6, ~mEnPDepth );
+	return RenderTriangleList( trv, 6, true );
 }
 
 //*****************************************************************************
@@ -1651,7 +1678,12 @@ bool PSPRenderer::FlushTris()
 	
 	sceGuSetMatrix( GU_PROJECTION, p_psp_proj );
 
-	RenderUsingCurrentBlendMode( p_vertices, num_vertices, RM_RENDER_3D, false );
+	// Hack for nascar games..to be honest I don't know why these games are so different...might be tricky to have a proper fix..
+	// Hack accuracy : works 100%
+	//
+	bool bIsZBuffer = (gRDPOtherMode.depth_source && g_ROM.GameHacks == NASCAR) ? true : false;
+
+	RenderUsingCurrentBlendMode( p_vertices, num_vertices, RM_RENDER_3D, bIsZBuffer );
 
 	sceGuDisable(GU_CULL_FACE);
 
@@ -2263,8 +2295,8 @@ void PSPRenderer::ModifyVertexInfo(u32 whered, u32 vert, u32 val)
 				s16 x = (u16)(val >> 16) >> 2;
 				s16 y = (u16)(val & 0xFFFF) >> 2;
 
-				x -= uViWidth / 2;
-				y = uViHeight / 2 - y;
+				//x -= uViWidth / 2;
+				//y = uViHeight / 2 - y;
 
 				DL_PF("		Modify vert %d: x=%d, y=%d", vert, x, y);
 				
@@ -2309,7 +2341,7 @@ void PSPRenderer::ModifyVertexInfo(u32 whered, u32 vert, u32 val)
 //*****************************************************************************
 inline void PSPRenderer::SetVtxColor( u32 vert, c32 color )
 {
-	DAEDALUS_ASSERT( vert > MAX_VERTS, " SetVtxColor : Reached max of verts");
+	DAEDALUS_ASSERT( vert < MAX_VERTS, " SetVtxColor : Reached max of verts");
 
 	mVtxProjected[vert].Colour = color.GetColourV4();
 }
@@ -2319,7 +2351,7 @@ inline void PSPRenderer::SetVtxColor( u32 vert, c32 color )
 //*****************************************************************************
 inline void PSPRenderer::SetVtxZ( u32 vert, float z )
 {
-	DAEDALUS_ASSERT( vert > MAX_VERTS, " SetVtxZ : Reached max of verts");
+	DAEDALUS_ASSERT( vert < MAX_VERTS, " SetVtxZ : Reached max of verts");
 
 #if 1
 	mVtxProjected[vert].TransformedPos.z = z;
@@ -2337,7 +2369,7 @@ inline void PSPRenderer::SetVtxZ( u32 vert, float z )
 //*****************************************************************************
 inline void PSPRenderer::SetVtxXY( u32 vert, float x, float y )
 {
-	DAEDALUS_ASSERT( vert > MAX_VERTS, " SetVtxXY : Reached max of verts");
+	DAEDALUS_ASSERT( vert < MAX_VERTS, " SetVtxXY : Reached max of verts %d",vert);
 
 #if 1
 	mVtxProjected[vert].TransformedPos.x = x;
@@ -2503,8 +2535,8 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 void	PSPRenderer::SetScissor( u32 x0, u32 y0, u32 x1, u32 y1 )
 {
 	//Clamp scissor to max N64 screen resolution //Corn
-	if( x1 > uViWidth )  x1 = uViWidth;
-	if( y1 > uViHeight ) y1 = uViHeight;
+	//if( x1 > uViWidth )  x1 = uViWidth;
+	//if( y1 > uViHeight ) y1 = uViHeight;
 
 	v2		n64_coords_tl( x0, y0 );
 	v2		n64_coords_br( x1, y1 );

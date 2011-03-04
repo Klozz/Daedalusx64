@@ -113,13 +113,14 @@ enum EGameHacks
 	ZELDA_MM,
 	TIGERS_HONEY_HUNT,
 	CHAMELEON_TWIST,
-	NASCAR,
+	SSV,
 	LOAD_RUNNER,
 	KILLER_INSTINCT,
 	KIRBY64,
 	TARZAN,
 	DONALD,
-	PMARIO
+	PMARIO,
+	AEROGAUGE
 };
 
 //*****************************************************************************

@@ -460,6 +460,7 @@ void SpecificGameHacks( const ROMHeader & id )
 	
 	switch( id.CartID )
 	{
+	case 0x4741: g_ROM.GameHacks = AEROGAUGE;			break;
 	case 0x4547: g_ROM.GameHacks = GOLDEN_EYE;			break;
 	case 0x5742: g_ROM.GameHacks = SUPER_BOWLING;		break;
 	case 0x5546: g_ROM.GameHacks = CONKER;				break;
@@ -481,15 +482,14 @@ void SpecificGameHacks( const ROMHeader & id )
 	case 0x5a52:	//RidgeRacer 64
 		gForceZcmp = true;
 		break;
-	case 0x5653:	//SSV
 	case 0x5547:	//Sin and punishment	
 	case 0x4641:	//Animal crossing	
 	case 0x4446:	//Flying Dragon	
 		gTLUTalt_mode = true;
 		break;
-	case 0x324e: 
-	case 0x4339:
-		g_ROM.GameHacks = NASCAR;
+	case 0x5653:	//SSV
+		g_ROM.GameHacks = SSV;
+		gTLUTalt_mode = true;
 		break;
 	default:
 		g_ROM.GameHacks = NO_GAME_HACK;

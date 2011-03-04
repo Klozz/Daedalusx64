@@ -38,7 +38,7 @@ class CCodeGeneratorPSP : public CCodeGenerator, public CAssemblyWriterPSP
 		CCodeGeneratorPSP( CAssemblyBuffer * p_buffer_a, CAssemblyBuffer * p_buffer_b );
 
 		virtual void				Initialise( u32 entry_address, u32 exit_address, u32 * hit_counter, const void * p_base, const SRegisterUsageInfo & register_usage );
-		virtual void				Finalise( ExceptionHandlerFn p_exception_handler_fn, const std::vector< CJumpLocation > & exception_handler_jumps );
+		virtual void				Finalise();
 
 		virtual void				UpdateRegisterCaching( u32 instruction_idx );
 
@@ -71,7 +71,7 @@ private:
 
 				void				GenerateCACHE( EN64Reg base, s16 offset, u32 cache_op );
 
-				void				GenerateJAL( u32 address, u32 target );
+				void				GenerateJAL( u32 address );
 				void				GenerateJR( EN64Reg rs, const SBranchDetails * p_branch, CJumpLocation * p_branch_jump );
 				void				GenerateJALR( EN64Reg rs, EN64Reg rd, u32 address, const SBranchDetails * p_branch, CJumpLocation * p_branch_jump );
 
@@ -153,12 +153,12 @@ private:
 				CJumpLocation		GenerateBranchIfNotEqual( const u32 * p_var, u32 value, CCodeLabel target );
 				CJumpLocation		GenerateBranchIfNotEqual( EPspReg reg_a, u32 value, CCodeLabel target );
 
-				void				GenerateBEQ( EN64Reg rs, EN64Reg rt, u32 target, const SBranchDetails * p_branch, CJumpLocation * p_branch_jump );
-				void				GenerateBNE( EN64Reg rs, EN64Reg rt, u32 target, const SBranchDetails * p_branch, CJumpLocation * p_branch_jump );
-				void				GenerateBLEZ( EN64Reg rs, u32 target, const SBranchDetails * p_branch, CJumpLocation * p_branch_jump );
-				void				GenerateBGTZ( EN64Reg rs, u32 target, const SBranchDetails * p_branch, CJumpLocation * p_branch_jump );
-				void				GenerateBLTZ( EN64Reg rs, u32 target, const SBranchDetails * p_branch, CJumpLocation * p_branch_jump );
-				void				GenerateBGEZ( EN64Reg rs, u32 target, const SBranchDetails * p_branch, CJumpLocation * p_branch_jump );
+				void				GenerateBEQ( EN64Reg rs, EN64Reg rt, const SBranchDetails * p_branch, CJumpLocation * p_branch_jump );
+				void				GenerateBNE( EN64Reg rs, EN64Reg rt, const SBranchDetails * p_branch, CJumpLocation * p_branch_jump );
+				void				GenerateBLEZ( EN64Reg rs, const SBranchDetails * p_branch, CJumpLocation * p_branch_jump );
+				void				GenerateBGTZ( EN64Reg rs, const SBranchDetails * p_branch, CJumpLocation * p_branch_jump );
+				void				GenerateBLTZ( EN64Reg rs, const SBranchDetails * p_branch, CJumpLocation * p_branch_jump );
+				void				GenerateBGEZ( EN64Reg rs, const SBranchDetails * p_branch, CJumpLocation * p_branch_jump );
 
 				void				GenerateBC1F( const SBranchDetails * p_branch, CJumpLocation * p_branch_jump );
 				void				GenerateBC1T( const SBranchDetails * p_branch, CJumpLocation * p_branch_jump );

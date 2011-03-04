@@ -92,9 +92,12 @@ namespace
 		const char * const TERMINAL_SAVE_POS			= "\033[2s";
 		const char * const TERMINAL_RESTORE_POS			= "\033[2u";
 
-		const char * const TERMINAL_YELLOW				= "\033[1;33m";
+		const char * const TERMINAL_RED					= "\033[1;31m";
 		const char * const TERMINAL_GREEN				= "\033[1;32m";
+		const char * const TERMINAL_YELLOW				= "\033[1;33m";
+		const char * const TERMINAL_BLUE				= "\033[1;34m";
 		const char * const TERMINAL_MAGENTA				= "\033[1;35m";
+		const char * const TERMINAL_CYAN				= "\033[1;36m";
 		const char * const TERMINAL_WHITE				= "\033[1;37m";
 
 const char * const gDDLOText[] = 
@@ -178,9 +181,14 @@ void CCombinerExplorerDebugMenuOption::Display() const
 {
 	const std::set< u64 > & 	combiner_states( PSPRenderer::Get()->GetRecordedCombinerStates() );
 
-	printf( "Combiner States in use:\n" );
 	printf( "   Use [] to return\n" );
-	printf( "   Use O to toggle on/off:\n" );
+	printf( "   Use O to select on/off\n" );
+	printf( "   Use up/down to move cursor\n\n" );
+	printf( "   %sHandled Inexact Blend\n", TERMINAL_GREEN );
+	printf( "   %sDefault Inexact Blend\n", TERMINAL_CYAN );
+	printf( "   %sForced Blend\n", TERMINAL_MAGENTA );
+	printf( "   %sSelected for Blend Explorer\n\n", TERMINAL_RED );
+	printf( "%sCombiner States in use:\n", TERMINAL_WHITE );
 
 	u32		idx( 0 );
 	u64		selected_mux( 0 );
@@ -190,28 +198,35 @@ void CCombinerExplorerDebugMenuOption::Display() const
 
 		bool	selected( idx == mSelectedIdx );
 		bool	disabled( PSPRenderer::Get()->IsCombinerStateDisabled( state ) );
-		bool	unhandled( PSPRenderer::Get()->IsCombinerStateUnhandled( state ) );
+		//bool	unhandled( PSPRenderer::Get()->IsCombinerStateUnhandled( state ) );
+		bool	forced( PSPRenderer::Get()->IsCombinerStateForced( state ) );
+		bool	idefault( PSPRenderer::Get()->IsCombinerStateDefault( state ) );
 		const char *	text_col;
 
 		if(selected)
 		{
-			text_col = TERMINAL_YELLOW;
+			//text_col = TERMINAL_YELLOW;
 			selected_mux = state;
 		}
-		else if(disabled)
+
+		if(disabled)
 		{
-			text_col = TERMINAL_GREEN;
+			text_col = TERMINAL_RED;
 		}
-		else if(unhandled)
+		else if(forced)
 		{
 			text_col = TERMINAL_MAGENTA;
 		}
+		else if(idefault)
+		{
+			text_col = TERMINAL_CYAN;
+		}
 		else
 		{
-			text_col = TERMINAL_WHITE;
+			text_col = TERMINAL_GREEN;
 		}
 
-		printf( " %s%c%08x%08x\n", text_col, selected ? '*' : ' ', u32(state >> 32), u32(state) );
+		printf( "  %s%c%08x%08x\n", text_col, selected ? '*' : ' ', u32(state >> 32), u32(state) );
 
 		idx++;
 	}
@@ -296,7 +311,7 @@ class CBlendDebugMenuOption : public CDebugMenuOption
 		CBlendDebugMenuOption();
 		virtual void			Display() const;
 		virtual void			Update( const SPspPadState & pad_state, float elapsed_time );
-		virtual const char *	GetDescription() const									{ return "Blender Explorer"; }
+		virtual const char *	GetDescription() const									{ return "Blend Explorer"; }
 
 	private:
 		u32				mIdx;
@@ -326,30 +341,29 @@ void CBlendDebugMenuOption::Display() const
 	if( mSel == 9 && modify ) gForceRGB = mIdx % 8;
 	
 
-	printf( "Blender Explorer\n");
+	printf( "Blend Explorer\n");
 	printf( "   Use [] to return\n" );
 	printf( "   Use X to modify\n" );
 	printf( "   Use up/down to choose & left/right to adjust\n\n\n" );
 
 	printf( " Blending Options (Color Adjuster)\n" );
-	
-	printf( "   %s%cTextureEnabled: %s\n",(mSel==0 && modify) ? TERMINAL_GREEN : TERMINAL_WHITE, mSel==0 ? '*' : ' ', gTexInstall ? "ON" : "OFF");
+	printf( "   %s%cTexture Enabled: %s\n",(mSel==0 && modify) ? TERMINAL_GREEN : TERMINAL_WHITE, mSel==0 ? '*' : ' ', gTexInstall ? "ON" : "OFF");
 	printf( "   %s%cSetRGB: %s\n",		  (mSel==1 && modify) ? TERMINAL_GREEN : TERMINAL_WHITE, mSel==1 ? '*' : ' ', gCAdj[gSetRGB]);
 	printf( "   %s%cSetA: %s\n",		  (mSel==2 && modify) ? TERMINAL_GREEN : TERMINAL_WHITE, mSel==2 ? '*' : ' ', gCAdj[gSetA]);
 	printf( "   %s%cSetRGBA: %s\n",		  (mSel==3 && modify) ? TERMINAL_GREEN : TERMINAL_WHITE, mSel==3 ? '*' : ' ', gCAdj[gSetRGBA]);
 	printf( "   %s%cModifyA: %s\n",		  (mSel==4 && modify) ? TERMINAL_GREEN : TERMINAL_WHITE, mSel==4 ? '*' : ' ', gCAdj[gModA]);
 	printf( "   %s%cSetAOpaque: %s\n",	  (mSel==5 && modify) ? TERMINAL_GREEN : TERMINAL_WHITE, mSel==5 ? '*' : ' ', gAOpaque ? "ON" : "OFF");
 	printf( "%s\n", TERMINAL_WHITE );
-	printf( " Environment Color in SDK\n" );
+	printf( " Environment Color in PSP SDK\n" );
 	printf( "   %s%cTexEnvColor: %s\n",   (mSel==6 && modify) ? TERMINAL_GREEN : TERMINAL_WHITE, mSel==6 ? '*' : ' ', gsceENV ? ((gsceENV==1) ? "EnvColor" : "PrimColor") : "OFF");
 	printf( "%s\n", TERMINAL_WHITE );
-	printf( " PSP Texture Function\n" );
+	printf( " PSP Texture Blending Function\n" );
 	printf( "   %s%c%s\n",				(mSel==7 && modify) ? TERMINAL_GREEN : TERMINAL_WHITE, mSel==7 ? '*' : ' ', gPSPtxtFunc[gTXTFUNC]);
 	printf( "%s\n", TERMINAL_WHITE );
-	printf( " Cycle\n" );
+	printf( " Use Cycle(s)\n" );
 	printf( "   %s%c%s\n",				(mSel==8 && modify) ? TERMINAL_GREEN : TERMINAL_WHITE, mSel==8 ? '*' : ' ', gNumCyc==3 ? "ALL" :((gNumCyc==1) ? "1" : "2"));
 	printf( "%s\n", TERMINAL_WHITE );
-	printf( " Force RGB\n" );
+	printf( " Force RGB color\n" );
 	printf( "   %s%c%s\n",				(mSel==9 && modify) ? TERMINAL_GREEN : TERMINAL_WHITE, mSel==9 ? '*' : ' ', gForceColor[gForceRGB]);
 	printf( "%s\n", TERMINAL_WHITE );
 }

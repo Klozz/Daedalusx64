@@ -104,11 +104,11 @@ void PrintMux( FILE * fh, u64 mux )
 	u32 cA1    = (mux1>>18)&0x07;	// c2 a3		// Ac1
 	u32 dA1    = (mux1    )&0x07;	// c2 a4		// Ad1
 
-	fprintf(fh, "\n\t\tcase 0x%08x%08xLL:\n", mux0, mux1);
-	fprintf(fh, "\t\t//aRGB0: (%s - %s) * %s + %s\n", sc_colcombtypes16[aRGB0], sc_colcombtypes16[bRGB0], sc_colcombtypes32[cRGB0], sc_colcombtypes8[dRGB0]);		
-	fprintf(fh, "\t\t//aA0  : (%s - %s) * %s + %s\n", sc_colcombtypes8[aA0], sc_colcombtypes8[bA0], sc_colcombtypes8[cA0], sc_colcombtypes8[dA0]);
-	fprintf(fh, "\t\t//aRGB1: (%s - %s) * %s + %s\n", sc_colcombtypes16[aRGB1], sc_colcombtypes16[bRGB1], sc_colcombtypes32[cRGB1], sc_colcombtypes8[dRGB1]);		
-	fprintf(fh, "\t\t//aA1  : (%s - %s) * %s + %s\n", sc_colcombtypes8[aA1],  sc_colcombtypes8[bA1], sc_colcombtypes8[cA1],  sc_colcombtypes8[dA1]);
+	fprintf(fh, "\n//case 0x%08x%08xLL:\n", mux0, mux1);
+	fprintf(fh, "//aRGB0: (%s - %s) * %s + %s\n", sc_colcombtypes16[aRGB0], sc_colcombtypes16[bRGB0], sc_colcombtypes32[cRGB0], sc_colcombtypes8[dRGB0]);		
+	fprintf(fh, "//aA0  : (%s - %s) * %s + %s\n", sc_colcombtypes8[aA0], sc_colcombtypes8[bA0], sc_colcombtypes8[cA0], sc_colcombtypes8[dA0]);
+	fprintf(fh, "//aRGB1: (%s - %s) * %s + %s\n", sc_colcombtypes16[aRGB1], sc_colcombtypes16[bRGB1], sc_colcombtypes32[cRGB1], sc_colcombtypes8[dRGB1]);		
+	fprintf(fh, "//aA1  : (%s - %s) * %s + %s\n\n", sc_colcombtypes8[aA1],  sc_colcombtypes8[bA1], sc_colcombtypes8[cA1],  sc_colcombtypes8[dA1]);
 }
 #endif
 /* To Devs,
@@ -212,6 +212,30 @@ void BlendMode_0x002698041f14ffffLL( BLEND_MODE_ARGS )
  //#F
  */
 
+//F1 World GP Wheels
+//case 0x0027fe041ffcfdfeLL:
+//aRGB0: (Texel1       - Texel0      ) * K5           + Texel0      
+//aA0  : (0            - 0           ) * 0            + 1           
+//aRGB1: (Combined     - 0           ) * Shade        + 0           
+//aA1  : (0            - 0           ) * 0            + 1 
+void BlendMode_0x0027fe041ffcfdfeLL (BLEND_MODE_ARGS)
+{
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
+}
+
+//F1 World GP Sky
+//case 0x0055a68730fd923eLL:
+//aRGB0: (Env          - Primitive   ) * Shade_Alpha  + Primitive   
+//aA0  : (Texel1       - Texel0      ) * Primitive    + Texel0      
+//aRGB1: (Shade        - Combined    ) * CombAlp      + Combined    
+//aA1  : (0            - 0           ) * 0            + 1   
+void BlendMode_0x0055a68730fd923eLL (BLEND_MODE_ARGS)
+{
+	details.ColourAdjuster.SetRGB(details.PrimColour);
+	sceGuTexFunc(GU_TFX_DECAL,GU_TCC_RGBA);
+}
+
+
 // F- Zero Tracks / Mario 64 Penguin / Owl / Canon dude Eyes / Face /
 //case 0x00147e2844fe793cLL:
 //aRGB0: (Texel0       - Shade       ) * Texel0_Alp   + Shade       
@@ -294,6 +318,54 @@ void BlendMode_0x00159a045ffefff8LL (BLEND_MODE_ARGS)
 /*
  #K
  */ 
+//Kirby 64 - Ground
+//case 0x0030fe045ffefdf8LL:
+//aRGB0: (Primitive    - Env         ) * Texel0       + Env
+//aA0  : (0            - 0           ) * 0            + 1
+//aRGB1: (Combined     - 0           ) * Shade        + 0
+//aA1  : (0            - 0           ) * 0            + Combined
+void BlendMode_0x0030fe045ffefdf8LL (BLEND_MODE_ARGS)
+{
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
+}
+
+//Kirby 64 - some parts of the Ground
+//case 0x00309e045ffefdf8LL:
+//aRGB0: (Primitive    - Env         ) * Texel0       + Env         
+//aA0  : (Texel0       - 0           ) * 0            + 1           
+//aRGB1: (Combined     - 0           ) * Shade        + 0           
+//aA1  : (0            - 0           ) * 0            + Combined    
+void BlendMode_0x00309e045ffefdf8LL (BLEND_MODE_ARGS)
+{
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
+}
+
+//Kirby 64 - Far Terrain
+//case 0x0040fe8155fefd7eLL:
+//aRGB0: (Shade        - Env         ) * Texel0       + Env
+//aA0  : (0            - 0           ) * 0            + 1
+//aRGB1: (Shade        - Env         ) * Texel0       + Env
+//aA1  : (0            - 0           ) * 0            + 1
+
+void BlendMode_0x0040fe8155fefd7eLL (BLEND_MODE_ARGS)
+{
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGB);
+}
+
+// Kirby - Air seeds, Ridge Racer 64 menu text 
+//case 0x0030b2615566db6dLL:
+//aRGB0: (Primitive    - Env         ) * Texel0       + Env
+//aA0  : (Primitive    - Env         ) * Texel0       + Env
+//aRGB1: (Primitive    - Env         ) * Texel0       + Env
+//aA1  : (Primitive    - Env         ) * Texel0       + Env
+void BlendMode_0x0030b2615566db6dLL( BLEND_MODE_ARGS )
+{
+	// Modulate the texture*shade for RGBA
+	details.ColourAdjuster.SetRGB( details.EnvColour );
+	details.ColourAdjuster.SetA( details.PrimColour );
+	sceGuTexEnvColor( details.PrimColour.GetColour() );
+	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);			// XXXX Argh - need to interpolate alpha too!? We're just doing modulate(t,prim) for now
+}
 
 /*
  //#M
@@ -369,6 +441,18 @@ void BlendMode_0x00147e2844fe7b3dLL (BLEND_MODE_ARGS)
  //#T
  */
 
+
+//Tarzan birds wings, Marios drop shadows in SM64, Kirby64 Fence
+//case 0x00121824ff33ffffLL:
+//aRGB0: (Texel0       - 0           ) * Shade        + 0
+//aA0  : (Texel0       - 0           ) * Shade        + 0
+//aRGB1: (Texel0       - 0           ) * Shade        + 0
+//aA1  : (Texel0       - 0           ) * Shade        + 0
+void BlendMode_0x00121824ff33ffffLL( BLEND_MODE_ARGS )
+{
+	if( g_ROM.GameHacks == TARZAN ) details.ColourAdjuster.SetAOpaque();
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
+}
 
 /*
  //#U
@@ -877,22 +961,53 @@ void BlendMode_0x00272c041f0c93ffLL (BLEND_MODE_ARGS)
 	sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
 }
 
-	
-	
-	
-OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
+
+//*****************************************************************************
+// Check if Inexact blend is using default blend
+//*****************************************************************************
+bool	IsInexactDefault( OverrideBlendModeFn Fn )
+{
+	return Fn == BlendMode_Generic;
+}
+
+//*****************************************************************************
+// This only for hacks etc these are non-inexact blendmodes
+//*****************************************************************************
+OverrideBlendModeFn		LookupOverrideBlendModeForced( u64 mux )
+{
+#ifndef DAEDALUS_PUBLIC_RELEASE
+	if(!gGlobalPreferences.CustomBlendModes) return NULL;
+#endif
+	switch(mux)
+	{	
+#define BLEND_MODE( x )		case (x):	return BlendMode_##x;
+			BLEND_MODE(0x00121824ff33ffffLL); // Tarzan
+			BLEND_MODE(0x00fffffffffcfa7dLL); // Mario 64 Stars
+
+	#undef BLEND_MODE 
+	}
+
+	return NULL;
+
+}
+//*****************************************************************************
+// Inexact blendmodes, we find a match or try to guess a correct blending
+//*****************************************************************************	
+OverrideBlendModeFn		LookupOverrideBlendModeInexact( u64 mux )
 {
 #ifndef DAEDALUS_PUBLIC_RELEASE
 	if(!gGlobalPreferences.CustomBlendModes) return NULL;
 #endif
 	switch(mux)
 	{
+			
+			
 #define BLEND_MODE( x )		case (x):	return BlendMode_##x;
 			BLEND_MODE(0x00121603ff5bfff8LL); // Zelda Paths
 			BLEND_MODE(0x00127e2433fdf8fcLL); // Wetrix Background / Banjo Kazooie
 			BLEND_MODE(0x001298043f15ffffLL); // Banjo Kazooie N64 Logo / Characters
 			BLEND_MODE(0x00129bfffffdf638LL); // Road Rush64 trees
-			BLEND_MODE(0x00147e045ffefbf8LL); // FZerp other ships
+			BLEND_MODE(0x00147e045ffefbf8LL); // FZero other ships
 			BLEND_MODE(0x00147e2844fe793cLL); // FZero tracks / Mario 64 penguin's eyes
 			BLEND_MODE(0x00167e6035fcff7eLL); // OOT, MM Intro (N64 Logo)
 			BLEND_MODE(0x0017166035fcff78LL); // OOT Deku tree Flash
@@ -920,18 +1035,23 @@ OverrideBlendModeFn		LookupOverrideBlendModeFunction( u64 mux )
 			BLEND_MODE(0x00272c6035fce378LL); // Zelda Blue Fire Lamp
 			BLEND_MODE(0x00276c6035d8ed76LL); // OOT Deku Nut Core
 			BLEND_MODE(0x00277e6035fcf778LL); // Zelda Triforce
+			BLEND_MODE(0x0027fe041ffcfdfeLL); // F1 World GP Wheels
+			BLEND_MODE(0x00309e045ffefdf8LL); // Kirby some parts of the Ground
 			BLEND_MODE(0x0030b2045ffefff8LL); // OOT - Eponas Dust
+			BLEND_MODE(0x0030b2615566db6dLL); // Kirby Air seeds, Ridge racer text
 			BLEND_MODE(0x0030b3ff5ffeda38LL); // OOT Sign Cut (Sword)
 			BLEND_MODE(0x0030ec6155daed76LL); // Cucukan Egg
 			BLEND_MODE(0x0030ec045fdaedf6LL); // Zelda Arrows in Shop
 			BLEND_MODE(0x0030fe045f0ef3ffLL); // Gold Skulltula Eyes
 			BLEND_MODE(0x0030fe045ffef3f8LL); // Zelda Bottle Decal
 			BLEND_MODE(0x0030fe045ffefbf8LL); // FZero main ship
+			BLEND_MODE(0x0030fe045ffefdf8LL); // Kirby Ground
 			BLEND_MODE(0x0030fe045ffefdfeLL); // Zelda Kokori Sword Handle
 			BLEND_MODE(0x0040fe8155fef97cLL); // GoldenEye Sky
+			BLEND_MODE(0x0040fe8155fefd7eLL); // Kirby Far Terrain
+			BLEND_MODE(0x0055a68730fd923eLL); // F1 World GP Sky
 			BLEND_MODE(0x0062fe043f15f9ffLL); // Banjo Kazooie Backdrop
 			BLEND_MODE(0x00772c60f5fce378LL); // Zelda Poe
-			BLEND_MODE(0x00fffffffffcfa7dLL); // Mario 64 Stars
 			default:
 				return BlendMode_Generic;	  // Basic generic blenmode
 			

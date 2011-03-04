@@ -166,7 +166,7 @@ u32	gAOpaque=0;
 
 u32	gsceENV=0;
 
-u32	gTXTFUNC=6;	//defaults to replace
+u32	gTXTFUNC=0;	//defaults to MODULATE_RGB
 
 u32	gNumCyc=3;
 
@@ -700,24 +700,27 @@ PSPRenderer::SBlendStateEntry	PSPRenderer::LookupBlendState( u64 mux, bool two_c
 
 
 	// Only check for blendmodes when inexact blends are found, this is done to allow setting a default case to handle most (inexact) blends with GU_TFX_MODULATE
-	// Only issue with this is that we won't be able to add custom blendmodes to non-innexact blends, but meh we shouldn't need to anyways. (this only happens with M64's star hack..)
 	// A nice side effect is that it gives a slight speed up when changing scenes since we would only check for innexact blends and not every mux that gets passed here :) // Salvy
 	//
 	if( entry.States->IsInexact() )
 	{
-		entry.OverrideFunction = LookupOverrideBlendModeFunction( mux );
+		entry.OverrideFunction = LookupOverrideBlendModeInexact( mux );
+	}
+	else
+	{
+		// This is for non-inexact blends, errg hacks and such to be more precise
+		entry.OverrideFunction = LookupOverrideBlendModeForced( mux );
 	}
 
-
-	//if( entry.OverrideFunction == NULL ) // This won't happen anymore, so is disabled - Salvy
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST	
+	if( entry.OverrideFunction == NULL )
 	{
 		//CCombinerTree				tree( mux, two_cycles );
 		//entry.States = tree.GetBlendStates();
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		printf( "Adding %08x%08x - %d cycles%s", u32(mux>>32), u32(mux), two_cycles ? 2 : 1, entry.States->IsInexact() ?  " - Inexact - bodging\n" : "\n");
-#endif
-	}
 
+	}
+#endif
 	mBlendStatesMap[ un.key ] = entry;
 	return entry;
 }
@@ -1085,7 +1088,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		//
 		if( inexact && gGlobalPreferences.HighlightInexactBlendModes)
 		{
-			if(mUnhandledCombinderStates.find( gRDPMux._u64 ) == mUnhandledCombinderStates.end())
+			if(mUnhandledCombinerStates.find( gRDPMux._u64 ) == mUnhandledCombinerStates.end())
 			{
 				char szFilePath[MAX_PATH+1];
 
@@ -1093,14 +1096,14 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 
 				IO::Path::Append(szFilePath, "missing_mux.txt");
 
-				FILE * fh( fopen(szFilePath, mUnhandledCombinderStates.empty() ? "w" : "a") );
+				FILE * fh( fopen(szFilePath, mUnhandledCombinerStates.empty() ? "w" : "a") );
 				if(fh != NULL)
 				{
 					PrintMux( fh, gRDPMux._u64 );
 					fclose(fh);
 				}
 
-				mUnhandledCombinderStates.insert( gRDPMux._u64 );
+				mUnhandledCombinerStates.insert( gRDPMux._u64 );
 			}
 		}
 

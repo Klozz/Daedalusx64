@@ -105,7 +105,7 @@ u32 gNumOfOSFunctions;
 #define PATCH_RET_ERET RET_JR_ERET()
 
 // Increase this number every time we changed the symbol table
-static const u32 MAGIC_HEADER = 0x80000120;
+static const u32 MAGIC_HEADER = 0x80000121;
 
 bool gPatchesInstalled = false;
 
@@ -538,6 +538,26 @@ void Patch_RecurseAndFind()
 					found_duplicate = true;
 					break;
 				}
+			}
+			// Hacks to disable certain os funcs in games that causes issues
+			// This alot cheaper than adding a check on the func itself, this is only checked once -Salvy
+			// Eventually we should fix them though 
+			//
+			// osSendMesg - Breaks the in game menu in Zelda OOT
+			//
+			if( ( g_ROM.GameHacks == ZELDA_OOT ) && ( strcmp("osSendMesg",g_PatchSymbols[i]->szName) == 0) )
+			{
+				DBGConsole_Msg(0, "Zelda OOT Hack : Disabling [R%s]",g_PatchSymbols[i]->szName);
+				g_PatchSymbols[i]->bFound = false;
+				break;
+			}
+			// osRestoreInt causes Ridge Racer to BSOD when quick race is about to start
+			//
+			else if( ( g_ROM.GameHacks == RIDGE_RACER ) && ( strcmp("__osRestoreInt",g_PatchSymbols[i]->szName) == 0) )
+			{
+				DBGConsole_Msg(0, "Ridge Racer Hack : Disabling [R%s]",g_PatchSymbols[i]->szName);
+				g_PatchSymbols[i]->bFound = false;
+				break;
 			}
 
 			if (!found_duplicate)

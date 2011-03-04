@@ -1,6 +1,8 @@
 #define TEST_DISABLE_MATH_FUNCS DAEDALUS_PROFILE(__FUNCTION__);
 
-
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch___ull_mul()
 {
 TEST_DISABLE_MATH_FUNCS
@@ -20,7 +22,9 @@ TEST_DISABLE_MATH_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
-
+//*****************************************************************************
+//
+//*****************************************************************************
 // By Jun Su
 // Used by SM64 and Space station Silicon Valley
 u32 Patch___ll_div() 
@@ -35,7 +39,6 @@ TEST_DISABLE_MATH_FUNCS
 		 (gGPR[REG_a2]._u32_0 + (gGPR[REG_a3]._u32_0 >> 31)) == 0) )
 	{
 		//Do 32bit
-		//printf("DIV32\n");
 		s32 op1 = (s32)gGPR[REG_a1]._u32_0; 
 		s32 op2 = (s32)gGPR[REG_a3]._u32_0; 
 
@@ -46,6 +49,7 @@ TEST_DISABLE_MATH_FUNCS
 		else 
 		{ 
 			s32 result = op1 / op2; 
+
 			// StrmnNrmn - the s32 casts were originally u32. Not sure if this is needed
 			gGPR[REG_v1]._s64 = (s64)result; 
 			gGPR[REG_v0]._s64 = (s64)result >> 32; 
@@ -55,7 +59,6 @@ TEST_DISABLE_MATH_FUNCS
 	else
 	{
 		//Do 64bit
-		//printf("DIV64\n");
 		s64 op1 = (s64)((u64)gGPR[REG_a0]._u32_0 << 32 | (u64)gGPR[REG_a1]._u32_0); 
 		s64 op2 = (s64)((u64)gGPR[REG_a2]._u32_0 << 32 | (u64)gGPR[REG_a3]._u32_0); 
 
@@ -66,6 +69,7 @@ TEST_DISABLE_MATH_FUNCS
 		else 
 		{ 
 			s64 result = op1 / op2; 
+
 			// StrmnNrmn - the s32 casts were originally u32. Not sure if this is needed
 			gGPR[REG_v1]._s64 = (s64)(s32)(result & 0xffffffff); 
 			gGPR[REG_v0]._s64 = (s64)(s32)(result >> 32); 
@@ -74,6 +78,9 @@ TEST_DISABLE_MATH_FUNCS
 	}
 } 
 
+//*****************************************************************************
+//
+//*****************************************************************************
 // By Jun Su
 //Used by AeroGauge
 u32 Patch___ull_div() 
@@ -85,7 +92,6 @@ TEST_DISABLE_MATH_FUNCS
 	if( (gGPR[REG_a0]._u32_0 | gGPR[REG_a2]._u32_0) == 0 )
 	{
 		//Do 32bit
-		//printf("UDIV32\n");
 		u32 op1 = gGPR[REG_a1]._u32_0; 
 		u32 op2 = gGPR[REG_a3]._u32_0; 
 		
@@ -96,6 +102,7 @@ TEST_DISABLE_MATH_FUNCS
 		else 
 		{ 
 			u32 result = op1 / op2; 
+
 			// StrmnNrmn - the s32 casts were originally u32. Not sure if this is needed
 			gGPR[REG_v1]._s64 = (s64)result; 
 			gGPR[REG_v0]._s64 = (s64)result >> 32; 
@@ -105,7 +112,6 @@ TEST_DISABLE_MATH_FUNCS
 	else
 	{
 		//Do 64bit
-		//printf("UDIV64\n");
 		u64 op1 = (u64)((u64)gGPR[REG_a0]._u32_0 << 32 | (u64)gGPR[REG_a1]._u32_0); 
 		u64 op2 = (u64)((u64)gGPR[REG_a2]._u32_0 << 32 | (u64)gGPR[REG_a3]._u32_0); 
 		
@@ -115,7 +121,8 @@ TEST_DISABLE_MATH_FUNCS
 		} 
 		else 
 		{ 
-			u64 result = op1 / op2; 
+			u64 result = op1 / op2;
+
 			// StrmnNrmn - the s32 casts were originally u32. Not sure if this is needed
 			gGPR[REG_v1]._s64 = (s64)(s32)(result & 0xffffffff); 
 			gGPR[REG_v0]._s64 = (s64)(s32)(result >> 32); 
@@ -124,19 +131,22 @@ TEST_DISABLE_MATH_FUNCS
 	}
 } 
 
-
+//*****************************************************************************
+//
+//*****************************************************************************
 // By Jun Su
 //Used heavily by Super Smash Brothers
 u32 Patch___ull_rshift() 
 { 
 TEST_DISABLE_MATH_FUNCS
-	//printf("Rshift\n");
+
 	// Fixed by  StrmnNrmn - regs cast to 32 bits so shift didn't work
 	u64 op1 = (u64)((u64)gGPR[REG_a0]._u32_0 << 32 | (u64)gGPR[REG_a1]._u32_0); 
 	//u64 op2 = (u64)((u64)gGPR[REG_a2]._u32_0 << 32 | (u64)gGPR[REG_a3]._u32_0); 
 	u32 op2 = gGPR[REG_a3]._u32_0; 
 	
 	u64 result = op1 >> op2; 
+
 	// StrmnNrmn - the s32 casts were originally u32. Not sure if this is needed
 	//gGPR[REG_v1]._s64 = (s64)(s32)(result & 0xffffffff); 
 	//gGPR[REG_v0]._s64 = (s64)(s32)(result>>32); 
@@ -145,47 +155,57 @@ TEST_DISABLE_MATH_FUNCS
 	return PATCH_RET_JR_RA; 
 } 
 
+//*****************************************************************************
+//
+//*****************************************************************************
 // By Jun Su
 u32 Patch___ll_lshift() 
 { 
 TEST_DISABLE_MATH_FUNCS
-	//printf("Lshift\n");
+
 	// Fixed by  StrmnNrmn - regs cast to 32 bits so shift didn't work
 	s64 op1 = (s64)((u64)gGPR[REG_a0]._u32_0 << 32 | (u64)gGPR[REG_a1]._u32_0); 
 	//u64 op2 = (u64)((u64)gGPR[REG_a2]._u32_0 << 32 | (u64)gGPR[REG_a3]._u32_0); 
 	u32 op2 = gGPR[REG_a3]._u32_0; 
 	
 	s64 result = op1 << op2; 
+
 	// StrmnNrmn - the s32 casts were originally u32. Not sure if this is needed
 	gGPR[REG_v1]._s64 = (s64)(s32)(result & 0xffffffff); 
 	gGPR[REG_v0]._s64 = (s64)(s32)(result >> 32); 
 	return PATCH_RET_JR_RA; 
 } 
 
-
+//*****************************************************************************
+//
+//*****************************************************************************
 // By Jun Su
 //Used by SSV
 u32 Patch___ll_rshift() 
 { 
 TEST_DISABLE_MATH_FUNCS
-	//printf("ARshift\n");
+
 	// Fixed by  StrmnNrmn - regs cast to 32 bits so shift didn't work
 	s64 op1 = (s64)((u64)gGPR[REG_a0]._u32_0 << 32 | (u64)gGPR[REG_a1]._u32_0); 
 	//u64 op2 = (u64)((u64)gGPR[REG_a2]._u32_0 << 32 | (u64)gGPR[REG_a3]._u32_0); 
 	u32 op2 = gGPR[REG_a3]._u32_0; 
 	
 	s64 result = op1 >> op2; 
+
 	// StrmnNrmn - the s32 casts were originally u32. Not sure if this is needed
 	gGPR[REG_v1]._s64 = (s32)(result & 0xffffffff);  
 	gGPR[REG_v0]._s64 = (result >> 32); 
 	return PATCH_RET_JR_RA; 
 } 
 
+//*****************************************************************************
+//
+//*****************************************************************************
 // By Jun Su
 u32 Patch___ll_mod() 
 { 
 TEST_DISABLE_MATH_FUNCS
-	//printf("MOD\n");
+
 	// Fixed by  StrmnNrmn - regs cast to 32 bits so shift didn't work
 	s64 op1 = (s64)((u64)gGPR[REG_a0]._u32_0 << 32 | (u64)gGPR[REG_a1]._u32_0); 
 	s64 op2 = (s64)((u64)gGPR[REG_a2]._u32_0 << 32 | (u64)gGPR[REG_a3]._u32_0); 
@@ -197,6 +217,7 @@ TEST_DISABLE_MATH_FUNCS
 	else 
 	{ 
 		s64 result = op1 % op2; 
+
 		// StrmnNrmn - the s32 casts were originally u32. Not sure if this is needed
 		gGPR[REG_v1]._s64 = (s32)(result & 0xffffffff); 
 		gGPR[REG_v0]._s64 = (result >> 32); 
@@ -204,57 +225,68 @@ TEST_DISABLE_MATH_FUNCS
 	} 
 } 
 
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch_sqrtf()
 {
 TEST_DISABLE_MATH_FUNCS
-	f32 f = ToFloat(gCPUState.FPU[12]);
-	ToFloat(gCPUState.FPU[00]) = pspFpuSqrt(f);	// Do not use vfpu, Check math.h !
+	f32 f = gCPUState.FPU[12]._f32_0;
+
+	gCPUState.FPU[00]._f32_0 = pspFpuSqrt(f);
+
 	return PATCH_RET_JR_RA;
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch_sinf()
 {
 TEST_DISABLE_MATH_FUNCS
 	// FP12 is input
 	// FP00 is output
-	f32 f = ToFloat(gCPUState.FPU[12]);
+	f32 f = gCPUState.FPU[12]._f32_0;
 
-	f32 r = vfpu_sinf(f);
+	//DBGConsole_Msg(0, "sinf(%f) (ra 0x%08x)", f, gGPR[REG_ra]._u32_0);
 
-	//DBGConsole_Msg(0, "sinf(%f) = %f (ra 0x%08x)", f, r, (u32)gGPR[REG_ra]);
-
-	ToFloat(gCPUState.FPU[00]) = r;
+	gCPUState.FPU[00]._f32_0 = vfpu_sinf(f);
 
 /*	g_dwNumCosSin++;
 	if ((g_dwNumCosSin % 100000) == 0)
 	{
 		DBGConsole_Msg(0, "%d sin/cos calls intercepted", g_dwNumCosSin);
-	}*/
+	}
+*/
 	return PATCH_RET_JR_RA;
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch_cosf()
 {
 TEST_DISABLE_MATH_FUNCS
 	// FP12 is input
 	// FP00 is output
-	f32 f = ToFloat(gCPUState.FPU[12]);
+	f32 f = gCPUState.FPU[12]._f32_0;
+	//DBGConsole_Msg(0, "cosf(%f) (ra 0x%08x)", f, gGPR[REG_ra]._u32_0);
 
-	f32 r = vfpu_cosf(f);
-
-	//DBGConsole_Msg(0, "cosf(%f) = %f (ra 0x%08x)", f, r, (u32)gGPR[REG_ra]);
-
-	ToFloat(gCPUState.FPU[00]) = r;
+	gCPUState.FPU[00]._f32_0 = vfpu_cosf(f);
 
 /*	g_dwNumCosSin++;
 	if ((g_dwNumCosSin % 100000) == 0)
 	{
 		DBGConsole_Msg(0, "%d sin/cos calls intercepted", g_dwNumCosSin);
-	}*/
+	}
+*/
 	return PATCH_RET_JR_RA;
 
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch___ull_rem()
 {
 	u64 op1 = (u64)((u64)gGPR[REG_a0]._u32_0 << 32 | (u64)gGPR[REG_a1]._u32_0); 
@@ -274,20 +306,26 @@ u32 Patch___ull_rem()
 	}
 }
 
-
-
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch___ull_divremi()
 {
 	return PATCH_RET_NOT_PROCESSED;
 }
 
-
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch___lldiv()
 {
 	//Calls ll_div and ull_mul
 	return PATCH_RET_NOT_PROCESSED;
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch___ldiv()
 {
 	return PATCH_RET_NOT_PROCESSED;

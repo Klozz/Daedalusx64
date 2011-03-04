@@ -686,6 +686,22 @@ static void BlendMode_0x00129bfffffdf638LL (BLEND_MODE_ARGS)
  //#S
  */
 
+//SSB Bomb Partial-Flashing Animation
+//case 0x00127eacf0fff238LL:
+//aRGB0: (Texel0       - 0           ) * Shade        + 0   
+//aA0  : (0            - 0           ) * 0            + Texel0      
+//aRGB1: (Env          - Combined    ) * Env_Alpha    + Combined    
+//aA1  : (0            - 0           ) * 0            + Combined 
+void BlendMode_0x00127eacf0fff238LL( BLEND_MODE_ARGS )
+{
+	// By Kreationz & Shinydude100
+	details.ColourAdjuster.SetAOpaque();//Opaque still isn't doing much on the Alpha..?
+	details.ColourAdjuster.SetRGB( details.EnvColour );	
+	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA); //Not sure if BLEND is doing anything?
+}
+
+
+
 // Super Mario 64 - Mario Face
 //case 0x00147e2844fe7b3dLL:
 //aRGB0: (Texel0       - Shade       ) * Texel0_Alp   + Shade       
@@ -1220,7 +1236,7 @@ static void BlendMode_0x00271c6035fcf378LL (BLEND_MODE_ARGS)
 	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
 }
 
-//Zelda Bottle Detail
+//Zelda Bottle Detail / Ridge Racer Fences
 //case 0x0030fe045ffef3f8LL:
 //aRGB0: (Primitive    - Env         ) * Texel0       + Env         
 //aA0  : (0            - 0           ) * 0            + Texel0      
@@ -1229,9 +1245,10 @@ static void BlendMode_0x00271c6035fcf378LL (BLEND_MODE_ARGS)
 static void BlendMode_0x0030fe045ffef3f8LL (BLEND_MODE_ARGS)
 {
 	details.ColourAdjuster.SetRGB(details.EnvColour);
-	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
-}
 
+	// WE need BLEND for RR's fences, otherwise they appear red..
+	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA); 
+}
 
 //Zelda Cukuaan Egg
 //case 0x0030ec6155daed76LL:
@@ -1343,6 +1360,7 @@ OverrideBlendModeFn		LookupOverrideBlendModeInexact( u64 mux )
 			BLEND_MODE(0x00121603ff5bfff8LL); // Zelda Paths
 			BLEND_MODE(0x00127624ffef93c9LL); // Mario Party - River
 			BLEND_MODE(0x00127e2433fdf8fcLL); // Wetrix Background / Banjo Kazooie
+			BLEND_MODE(0x00127eacf0fff238LL); // SSB Link bomb
 			BLEND_MODE(0x001298043f15ffffLL); // Banjo Kazooie N64 Logo / Characters
 			BLEND_MODE(0x00129bfffffdf638LL); // Road Rush64 trees
 			BLEND_MODE(0x00147e2844fe7b3dLL); // Mario's Head
@@ -1393,7 +1411,7 @@ OverrideBlendModeFn		LookupOverrideBlendModeInexact( u64 mux )
 			BLEND_MODE(0x0030ec045fdaedf6LL); // Zelda Arrows in Shop
 			BLEND_MODE(0x0030fe045f0ef3ffLL); // Gold Skulltula Eyes
 			BLEND_MODE(0x0030fe045ffef7f8LL); // MRC - Car Windows
-			BLEND_MODE(0x0030fe045ffef3f8LL); // Zelda Bottle Decal
+			BLEND_MODE(0x0030fe045ffef3f8LL); // Zelda Bottle Decal / Ridge Racer Fences
 			BLEND_MODE(0x0030fe045ffefbf8LL); // FZero main ship
 			BLEND_MODE(0x0030fe045ffefdf8LL); // Kirby Ground
 			BLEND_MODE(0x0030fe045ffefdfeLL); // Zelda Kokori Sword Handle

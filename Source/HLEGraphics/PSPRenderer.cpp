@@ -156,7 +156,7 @@ extern void		PrintMux( FILE * fh, u64 mux );
 //***************************************************************************
 //*General blender used for testing //Corn
 //***************************************************************************
-u32 gTexInstall=1;
+u32 gTexInstall=1;	//defaults to texture on
 u32	gSetRGB=0;
 u32	gSetA=0;
 u32	gSetRGBA=0;
@@ -167,43 +167,43 @@ u32	gsceENV=0;
 
 u32	gTXTFUNC=0;	//defaults to MODULATE_RGB
 
-u32	gNumCyc=3;
+u32	gNumCyc=3;	//defaults All cycles
 
-u32	gForceRGB=6;	//defaults to magenta
+u32	gForceRGB=0;	//defaults to OFF
 
 const char *gForceColor[8] =
 {
-	"OFF",
-	"White",
-	"Black",
-	"Red",
-	"Green",
-	"Blue",
-	"Magenta",
-	"Gold"
+	"( OFF )",
+	"( c32::White )",
+	"( c32::Black )",
+	"( c32::Red )",
+	"( c32::Green )",
+	"( c32::Blue )",
+	"( c32::Magenta )",
+	"( c32::Gold )"
 };
 
 const char *gPSPtxtFunc[10] =
 {
-	"Modulate RGB",
-	"Modulate RGBA",
-	"Blend RGB",
-	"Blend RGBA",
-	"Add RGB",
-	"Add RGBA",
-	"Replace RGB",
-	"Replace RGBA",
-	"Decal RGB",
-	"Decal RGBA"
+	"( GU_TFX_MODULATE, GU_TCC_RGB )",
+	"( GU_TFX_MODULATE, GU_TCC_RGBA )",
+	"( GU_TFX_BLEND, GU_TCC_RGB )",
+	"( GU_TFX_BLEND, GU_TCC_RGBA )",
+	"( GU_TFX_ADD, GU_TCC_RGB )",
+	"( GU_TFX_ADD, GU_TCC_RGBA )",
+	"( GU_TFX_REPLACE, GU_TCC_RGB )",
+	"( GU_TFX_REPLACE, GU_TCC_RGBA )",
+	"( GU_TFX_DECAL, GU_TCC_RGB )",
+	"( GU_TFX_DECAL, GU_TCC_RGBA )"
 };
 
 const char *gCAdj[5] =
 {
-	"OFF",
-	"Prim Color",
-	"Prim Color Replicate Alpha",
-	"Env Color",
-	"Env Color Replicate Alpha",
+	"( OFF )",
+	"( details.PrimColour )",
+	"( details.PrimColour.ReplicateAlpha() )",
+	"( details.EnvColour )",
+	"( details.EnvColour.ReplicateAlpha() )",
 };
 
 #define BLEND_MODE_MAKER \
@@ -908,14 +908,14 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	switch( gGlobalPreferences.ForceTextureFilter )
 	{
 		case FORCE_DEFAULT_FILTER:
-			switch(gRDPOtherMode.text_filt)
-			{
-				case 2:			//G_TF_BILERP:	// 2
-					sceGuTexFilter(GU_LINEAR,GU_LINEAR);
-					break;
-				default:		//G_TF_POINT:	// 0
-					sceGuTexFilter(GU_NEAREST,GU_NEAREST);
-					break;
+			if( gRDPOtherMode.text_filt == 0 )
+			{	//G_TF_POINT:	// 0
+				sceGuTexFilter(GU_NEAREST,GU_NEAREST);
+			}
+			else
+			{	//G_TF_AVERAGE:	// 1	We do Bilinear anyway here //Corn
+				//G_TF_BILERP:	// 2
+				sceGuTexFilter(GU_LINEAR,GU_LINEAR);
 			}
 			break;
 		case FORCE_POINT_FILTER:
@@ -2636,7 +2636,7 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace
 			//it renders at Z cordinate = 0.0f that gets clipped away.
 			//so we translate them a bit along Z to make them stick :) //Corn
 			//
-			if((g_ROM.GameHacks == ZELDA_OOT) || (g_ROM.GameHacks == ZELDA_MM))
+			if((g_ROM.GameHacks == ZELDA_OOT) | (g_ROM.GameHacks == ZELDA_MM))
 				mProjectionStack[mProjectionTop].mRaw[14] += 0.4f;
 		}
 		else
@@ -2692,7 +2692,9 @@ void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace)
 		if (bReplace)
 		{
 			// Load ModelView matrix
-			mModelViewStack[mModelViewTop] = mat;
+			//Hack to make GEX games work, need to multiply all elements with 2.0 //Corn
+			if( g_ROM.GameHacks == GEX_GECKO ) for(u32 i=0;i<16;i++) mModelViewStack[mModelViewTop].mRaw[i] = 2.0f * mat.mRaw[i];
+			else mModelViewStack[mModelViewTop] = mat;
 		}
 		else			// Multiply ModelView matrix
 		{

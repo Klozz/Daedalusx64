@@ -290,7 +290,7 @@ namespace
 			:	CUISetting( name, description )
 		{
 		}
-
+ 
 		virtual	void		OnNext()		{ (gGlobalPreferences.DisplayFramerate >= 2) ? 0 : gGlobalPreferences.DisplayFramerate++; }
 		virtual	void		OnPrevious()	{ (gGlobalPreferences.DisplayFramerate <= 0) ? 0 : gGlobalPreferences.DisplayFramerate--; }
 
@@ -305,6 +305,7 @@ namespace
 			return "?";
 		}
 	};
+
 
 
 }

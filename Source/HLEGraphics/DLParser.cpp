@@ -937,7 +937,9 @@ void DLParser_RDPSetOtherMode( MicroCodeCommand command )
 	gOtherModeH = command.inst.cmd0;
 	gOtherModeL = command.inst.cmd1;
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	RDP_SetOtherMode( command.inst.cmd0, command.inst.cmd1 );
+#endif
 }
 
 //*****************************************************************************
@@ -961,7 +963,7 @@ void DLParser_GBI1_RDPHalf_2( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_RDPHalf_1( MicroCodeCommand command )
 {
-	gRDPHalf1 = u32(command.inst.cmd1);
+	gRDPHalf1 = command.inst.cmd1;
 }
 
 //*****************************************************************************
@@ -981,9 +983,6 @@ void DLParser_RDPFullSync( MicroCodeCommand command )
 
 	/*DL_PF("FullSync: (Generating Interrupt)");*/
 }
-
-
-
 
 //*****************************************************************************
 //
@@ -1535,7 +1534,7 @@ void DLParser_SetTile( MicroCodeCommand command )
 	RDP_SetTile( tile );
 	gRDPStateManager.SetTile( tile.tile_idx, tile );
 
-	DL_PF( "    Tile:%d  Fmt: %s/%s Line:%d TMem:0x%04x Palette:%d", tile.tile_idx, gFormatNames[tile.format], gSizeNames[tile.size], tile.line, tile.tmem<<3, tile.palette);
+	DL_PF( "    Tile:%d  Fmt: %s/%s Line:%d TMem:0x%04x Palette:%d", tile.tile_idx, gFormatNames[tile.format], gSizeNames[tile.size], tile.line, tile.tmem, tile.palette);
 	DL_PF( "         S: Clamp:%s Mirror:%s Mask:0x%x Shift:0x%x", gOnOffNames[tile.clamp_s],gOnOffNames[tile.mirror_s], tile.mask_s, tile.shift_s );
 	DL_PF( "         T: Clamp:%s Mirror:%s Mask:0x%x Shift:0x%x", gOnOffNames[tile.clamp_t],gOnOffNames[tile.mirror_t], tile.mask_t, tile.shift_t );
 }
@@ -1699,7 +1698,7 @@ void DLParser_LoadTLut( MicroCodeCommand command )
 		u32 i;
 
 
-		DL_PF("    LoadTLut Addr:0x%08x Offset:0x%05x TMEM:0x%04x Tile:%d, (%d,%d) -> (%d,%d), Count %d", g_TI.Address, offset, tmem,
+		DL_PF("    LoadTLut Addr:0x%08x Offset:0x%05x TMEM:0x%04x Tile:%d, (%d,%d) -> (%d,%d), Count %d", g_TI.Address, offset, gRDPTiles[ tile_idx ].tmem,
 			tile_idx, uls, ult, lrs, lrt, count);
 		// This is sometimes wrong (in 007) tlut fmt is set after 
 		// tlut load, but before tile load

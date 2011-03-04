@@ -687,7 +687,7 @@ PSPRenderer::SBlendStateEntry	PSPRenderer::LookupBlendState( u64 mux, bool two_c
 #else
 	if( two_cycles ) un.key |= u64(1)<<63;
 #endif
-	
+
 	BlendStatesMap::const_iterator	it( mBlendStatesMap.find( un.key ) );
 	if( it != mBlendStatesMap.end() )
 	{
@@ -695,13 +695,24 @@ PSPRenderer::SBlendStateEntry	PSPRenderer::LookupBlendState( u64 mux, bool two_c
 	}
 
 	SBlendStateEntry			entry;
+	CCombinerTree				tree( mux, two_cycles );
+	entry.States = tree.GetBlendStates();
 
-	entry.OverrideFunction = LookupOverrideBlendModeFunction( mux );
 
-	if( entry.OverrideFunction == NULL )
+	// Only check for blendmodes when inexact blends are found, this is done to allow setting a default case to handle most (inexact) blends with GU_TFX_MODULATE
+	// Only issue with this is that we won't be able to add custom blendmodes to non-innexact blends, but meh we shouldn't need to anyways. (this only happens with M64's star hack..)
+	// A nice side effect is that it gives a slight speed up when changing scenes since we would only check for innexact blends and not every mux that gets passed here :) // Salvy
+	//
+	if( entry.States->IsInexact() )
 	{
-		CCombinerTree				tree( mux, two_cycles );
-		entry.States = tree.GetBlendStates();
+		entry.OverrideFunction = LookupOverrideBlendModeFunction( mux );
+	}
+
+
+	//if( entry.OverrideFunction == NULL ) // This won't happen anymore, so is disabled - Salvy
+	{
+		//CCombinerTree				tree( mux, two_cycles );
+		//entry.States = tree.GetBlendStates();
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		printf( "Adding %08x%08x - %d cycles%s", u32(mux>>32), u32(mux), two_cycles ? 2 : 1, entry.States->IsInexact() ?  " - Inexact - bodging\n" : "\n");
 #endif
@@ -835,7 +846,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	static u32	gLastRDPOtherMode	( 0 );
 	static bool	gZFightingEnabled	= false;
 	static bool	gLastUseZBuffer		= false;
-	u32 blender				( gOtherModeL );
+	u32 blender	( gOtherModeL );
 
 	DAEDALUS_PROFILE( "PSPRenderer::RenderUsingCurrentBlendMode" );
 
@@ -846,8 +857,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	}
 	else
 	{
-		if ((blender != gLastRDPOtherMode) ||
-				(m_bZBuffer != gLastUseZBuffer) )
+		if ( (blender != gLastRDPOtherMode) || (m_bZBuffer != gLastUseZBuffer) )
 		{
 			// Only update if ZBuffer is enabled
 			if (m_bZBuffer)
@@ -1062,60 +1072,18 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	}
 	else
 #endif
+	// This check is for inexact blends which were handled either by a custom blendmode or auto blendmode thing
+	// This will always return true now, we should remove the null check eventually - Salvy
 	if( blend_entry.OverrideFunction != NULL )
 	{
-		// Local vars for now
-		SBlendModeDetails		details;
 
-		details.InstallTexture = true;
-		details.EnvColour = mEnvColour;
-		details.PrimColour = mPrimitiveColour;
-		details.ColourAdjuster.Reset();
-		details.RecolourTextureWhite = false;
-
-		blend_entry.OverrideFunction( gRDPOtherMode.cycle_type == CYCLE_2CYCLE ? 2 : 1, details );
-
-		bool	installed_texture( false );
-
-		if( details.InstallTexture )
-		{
-			if( mpTexture[ 0 ] != NULL )
-			{
-				CRefPtr<CNativeTexture> texture;
-
-				if(details.RecolourTextureWhite)
-				{
-					texture = mpTexture[ 0 ]->GetRecolouredTexture( c32::White );
-				}
-				else
-				{
-					texture = mpTexture[ 0 ]->GetTexture();
-				}
-
-				if(texture != NULL)
-				{
-					texture->InstallTexture();
-					installed_texture = true;
-				}
-			}
-		}
-
-		// If no texture was specified, or if we couldn't load it, clear it out
-		if( !installed_texture )
-		{
-			sceGuDisable( GU_TEXTURE_2D );
-		}
-
-		details.ColourAdjuster.Process( p_vertices, num_vertices );
-
-		sceGuDrawArray( DRAW_MODE, render_flags, num_vertices, NULL, p_vertices );
-	}
-	else if( blend_entry.States != NULL )
-	{
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST	
 		bool	inexact( blend_entry.States->IsInexact() );
 
-		if( inexact )
+		// Only dump missing_mux when we awant to search for inexact blends aka HighlightInexactBlendModes is enabled.
+		// Otherwise will dump lotsa of missing_mux even though is not needed since was handled correctly by auto blendmode thing - Salvy
+		//
+		if( inexact && gGlobalPreferences.HighlightInexactBlendModes)
 		{
 			if(mUnhandledCombinderStates.find( gRDPMux._u64 ) == mUnhandledCombinderStates.end())
 			{
@@ -1138,6 +1106,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 
 		if(inexact && gGlobalPreferences.HighlightInexactBlendModes)
 		{
+			
 			sceGuEnable( GU_TEXTURE_2D );
 			sceGuTexMode( GU_PSM_8888, 0, 0, GL_TRUE );		// maxmips/a2/swizzle = 0
 
@@ -1149,8 +1118,57 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		else
 #endif
 		{
-			RenderUsingRenderSettings( blend_entry.States, p_vertices, num_vertices, render_flags );
+
+			// Local vars for now
+			SBlendModeDetails		details;
+
+			details.InstallTexture = true;
+			details.EnvColour = mEnvColour;
+			details.PrimColour = mPrimitiveColour;
+			details.ColourAdjuster.Reset();
+			details.RecolourTextureWhite = false;
+
+			blend_entry.OverrideFunction( gRDPOtherMode.cycle_type == CYCLE_2CYCLE ? 2 : 1, details );
+
+			bool	installed_texture( false );
+
+			if( details.InstallTexture )
+			{
+				if( mpTexture[ 0 ] != NULL )
+				{
+					CRefPtr<CNativeTexture> texture;
+
+					if(details.RecolourTextureWhite)
+					{
+						texture = mpTexture[ 0 ]->GetRecolouredTexture( c32::White );
+					}
+					else
+					{
+						texture = mpTexture[ 0 ]->GetTexture();
+					}
+
+					if(texture != NULL)
+					{
+						texture->InstallTexture();
+						installed_texture = true;
+					}
+				}
+			}
+
+			// If no texture was specified, or if we couldn't load it, clear it out
+			if( !installed_texture )
+			{
+				sceGuDisable( GU_TEXTURE_2D );
+			}
+
+			details.ColourAdjuster.Process( p_vertices, num_vertices );
+
+			sceGuDrawArray( DRAW_MODE, render_flags, num_vertices, NULL, p_vertices );
 		}
+	}
+	else if( blend_entry.States != NULL )
+	{
+		RenderUsingRenderSettings( blend_entry.States, p_vertices, num_vertices, render_flags );
 	}
 	else
 	{
@@ -2580,12 +2598,10 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace
 	// Projection
 	if (bPush)
 	{
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		if (mProjectionTop >= (MATRIX_STACK_SIZE-1))
 			DBGConsole_Msg(0, "Pushing past proj stack limits! %d/%d", mProjectionTop, MATRIX_STACK_SIZE);
 		else
-#endif
-		++mProjectionTop;
+			++mProjectionTop;
 
 		if (bReplace)
 			// Load projection matrix
@@ -2651,13 +2667,10 @@ void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace)
 	// ModelView
 	if (bPush)
 	{
-
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		if (mModelViewTop >= (MATRIX_STACK_SIZE-1))
 			DBGConsole_Msg(0, "Pushing past modelview stack limits! %d/%d", mModelViewTop, MATRIX_STACK_SIZE);
 		else
-#endif
-		++mModelViewTop;
+			++mModelViewTop;
 
 		// We should store the current projection matrix...
 		if (bReplace)

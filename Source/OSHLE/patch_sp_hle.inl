@@ -101,9 +101,11 @@ TEST_DISABLE_SP_FUNCS
 //
 //*****************************************************************************
 // Very similar to osSpDeviceBusy, 
+// I think osSpGetStatus is not defined correctly in our symbol table, It didn't show up in any game I tried..
 u32 Patch___osSpGetStatus_Mario()
 {
 TEST_DISABLE_SP_FUNCS
+	DAEDALUS_ERROR("osSpGetStatus_Mario");
 	u32 status = SpGetStatus();
 
 	gGPR[REG_v0]._s64 = (s64)(s32)status;
@@ -116,8 +118,9 @@ TEST_DISABLE_SP_FUNCS
 u32 Patch___osSpGetStatus_Rugrats()
 {
 TEST_DISABLE_SP_FUNCS
+	DAEDALUS_ERROR("osSpGetStatus_Rugrats");
 	u32 status = SpGetStatus();
-
+	
 	gGPR[REG_v0]._s64 = (s64)(s32)status;
 	return PATCH_RET_JR_RA;
 }

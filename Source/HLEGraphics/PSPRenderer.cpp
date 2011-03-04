@@ -341,6 +341,8 @@ PSPRenderer::PSPRenderer()
 
 	gRDPMux._u64 = 0;
 
+	bStarOrigin = false;
+
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	memset( gWhiteTexture, 0xff, sizeof(gWhiteTexture) );
 
@@ -927,21 +929,24 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	//
 	// Initiate Blender
 	//
-	if( gRDPOtherMode.force_bl && (gRDPOtherMode.cycle_type < CYCLE_COPY) )
+	if(gRDPOtherMode.cycle_type < CYCLE_COPY)
 	{
-		InitBlenderMode( blender >> 16 );
-	}
-	else if ( blender & 0x2000 )	// This is a special case for Tarzan's characters
-	{
-		sceGuDisable( GU_BLEND );
-	}
+		if( gRDPOtherMode.force_bl ) //0x4000
+		{
+			InitBlenderMode( blender >> 16 );
+		}
+		else if ( gRDPOtherMode.alpha_cvg_sel )	// This is a special case for Tarzan's characters
+		{
+			sceGuDisable( GU_BLEND );
+		}
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	else
-	{
-		// If blender state couldn't be handled, default blending is used
-		//printf("Unhandled Blender State 0x%04x\n",blender);
-	}
+		else
+		{
+			// If blender state couldn't be handled, default blending is used
+			//printf("Unhandled Blender State 0x%04x\n",blender);
+		}
 #endif
+	}
 	//
 	// I can't think why the hand in mario's menu screen is rendered with an opaque rendermode,
 	// and no alpha threshold. We set the alpha reference to 1 to ensure that the transparent pixels
@@ -964,7 +969,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	}
 	else
 	{
-		if( gRDPOtherMode.alpha_cvg_sel && !gRDPOtherMode.cvg_x_alpha ) //We need cvg_sel for SSVN characters to display
+		if( (gRDPOtherMode.alpha_cvg_sel ) && !gRDPOtherMode.cvg_x_alpha ) //We need cvg_sel for SSVN characters to display
 		{
 			// Use CVG for pixel alpha
 			sceGuDisable(GU_ALPHA_TEST);
@@ -972,7 +977,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		else
 		{
 			// G_AC_THRESHOLD || G_AC_DITHER
-			sceGuAlphaFunc( mAlphaThreshold ? GU_GREATER : GU_GEQUAL, mAlphaThreshold, 0xff);
+			sceGuAlphaFunc( mAlphaThreshold ? GU_GEQUAL : GU_GREATER, mAlphaThreshold, 0xff);
 			sceGuEnable(GU_ALPHA_TEST);
 		}
 	}
@@ -1005,7 +1010,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
         else
         {
             // RDP_ALPHA_COMPARE_THRESHOLD || RDP_ALPHA_COMPARE_DITHER
-			sceGuAlphaFunc( mAlphaThreshold ? GU_GREATER : GU_GEQUAL, mAlphaThreshold, 0xff);
+			sceGuAlphaFunc( mAlphaThreshold ? GU_GEQUAL : GU_GREATER, mAlphaThreshold, 0xff);
 			sceGuEnable(GU_ALPHA_TEST);
         }
 #endif

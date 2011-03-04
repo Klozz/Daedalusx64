@@ -1,8 +1,8 @@
 #define TEST_DISABLE_MESG_FUNCS //return PATCH_RET_NOT_PROCESSED;
 
-
-
-
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch_osSetEventMesg_Mario()
 {
 TEST_DISABLE_MESG_FUNCS
@@ -30,6 +30,9 @@ TEST_DISABLE_MESG_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch_osSetEventMesg_Zelda()
 {
 TEST_DISABLE_MESG_FUNCS
@@ -58,7 +61,9 @@ TEST_DISABLE_MESG_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
-
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch_osCreateMesgQueue_Mario()
 {
 TEST_DISABLE_MESG_FUNCS
@@ -75,6 +80,10 @@ TEST_DISABLE_MESG_FUNCS
 	return PATCH_RET_NOT_PROCESSED;
 #endif
 }
+
+//*****************************************************************************
+//
+//*****************************************************************************
 // Exactly the same - just optimised slightly
 u32 Patch_osCreateMesgQueue_Rugrats()
 {
@@ -93,13 +102,15 @@ TEST_DISABLE_MESG_FUNCS
 #endif
 }
 
-
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch_osRecvMesg()
 {
 TEST_DISABLE_MESG_FUNCS
 
 	// osRecvMesg brakes OOT's in-game menu
-	//
+	// ToDo : Fix Me
 	if( g_ROM.GameHacks == ZELDA_OOT ) 
 	{
 		return PATCH_RET_NOT_PROCESSED0(osRecvMesg);
@@ -155,9 +166,10 @@ TEST_DISABLE_MESG_FUNCS
 
 	}
 
-
+	DAEDALUS_ASSERT( MsgCount != 0, "Invalid message count" );
+	DAEDALUS_ASSERT( MsgCount != u32(~0) && first+ValidCount != 0x80000000, "Invalid message count" );
 	// Point first to the next valid message
-	if (MsgCount == 0)
+	/*if (MsgCount == 0)
 	{
 		DBGConsole_Msg(0, "Invalid message count");
 		// We would break here!
@@ -167,13 +179,13 @@ TEST_DISABLE_MESG_FUNCS
 		DBGConsole_Msg(0, "Invalid message count/first");
 		// We would break here!
 	}
-	else
-	{
-		//DBGConsole_Msg(0, "  Generating next valid message number");
-		first = (first + 1) % MsgCount;
+	else*/
+	//{
+	//DBGConsole_Msg(0, "  Generating next valid message number");
+	first = (first + 1) % MsgCount;
 
-		Write32Bits(queue + 0x0c, first);
-	}
+	Write32Bits(queue + 0x0c, first);
+	//}
 
 	// Decrease the number of valid messages
 	ValidCount--;
@@ -206,14 +218,15 @@ TEST_DISABLE_MESG_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
-
-
+//*****************************************************************************
+//
+//*****************************************************************************
 u32 Patch_osSendMesg()
 {
 TEST_DISABLE_MESG_FUNCS
 
 	// osSendMesg brakes OOT's in-game menu
-	//
+	// ToDo : Fix Me
 	if( g_ROM.GameHacks == ZELDA_OOT )
 	{
 		return PATCH_RET_NOT_PROCESSED0(osSendMesg);
@@ -252,11 +265,13 @@ TEST_DISABLE_MESG_FUNCS
 	}
 
 	//DBGConsole_Msg(0, "  Processing Pending");
+	DAEDALUS_ASSERT( MsgCount != 0, "Invalid message count" );
+	DAEDALUS_ASSERT( MsgCount != u32(~0) && first+ValidCount != 0x80000000, "Invalid message count" );
 
 	u32 first = Read32Bits(queue + 0x0c);
 	
 	// Point first to the next valid message
-	if (MsgCount == 0)
+	/*if (MsgCount == 0)
 	{
 		DBGConsole_Msg(0, "Invalid message count");
 		// We would break here!
@@ -266,18 +281,18 @@ TEST_DISABLE_MESG_FUNCS
 		DBGConsole_Msg(0, "Invalid message count/first");
 		// We would break here!
 	}
-	else
-	{
-		u32 slot = (first + ValidCount) % MsgCount;
-		
-		u32 MsgBase = Read32Bits(queue + 0x14);
+	else*/
+	//{
+	u32 slot = (first + ValidCount) % MsgCount;
+	
+	u32 MsgBase = Read32Bits(queue + 0x14);
 
-		// Offset to first valid message
-		MsgBase += slot * 4;
+	// Offset to first valid message
+	MsgBase += slot * 4;
 
-		Write32Bits(MsgBase, msg);
+	Write32Bits(MsgBase, msg);
 
-	}
+	//}
 	
 	// Increase the number of valid messages
 	ValidCount++;

@@ -175,11 +175,37 @@ u32 Patch_bzero()
 { 
 	u32 dst = gGPR[REG_a0]._u32_0; 
 	u32 len = gGPR[REG_a1]._u32_0; 
-	
+
+	//Faster but breaks Chameleon Twist 2
+	//memset( (void *)ReadAddress(dst), 0, len);
+
+#if 0 //1->Normal, 0->Optimized //Corn
 	// Assume we will only access RAM range
-	void *pDst = ReadAddress(dst);
-	memset(pDst, 0, len);
+	//Todo optimize unaligned/odd destinations and lengths //Corn
+	if( (dst & 0x3) | (len & 0x3) ) for(u32 i = 0; i < len; i++) Write8Bits(dst + i, 0);
+	else memset( (void *)ReadAddress(dst), 0, len);
+#else
+	//Write(0) to the unaligned start(if any), byte by byte...
+	while((dst & 0x3) && len)
+	{
+		Write8Bits(dst++ , 0);
+		len--;
+	}
 	
+	//Write(0) to the aligned part
+	memset( (void *)ReadAddress(dst), 0, len & ~0x3);
+
+	dst += len & ~0x3;
+	len &= 0x3;
+
+	//Write(0) to the unaligned remains(if any), byte by byte...
+	while(len--)
+	{
+		Write8Bits(dst++ , 0);
+	}
+
+#endif	
+
 	// return value of dest 
 	gGPR[REG_v0]._u32_0 = gGPR[REG_a0]._u32_0; 
 	

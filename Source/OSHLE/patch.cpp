@@ -93,6 +93,7 @@ static const char * g_szEventStrings[23] =
 };
 #endif	// DUMPOSFUNCTIONS
 
+bool applied = false;
 u32 gCurrentLength;
 u32 gNumOfOSFunctions;
 
@@ -127,6 +128,7 @@ static u32  nPatchVariables;
 
 void Patch_Reset()
 {
+	applied = false;
 	gPatchesInstalled = false;
 	gCurrentLength = 0;
 	gNumOfOSFunctions = 0;
@@ -152,7 +154,6 @@ void Patch_ResetSymbolTable()
 	nPatchVariables = i;
 }
 
-static bool applied = false;
 void Patch_ApplyPatches()
 {
 	applied = true;
@@ -178,8 +179,9 @@ void Patch_ApplyPatches()
 void Patch_PatchAll()
 {
 	if (!applied)
+	{
 		Patch_ApplyPatches();
-
+	}
 #ifdef DUMPOSFUNCTIONS
 	FILE *fp;
 	char path[MAX_PATH + 1];
@@ -480,7 +482,7 @@ void Patch_RecurseAndFind()
 		intraFontPrintf( ltn8, 480/2, (272>>1), "OS HLE Patching: %d%%", i * 100 / (nPatchSymbols-1));
 		intraFontPrintf( ltn8, 480/2, (272>>1)-50, "Searching for %s", g_PatchSymbols[i]->szName );
 		CGraphicsContext::Get()->EndFrame();
-		CGraphicsContext::Get()->UpdateFrameGUI( true );
+		CGraphicsContext::Get()->UpdateFrame( true );
 #endif
 		// Skip symbol if already found, or if it is a variable
 		if (g_PatchSymbols[i]->bFound)
@@ -584,7 +586,7 @@ void Patch_RecurseAndFind()
 		intraFontPrintf( ltn8, 480/2, (272>>1), "Symbols Identified: %d%%",100 * nFound / (nPatchSymbols-1));
 		intraFontPrintf( ltn8, 480/2, (272>>1)+50, "Range 0x%08x -> 0x%08x", first, last );
 		CGraphicsContext::Get()->EndFrame();
-		CGraphicsContext::Get()->UpdateFrameGUI( true );
+		CGraphicsContext::Get()->UpdateFrame( true );
 #endif
 	}
 
@@ -623,7 +625,7 @@ void Patch_RecurseAndFind()
 		CGraphicsContext::Get()->Clear(true,true);
 		intraFontPrintf( ltn8, 480/2, 272>>1, "Variables Identified: %d%%", 100 * nFound / (nPatchVariables-1) );
 		CGraphicsContext::Get()->EndFrame();
-		CGraphicsContext::Get()->UpdateFrameGUI( true );
+		CGraphicsContext::Get()->UpdateFrame( true );
 #endif
 	}
 

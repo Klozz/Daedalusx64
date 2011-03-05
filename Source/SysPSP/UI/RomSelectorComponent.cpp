@@ -2079,7 +2079,7 @@ void	IRomSelectorComponent::Update_old( float elapsed_time, const v2 & stick, u3
 #ifdef DAEDALUS_DIALOGS
 			EasyMessage msg;
 
-			if(msg.ShowMessage("Do you want to exit?", 1))
+			if(msg.ShowMessage("Do you want to quit Daedalus?", 1))
 			{
 				sceKernelExitGame();
 			}
@@ -2321,7 +2321,7 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 #ifdef DAEDALUS_DIALOGS
 			EasyMessage msg;
 
-			if(msg.ShowMessage("Do you want to exit?", 1))
+			if(msg.ShowMessage("Do you want to quit Daedalus?", 1))
 			{
 				sceKernelExitGame();
 			}

@@ -102,8 +102,6 @@ u32 gRDPFrame = 0;
 //*****************************************************************************
 //
 //*****************************************************************************
-u32 gOtherModeL   = 0;
-u32 gOtherModeH   = 0;
 u32 gRDPHalf1 = 0;
 
 extern UcodeInfo last;
@@ -256,9 +254,10 @@ bool DLParser_Initialise()
 	//
 	// Reset all the RDP registers
 	//
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	gRDPOtherMode._u64 = 0;
-#endif
+	//gRDPOtherMode._u64 = 0;
+	gRDPOtherMode.L = 0;
+	gRDPOtherMode.H = 0;
+
 	gRDPOtherMode.pad = G_RDP_RDPSETOTHERMODE;
 	gRDPOtherMode.blender = 0x0050;
 
@@ -619,7 +618,6 @@ void DLParser_Process()
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	GBIMicrocode_ResetMicrocodeHistory();
-	gRDPOtherMode._u64 = 0;			// Use gOtherModeL instead, pretty much the same and cheap on the psp
 #endif
 	if ( last.code_base != code_base )
 	{
@@ -629,8 +627,9 @@ void DLParser_Process()
 	//
 	// Not sure what to init this with. We should probably read it from the dmem
 	//
-	gOtherModeL = 0;
-	gOtherModeH = 0;
+	//gRDPOtherMode._u64 = 0;	//Better clear this here at Dlist start
+	gRDPOtherMode.L = 0;
+	gRDPOtherMode.H = 0;
 
 	gRDPOtherMode.pad = G_RDP_RDPSETOTHERMODE;
 	gRDPOtherMode.blender = 0x0050;
@@ -918,7 +917,6 @@ void DLParser_SetPrimDepth( MicroCodeCommand command )
 	u32 z  = (command.inst.cmd1 >> 16) & 0x7FFF;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	//u32 z  = (command.inst.cmd1 >> 16) & 0xFFFF;
 	u32 dz = (command.inst.cmd1      ) & 0xFFFF;
 
 	DL_PF("SetPrimDepth: 0x%08x 0x%08x - z: 0x%04x dz: 0x%04x", command.inst.cmd0, command.inst.cmd1, z, dz);
@@ -934,11 +932,11 @@ void DLParser_RDPSetOtherMode( MicroCodeCommand command )
 {
 	DL_PF( "      RDPSetOtherMode: 0x%08x 0x%08x", command.inst.cmd0, command.inst.cmd1 );
 
-	gOtherModeH = command.inst.cmd0;
-	gOtherModeL = command.inst.cmd1;
+	gRDPOtherMode.H = command.inst.cmd0;
+	gRDPOtherMode.L = command.inst.cmd1;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	RDP_SetOtherMode( command.inst.cmd0, command.inst.cmd1 );
+	RDP_SetOtherMode( gRDPOtherMode.H, gRDPOtherMode.L );
 #endif
 }
 
@@ -1738,6 +1736,7 @@ enum CycleType
 	CYCLE_COPY,
 	CYCLE_FILL,
 };
+
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -1785,12 +1784,12 @@ void DLParser_TexRect( MicroCodeCommand command )
 		case CYCLE_COPY:
 			d.x *= 0.25f;	// In copy mode 4 pixels are copied at once.
 		case CYCLE_FILL:
-			xy1.x = (tex_rect.x1 + 4) / 4.0f;
-			xy1.y = (tex_rect.y1 + 4) / 4.0f;
+			xy1.x = (tex_rect.x1 + 4) * 0.25f;
+			xy1.y = (tex_rect.y1 + 4) * 0.25f;
 			break;
 		default:
-			xy1.x = tex_rect.x1 / 4.0f;
-			xy1.y = tex_rect.y1 / 4.0f;
+			xy1.x = tex_rect.x1 * 0.25f;
+			xy1.y = tex_rect.y1 * 0.25f;
 			break;
 	}
 
@@ -1838,12 +1837,12 @@ void DLParser_TexRectFlip( MicroCodeCommand command )
 		case CYCLE_COPY:
 			d.x *= 0.25f;	// In copy mode 4 pixels are copied at once.
 		case CYCLE_FILL:
-			xy1.x = (tex_rect.x1 + 4) / 4.0f;
-			xy1.y = (tex_rect.y1 + 4) / 4.0f;
+			xy1.x = (tex_rect.x1 + 4) * 0.25f;
+			xy1.y = (tex_rect.y1 + 4) * 0.25f;
 			break;
 		default:
-			xy1.x = tex_rect.x1 / 4.0f;
-			xy1.y = tex_rect.y1 / 4.0f;
+			xy1.x = tex_rect.x1 * 0.25f;
+			xy1.y = tex_rect.y1 * 0.25f;
 			break;
 	}
 

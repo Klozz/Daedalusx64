@@ -677,17 +677,17 @@ PSPRenderer::SBlendStateEntry	PSPRenderer::LookupBlendState( u64 mux, bool two_c
 	union
 	{
 		u64		key;
-		u32		kpart[2];
+		struct
+		{
+			u32	L;
+			u32	H;
+		};
 	}un;
 
 	un.key = mux;
 
 	// Top 8 bits are never set - use the very top one to differentiate between 1/2 cycles
-#if 1	//1->faster, 0->old
-	un.kpart[1] |= (two_cycles << 31);
-#else
-	if( two_cycles ) un.key |= u64(1)<<63;
-#endif
+	un.H |= (two_cycles << 31);
 
 	BlendStatesMap::const_iterator	it( mBlendStatesMap.find( un.key ) );
 	if( it != mBlendStatesMap.end() )
@@ -839,7 +839,7 @@ void PSPRenderer::RenderUsingRenderSettings( const CBlendStates * states, Daedal
 		sceGuDrawArray( DRAW_MODE, render_flags, num_vertices, NULL, p_vertices );
 	}
 }
-extern u32 gOtherModeL;
+
 extern void InitBlenderMode( u32 blender );
 //*****************************************************************************
 //
@@ -861,10 +861,10 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	}
 	else
 	{
-		if ( (gOtherModeL != Old_OtherModeL) || (m_bZBuffer != Old_UseZBuffer) )
+		if ( (gRDPOtherMode.L != Old_OtherModeL) || (m_bZBuffer != Old_UseZBuffer) )
 		{
 			// Fixes Zfighting issues we have on the PSP.
-			if( IsZModeDecal() )
+			if( gRDPOtherMode.zmode == 3 )
 			{
 				if( !ZFightingEnabled )
 				{
@@ -892,7 +892,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 			sceGuDepthMask( gRDPOtherMode.z_upd ? GL_FALSE : GL_TRUE );
 
 			Old_UseZBuffer = m_bZBuffer;
-			Old_OtherModeL = gOtherModeL;
+			Old_OtherModeL = gRDPOtherMode.L;
 		}
 	}
 
@@ -926,11 +926,11 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	//
 	if(gRDPOtherMode.cycle_type < CYCLE_COPY)
 	{
-		if( gOtherModeL & 0x4000) //0x4000
+		if( gRDPOtherMode.force_bl ) //gRDPOtherMode.L & 0x4000 -> gRDPOtherMode.force_bl
 		{
-			InitBlenderMode( gOtherModeL >> 16 );
+			InitBlenderMode( gRDPOtherMode.blender );	//gRDPOtherMode.L >> 16
 		}
-		else if ( gOtherModeL & 0x2000 )	// This is a special case for Tarzan's characters
+		else if ( gRDPOtherMode.alpha_cvg_sel )	// gRDPOtherMode.L & 0x2000 -> gRDPOtherMode.alpha_cvg_sel This is a special case for Tarzan's characters
 		{
 			sceGuDisable( GU_BLEND );
 		}
@@ -1295,15 +1295,14 @@ void PSPRenderer::TexRectFlip( u32 tile_idx, const v2 & xy0, const v2 & xy1, con
 //*****************************************************************************
 void PSPRenderer::FillRect( const v2 & xy0, const v2 & xy1, u32 color )
 {
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+/*
 	if ( (gRDPOtherMode._u64 & 0xffff0000) == 0x5f500000 )	//Used by Wave Racer
 	{
 		// this blend mode is mem*0 + mem*1, so we don't need to render it... Very odd!
 		DAEDALUS_ERROR("	mem*0 + mem*1 - skipped");
 		return;
 	}
-#endif
-
+*/
 	// Unless we support fb emulation, we can safetly skip here
 	if( g_CI.Size != G_IM_SIZ_16b )	return;
 

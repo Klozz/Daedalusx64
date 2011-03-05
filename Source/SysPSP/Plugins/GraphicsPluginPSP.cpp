@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Core/Memory.h"
 
+
 //#define DAEDALUS_FRAMERATE_ANALYSIS
 extern void battery_warning();
 extern void HandleEndOfFrame();
@@ -230,7 +231,7 @@ void CGraphicsPluginPsp::UpdateScreen()
 				pspDebugScreenSetTextColor( 0xffffffff );
 				pspDebugScreenSetBackColor(0);
 				pspDebugScreenSetXY(0, 0);
-				
+
 				switch(gGlobalPreferences.DisplayFramerate)
 				{
 					case 1:
@@ -250,7 +251,7 @@ void CGraphicsPluginPsp::UpdateScreen()
 				CGraphicsContext::Get()->DumpNextScreen();
 				gTakeScreenshot = false;
 			}
-			CGraphicsContext::Get()->UpdateFrame( false );
+			CGraphicsContext::Get()->UpdateFrame();
 		}
 
 		static u32 current_frame = 0;

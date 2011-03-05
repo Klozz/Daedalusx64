@@ -523,7 +523,7 @@ static void	DLParser_ProcessDList()
 	//Clean frame buffer at DList start if selected
 	if( gCleanSceneEnabled && CGraphicsContext::CleanScene )
 	{
-		CGraphicsContext::Get()->Clear(true, false);
+		CGraphicsContext::Get()->ClearZBuffer(0);
 		CGraphicsContext::CleanScene = false;
 	}
 
@@ -1834,7 +1834,7 @@ void DLParser_FillRect( MicroCodeCommand command )
 	//Always clear Zbuffer if Depthbuffer is selected //Corn
 	if (g_DI.Address == g_CI.Address)
 	{
-		CGraphicsContext::Get()->Clear( false, true );
+		CGraphicsContext::Get()->ClearZBuffer( 0 );
 		DL_PF("    Clearing ZBuffer");
 		return;
 	}

@@ -847,9 +847,9 @@ extern void InitBlenderMode( u32 blender );
 void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num_vertices, ERenderMode mode, bool disable_zbuffer )
 {
 	//These has to be static!!! //Corn
-	static u32	gLastRDPOtherMode	( 0 );
-	static bool	gZFightingEnabled	= false;
-	static bool	gLastUseZBuffer		= false;
+	static u32	Old_OtherModeL	( 0 );
+	static bool	ZFightingEnabled	= false;
+	static bool	Old_UseZBuffer		= false;
 
 	DAEDALUS_PROFILE( "PSPRenderer::RenderUsingCurrentBlendMode" );
 
@@ -857,48 +857,41 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	{
 		sceGuDisable(GU_DEPTH_TEST);
 		sceGuDepthMask( GL_TRUE );	// GL_TRUE to disable z-writes
+		Old_OtherModeL = 0;	//This forces to check Zbuffer setting next time
 	}
 	else
 	{
-		if ( (gOtherModeL != gLastRDPOtherMode) || (m_bZBuffer != gLastUseZBuffer) )
+		if ( (gOtherModeL != Old_OtherModeL) || (m_bZBuffer != Old_UseZBuffer) )
 		{
-			// Only update if ZBuffer is enabled
-			if (m_bZBuffer)
+			// Fixes Zfighting issues we have on the PSP.
+			if( IsZModeDecal() & !ZFightingEnabled )
 			{
-				if( gRDPOtherMode.z_cmp || gForceZcmp )
-				{
-					sceGuEnable(GU_DEPTH_TEST);
-					
-					// Fixes Zfighting issues we have on the PSP.
-					if( IsZModeDecal() )
-					{
-						gZFightingEnabled = true;						
-						sceGuDepthRange(65535,80);
-					}
-					else if( gZFightingEnabled )
-					{
-						gZFightingEnabled = false;						
-						sceGuDepthRange(65535,0);
-					}
- 				}
-				else
-				{
-					sceGuDisable(GU_DEPTH_TEST);
-				}
+				ZFightingEnabled = true;						
+				sceGuDepthRange(65535,80);
+			}
+			else if( ZFightingEnabled )
+			{
+				ZFightingEnabled = false;						
+				sceGuDepthRange(65535,0);
+			}
 
-				sceGuDepthMask( gRDPOtherMode.z_upd ? GL_FALSE : GL_TRUE );	// GL_TRUE to disable z-writes
+			// Update ZBuffer
+			if ( (m_bZBuffer & gRDPOtherMode.z_cmp) | gForceZcmp )
+			{
+				sceGuEnable(GU_DEPTH_TEST);
 			}
 			else
 			{
 				sceGuDisable(GU_DEPTH_TEST);
-				sceGuDepthMask( GL_TRUE );	// GL_TRUE to disable z-writes
 			}
 
-			gLastUseZBuffer = m_bZBuffer;
+			// GL_TRUE to disable z-writes
+			sceGuDepthMask( gRDPOtherMode.z_upd ? GL_FALSE : GL_TRUE );
+
+			Old_UseZBuffer = m_bZBuffer;
+			Old_OtherModeL = gOtherModeL;
 		}
 	}
-
-	gLastRDPOtherMode = gOtherModeL;
 
 	sceGuShadeModel( mSmooth ? GU_SMOOTH : GU_FLAT );
 	//
@@ -957,7 +950,6 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	{
 		if( gRDPOtherMode.cvg_x_alpha )	// I think this implies that alpha is coming from
 		{
-			bStarOrigin = true;	// Used to enable Mario 64 star blend when alpha origs, we do this to avoid messing the text.
 			sceGuAlphaFunc(GU_GREATER, 0x70, 0xff); // Going over 0x70 brakes OOT, but going lesser than that makes lines on games visible...ex: Paper Mario.
 			sceGuEnable(GU_ALPHA_TEST);
 		}
@@ -987,7 +979,6 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		if( gRDPOtherMode.cvg_x_alpha && ( gRDPOtherMode.alpha_cvg_sel || gRDPOtherMode.aa_en ) )
 		{
 			// Going over 0x70 brakes OOT, but going lesser than that makes lines on games visible...ex: Paper Mario.
-			bStarOrigin = true;	// Used to enable Mario 64 star blend when alpha origs, we do this to avoid messing the text.
 			sceGuAlphaFunc(GU_GREATER, 0x70, 0xff);
 			sceGuEnable(GU_ALPHA_TEST);
 		}
@@ -2524,6 +2515,9 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 			ti.GetLoadAddress(), ti.GetPitch(),
 			ti.GetFormatName(), ti.GetSizeInBits(),
 			ti.GetWidth(), ti.GetHeight() );
+
+	//SM64 black Star hack (maybe only works on U ROM?) //Corn
+	( ti.GetLoadAddress() == 0x000de6a0 ) ? bStarOrigin = true : bStarOrigin = false;
 
 	if( (mpTexture[ index ] != NULL) && (mpTexture[ index ]->GetTextureInfo() == ti) ) return;
 

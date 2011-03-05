@@ -1951,6 +1951,9 @@ void IRomSelectorComponent::Render()
 		return;
 	}
 
+	sceGuEnable(GU_SCISSOR_TEST);
+	sceGuScissor(0,0, 480,272);
+
 	ICON_AREA_TOP = 48;
 	ICON_AREA_LEFT = 20;
 	ICON_AREA_WIDTH = 256;
@@ -2079,10 +2082,6 @@ void	IRomSelectorComponent::Update_old( float elapsed_time, const v2 & stick, u3
 			if(msg.ShowMessage("Do you want to exit?", 1))
 			{
 				sceKernelExitGame();
-			}
-			else
-			{
-				return;
 			}
 #else
 			sceKernelExitGame();
@@ -2325,10 +2324,6 @@ void	IRomSelectorComponent::Update( float elapsed_time, const v2 & stick, u32 ol
 			if(msg.ShowMessage("Do you want to exit?", 1))
 			{
 				sceKernelExitGame();
-			}
-			else
-			{
-				return;
 			}
 #else
 			sceKernelExitGame();

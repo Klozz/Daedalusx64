@@ -107,7 +107,6 @@ enum EGameHacks
 	NO_GAME_HACK = 0,
 	GOLDEN_EYE,
 	SUPER_BOWLING,
-	CONKER,
 	PILOT_WINGS,
 	ZELDA_OOT,
 	ZELDA_MM,
@@ -123,7 +122,8 @@ enum EGameHacks
 	RIDGE_RACER,
 	WONDER_PROJECTJ2,
 	ANIMAL_CROSSING,
-	CHAMELEON_TWIST_2
+	CHAMELEON_TWIST_2,
+	CLAY_FIGHTER_63
 };
 
 //*****************************************************************************

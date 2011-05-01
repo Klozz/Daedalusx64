@@ -847,6 +847,7 @@ extern void InitBlenderMode( u32 blender );
 void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num_vertices, ERenderMode mode, bool disable_zbuffer )
 {
 	//These has to be static!!! //Corn
+	static u32	Old_OtherModeH	( 0 );
 	static u32	Old_OtherModeL	( 0 );
 	static bool	ZFightingEnabled	= false;
 	static bool	Old_UseZBuffer		= false;
@@ -861,7 +862,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	}
 	else
 	{
-		if ( (gRDPOtherMode.L != Old_OtherModeL) || (m_bZBuffer != Old_UseZBuffer) )
+		if ( ((gRDPOtherMode.H ^ gRDPOtherMode.L ^ Old_OtherModeH ^ Old_OtherModeL) != 0) || (m_bZBuffer != Old_UseZBuffer) )
 		{
 			// Fixes Zfighting issues we have on the PSP.
 			if( gRDPOtherMode.zmode == 3 )
@@ -893,6 +894,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 
 			Old_UseZBuffer = m_bZBuffer;
 			Old_OtherModeL = gRDPOtherMode.L;
+			Old_OtherModeH = gRDPOtherMode.H;
 		}
 	}
 
@@ -1672,17 +1674,6 @@ bool PSPRenderer::FlushTris()
 
 	//
 	//	Render out our vertices
-	//	XXXX Should be using GetWorldProject()?
-	//
-	const Matrix4x4 &	projection( mProjectionStack[mProjectionTop] );
-
-	//If decal polys, we shift near/far plane a bit with projection matrix to eliminate z-fight //Corn
-	//Works well in most games and is practically "free", however OOT does not work :(
-	//if( (gRDPOtherMode.zmode == 3) && gRemoveZFighting ) projection.mRaw[10] += 0.0004f;
-
-	const ScePspFMatrix4 *	p_psp_proj( reinterpret_cast< const ScePspFMatrix4 * >( &projection ) );
-	
-	sceGuSetMatrix( GU_PROJECTION, p_psp_proj );
 
 	DAEDALUS_ASSERT( !gRDPOtherMode.depth_source, " Warning : Using depth source in flushtris" );
 
@@ -2609,6 +2600,8 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace
 			mProjectionStack[mProjectionTop] = mat * mProjectionStack[mProjectionTop];
 	}
 
+	sceGuSetMatrix( GU_PROJECTION, reinterpret_cast< const ScePspFMatrix4 * >( &mProjectionStack[mProjectionTop]) );
+	
 	mProjisNew = true;	// Note when a new P-matrix has been loaded
 	mWorldProjectValid = false;
 }

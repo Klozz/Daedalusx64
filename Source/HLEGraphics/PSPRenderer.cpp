@@ -129,13 +129,19 @@ enum CycleType
 	CYCLE_FILL,
 };
 
+struct ViewportInfo
+{
+	u32	Width;
+	f32 Zoom;
+};
+
 extern u32 SCR_WIDTH;
 extern u32 SCR_HEIGHT;
 
 static f32 fViWidth = 320.0f;
 static f32 fViHeight = 240.0f;
-//static u32 uViWidth = 320;
-//static u32 uViHeight = 240;
+static u32 uViWidth = 320;
+static u32 uViHeight = 240;
 
 static const float gTexRectDepth( 0.0f );
 f32 gZoomX=1.0;	//Default is 1.0f
@@ -283,6 +289,7 @@ template<> bool CSingleton< PSPRenderer >::Create()
 	return mpInstance != NULL;
 }
 
+ViewportInfo	mView;
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -339,7 +346,8 @@ PSPRenderer::PSPRenderer()
 	mTnLParams.TextureScaleY = 1.0f;
 
 	gRDPMux._u64 = 0;
-
+	
+	mView.Zoom	 = 0.0f;	//Force to check viewport/zoom
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	memset( gWhiteTexture, 0xff, sizeof(gWhiteTexture) );
 
@@ -497,8 +505,8 @@ void PSPRenderer::SetVIScales()
 		fViWidth = (f32)Memory_VI_GetRegister( VI_WIDTH_REG );
 	}
 	//Used to set a limit on Scissors //Corn
-	//uViWidth  = (u32)fViWidth - 1;
-	//uViHeight = (u32)fViHeight - 1;
+	uViWidth  = (u32)fViWidth - 1;
+	uViHeight = (u32)fViHeight - 1;
 }
 
 //*****************************************************************************
@@ -533,16 +541,24 @@ void PSPRenderer::BeginScene()
 	mRecordedCombinerStates.clear();
 #endif
 
-	u32		display_width( 0 );
-	u32		display_height( 0 );
-	u32		frame_width( 480 );
-	u32		frame_height( 272 );
+	u32				display_width( 0 );
+	u32				display_height( 0 );
+	u32				frame_width( 480 );
+	u32				frame_height( 272 );
 	//
 	//	We do this each frame as it lets us adapt to changes in the viewport dynamically
 	//
 	CGraphicsContext::Get()->ViewportType(&display_width, &display_height, &frame_width, &frame_height );
 
 	DAEDALUS_ASSERT( display_width != 0 && display_height != 0, "Unhandled viewport type" );
+
+	// Check wherever our viewport has changed.
+	// This only happens when the user changes it in pause menu. 
+	//
+	if( mView.Width == display_width && mView.Zoom == gZoomX )	return;
+
+	mView.Width	 = display_width;
+	mView.Zoom	 = gZoomX;
 
 	s32		display_x( (frame_width - display_width)/2 );
 	s32		display_y( (frame_height - display_height)/2 );
@@ -554,7 +570,6 @@ void PSPRenderer::BeginScene()
 
 	SetN64Viewport( scale, trans );
 }
-
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -1876,28 +1891,28 @@ void PSPRenderer::SetNewVertexInfo(u32 address, u32 v0, u32 n)
 
 	//TestVFPUVerts( v0, n, pVtxBase, matWorld );
 
-	//Make a special pass for env mapping of textures //Corn
+#if 0	//Make a special pass for env mapping of textures //Corn
 	if( (mTnLModeFlags & (TNL_LIGHT|TNL_TEXGEN|TNL_TEXTURE)) == (TNL_LIGHT|TNL_TEXGEN|TNL_TEXTURE) )
 	{
 		for (u32 i = v0; i < (v0 + n); i++)
 		{
 			//Normal has been calculated by VFPU already //Corn
-			f32 NormX = mVtxProjected[i].Texture.x;
-			f32 NormY = mVtxProjected[i].Texture.y;
-
-			mVtxProjected[i].Texture.x = acosf(NormX) / 3.14159265f;
-			mVtxProjected[i].Texture.y = acosf(NormY) / 3.14159265f;
+			//mVtxProjected[i].Texture.x = acosf( mVtxProjected[i].Texture.x ) / 3.14159265f;
+			//mVtxProjected[i].Texture.y = acosf( mVtxProjected[i].Texture.y ) / 3.14159265f;
 
 			//Cheaper way to do Acos(x)/Pi //Corn
-			//mVtxProjected[i].Texture.x = -0.125f * NormX * NormX * NormX - 0.125f * NormX + 0.25f; 
-			//mVtxProjected[i].Texture.y = +0.125f * NormY * NormY * NormY + 0.125f * NormY + 0.25f;
+			f32 NormX = absf( mVtxProjected[i].Texture.x );
+			f32 NormY = absf( mVtxProjected[i].Texture.y );
+			mVtxProjected[i].Texture.x = -0.25f * NormX * NormX * NormX - 0.25f * NormX + 0.5f; 
+			mVtxProjected[i].Texture.y = -0.25f * NormY * NormY * NormY - 0.25f * NormY + 0.5f;
 
-			//mVtxProjected[i].Texture.x = 0.5f * ( 1.0f + norm.x);
-			//mVtxProjected[i].Texture.y = 0.25f * ( 1.0f + norm.y);
+			//mVtxProjected[i].Texture.x = 0.5f * ( 1.0f + NormX);
+			//mVtxProjected[i].Texture.y = 0.5f * ( 1.0f - NormY);
 
 			//printf("%f -> %f | %f -> %f | %f -> %f\n",acosf(NormX) / 3.14159265f, mVtxProjected[i].Texture.x, acosf(NormY) / 3.14159265f, mVtxProjected[i].Texture.y, NormX, NormY);
 		}
 	}
+#endif
 }
 
 #ifdef DAEDALUS_IS_LEGACY
@@ -2308,8 +2323,10 @@ void PSPRenderer::ModifyVertexInfo(u32 whered, u32 vert, u32 val)
 				s16 x = (u16)(val >> 16) >> 2;
 				s16 y = (u16)(val & 0xFFFF) >> 2;
 
-				//x -= uViWidth / 2;
-				//y = uViHeight / 2 - y;
+				// Fixes the blocks lining up backwards in New Tetris
+				//
+				x -= uViWidth / 2;
+				y = uViHeight / 2 - y;
 
 				DL_PF("		Modify vert %d: x=%d, y=%d", vert, x, y);
 				
@@ -2552,8 +2569,8 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 void	PSPRenderer::SetScissor( u32 x0, u32 y0, u32 x1, u32 y1 )
 {
 	//Clamp scissor to max N64 screen resolution //Corn
-	//if( x1 > uViWidth )  x1 = uViWidth;
-	//if( y1 > uViHeight ) y1 = uViHeight;
+	if( x1 > uViWidth )  x1 = uViWidth;
+	if( y1 > uViHeight ) y1 = uViHeight;
 
 	v2		n64_coords_tl( x0, y0 );
 	v2		n64_coords_br( x1, y1 );

@@ -486,22 +486,18 @@ void PSPRenderer::SetVIScales()
 	if( width > 0x300 )	
 		fViHeight *= 2.0f;
 
-	//Sometimes HStartReg and VStartReg are zero
-	//This fixes gaps is some games ex: CyberTiger
-	if( fViWidth < 100)
-	{
-		// Load Runner in game sets zero for fViWidth, but VI_WIDTH_REG sets 640..which is wrong
-		//
-		if( g_ROM.GameHacks == LOAD_RUNNER )
-			fViWidth = 320.0f;
-		else
-			fViWidth = (f32)Memory_VI_GetRegister( VI_WIDTH_REG );
-	}
+	// Sometimes HStartReg and VStartReg are zero
+	// This fixes gaps is some games ex: CyberTiger
+	// Height has priority - Bug fix for Load Runner
+	//
 	if( fViHeight < 100) 
 	{
 		fViHeight = fViWidth * 0.75f; //sRatio
 	}
-
+	else if( fViWidth < 100) 
+	{
+		fViWidth = (f32)Memory_VI_GetRegister( VI_WIDTH_REG );
+	}
 	//Used to set a limit on Scissors //Corn
 	//uViWidth  = (u32)fViWidth - 1;
 	//uViHeight = (u32)fViHeight - 1;
@@ -1086,7 +1082,13 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	}
 	else
 	{
-		if( (gRDPOtherMode.alpha_cvg_sel ) && !gRDPOtherMode.cvg_x_alpha ) //We need cvg_sel for SSVN characters to display
+		// I don't know what up with the sky on this game, breaks completely our logic of alpha threshold..
+		//
+		// cvg_x_alpha:   0			(!gRDPOtherMode.cvg_x_alpha)
+		// alpha_cvg_sel: 0			(!gRDPOtherMode.alpha_cvg_sel)
+		// alpha_compare: Threshold (gRDPOtherMode.alpha_compare == 1)
+		//
+		if( (g_ROM.GameHacks == AIDYN_CRONICLES) | (gRDPOtherMode.alpha_cvg_sel & !gRDPOtherMode.cvg_x_alpha) )
 		{
 			// Use CVG for pixel alpha
 			sceGuDisable(GU_ALPHA_TEST);
@@ -1305,9 +1307,6 @@ void PSPRenderer::FillRect( const v2 & xy0, const v2 & xy1, u32 color )
 		return;
 	}
 */
-	// Unless we support fb emulation, we can safetly skip here
-	if( g_CI.Size != G_IM_SIZ_16b )	return;
-
 	// This if for C&C - It might break other stuff (I'm not sure if we should allow alpha or not..)
 	//color |= 0xff000000;
 
@@ -2452,10 +2451,9 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 	//
 	// Initialise the clamping state. When the mask is 0, it forces clamp mode.
 	//
-	int mode_u = (rdp_tile.clamp_s || rdp_tile.mask_s == 0) ? GU_CLAMP : GU_REPEAT;
-	int mode_v = (rdp_tile.clamp_t || rdp_tile.mask_t == 0)	? GU_CLAMP : GU_REPEAT;
+	u32 mode_u = (rdp_tile.clamp_s || rdp_tile.mask_s == 0) ? GU_CLAMP : GU_REPEAT;
+	u32 mode_v = (rdp_tile.clamp_t || rdp_tile.mask_t == 0)	? GU_CLAMP : GU_REPEAT;
 
-	//
 	//	In CRDPStateManager::GetTextureDescriptor, we limit the maximum dimension of a
 	//	texture to that define by the mask_s/mask_t value.
 	//	It this happens, the tile size can be larger than the truncated width/height

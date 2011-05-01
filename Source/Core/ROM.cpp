@@ -63,7 +63,6 @@ const char *gGameHackNames[ MAX_HACK_NAMES ] =
 	"Flat Shade Disabled Hack",
 	"Rumble Pak Disabled Hack",
 	"1/2 ZBuffer Hack",
-	"Width Hack"
 	"S2DEX Palette Hack",
 	"Tarzan Misc Hacks",
 	"Force Mtx Donald Duck Hack",
@@ -74,7 +73,8 @@ const char *gGameHackNames[ MAX_HACK_NAMES ] =
 	"Texture Update Hack",
 	"Disable osSendMesg",
 	"Screen Update Hack",
-	"Disable bcopy and osSendMes Hack"
+	"Disable bcopy and osSendMes Hack",
+	"Ignore Alpha"
 };
 #endif
 
@@ -463,6 +463,7 @@ void SpecificGameHacks( const ROMHeader & id )
 	case 0x324a: g_ROM.GameHacks = WONDER_PROJECTJ2;	break;
 	case 0x4741: g_ROM.GameHacks = AEROGAUGE;			break;
 	case 0x4547: g_ROM.GameHacks = GOLDEN_EYE;			break;
+	case 0x4842: g_ROM.GameHacks = BODY_HARVEST;		break;
 	case 0x5742: g_ROM.GameHacks = SUPER_BOWLING;		break;
 	case 0x5750: g_ROM.GameHacks = PILOT_WINGS;			break;
 	case 0x4c5a: g_ROM.GameHacks = ZELDA_OOT;			break;
@@ -470,7 +471,7 @@ void SpecificGameHacks( const ROMHeader & id )
 	case 0x3954: g_ROM.GameHacks = TIGERS_HONEY_HUNT;	break;
 	case 0x5443: g_ROM.GameHacks = CHAMELEON_TWIST;		break;
 	case 0x5632: g_ROM.GameHacks = CHAMELEON_TWIST_2;	break;
-	case 0x524c: g_ROM.GameHacks = LOAD_RUNNER;			break;
+	case 0x5941: g_ROM.GameHacks = AIDYN_CRONICLES;		break;
 	case 0x344b: g_ROM.GameHacks = KIRBY64;				break;
 	case 0x4154: g_ROM.GameHacks = TARZAN;				break;
 	case 0x5144: g_ROM.GameHacks = DONALD;				break;

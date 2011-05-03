@@ -130,8 +130,6 @@ enum CycleType
 	CYCLE_FILL,
 };
 
-extern int PSP_TV_CABLE; 
-
 extern u32 SCR_WIDTH;
 extern u32 SCR_HEIGHT;
 
@@ -171,41 +169,6 @@ u32	gTXTFUNC=0;	//defaults to MODULATE_RGB
 u32	gNumCyc=3;	//defaults All cycles
 
 u32     gForceRGB=0;    //defaults to OFF
-
-const char *gForceColor[8] =
-{
-	"( OFF )",
-	"( c32::White )",
-	"( c32::Black )",
-	"( c32::Red )",
-	"( c32::Green )",
-	"( c32::Blue )",
-	"( c32::Magenta )",
-	"( c32::Gold )"
-};
-
-const char *gPSPtxtFunc[10] =
-{
-	"( GU_TFX_MODULATE, GU_TCC_RGB )",
-	"( GU_TFX_MODULATE, GU_TCC_RGBA )",
-	"( GU_TFX_BLEND, GU_TCC_RGB )",
-	"( GU_TFX_BLEND, GU_TCC_RGBA )",
-	"( GU_TFX_ADD, GU_TCC_RGB )",
-	"( GU_TFX_ADD, GU_TCC_RGBA )",
-	"( GU_TFX_REPLACE, GU_TCC_RGB )",
-	"( GU_TFX_REPLACE, GU_TCC_RGBA )",
-	"( GU_TFX_DECAL, GU_TCC_RGB )",
-	"( GU_TFX_DECAL, GU_TCC_RGBA )"
-};
-
-const char *gCAdj[5] =
-{
-	"( OFF )",
-	"( details.PrimColour )",
-	"( details.PrimColour.ReplicateAlpha() )",
-	"( details.EnvColour )",
-	"( details.EnvColour.ReplicateAlpha() )",
-};
 
 #define BLEND_MODE_MAKER \
 { \
@@ -556,8 +519,8 @@ void PSPRenderer::BeginScene()
 	DAEDALUS_ASSERT( display_width && display_height, "Unhandled viewport type" );
 
 
-	u32 frame_width(  PSP_TV_CABLE <= 0 ? 480 : 720 );
-	u32	frame_height( PSP_TV_CABLE <= 0 ? 272 : 272 );
+	u32 frame_width(  gGlobalPreferences.TVEnable ? 720 : 480 );
+	u32	frame_height( gGlobalPreferences.TVEnable ? 480 : 272 );
 
 	v3 scale( 640.0f*0.25f, 480.0f*0.25f, 511.0f*0.25f );
 	v3 trans( 640.0f*0.25f, 480.0f*0.25f, 511.0f*0.25f );
@@ -986,11 +949,8 @@ extern void InitBlenderMode( u32 blender );
 //*****************************************************************************
 void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num_vertices, ERenderMode mode, bool disable_zbuffer )
 {
-	//These has to be static!!! //Corn
-	static u32	Old_OtherModeH( 0 );
-	static u32	Old_OtherModeL( 0 );
+
 	static bool	ZFightingEnabled( false );
-	static bool	Old_UseZBuffer( false );
 
 	DAEDALUS_PROFILE( "PSPRenderer::RenderUsingCurrentBlendMode" );
 
@@ -998,44 +958,36 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	{
 		sceGuDisable(GU_DEPTH_TEST);
 		sceGuDepthMask( GL_TRUE );	// GL_TRUE to disable z-writes
-		Old_OtherModeL = 0;	//This forces to check Zbuffer setting next time
 	}
 	else
 	{
-		if ( ((gRDPOtherMode.H ^ gRDPOtherMode.L ^ Old_OtherModeH ^ Old_OtherModeL) != 0) | (m_bZBuffer ^ Old_UseZBuffer) )
+		// Fixes Zfighting issues we have on the PSP.
+		if( gRDPOtherMode.zmode == 3 )
 		{
-			// Fixes Zfighting issues we have on the PSP.
-			if( gRDPOtherMode.zmode == 3 )
+			if( !ZFightingEnabled )
 			{
-				if( !ZFightingEnabled )
-				{
-					ZFightingEnabled = true;						
-					sceGuDepthRange(65535,80);
-				}
+				ZFightingEnabled = true;						
+				sceGuDepthRange(65535,80);
 			}
-			else if( ZFightingEnabled )
-			{
-				ZFightingEnabled = false;						
-				sceGuDepthRange(65535,0);
-			}
-
-			// Enable or Disable ZBuffer test
-			if ( (m_bZBuffer & gRDPOtherMode.z_cmp) | gRDPOtherMode.z_upd )
-			{
-				sceGuEnable(GU_DEPTH_TEST);
-			}
-			else
-			{
-				sceGuDisable(GU_DEPTH_TEST);
-			}
-
-			// GL_TRUE to disable z-writes
-			sceGuDepthMask( gRDPOtherMode.z_upd ? GL_FALSE : GL_TRUE );
-
-			Old_UseZBuffer = m_bZBuffer;
-			Old_OtherModeL = gRDPOtherMode.L;
-			Old_OtherModeH = gRDPOtherMode.H;
 		}
+		else if( ZFightingEnabled )
+		{
+			ZFightingEnabled = false;						
+			sceGuDepthRange(65535,0);
+		}
+
+		// Enable or Disable ZBuffer test
+		if ( (m_bZBuffer & gRDPOtherMode.z_cmp) | gRDPOtherMode.z_upd )
+		{
+			sceGuEnable(GU_DEPTH_TEST);
+		}
+		else
+		{
+			sceGuDisable(GU_DEPTH_TEST);
+		}
+
+		// GL_TRUE to disable z-writes
+		sceGuDepthMask( gRDPOtherMode.z_upd ? GL_FALSE : GL_TRUE );
 	}
 
 	sceGuShadeModel( mSmooth ? GU_SMOOTH : GU_FLAT );
@@ -1044,7 +996,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	// G_TF_AVERAGE : 1, G_TF_BILERP : 2 (linear)
 	// G_TF_POINT   : 0 (nearest)
 	//
-	if( (gRDPOtherMode.text_filt != G_TF_POINT) || (gGlobalPreferences.ForceLinearFilter))
+	if( (gRDPOtherMode.text_filt != G_TF_POINT) | (gGlobalPreferences.ForceLinearFilter) )
 	{
 		sceGuTexFilter(GU_LINEAR,GU_LINEAR);
 	}
@@ -1211,6 +1163,18 @@ void PSPRenderer::RenderTriangleList( const DaedalusVtx * p_verts, u32 num_verts
 {
 	DaedalusVtx*	p_vertices( (DaedalusVtx*)sceGuGetMemory(num_verts*sizeof(DaedalusVtx)) );
 	memcpy( p_vertices, p_verts, num_verts*sizeof(DaedalusVtx));
+
+	// In some games ex Mario 64, we cull up to 25% of all rects here
+	//
+	if( m_bCull )
+	{
+		sceGuFrontFace(m_bCull_mode);
+		sceGuEnable(GU_CULL_FACE);
+	}
+	else
+	{
+		sceGuDisable(GU_CULL_FACE);
+	}
 
 	//sceGuSetMatrix( GU_PROJECTION, reinterpret_cast< const ScePspFMatrix4 * >( &gMatrixIdentity ) );
 	RenderUsingCurrentBlendMode( p_vertices, num_verts, RM_RENDER_2D, disable_zbuffer );
@@ -1453,7 +1417,7 @@ bool PSPRenderer::FlushTris()
 	u32				num_vertices;
 	DaedalusVtx *	p_vertices;
 
-	if(gGlobalPreferences.SoftwareClipping && (mVtxClipFlagsUnion != 0))
+	if(mVtxClipFlagsUnion != 0)
 	{
 		PrepareTrisClipped( &p_vertices, &num_vertices );
 	}

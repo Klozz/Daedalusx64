@@ -257,6 +257,7 @@ static int SetupPanic()
 }
 
 extern void InitialiseJobManager();
+extern bool bNeedStartME;
 //*************************************************************************************
 //
 //*************************************************************************************
@@ -307,10 +308,15 @@ static bool	Initialize()
 #endif
 	}
 
-	//Set up the DveMgr (TV Display) and Detect PSP Slim 
-	if ( kuKernelGetModel() == PSP_MODEL_SLIM_AND_LITE )
+	//Set up the DveMgr (TV Display) and Detect PSP Slim /3K/ Go
+	if ( kuKernelGetModel() != PSP_MODEL_STANDARD )
 	{
-		PSP_IS_SLIM = true;
+		// Check if mediaengine.prx could be initiated, we need it to unlock the extra memory
+		// This tells us if the user's psp have kmode access too
+		//
+		if( bNeedStartME )
+			PSP_IS_SLIM = true;
+
 		HAVE_DVE = pspSdkLoadStartModule("dvemgr.prx", PSP_MEMORY_PARTITION_KERNEL);
 		if (HAVE_DVE >= 0)
 			PSP_TV_CABLE = pspDveMgrCheckVideoOut();

@@ -134,7 +134,19 @@ struct ViewportInfo
 {
 	u32	Width;
 	f32 Zoom;
+	
+	f32 ViWidth;
+	f32 ViHeight;
+	f32	ScaleX;
+	f32	ScaleY;
+	
+	f32	Scale0X;
+	f32	Scale0Y;
+	f32 TransX;
+	f32 TransY;
 };
+
+extern int PSP_TV_CABLE; 
 
 extern u32 SCR_WIDTH;
 extern u32 SCR_HEIGHT;
@@ -348,7 +360,8 @@ PSPRenderer::PSPRenderer()
 
 	gRDPMux._u64 = 0;
 	
-	mView.Zoom	 = 0.0f;	//Force to check viewport/zoom
+	memset( &mView, 0, sizeof(mView) );
+
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	memset( gWhiteTexture, 0xff, sizeof(gWhiteTexture) );
 
@@ -542,35 +555,39 @@ void PSPRenderer::BeginScene()
 	mRecordedCombinerStates.clear();
 #endif
 
-	u32				display_width( 0 );
-	u32				display_height( 0 );
-	u32				frame_width( 480 );
-	u32				frame_height( 272 );
-	//
-	//	We do this each frame as it lets us adapt to changes in the viewport dynamically
-	//
-	CGraphicsContext::Get()->ViewportType(&display_width, &display_height, &frame_width, &frame_height );
+	u32	display_width, display_height( 0 );
 
-	DAEDALUS_ASSERT( display_width != 0 && display_height != 0, "Unhandled viewport type" );
+	CGraphicsContext::Get()->ViewportType(&display_width, &display_height);
 
-	// Check wherever our viewport has changed.
-	// This only happens when the user changes it in pause menu. 
+	DAEDALUS_ASSERT( display_width && display_height, "Unhandled viewport type" );
+
+	// Update viewport only if user changed it in settings or vi register changed it
+	// Both happen really rare
 	//
-	if( mView.Width == display_width && mView.Zoom == gZoomX )	return;
+	if( mView.ViWidth == fViWidth    && // Viewport wasn't changed in pased menu
+		mView.ViHeight == fViHeight  && // Zoom wasn't changed in pased menu
+		mView.Width == display_width && // VI register didn't width? (bug fix GE007)
+		mView.Zoom == gZoomX )			// VI register didn't changed height
+		return;
 
-	mView.Width	 = display_width;
-	mView.Zoom	 = gZoomX;
+	u32 frame_width(  PSP_TV_CABLE <= 0 ? 480 : 720 );
+	u32	frame_height( PSP_TV_CABLE <= 0 ? 272 : 272 );
+
+	v3 scale( 640.0f*0.25f, 480.0f*0.25f, 511.0f*0.25f );
+	v3 trans( 640.0f*0.25f, 480.0f*0.25f, 511.0f*0.25f );
 
 	s32		display_x( (frame_width - display_width)/2 );
 	s32		display_y( (frame_height - display_height)/2 );
 
 	SetPSPViewport( display_x, display_y, display_width, display_height );
-
-	v3 scale( 640.0f*0.25f, 480.0f*0.25f, 511.0f*0.25f );
-	v3 trans( 640.0f*0.25f, 480.0f*0.25f, 511.0f*0.25f );
-
 	SetN64Viewport( scale, trans );
+
+	mView.Width	 	= display_width;
+	mView.Zoom	 	= gZoomX;
+	mView.ViWidth	= fViWidth;
+	mView.ViHeight	= fViHeight;
 }
+
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -622,9 +639,13 @@ void PSPRenderer::SetPSPViewport( s32 x, s32 y, u32 w, u32 h )
 //*****************************************************************************
 void PSPRenderer::SetN64Viewport( const v3 & scale, const v3 & trans )
 {
+	// Only Update viewport when it actually changed, this happens rarely 
+	//
+	if( mVpTrans.x == scale.x && mVpTrans.y == scale.y )	return;
+
 	mVpScale = scale;
 	mVpTrans = trans;
-
+	
 	UpdateViewport();
 }
 
@@ -646,6 +667,8 @@ void	PSPRenderer::UpdateViewport()
 	s32		vp_y( s32( psp_min.y ) );
 	s32		vp_width( s32( psp_max.x - psp_min.x ) );
 	s32		vp_height( s32( psp_max.y - psp_min.y ) );
+
+	//DBGConsole_Msg(0, "[WViewport Changed (%d) (%d)]",vp_width,vp_height );
 
 	sceGuOffset(vx - (vp_width/2),vy - (vp_height/2));
 	sceGuViewport(vx + vp_x,vy + vp_y,vp_width,vp_height);
@@ -2521,10 +2544,17 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 	//	It sets up a texture with a mask_s/t of 6/6 (64x64), but sets the tile size to
 	//	256*128. clamp_s/t are set, meaning the texture wraps 4x and 2x.
 	//
-	// Breaks the Sun, and other textures in Zelda. Breaks Mario's hat in SSB, and other textures, and foes in Kirby 64's cutscenes
-	// ToDo : Find a proper workaround for this, if this disabled the castle in Link's stage in SSB is broken :/
-	//
-	//if( tile_size.GetWidth()  > ti.GetWidth()  ) mode_u = GU_REPEAT; 
+	if( tile_size.GetWidth()  > ti.GetWidth()  )
+	{
+		// This breaks the Sun, and other textures in Zelda. Breaks Mario's hat in SSB, and other textures, and foes in Kirby 64's cutscenes
+		// ToDo : Find a proper workaround for this, if this disabled the castle in Link's stage in SSB is broken :/
+		// Do a hack just for Zelda for now..
+		//
+		if((g_ROM.GameHacks == ZELDA_OOT) | (g_ROM.GameHacks == ZELDA_MM))
+			 mode_u = GU_CLAMP;
+		else
+			mode_u = GU_REPEAT; 
+	}
 	if( tile_size.GetHeight() > ti.GetHeight() ) mode_v = GU_REPEAT;
 
 	sceGuTexWrap( mode_u, mode_v );

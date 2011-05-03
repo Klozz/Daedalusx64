@@ -89,33 +89,10 @@ inline void 	FinishRDPJob()
 //*************************************************************************************
 //
 //*************************************************************************************
-
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-void DLParser_DumpVtxInfo(u32 address, u32 v0_idx, u32 num_verts);
-
-u32 gNumDListsCulled;
-u32 gNumVertices;
-#endif
-
+u32 gRDPHalf1 = 0;
 u32 gRDPFrame = 0;
 
-//*****************************************************************************
-//
-//*****************************************************************************
-u32 gRDPHalf1 = 0;
-
 UcodeInfo last;
-//////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////
-//                      Dumping                         //
-//////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-static bool gDumpNextDisplayList = false;
-
-FILE * gDisplayListFile = NULL;
-
-#endif
 
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
@@ -139,7 +116,7 @@ struct RDP_Scissor
 
 u32	gSegments[16];
 static RDP_Scissor scissors;
-static N64Light  g_N64Lights[8];
+static N64Light  g_N64Lights[16];	//Conker uses more than 8
 SImageDescriptor g_TI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
 SImageDescriptor g_CI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
 SImageDescriptor g_DI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
@@ -156,9 +133,38 @@ u32 gucode_ver=0;	//Need this global ucode version to get correct ucode names
 #endif
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-static u32					gCurrentInstructionCount = 0;			// Used for debugging display lists
-u32					gTotalInstructionCount = 0;
-static u32					gInstructionCountLimit = UNLIMITED_INSTRUCTION_COUNT;
+//////////////////////////////////////////////////////////
+//                      Dumping                         //
+//////////////////////////////////////////////////////////
+static bool gDumpNextDisplayList = false;
+FILE * gDisplayListFile = NULL;
+
+//////////////////////////////////////////////////////////
+//                      Debug vars                      //
+//////////////////////////////////////////////////////////
+void DLParser_DumpVtxInfo(u32 address, u32 v0_idx, u32 num_verts);
+
+u32			gNumDListsCulled;
+u32			gNumVertices;
+u32			gNunRectsClipped;
+static u32	gCurrentInstructionCount = 0;			// Used for debugging display lists
+u32			gTotalInstructionCount = 0;
+static u32	gInstructionCountLimit = UNLIMITED_INSTRUCTION_COUNT;
+
+#define SCISSOR_RECT( x0, y0, x1, y1 ) \
+	if( x0 >= scissors.right || y0 >= scissors.bottom ||  \
+		x1 < scissors.left || y1 < scissors.top ) \
+	{ \
+		++gNunRectsClipped; \
+		return; \
+	}
+#else
+#define SCISSOR_RECT( x0, y0, x1, y1 ) \
+	if( x0 >= scissors.right || y0 >= scissors.bottom ||  \
+		x1 < scissors.left || y1 < scissors.top ) \
+	{ \
+		return; \
+	}
 #endif
 
 static bool gFirstCall = true;	// Used to keep track of when we're processing the first display list
@@ -171,12 +177,7 @@ u32 gFillColor		= 0xFFFFFFFF;
 
 u32 gVertexStride;
  
-#define SCISSOR_RECT( x0, y0, x1, y1 ) \
-	if( x0 >= scissors.right || y0 >= scissors.bottom ||  \
-		x1 < scissors.left || y1 < scissors.top ) \
-	{ \
-		return; \
-	}
+
 //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////
 //                      Strings                         //
@@ -246,6 +247,13 @@ bool DLParser_Initialise()
 #endif
 
 	gFirstCall = true;
+
+	// Reset scissor to default
+	//
+	scissors.top = 0;
+	scissors.left = 0;
+	scissors.right = 320;
+	scissors.bottom = 240;
 
 	//
 	// Reset all the RDP registers
@@ -535,6 +543,7 @@ static void	DLParser_ProcessDList()
 			}
 		}
 #endif
+		//if(!(gCurrentInstructionCount % 1024)) printf("%d\n",gCurrentInstructionCount);
 
 		PROFILE_DL_CMD( command.inst.cmd );
 
@@ -572,11 +581,6 @@ void DLParser_Process()
 		CGraphicsContext::Get()->ClearAllSurfaces();
 
 		gFirstCall = false;
-
-		scissors.top=0;
-		scissors.left=0;
-		scissors.right=320;
-		scissors.bottom=240;
 	}
 
 	// Update Screen only when something is drawn, otherwise several games ex Army Men will flash or shake.
@@ -622,7 +626,7 @@ void DLParser_Process()
 	gCurrentInstructionCount = 0;
 	gNumDListsCulled = 0;
 	gNumVertices = 0;
-
+	gNunRectsClipped =0;
 	//
 	// Prepare to dump this displaylist, if necessary
 	//

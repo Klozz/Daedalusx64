@@ -21,6 +21,7 @@
 #include "stdafx.h"
 
 #include "../HLEGraphics/RDP.h"
+#include "../HLEGraphics/PSPRenderer.h"
 
 #include "Graphics/GraphicsContext.h"
 #include "Graphics/PngUtil.h"
@@ -66,7 +67,8 @@ static u32 __attribute__((aligned(16))) list[2][262144];
 static u32 __attribute__((aligned(16))) callList[64];
 static u32 __attribute__((aligned(16))) ilist[256];
 
-int listNum = 0;
+u32 listNum = 0;
+extern ViewportInfo	mView;
 //////////////////////////////////////////////
 //bool CGraphicsContext::CleanScene = false;
 //////////////////////////////////////////////
@@ -221,6 +223,8 @@ void IGraphicsContext::ClearAllSurfaces()
 		//Get Ready for next Frame
 		UpdateFrame( false );
 	}
+
+	mView.Update = true;
 }
 
 //*****************************************************************************
@@ -282,8 +286,6 @@ void IGraphicsContext::BeginFrame()
 		sceGuClear(GU_COLOR_BUFFER_BIT | GU_FAST_CLEAR_BIT);	//Clear screen
 		sceGuClear(GU_DEPTH_BUFFER_BIT | GU_FAST_CLEAR_BIT);	//Clear Zbuffer
 	}*/
-
-	if( gCleanSceneEnabled ) sceGuClear(GU_COLOR_BUFFER_BIT | GU_FAST_CLEAR_BIT);	//Clear screen
 
 //Toggle dither matrices between frames to smooth 16bit color even further //Corn
 #if defined(DAEDALUS_SCRN_16BIT) && defined(ENABLE_DITHERING)
@@ -375,6 +377,8 @@ bool IGraphicsContext::UpdateFrame( bool wait_for_vbl )
 	else 
 		listNum ^= 1;	//Toggle lists 0 & 1
 
+	if( gCleanSceneEnabled ) 
+		sceGuClear(GU_COLOR_BUFFER_BIT | GU_FAST_CLEAR_BIT);	//Clear screen
 	//if( gCleanSceneEnabled )	CleanScene = true;
 
 	//printf("%d %d\n",listNum,gDoubleDisplayEnabled);

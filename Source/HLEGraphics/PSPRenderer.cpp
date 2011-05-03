@@ -130,22 +130,6 @@ enum CycleType
 	CYCLE_FILL,
 };
 
-struct ViewportInfo
-{
-	u32	Width;
-	f32 Zoom;
-	
-	f32 ViWidth;
-	f32 ViHeight;
-	f32	ScaleX;
-	f32	ScaleY;
-	
-	f32	Scale0X;
-	f32	Scale0Y;
-	f32 TransX;
-	f32 TransY;
-};
-
 extern int PSP_TV_CABLE; 
 
 extern u32 SCR_WIDTH;
@@ -556,20 +540,21 @@ void PSPRenderer::BeginScene()
 	mRecordedCombinerStates.clear();
 #endif
 
-	u32	display_width, display_height( 0 );
+	// Update viewport only if user changed it in settings or vi register changed it
+	// Both happen really rare
+	//
+	if( !mView.Update &&				  // We need to update after pause menu?
+		mView.ViWidth == fViWidth    &&  //  VI register changed width? (bug fix GE007) 
+		mView.ViHeight == fViHeight )   //  VI register changed height?
+		return;
+
+	u32	display_width( 0 );
+	u32 display_height( 0 );
 
 	CGraphicsContext::Get()->ViewportType(&display_width, &display_height);
 
 	DAEDALUS_ASSERT( display_width && display_height, "Unhandled viewport type" );
 
-	// Update viewport only if user changed it in settings or vi register changed it
-	// Both happen really rare
-	//
-	if( mView.ViWidth == fViWidth    && // VI register changed width? (bug fix GE007) 
-		mView.ViHeight == fViHeight  && // VI register changed height?
-		mView.Width == display_width && // Viewport changed in paused menu?
-		mView.Zoom == gZoomX )			// Zoom changed in paused menu?
-		return;
 
 	u32 frame_width(  PSP_TV_CABLE <= 0 ? 480 : 720 );
 	u32	frame_height( PSP_TV_CABLE <= 0 ? 272 : 272 );
@@ -583,8 +568,7 @@ void PSPRenderer::BeginScene()
 	SetPSPViewport( display_x, display_y, display_width, display_height );
 	SetN64Viewport( scale, trans );
 
-	mView.Width	 	= display_width;
-	mView.Zoom	 	= gZoomX;
+	mView.Update	= false;
 	mView.ViWidth	= fViWidth;
 	mView.ViHeight	= fViHeight;
 }
@@ -645,6 +629,7 @@ void PSPRenderer::SetN64Viewport( const v3 & scale, const v3 & trans )
 	if( mVpScale.x == scale.x && mVpScale.y == scale.y && 
 		mVpTrans.x == trans.x && mVpTrans.y == trans.y )	
 		return;
+
 	mVpScale = scale;
 	mVpTrans = trans;
 	
@@ -1056,29 +1041,17 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	sceGuShadeModel( mSmooth ? GU_SMOOTH : GU_FLAT );
 	//
 	// Initiate Filter
+	// G_TF_AVERAGE : 1, G_TF_BILERP : 2 (linear)
+	// G_TF_POINT   : 0 (nearest)
 	//
-	//This sets our filtering either through gRDPOtherMode by default or we force it
-	switch( gGlobalPreferences.ForceTextureFilter )
+	if( (gRDPOtherMode.text_filt != G_TF_POINT) || (gGlobalPreferences.ForceLinearFilter))
 	{
-		case FORCE_DEFAULT_FILTER:
-			if( gRDPOtherMode.text_filt == 0 )
-			{	//G_TF_POINT:	// 0
-				sceGuTexFilter(GU_NEAREST,GU_NEAREST);
-			}
-			else
-			{	//G_TF_AVERAGE:	// 1	We do Bilinear anyway here //Corn
-				//G_TF_BILERP:	// 2
-				sceGuTexFilter(GU_LINEAR,GU_LINEAR);
-			}
-			break;
-		case FORCE_POINT_FILTER:
-			sceGuTexFilter(GU_NEAREST,GU_NEAREST);
-			break;
-		case FORCE_LINEAR_FILTER:
-			sceGuTexFilter(GU_LINEAR,GU_LINEAR);
-			break;
+		sceGuTexFilter(GU_LINEAR,GU_LINEAR);
 	}
-	//
+	else
+	{
+		sceGuTexFilter(GU_NEAREST,GU_NEAREST);
+	}
 	// Initiate Blender
 	//
 	if(gRDPOtherMode.cycle_type < CYCLE_COPY)
@@ -1466,132 +1439,6 @@ inline v4 PSPRenderer::LightVert( const v3 & norm ) const
 
 //*****************************************************************************
 //
-//	The following clipping code was taken from The Irrlicht Engine.
-//	See http://irrlicht.sourceforge.net/ for more information.
-//	Copyright (C) 2002-2006 Nikolaus Gebhardt/Alten Thomas
-//
-//*****************************************************************************
-const v4 __attribute__((aligned(16))) NDCPlane[6] =
-{
-	v4(  0.f,  0.f, -1.f, -1.f ),	// near
-	v4(  0.f,  0.f,  1.f, -1.f ),	// far
-	v4(  1.f,  0.f,  0.f, -1.f ),	// left
-	v4( -1.f,  0.f,  0.f, -1.f ),	// right
-	v4(  0.f,  1.f,  0.f, -1.f ),	// bottom
-	v4(  0.f, -1.f,  0.f, -1.f )	// top
-};
-
-// Ununsed... we might remove this, or keep it for check-in
-#ifdef DAEDALUS_IS_LEGACY
-//*****************************************************************************
-//
-//*****************************************************************************
-void DaedalusVtx4::Interpolate( const DaedalusVtx4 & lhs, const DaedalusVtx4 & rhs, float factor )
-{
-	ProjectedPos = lhs.ProjectedPos + (rhs.ProjectedPos - lhs.ProjectedPos) * factor;
-	TransformedPos = lhs.TransformedPos + (rhs.TransformedPos - lhs.TransformedPos) * factor;
-	Colour = lhs.Colour + (rhs.Colour - lhs.Colour) * factor;
-	Texture = lhs.Texture + (rhs.Texture - lhs.Texture) * factor;
-	ClipFlags = 0;
-}
-
-//*****************************************************************************
-//
-//*****************************************************************************
-static u32 clipToHyperPlane( DaedalusVtx4 * dest, const DaedalusVtx4 * source, u32 inCount, const v4 &plane )
-{
-	u32 outCount = 0;
-	DaedalusVtx4 * out = dest;
-
-	const DaedalusVtx4 * a;
-	const DaedalusVtx4 * b = source;
-
-	f32 bDotPlane;
-
-	bDotPlane = b->ProjectedPos.Dot( plane );
-
-	for( u32 i = 1; i < inCount + 1; ++i)
-	{
-		const s32 condition = i - inCount;
-		const s32 index = (( ( condition >> 31 ) & ( i ^ condition ) ) ^ condition ) << 1;
-
-		a = &source[ index ];
-
-	
-		// current point inside
-		if ( a->ProjectedPos.Dot( plane ) <= 0.f )
-		{
-			// last point outside
-			if ( bDotPlane > 0.f )
-			{
-				// intersect line segment with plane
-				out->Interpolate( *b, *a, bDotPlane / (b->ProjectedPos - a->ProjectedPos).Dot( plane ) );
-				out += 2;
-				outCount += 1;
-			}
-			// copy current to out
-			memcpy( out, a, sizeof( DaedalusVtx4 ) * 2);
-			b = out;
-
-			out += 2;
-			outCount += 1;
-		}
-		else
-		{
-			// current point outside
-
-			if ( bDotPlane <= 0.f )
-			{
-				// previous was inside
-				// intersect line segment with plane
-				out->Interpolate( *b, *a, bDotPlane / (b->ProjectedPos - a->ProjectedPos).Dot( plane ) );
-
-				out += 2;
-				outCount += 1;
-			}
-			b = a;
-		}
-
-		bDotPlane = b->ProjectedPos.Dot( plane );
-	}
-
-	return outCount;
-}
-
-u32 clip_tri_to_frustum( DaedalusVtx4 * v0, DaedalusVtx4 * v1 )
-{
-	u32 vOut( 3 );
-
-	vOut = clipToHyperPlane( v1, v0, vOut, NDCPlane[0] ); if( vOut < 3 ) return 0;		// near
-	vOut = clipToHyperPlane( v0, v1, vOut, NDCPlane[1] ); if( vOut < 3 ) return 0;		// left
-	vOut = clipToHyperPlane( v1, v0, vOut, NDCPlane[2] ); if( vOut < 3 ) return 0;		// right
-	vOut = clipToHyperPlane( v0, v1, vOut, NDCPlane[3] ); if( vOut < 3 ) return 0;		// bottom
-	vOut = clipToHyperPlane( v1, v0, vOut, NDCPlane[4] ); if( vOut < 3 ) return 0;		// top
-	vOut = clipToHyperPlane( v0, v1, vOut, NDCPlane[5] );		// far
-
-	return vOut;
-}
-#endif	//DAEDALUS_IS_LEGACY
-
-//*****************************************************************************
-//
-//*****************************************************************************
-u32 clip_tri_to_frustum_vfpu( DaedalusVtx4 * v0, DaedalusVtx4 * v1 )
-{
-	u32 vOut( 3 );
-
-	vOut = _ClipToHyperPlane( v1, v0, &NDCPlane[0], vOut ); if( vOut < 3 ) return 0;		// near
-	vOut = _ClipToHyperPlane( v0, v1, &NDCPlane[1], vOut ); if( vOut < 3 ) return 0;		// left
-	vOut = _ClipToHyperPlane( v1, v0, &NDCPlane[2], vOut ); if( vOut < 3 ) return 0;		// right
-	vOut = _ClipToHyperPlane( v0, v1, &NDCPlane[3], vOut ); if( vOut < 3 ) return 0;		// bottom
-	vOut = _ClipToHyperPlane( v1, v0, &NDCPlane[4], vOut ); if( vOut < 3 ) return 0;		// top
-	vOut = _ClipToHyperPlane( v0, v1, &NDCPlane[5], vOut );		// far
-
-	return vOut;
-}
-
-//*****************************************************************************
-//
 //*****************************************************************************
 bool PSPRenderer::FlushTris()
 {
@@ -1713,6 +1560,142 @@ bool PSPRenderer::FlushTris()
 
 //*****************************************************************************
 //
+//	The following clipping code was taken from The Irrlicht Engine.
+//	See http://irrlicht.sourceforge.net/ for more information.
+//	Copyright (C) 2002-2006 Nikolaus Gebhardt/Alten Thomas
+//
+//*****************************************************************************
+const v4 __attribute__((aligned(16))) NDCPlane[6] =
+{
+	v4(  0.f,  0.f, -1.f, -1.f ),	// near
+	v4(  0.f,  0.f,  1.f, -1.f ),	// far
+	v4(  1.f,  0.f,  0.f, -1.f ),	// left
+	v4( -1.f,  0.f,  0.f, -1.f ),	// right
+	v4(  0.f,  1.f,  0.f, -1.f ),	// bottom
+	v4(  0.f, -1.f,  0.f, -1.f )	// top
+};
+
+//*****************************************************************************
+//*****************************************************************************
+//*****************************************************************************
+//*****************************************************************************
+//*****************************************************************************
+//Triangle clip using VFPU(fast) or FPU/CPU(slow and also broken) 
+//*****************************************************************************
+//*****************************************************************************
+//*****************************************************************************
+//*****************************************************************************
+//*****************************************************************************
+#if 1 //1->VFPU clip, 0->FPU/CPU clip
+
+//*****************************************************************************
+//VFPU tris clip
+//*****************************************************************************
+u32 clip_tri_to_frustum( DaedalusVtx4 * v0, DaedalusVtx4 * v1 )
+{
+	u32 vOut( 3 );
+
+	vOut = _ClipToHyperPlane( v1, v0, &NDCPlane[0], vOut ); if( vOut < 3 ) return 0;		// near
+	vOut = _ClipToHyperPlane( v0, v1, &NDCPlane[1], vOut ); if( vOut < 3 ) return 0;		// left
+	vOut = _ClipToHyperPlane( v1, v0, &NDCPlane[2], vOut ); if( vOut < 3 ) return 0;		// right
+	vOut = _ClipToHyperPlane( v0, v1, &NDCPlane[3], vOut ); if( vOut < 3 ) return 0;		// bottom
+	vOut = _ClipToHyperPlane( v1, v0, &NDCPlane[4], vOut ); if( vOut < 3 ) return 0;		// top
+	vOut = _ClipToHyperPlane( v0, v1, &NDCPlane[5], vOut );		// far
+
+	return vOut;
+}
+
+#else
+//*****************************************************************************
+//CPU tris clip
+//*****************************************************************************
+void DaedalusVtx4::Interpolate( const DaedalusVtx4 & lhs, const DaedalusVtx4 & rhs, float factor )
+{
+	ProjectedPos = lhs.ProjectedPos + (rhs.ProjectedPos - lhs.ProjectedPos) * factor;
+	TransformedPos = lhs.TransformedPos + (rhs.TransformedPos - lhs.TransformedPos) * factor;
+	Colour = lhs.Colour + (rhs.Colour - lhs.Colour) * factor;
+	Texture = lhs.Texture + (rhs.Texture - lhs.Texture) * factor;
+	ClipFlags = 0;
+}
+
+//*****************************************************************************
+//CPU tris clip
+//*****************************************************************************
+static u32 clipToHyperPlane( DaedalusVtx4 * dest, const DaedalusVtx4 * source, u32 inCount, const v4 &plane )
+{
+	u32 outCount = 0;
+	DaedalusVtx4 * out = dest;
+
+	const DaedalusVtx4 * a;
+	const DaedalusVtx4 * b = source;
+
+	f32 bDotPlane;
+
+	bDotPlane = b->ProjectedPos.Dot( plane );
+
+	for( u32 i = 1; i < inCount + 1; ++i)
+	{
+		const s32 condition = i - inCount;
+		const s32 index = (( ( condition >> 31 ) & ( i ^ condition ) ) ^ condition ) << 1;
+
+		a = &source[ index ];
+	
+		// current point inside
+		if ( a->ProjectedPos.Dot( plane ) <= 0.f )
+		{
+			// last point outside
+			if ( bDotPlane > 0.f )
+			{
+				// intersect line segment with plane
+				out->Interpolate( *b, *a, bDotPlane / (b->ProjectedPos - a->ProjectedPos).Dot( plane ) );
+				out += 2;
+				outCount += 1;
+			}
+			// copy current to out
+			memcpy( out, a, sizeof( DaedalusVtx4 ) * 2);
+			b = out;
+
+			out += 2;
+			outCount += 1;
+		}
+		else
+		{
+			// current point outside
+			if ( bDotPlane <= 0.f )
+			{
+				// previous was inside
+				// intersect line segment with plane
+				out->Interpolate( *b, *a, bDotPlane / (b->ProjectedPos - a->ProjectedPos).Dot( plane ) );
+
+				out += 2;
+				outCount += 1;
+			}
+			b = a;
+		}
+
+		bDotPlane = b->ProjectedPos.Dot( plane );
+	}
+
+	return outCount;
+}
+
+u32 clip_tri_to_frustum( DaedalusVtx4 * v0, DaedalusVtx4 * v1 )
+{
+	u32 vOut( 3 );
+
+	vOut = clipToHyperPlane( v1, v0, vOut, NDCPlane[0] ); if( vOut < 3 ) return 0;		// near
+	vOut = clipToHyperPlane( v0, v1, vOut, NDCPlane[1] ); if( vOut < 3 ) return 0;		// left
+	vOut = clipToHyperPlane( v1, v0, vOut, NDCPlane[2] ); if( vOut < 3 ) return 0;		// right
+	vOut = clipToHyperPlane( v0, v1, vOut, NDCPlane[3] ); if( vOut < 3 ) return 0;		// bottom
+	vOut = clipToHyperPlane( v1, v0, vOut, NDCPlane[4] ); if( vOut < 3 ) return 0;		// top
+	vOut = clipToHyperPlane( v0, v1, vOut, NDCPlane[5] );		// far
+
+	return vOut;
+}
+#endif	//CPU clip
+
+//*****************************************************************************
+//
 //*****************************************************************************
 namespace 
 {
@@ -1759,7 +1742,7 @@ void PSPRenderer::PrepareTrisClipped( DaedalusVtx ** p_p_vertices, u32 * p_num_v
 			DL_PF( "i%d: %f,%f,%f,%f", i-2, temp_a[1].ProjectedPos.x, temp_a[1].ProjectedPos.y, temp_a[1].ProjectedPos.z, temp_a[1].ProjectedPos.w );
 			DL_PF( "i%d: %f,%f,%f,%f", i-1, temp_a[2].ProjectedPos.x, temp_a[2].ProjectedPos.y, temp_a[2].ProjectedPos.z, temp_a[2].ProjectedPos.w );
 
-			u32 out = clip_tri_to_frustum_vfpu( temp_a, temp_b );
+			u32 out = clip_tri_to_frustum( temp_a, temp_b );
 			//If we have less than 3 vertices left after the clipping
 			//we can't make a triangle so we bail and skip rendering it.
 			if( out < 3 )
@@ -1921,29 +1904,6 @@ void PSPRenderer::SetNewVertexInfo(u32 address, u32 v0, u32 n)
 	}
 
 	//TestVFPUVerts( v0, n, pVtxBase, matWorld );
-
-#if 0	//Make a special pass for env mapping of textures //Corn
-	if( (mTnLModeFlags & (TNL_LIGHT|TNL_TEXGEN|TNL_TEXTURE)) == (TNL_LIGHT|TNL_TEXGEN|TNL_TEXTURE) )
-	{
-		for (u32 i = v0; i < (v0 + n); i++)
-		{
-			//Normal has been calculated by VFPU already //Corn
-			//mVtxProjected[i].Texture.x = acosf( mVtxProjected[i].Texture.x ) / 3.14159265f;
-			//mVtxProjected[i].Texture.y = acosf( mVtxProjected[i].Texture.y ) / 3.14159265f;
-
-			//Cheaper way to do Acos(x)/Pi //Corn
-			f32 NormX = absf( mVtxProjected[i].Texture.x );
-			f32 NormY = absf( mVtxProjected[i].Texture.y );
-			mVtxProjected[i].Texture.x = -0.25f * NormX * NormX * NormX - 0.25f * NormX + 0.5f; 
-			mVtxProjected[i].Texture.y = -0.25f * NormY * NormY * NormY - 0.25f * NormY + 0.5f;
-
-			//mVtxProjected[i].Texture.x = 0.5f * ( 1.0f + NormX);
-			//mVtxProjected[i].Texture.y = 0.5f * ( 1.0f - NormY);
-
-			//printf("%f -> %f | %f -> %f | %f -> %f\n",acosf(NormX) / 3.14159265f, mVtxProjected[i].Texture.x, acosf(NormY) / 3.14159265f, mVtxProjected[i].Texture.y, NormX, NormY);
-		}
-	}
-#endif
 }
 
 #ifdef DAEDALUS_IS_LEGACY
@@ -2027,6 +1987,8 @@ void PSPRenderer::TestVFPUVerts( u32 v0, u32 num, const FiddledVtx * verts, cons
 
 
 #else
+
+extern u32 gGeometryMode;
 //*****************************************************************************
 //Transform Using FPU/CPU
 //*****************************************************************************
@@ -2080,23 +2042,38 @@ void PSPRenderer::ProcessVerts( u32 v0, u32 num, const FiddledVtx * verts, const
 			v3 vecTransformedNormal;		// Used only when TNL_LIGHT set
 			v3	model_normal(f32( vert.norm_x ), f32( vert.norm_y ), f32( vert.norm_z ) );
 
+			//On VFPU we use matWorldProject instead of mat_world for nicer effect //Corn
 			vecTransformedNormal = mat_world.TransformNormal( model_normal );
 			vecTransformedNormal.Normalise();
 
 			const v3 & norm = vecTransformedNormal;
 
-			// Assign the spheremap's texture coordinates
-			//mVtxProjected[i].Texture.x = (0.5f * ( 1.0f + ( norm.x*mat_world.m11 +
-			//											    norm.y*mat_world.m21 +
-			//											    norm.z*mat_world.m31 ) ));
-
-			//mVtxProjected[i].Texture.y = (0.5f * ( 1.0f - ( norm.x*mat_world.m12 +
-			//											    norm.y*mat_world.m22 +
-			//											    norm.z*mat_world.m32 ) ));
-			
 			//Env mapping
-			mVtxProjected[i].Texture.x = acosf(norm.x) / 3.14159265f;
-			mVtxProjected[i].Texture.y = acosf(norm.y) / 3.14159265f;
+			if( gGeometryMode & G_TEXTURE_GEN_LINEAR )
+			{
+				mVtxProjected[i].Texture.x = 0.5f * ( 1.0f + norm.x);
+				mVtxProjected[i].Texture.y = 0.5f * ( 1.0f + norm.y);
+			}
+			else
+			{
+				// Assign the spheremap's texture coordinates
+				//mVtxProjected[i].Texture.x = (0.5f * ( 1.0f + ( norm.x*mat_world.m11 +
+				//											    norm.y*mat_world.m21 +
+				//											    norm.z*mat_world.m31 ) ));
+
+				//mVtxProjected[i].Texture.y = (0.5f * ( 1.0f - ( norm.x*mat_world.m12 +
+				//											    norm.y*mat_world.m22 +
+				//											    norm.z*mat_world.m32 ) ));
+				
+				//mVtxProjected[i].Texture.x = acosf(norm.x) / 3.14159265f;
+				//mVtxProjected[i].Texture.y = acosf(norm.y) / 3.14159265f;
+
+				//Cheaper way to do Acos(x)/Pi //Corn
+				f32 NormX = absf( norm.x );
+				f32 NormY = absf( norm.y );
+				mVtxProjected[i].Texture.x =  0.5f - 0.25f * NormX - 0.25f * NormX * NormX * NormX; 
+				mVtxProjected[i].Texture.y =  0.5f - 0.25f * NormY - 0.25f * NormY * NormY * NormY;
+			}
 		}
 		else if(TextureMode == 1)
 		{
@@ -2121,6 +2098,23 @@ void PSPRenderer::SetNewVertexInfo(u32 dwAddress, u32 dwV0, u32 dwNum)
 	FiddledVtx * pVtxBase = (FiddledVtx*)(g_pu8RamBase + dwAddress);
 
 	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );
+
+	//If WoldProjectmatrix has modified due to insert matrix
+	//we need to update our modelView (fixes NMEs in Kirby and SSB) //Corn
+	if( mWPmodified )
+	{
+		mWPmodified = false;
+		
+		//Only calculate inverse if there is a new Projectmatrix
+		if( mProjisNew )
+		{
+			mProjisNew = false;
+			mInvProjection = mProjectionStack[mProjectionTop].Inverse();
+		}
+		
+		mModelViewStack[mModelViewTop] = mWorldProject * mInvProjection;
+	}
+
 	const Matrix4x4 & matWorldProject( GetWorldProject() );
 
 	// Transform and Project + Lighting

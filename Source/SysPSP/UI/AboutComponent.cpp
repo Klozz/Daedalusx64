@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "svnversion.h"
 
+#include <kubridge.h>
 #include <pspctrl.h>
 #include <pspgu.h>
 
@@ -59,6 +60,11 @@ namespace
 		"Audio HLE code by Azimer",
 		"",
 		"For news and updates visit:",
+	};
+
+	const char * const		pspModel[5] =
+	{
+		"PSP PHAT", "PSP SLIM", "PSP BRITE", "PSP GO", "UNKNOWN PSP"
 	};
 
 	const char * const		URL_TEXT_1 = "http://DaedalusX64.com/";
@@ -162,13 +168,19 @@ void	IAboutComponent::Render()
 
 	CFixedString<128>	version( DAEDALUS_VERSION_TEXT );
 
-	version += " (";
+	version += " - ";
 	version += DAEDALUS_CONFIG_VERSION;
-	version += ")";
+	//version += ")";
 
+	CFixedString<128>	date( DATE_TEXT );
+
+	date += " (";
+	date += pspModel[ kuKernelGetModel() ];
+	date += ")";
 
 	mpContext->DrawTextAlign( TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_CENTRE, y, version, DrawTextUtilities::TextWhite ); y += line_height;
-	mpContext->DrawTextAlign( TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_CENTRE, y, DATE_TEXT, DrawTextUtilities::TextWhite ); y += line_height;
+	mpContext->DrawTextAlign( TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_CENTRE, y, date, DrawTextUtilities::TextWhite ); y += line_height;
+	//mpContext->DrawTextAlign( TEXT_AREA_LEFT, TEXT_AREA_RIGHT, AT_CENTRE, y, pspModel[ kuKernelGetModel() ], DrawTextUtilities::TextWhite ); y += line_height;
 
 	// Spacer
 	y += line_height;

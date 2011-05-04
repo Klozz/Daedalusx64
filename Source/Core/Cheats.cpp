@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
 */
 
 #include "stdafx.h"
@@ -33,11 +32,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // Cheatcode routines based from 1964 and followed PJ64's gameshark format
 //
 
-static bool bStoreCheat = false;
 CODEGROUP *codegrouplist;
 u32		codegroupcount		= 0;
 s32		currentgroupindex	= -1;
 char	current_rom_name[30];
+
+
+#define CHEAT_CODE_MAGIC_VALUE 0xDEAD
 
 enum { CHEAT_ALL_COUNTRY, CHEAT_USA, CHEAT_JAPAN, CHEAT_USA_AND_JAPAN, CHEAT_EUR, CHEAT_AUS, CHEAT_FR, CHEAT_GER };
 //*****************************************************************************
@@ -59,10 +60,15 @@ static void CheatCodes_Apply(u32 index)
 			address = PHYS_TO_K0(codegrouplist[index].codelist[i].addr & 0xFFFFFF);
 			value	= codegrouplist[index].codelist[i].val;
 
+			// Check if orig value is unitialized and valid to store current value
+			//
+			if(codegrouplist[index].codelist[i].orig && (codegrouplist[index].codelist[i].orig == CHEAT_CODE_MAGIC_VALUE))
+				codegrouplist[index].codelist[i].orig = Read8Bits(address);
+		
 			// Cheat code is no longer active, restore to original value
 			//
 			if(codegrouplist[index].enable==false)
-				value = codegrouplist[index].orig;
+				value = codegrouplist[index].codelist[i].orig;
 
 			Write8Bits(address,(u8)value);
 			break;
@@ -71,10 +77,15 @@ static void CheatCodes_Apply(u32 index)
 			address = PHYS_TO_K0(codegrouplist[index].codelist[i].addr & 0xFFFFFF);
 			value   = codegrouplist[index].codelist[i].val;
 
+			// Check if orig value is unitialized and valid to store current value
+			//
+			if(codegrouplist[index].codelist[i].orig && (codegrouplist[index].codelist[i].orig == CHEAT_CODE_MAGIC_VALUE))
+				codegrouplist[index].codelist[i].orig = Read16Bits(address);
+
 			// Cheat code is no longer active, restore to original value
 			//
 			if(codegrouplist[index].enable==false)
-				value = codegrouplist[index].orig;
+				value = codegrouplist[index].codelist[i].orig;
 	
 			Write16Bits(address, value);
 			break;
@@ -83,50 +94,6 @@ static void CheatCodes_Apply(u32 index)
 			break;
 		}
 	} 
-}
-
-//*****************************************************************************
-//
-//*****************************************************************************
-// This could be done alot more efficiently, but atm is the best I can think of..
-//
-static void CheatCodes_StoreValue( u32 index)
-{
-	u32 i;
-	u32 address;
-	
-	// Make sure we only restore orginal value once per cheat call
-	//
-	if(codegrouplist[index].old_orig == codegrouplist[index].orig)	
-		return;
-
-	//for(index = 0; index < codegroupcount; index++)
-	{
-		for (i = 0; i < codegrouplist[index].codecount; i ++) 
-		{
-			switch (codegrouplist[index].codelist[i].addr & 0xFF000000)
-			//switch(codegrouplist[index].codelist[i].addr / 0x1000000)
-			{
-			case 0x80000000:
-			case 0xA0000000:
-				address = PHYS_TO_K0(codegrouplist[index].codelist[i].addr & 0xFFFFFF);
-				codegrouplist[index].orig = Read8Bits(address);
-				codegrouplist[index].old_orig = codegrouplist[index].orig;
-				printf("Saving restore value %d\n",(u8)codegrouplist[index].orig);
-				break;
-			case 0x81000000:
-			case 0xA1000000:
-				address = PHYS_TO_K0(codegrouplist[index].codelist[i].addr & 0xFFFFFF);
-				codegrouplist[index].orig = Read16Bits(address);
-				codegrouplist[index].old_orig = codegrouplist[index].orig;
-				printf("Saving restore value %d\n",codegrouplist[index].orig);
-				break;
-			case 0: 
-				i = codegrouplist[index].codecount;
-				break;
-			}
-		}
-	}
 }
 
 //*****************************************************************************
@@ -145,12 +112,6 @@ void CheatCodes_Activate()
 			//
 			codegrouplist[i].enable = true;
 
-			// Store original value, before writing hacked value
-			// We do this right after the cheat is enabled to make sure to restore the most close state of the retrived value
-			// This routine could be done more simpler I think
-			//
-			CheatCodes_StoreValue( i );
-
 			CheatCodes_Apply( i );
 		}
 		else if(codegrouplist[i].enable)	// If cheat code is no longer disabled, do one pass to restore value
@@ -158,7 +119,6 @@ void CheatCodes_Activate()
 			codegrouplist[i].enable = false;
 			CheatCodes_Apply( i );
 		}
-
 	}
 }
 
@@ -172,7 +132,6 @@ void CheatCodes_Clear()
 		codegrouplist[i].codecount = 0;
 	}
 
-	bStoreCheat	   = false;
 	codegroupcount = 0;
 
 	if(codegrouplist != NULL)
@@ -337,11 +296,11 @@ bool CheatCodes_Read(char *rom_name, char *file)
 
 		if(stream == NULL)
 		{
-			printf("Cannot find Daedalus.cht file and cannot create it.");
+			//printf("Cannot find Daedalus.cht file and cannot create it.");
 			return false;
 		}
 
-		printf("Cannot find Daedalus.cht file, creating an empty one\n");
+		//printf("Cannot find Daedalus.cht file, creating an empty one\n");
 		fclose(stream);
 		return true;
 	}
@@ -408,7 +367,7 @@ bool CheatCodes_Read(char *rom_name, char *file)
 		codegrouplist = (CODEGROUP *) malloc(numberofgroups *sizeof(CODEGROUP));
 		if(codegrouplist == NULL)
 		{
-			printf("Cannot allocate memory to load cheat codes");
+			//printf("Cannot allocate memory to load cheat codes");
 			return false;
 		}
 	
@@ -430,7 +389,7 @@ bool CheatCodes_Read(char *rom_name, char *file)
 
 				if(IsCodeMatchRomCountryCode(codegrouplist[codegroupcount].country, g_ROM.rh.CountryID) == false)
 				{
-					printf("Wrong country id %d for cheatcode\n",codegrouplist[codegroupcount].country);
+					//printf("Wrong country id %d for cheatcode\n",codegrouplist[codegroupcount].country);
 					continue;
 				}
 			}
@@ -462,6 +421,7 @@ bool CheatCodes_Read(char *rom_name, char *file)
 			{
 				if (c2 < MAX_CHEATCODE_PER_GROUP)
 				{
+					codegrouplist[codegroupcount].codelist[c2].orig = CHEAT_CODE_MAGIC_VALUE;
 					codegrouplist[codegroupcount].codelist[c2].addr = ConvertHexStringToInt(line + c1 + 1 + c2 * 14, 8);
 					codegrouplist[codegroupcount].codelist[c2].val = (u16) ConvertHexStringToInt
 						(
@@ -472,11 +432,11 @@ bool CheatCodes_Read(char *rom_name, char *file)
 				else
 				{
 					codegrouplist[codegroupcount].codecount=MAX_CHEATCODE_PER_GROUP;
-					sprintf (errormessage,
+					/*sprintf (errormessage,
 						     "Too many codes for cheat: %s (Max = %d)! Cheat will be truncated and won't work!",
 							 codegrouplist[codegroupcount].name,
 							 MAX_CHEATCODE_PER_GROUP);
-					printf (errormessage);
+					printf (errormessage);*/
 					break;
 				}
 			}
@@ -484,12 +444,12 @@ bool CheatCodes_Read(char *rom_name, char *file)
 			codegroupcount++;
 		}
 
-		printf("Succesfully Loaded %d groups of cheat codes\n", codegroupcount);
+		//printf("Succesfully Loaded %d groups of cheat codes\n", codegroupcount);
 	}
 	else
 	{
 		// Cannot find entry for the current rom
-		printf("Cannot find entry %d groups of cheat code\n", codegroupcount);
+		//printf("Cannot find entry %d groups of cheat code\n", codegroupcount);
 	}
 
 	fclose(stream);

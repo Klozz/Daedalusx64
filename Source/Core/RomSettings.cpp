@@ -312,7 +312,14 @@ bool IRomSettingsDB::OpenSettingsFile( const char * filename )
 		{
 			settings.MemoryAccessOptimisation = p_property->GetBooleanValue( false );
 		}
-
+		if( p_section->FindProperty( "CheatsEnabled", &p_property ) )
+		{
+			settings.CheatsEnabled = p_property->GetBooleanValue( false );
+		}
+		if( p_section->FindProperty( "CheatType", &p_property ) )
+		{
+			settings.CheatType = p_property->GetIntValue( 0 );
+		}
 		SetSettings( id, settings );
 	}
 
@@ -433,7 +440,9 @@ void IRomSettingsDB::OutputSectionDetails( const RomID & id, const RomSettings &
 	if( settings.CleanSceneEnabled )			fprintf(fh, "CleanSceneEnabled=yes\n");	
 	if( settings.AudioRateMatch )				fprintf(fh, "AudioRateMatch=yes\n"); 
 	if( settings.FogEnabled )					fprintf(fh, "FogEnabled=yes\n"); 
-	 if( settings.MemoryAccessOptimisation )    fprintf(fh, "MemoryAccessOptimisation=yes\n");
+	if( settings.MemoryAccessOptimisation )		fprintf(fh, "MemoryAccessOptimisation=yes\n");
+	if( settings.CheatsEnabled )				fprintf(fh, "CheatsEnabled=yes\n");
+	if( settings.CheatType )					fprintf(fh, "CheatType=yes\n");
 
 	if ( settings.ExpansionPakUsage != PAK_STATUS_UNKNOWN )	fprintf(fh, "ExpansionPakUsage=%s\n", ROM_GetExpansionPakUsageName( settings.ExpansionPakUsage ) );
 	if ( settings.SaveType != SAVE_TYPE_UNKNOWN )			fprintf(fh, "SaveType=%s\n", ROM_GetSaveTypeName( settings.SaveType ) );
@@ -494,6 +503,8 @@ RomSettings::RomSettings()
 ,	AudioRateMatch( false )
 ,	FogEnabled( false )
 ,   MemoryAccessOptimisation( false )
+,   CheatsEnabled( false )
+,	CheatType( 0 )
 ,	RescanCount(0)
 {
 }
@@ -525,6 +536,8 @@ void	RomSettings::Reset()
 	CleanSceneEnabled = false;
 	AudioRateMatch = false;
 	FogEnabled = false;
+	CheatsEnabled = false;
+	CheatType = 0;
 	MemoryAccessOptimisation = false;
 	RescanCount = 0;
 }

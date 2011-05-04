@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "RomPreferencesScreen.h"
 #include "AdvancedOptionsScreen.h"
+#include "CheatOptionsScreen.h"
 
 #include "UIContext.h"
 #include "UIScreen.h"
@@ -71,6 +72,7 @@ class ISelectedRomComponent : public CSelectedRomComponent
 	private:
 		void						EditPreferences();
 		void						AdvancedOptions();
+		void						CheatOptions();
 		void						StartEmulation();
 
 	private:
@@ -113,7 +115,8 @@ ISelectedRomComponent::ISelectedRomComponent( CUIContext * p_context, CFunctor *
 {
 	mElements.Add( new CUICommandImpl( new CMemberFunctor< ISelectedRomComponent >( this, &ISelectedRomComponent::EditPreferences ), "Edit Preferences", "Edit various preferences for this rom." ) );
 	mElements.Add( new CUICommandImpl( new CMemberFunctor< ISelectedRomComponent >( this, &ISelectedRomComponent::AdvancedOptions ), "Advanced Options", "Edit advanced options for this rom." ) );
-	
+	mElements.Add( new CUICommandImpl( new CMemberFunctor< ISelectedRomComponent >( this, &ISelectedRomComponent::CheatOptions ), "Cheats", "Enable and select cheats for this rom." ) );
+
 	mElements.Add( new CUISpacer( 16 ) );
 
 	u32 i = mElements.Add( new CUICommandImpl( new CMemberFunctor< ISelectedRomComponent >( this, &ISelectedRomComponent::StartEmulation ), "Start Emulation", "Start emulating the selected rom." ) );
@@ -206,6 +209,15 @@ void	ISelectedRomComponent::AdvancedOptions()
 	delete advanced_options;
 }
 
+//*************************************************************************************
+//
+//*************************************************************************************
+void	ISelectedRomComponent::CheatOptions()
+{
+	CCheatOptionsScreen *	cheat_options( CCheatOptionsScreen::Create( mpContext, mRomID ) );
+	cheat_options->Run();
+	delete cheat_options;
+}
 //*************************************************************************************
 //
 //*************************************************************************************

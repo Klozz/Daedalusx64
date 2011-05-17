@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 CODEGROUP *codegrouplist;
 u32		codegroupcount		= 0;
 s32		currentgroupindex	= -1;
-char	current_rom_name[30];
+char	current_rom_name[128];
 
 
 #define CHEAT_CODE_MAGIC_VALUE 0xDEAD
@@ -46,12 +46,22 @@ enum { CHEAT_ALL_COUNTRY, CHEAT_USA, CHEAT_JAPAN, CHEAT_USA_AND_JAPAN, CHEAT_EUR
 //*****************************************************************************
 static void CheatCodes_Apply(u32 index) 
 {
-	u32 i;
-	u32 address;
-	u16 value;
+	u32		i;
+	u32		address;
+	u16		value;
+	bool	executenext = true;
 
 	for (i = 0; i < codegrouplist[index].codecount; i ++) 
 	{
+		// Used by activator codes, skip until the specified button is pressed
+		// OK, skip this code
+		//
+		if(executenext == false)
+		{
+			executenext = true;
+			continue;
+		}
+
 		switch (codegrouplist[index].codelist[i].addr & 0xFF000000)
 		//switch(codegrouplist[index].codelist[i].addr / 0x1000000)
 		{
@@ -88,6 +98,68 @@ static void CheatCodes_Apply(u32 index)
 				value = codegrouplist[index].codelist[i].orig;
 	
 			Write16Bits(address, value);
+			break;
+		// case 0xD8000000:
+		case 0xD0000000:
+			address = PHYS_TO_K0(codegrouplist[index].codelist[i].addr & 0xFFFFFF);
+			value   = codegrouplist[index].codelist[i].val;
+            if(Read8Bits(address) != value) executenext = false;
+			break;
+		//case 0xD9000000:
+		case 0xD1000000:
+			address = PHYS_TO_K0(codegrouplist[index].codelist[i].addr & 0xFFFFFF);
+			value   = codegrouplist[index].codelist[i].val;
+            if(Read16Bits(address) != value) executenext = false;
+			break;
+		case 0xD2000000:
+			address = PHYS_TO_K0(codegrouplist[index].codelist[i].addr & 0xFFFFFF);
+			value   = codegrouplist[index].codelist[i].val;
+			if(Read8Bits(address) == value) executenext = false;
+			break;
+		case 0xD3000000:
+			address = PHYS_TO_K0(codegrouplist[index].codelist[i].addr & 0xFFFFFF);
+			value   = codegrouplist[index].codelist[i].val;
+			if(Read16Bits(address) == value) executenext = false;
+			break;
+		case 0x50000000:						
+			{
+				address			= PHYS_TO_K0(codegrouplist[index].codelist[i].addr & 0xFFFFFF);
+				value			= codegrouplist[index].codelist[i].val;
+				s32	repeatcount = (address & 0x0000FF00) >> 8;
+				u32	addroffset	= (address & 0x000000FF);
+				u16	valinc		= value;
+
+
+				if(i + 1 < codegrouplist[index].codecount)
+				{
+					u32 type	= codegrouplist[index].codelist[i + 1].addr / 0x1000000;
+					address		= PHYS_TO_K0(codegrouplist[index].codelist[i + 1].addr & 0x00FFFFFF);
+					value		= codegrouplist[index].codelist[i + 1].val;
+					u8 valbyte = (u8)value;
+
+					if( type == 0x80 )
+					{
+						do
+						{
+							Write8Bits(address,valbyte);
+							address += addroffset;
+							valbyte += (u8)valinc;
+							repeatcount--;
+						} while(repeatcount > 0);
+					}
+					else if( type == 0x81 )
+					{
+						do
+						{
+							Write16Bits(address, value);
+							address += addroffset;
+							value += valinc;
+							repeatcount--;
+						} while(repeatcount > 0);
+					}
+				}
+			}
+			executenext = false;
 			break;
 		case 0: 
 			i = codegrouplist[index].codecount;
@@ -277,7 +349,7 @@ static u32 ConvertHexStringToInt(const char *str, int nchars)
 //*****************************************************************************
 bool CheatCodes_Read(char *rom_name, char *file, u8 countryID)
 {
-	static char		*last_rom_name = 0;
+	static char		last_rom_name[128];
 	char			path[MAX_PATH];
 	char			line[2048], romname[256], errormessage[400];	//changed line length to 2048 previous was 256
 	bool			bfound;
@@ -286,14 +358,17 @@ bool CheatCodes_Read(char *rom_name, char *file, u8 countryID)
 
 	strcpy(current_rom_name, rom_name);
 
-	// Doesn't work well..
-	//
-	/*if(last_rom_name != current_rom_name)
+	// Do not parse again, if we already parsed for this ROM
+	if(strcmp(current_rom_name, last_rom_name) == 0)
 	{
-		//printf("Cheat file isn't parsed for this ROM yet\n");
-		last_rom_name = current_rom_name;
-		return false;
-	}*/
+		//printf("Cheat file is already parsed for this ROM\n");
+		return true;
+	}
+
+	strcpy(last_rom_name, current_rom_name);
+
+	// Always clear when parsing a new ROM
+	CheatCodes_Clear();
 
 	strcpy(path, gDaedalusExePath);
 	strcat(path, file);
@@ -322,7 +397,7 @@ bool CheatCodes_Read(char *rom_name, char *file, u8 countryID)
 	// Locate the entry for current rom by searching for g_ROM.rh.Name
 	//
 	sprintf(romname, "[%s]", current_rom_name);
-	
+
 	bfound = false;
 
 	while(fgets(line, 256, stream))

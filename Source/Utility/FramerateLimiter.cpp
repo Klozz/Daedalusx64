@@ -35,17 +35,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //*****************************************************************************
 namespace
 {
-u64				gTicksBetweenVbls( 0 );				// How many ticks we want to delay between vertical blanks
-u64				gTicksPerSecond( 0 );				// How many ticks there are per second
+u32				gTicksBetweenVbls( 0 );				// How many ticks we want to delay between vertical blanks
+u32				gTicksPerSecond( 0 );				// How many ticks there are per second
 
 u64				gLastVITime( 0 );					// The time of the last vertical blank
 u32				gLastOrigin( 0 );					// The origin that we saw on the last vertical blank
 u32				gVblsSinceFlip( 0 );				// The number of vertical blanks that have occurred since the last n64 flip
 
+u32				gCurrentAverageTicksPerVbl( 0 );
+
 const u32		NUM_SYNC_SAMPLES( 8 );				// These are all for keeping track of the current sync rate
-u64				gRecentTicksPerVbl[ NUM_SYNC_SAMPLES ];
-u32				gRecentTicksPerVblIdx( 0 );
-u64				gCurrentAverageTicksPerVbl( 0 );
 
 const u32		gTvFrequencies[] = 
 {
@@ -79,21 +78,21 @@ void FramerateLimiter_Reset()
 		gTicksBetweenVbls = 0;
 		gTicksPerSecond = 0;
 	}
-
-
-	// Initialise the array - assume perfect timekeeping
-	for (u32 i = 0; i < NUM_SYNC_SAMPLES; i++)
-	{
-		gRecentTicksPerVbl[i] = gTicksBetweenVbls;
-	}
-	gRecentTicksPerVblIdx = 0;
-	gCurrentAverageTicksPerVbl = gTicksBetweenVbls;
-
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
+#if 1	//1->fast, 0->old //Corn
+u32 FramerateLimiter_UpdateAverageTicksPerVbl( u32 elapsed_ticks )
+{
+	static f32 avg = 0.f;
+
+	avg = 0.875f * avg + 0.125f * ((f32)elapsed_ticks);
+	
+	return (u32)avg;
+}
+#else
 template< typename T > T Average( const T * arr, const u32 count )
 {
 	T sum = 0;
@@ -104,14 +103,17 @@ template< typename T > T Average( const T * arr, const u32 count )
 	return sum / T( count );
 }
 
-u64 FramerateLimiter_UpdateAverageTicksPerVbl( u64 elapsed_ticks )
+u32 FramerateLimiter_UpdateAverageTicksPerVbl( u32 elapsed_ticks )
 {
-	gRecentTicksPerVbl[gRecentTicksPerVblIdx] = elapsed_ticks;
-	gRecentTicksPerVblIdx = (gRecentTicksPerVblIdx + 1) % NUM_SYNC_SAMPLES;
+	static u32	RecentTicksPerVbl[ NUM_SYNC_SAMPLES ];
+	static u32	RecentTicksPerVblIdx( 0 );
 
-	return Average( gRecentTicksPerVbl, NUM_SYNC_SAMPLES );
+	RecentTicksPerVbl[RecentTicksPerVblIdx] = elapsed_ticks;
+	RecentTicksPerVblIdx = (RecentTicksPerVblIdx + 1) % NUM_SYNC_SAMPLES;
+
+	return Average( RecentTicksPerVbl, NUM_SYNC_SAMPLES );
 }
-
+#endif
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -121,55 +123,37 @@ void FramerateLimiter_Limit()
 
 	// Only do framerate limiting on frames that correspond to a flip
 	u32 current_origin = Memory_VI_GetRegister(VI_ORIGIN_REG);
-	if( current_origin == gLastOrigin )
-	{
-		return;
-	}
+	
+	if( current_origin == gLastOrigin ) return;
+
 	gLastOrigin = current_origin;
 
 	u64	now;
 
 	NTiming::GetPreciseTime(&now);
-	if( gLastVITime != 0 )
+
+	u32 elapsed_ticks = (u32)(now - gLastVITime);
+
+	if( gVblsSinceFlip ) gCurrentAverageTicksPerVbl = FramerateLimiter_UpdateAverageTicksPerVbl( elapsed_ticks / gVblsSinceFlip );
+
+	if( gSpeedSyncEnabled )
 	{
-		u64 elapsed_ticks = now - gLastVITime;
-
-		gCurrentAverageTicksPerVbl = FramerateLimiter_UpdateAverageTicksPerVbl( elapsed_ticks / gVblsSinceFlip );
-
-		if( gSpeedSyncEnabled )
+		u32	required_ticks( gTicksBetweenVbls * gVblsSinceFlip );
+		
+		if( gSpeedSyncEnabled == 2 ) required_ticks = required_ticks << 1;	// Slow down to 1/2 speed //Corn
+		
+		if( elapsed_ticks < required_ticks )
 		{
-			//
-			// This is a bit of a hack - busy wait until we're exactly on schedule
-			//	Ideally we should call Sleep() or similar here to avoid this.
-			//
-			u64	required_ticks( gTicksBetweenVbls * gVblsSinceFlip );
-			
-			if( gSpeedSyncEnabled == 2 ) required_ticks = required_ticks << 1;	//½ speed //Corn
-			
-			while( elapsed_ticks < required_ticks )
+			s32	delay_ticks( required_ticks - elapsed_ticks - 50);	//Remove ~50 ticks for additional processing
+
+			if( delay_ticks > 0 )
 			{
-				if( gTicksPerSecond != 0 )
-				{
-					u64	delay_ticks( required_ticks - elapsed_ticks );
-					u64	delay_ms( 1000 * delay_ticks / gTicksPerSecond );
-					u32	sleep_ms = u32( delay_ms );			// Need to deal with potential overflow?
-
-					if( sleep_ms > 0 )
-					{
-						//printf( "Delay ticks: %d, ms: %d, sleep: %d\n", u32( delay_ticks ), u32( delay_ms ), sleep_ms );
-						ThreadSleepMs( sleep_ms );
-						
-						NTiming::GetPreciseTime(&gLastVITime);
-						gVblsSinceFlip = 0;
-
-						return;	//Return early //Corn
-					}
-				}
-
-				NTiming::GetPreciseTime(&now);
-				elapsed_ticks = now - gLastVITime;
+				//printf( "Delay ticks: %d\n", u32( delay_ticks ) );
+				ThreadSleepTicks( delay_ticks );
 			}
 		}
+
+		NTiming::GetPreciseTime(&now);
 	}
 
 	gLastVITime = now;

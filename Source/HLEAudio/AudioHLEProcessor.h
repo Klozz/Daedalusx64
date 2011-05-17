@@ -24,7 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //	Drop me a line if you get chance :)
 //
 
-
+//Size of N64 audio processing buffer (org. 0x10000). Have to be a power of 2 (2^N) //Corn
+#define N64_AUDIO_BUFF 0x1000
 
 struct AudioHLEState
 {
@@ -41,7 +42,7 @@ struct AudioHLEState
 	void	LoadBuffer( u16 dram_dst, u32 ram_src, u16 count );
 	void	SaveBuffer( u32 ram_dst, u16 dmem_src, u16 count );
 
-	void	SetSegment( u8 segment, u32 address );
+	//void	SetSegment( u8 segment, u32 address );
 	void	SetLoop( u32 loopval );
 	void	SetBuffer( u8 flags, u16 in, u16 out, u16 count );
 
@@ -61,11 +62,11 @@ private:
 
 
 public:
-	u8		Buffer[0x10000]; // Seems excesively large? 0x1000 should be enough.
-	u16		ADPCMTable[0x88];
+	u8	__attribute__((aligned(16))) Buffer[N64_AUDIO_BUFF];
 	s16		MixerWorkArea[256];
+	u16		ADPCMTable[0x88];
 	
-	u32		Segments[16];		// 0x0320
+	//u32		Segments[16];		// 0x0320
 	// T8 = 0x360
 	u16		InBuffer;			// 0x0000(T8)
 	u16		OutBuffer;			// 0x0002(T8)

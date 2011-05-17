@@ -105,10 +105,22 @@ public:
 		,	mCheatEnabled( cheat_enabled )
 	{
 	}
-	// Disable this if cheatcodes aren't enabled
-	// ToDo : Force all cheats disabled when is read only, aka CheatsEnabled is disabled
-	//
-	virtual bool			IsReadOnly() const		{ return !(*mCheatEnabled); }
+	// Make read only the cheat list if enable cheat code option is disable
+	virtual bool			IsReadOnly() const		
+	{ 
+		// Check for any active cheat codes
+		if(!(*mCheatEnabled) && codegrouplist[mIndex].enable)
+		{
+			// Disable 'em
+			codegrouplist[mIndex].active = false;
+			// Do one pass to restore their value too
+			CheatCodes_Activate(IN_GAME);
+		}
+
+		return !(*mCheatEnabled); 
+	}
+
+	virtual bool			IsSelectable()	const	{ return !IsReadOnly(); }
 
 	virtual	void			OnNext()				{ if( !IsReadOnly() ) codegrouplist[mIndex].active = !codegrouplist[mIndex].active; }
 	virtual	void			OnPrevious()			{ if( !IsReadOnly() ) codegrouplist[mIndex].active = !codegrouplist[mIndex].active; }
@@ -145,24 +157,20 @@ private:
 class CCheatNotFound : public CUISetting
 	{
 	public:
-		CCheatNotFound(  const char * name, bool * cheat_enabled, const char * description )
+		CCheatNotFound(  const char * name, const char * description )
 			:	CUISetting( name, description )
-			,	mCheatEnabled( cheat_enabled )
 		{
 		}
 		// Always show as read only when no cheats are found
 		//
-		virtual bool			IsReadOnly() const		{ return true; }
+		virtual bool			IsReadOnly()	const	{ return true; }
+
+		virtual bool			IsSelectable()	const	{ return false; }
+		virtual	void			OnSelected()			{ }
 
 		//virtual	void			OnSelected(){}
 
-		virtual const char *	GetSettingName() const
-		{
-			return "N/A";
-		}
-
-	private:
-		bool *					mCheatEnabled;
+		virtual const char *	GetSettingName() const	{ return "N/A";	}
 	};
 //*************************************************************************************
 //
@@ -222,7 +230,7 @@ ICheatOptionsScreen::ICheatOptionsScreen( CUIContext * p_context, const RomID & 
 			}
 			else
 			{
-				mElements.Add( new CCheatNotFound("No cheat codes found for this entry", &mRomPreferences.CheatsEnabled, "Make sure codes are formatted correctly for this entry. Daedalus supports a max of six cheats per game." ) );
+				mElements.Add( new CCheatNotFound("No cheat codes found for this entry", "Make sure codes are formatted correctly for this entry. Daedalus supports a max of eight cheats per game." ) );
 			}
 		}
 		else
@@ -230,7 +238,7 @@ ICheatOptionsScreen::ICheatOptionsScreen( CUIContext * p_context, const RomID & 
 			// Display Msg to user if he opens the cheat list without loading the cheatfile or no cheats found
 			//
 			//codegrouplist[i].active = false; // Overkill IMO
-			mElements.Add( new CCheatNotFound("No cheat codes found for this ROM", &mRomPreferences.CheatsEnabled, "Make sure codes are formatted correctly, and ROM was started with Cheat Codes option enabled. Note : Cheats won't be displayed until you start the ROM first." ) );
+			mElements.Add( new CCheatNotFound("No cheat codes found for this entry", "Make sure codes are formatted correctly for this entry. Daedalus supports a max of eight cheats per game." ) );
 
 		}
 	}

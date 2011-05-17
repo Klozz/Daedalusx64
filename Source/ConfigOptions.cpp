@@ -34,7 +34,7 @@ bool	gDynarecEnabled				= true;		// Use dynamic recompilation
 bool	gDynarecStackOptimisation	= true;		// Enable the dynarec stack optmisation
 bool	gDynarecLoopOptimisation	= true;		// Enable the dynarec loop optmisation
 bool	gOSHooksEnabled				= true;		// Apply os-hooks
-u32		gCheckTextureHashFrequency	= 5;		// How often to check textures for updates (every N frames, 0 to disable)
+u32		gCheckTextureHashFrequency	= 0;		// How often to check textures for updates (every N frames, 0 to disable)
 bool	gDoubleDisplayEnabled		= true;		// Workaround for games that have shaking issues
 bool	gSimulateDoubleDisabled		= false;	// Hack to disable SimulateDoubles, fixes Mario Party 
 bool	gCleanSceneEnabled			= false;	// Clean our Scenes, it gets rid of many glitches
@@ -42,7 +42,7 @@ bool	gAudioRateMatch				= false;	// Matches audio rate with framerate, only work
 bool	gFogEnabled					= false;	// Enable fog
 bool    gMemoryAccessOptimisation   = false;    // Enable the memory access optmisation
 bool	gCheatsEnabled				= false;	// Enable cheat codes
-u32		gCheatType					= 0;		// Cheat number
+u32		gCheatFrequency				= 0;		// Cheat frequency to apply
 u32		gControllerIndex			= 0;		// Which controller config to set
 
 DaedalusConfig g_DaedalusConfig =

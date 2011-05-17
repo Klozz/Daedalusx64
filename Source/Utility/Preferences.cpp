@@ -287,9 +287,9 @@ bool IPreferences::OpenPreferencesFile( const char * filename )
 		{
 			preferences.CheatsEnabled = property->GetBooleanValue( false );
 		}
-		if( section->FindProperty( "CheatType", &property ) )
+		if( section->FindProperty( "CheatFrequency", &property ) )
 		{
-			preferences.CheatType = property->GetIntValue( 0 );
+			preferences.CheatFrequency = ROM_GetCheatFrequencyFromFrames( atoi( property->GetValue() ) );
 		}
 		mPreferences[ id ] = preferences;
 	}
@@ -326,7 +326,7 @@ void IPreferences::OutputSectionDetails( const RomID & id, const SRomPreferences
 	fprintf(fh, "ZoomX=%f\n", preferences.ZoomX );
 	fprintf(fh, "MemoryAccessOptimisation=%d\n",preferences.MemoryAccessOptimisation);
 	fprintf(fh, "CheatsEnabled=%d\n",preferences.CheatsEnabled);
-	fprintf(fh, "CheatType=%d\n",preferences.CheatType);
+	fprintf(fh, "CheatFrequency=%d\n",ROM_GetCheatFrequencyAsFrames( preferences.CheatFrequency) );
 	fprintf(fh, "Controller=%s\n", CInputManager::Get()->GetConfigurationName( preferences.ControllerIndex ));
 	fprintf(fh, "\n");			// Spacer
 }
@@ -471,7 +471,7 @@ SRomPreferences::SRomPreferences()
 	,	AudioEnabled( APM_DISABLED )
 	,	ZoomX( 1.0f )
 	,	CheatsEnabled( false )
-	,	CheatType( 0 )
+	,	CheatFrequency( CF_EVERY_32 )
 	,	ControllerIndex( 0 )
 {
 }
@@ -498,7 +498,7 @@ void SRomPreferences::Reset()
 //	AudioAdaptFrequency = false;
 	ZoomX = 1.0f;
 	CheatsEnabled = false;
-	CheatType = 0;
+	CheatFrequency = CF_EVERY_32;
 	ControllerIndex = 0;
 }
 
@@ -522,7 +522,7 @@ void	SRomPreferences::Apply() const
 	gFrameskipValue = Frameskip;
 	gZoomX = ZoomX;
 	gCheatsEnabled = CheatsEnabled;
-	gCheatType = g_ROM.settings.CheatType || CheatType;
+	gCheatFrequency = ROM_GetCheatFrequencyAsFrames( CheatFrequency );
 	gAudioPluginEnabled = AudioEnabled;
 //	gAdaptFrequency = AudioAdaptFrequency;
 
@@ -539,13 +539,10 @@ static const u32 gTextureHashFreqeuncies[] =
 	0,	//THF_DISABLED = 0,
 	1,	//THF_EVERY_FRAME,
 	2,	//THF_EVERY_2,
-	3,	//THF_EVERY_3,
 	4,	//THF_EVERY_4,
-	5,	//THF_EVERY_5,
-	10,	//THF_EVERY_10,
-	15,	//THF_EVERY_15,
-	20,	//THF_EVERY_20,
-	30,	//THF_EVERY_30,
+	8,	//THF_EVERY_8,
+	16,	//THF_EVERY_16,
+	32,	//THF_EVERY_32,
 };
 
 static const char * const gTextureHashFreqeuncyDescriptions[] =
@@ -553,13 +550,10 @@ static const char * const gTextureHashFreqeuncyDescriptions[] =
 	"Disabled",			//THF_DISABLED = 0,
 	"Every Frame",		//THF_EVERY_FRAME,
 	"Every 2 Frames",	//THF_EVERY_2,
-	"Every 3 Frames",	//THF_EVERY_3,
 	"Every 4 Frames",	//THF_EVERY_4,
-	"Every 5 Frames",	//THF_EVERY_5,
-	"Every 10 Frames",	//THF_EVERY_10,
-	"Every 15 Frames",	//THF_EVERY_15,
-	"Every 20 Frames",	//THF_EVERY_20,
-	"Every 30 Frames",	//THF_EVERY_30,
+	"Every 8 Frames",	//THF_EVERY_8,
+	"Every 16 Frames",	//THF_EVERY_16,
+	"Every 32 Frames",	//THF_EVERY_32,
 };
 
 //*****************************************************************************
@@ -588,9 +582,8 @@ ETextureHashFrequency	ROM_GetTextureHashFrequencyFromFrames( u32 frames )
 		}
 	}
 
-	return THF_EVERY_30;	// Return the maximum
+	return THF_EVERY_32;	// Return the maximum
 }
-
 
 //*****************************************************************************
 //
@@ -600,6 +593,71 @@ const char * ROM_GetTextureHashFrequencyDescription( ETextureHashFrequency thf )
 	if(thf >= 0 && thf < NUM_THF)
 	{
 		return gTextureHashFreqeuncyDescriptions[ thf ];
+	}
+
+	return "?";
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+static const u32 gCheatFreqeuncies[] =
+{
+	0,	
+	3,	
+	7,	
+	15,	
+	31,	
+	63,	
+};
+
+static const char * const gCheatFreqeuncyDescriptions[] =
+{
+	"Every VBLS",	
+	"Every 4 VBLS",	
+	"Every 8 VBLS",	
+	"Every 16 VBLS",	
+	"Every 32 VBLS",	
+	"Every 64 VBLS",	
+};
+
+//*****************************************************************************
+//
+//*****************************************************************************
+u32	ROM_GetCheatFrequencyAsFrames( ECheatFrequency cf )
+{
+	if(cf >= 0 && cf < NUM_CF)
+	{
+		return gCheatFreqeuncies[ cf ];
+	}
+
+	return 0;
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+ECheatFrequency	ROM_GetCheatFrequencyFromFrames( u32 frames )
+{
+	for( u32 i = 0; i < NUM_CF; ++i )
+	{
+		if( frames <= gCheatFreqeuncies[ i ] )
+		{
+			return ECheatFrequency( i );
+		}
+	}
+
+	return CF_EVERY_32;	// Return the maximum
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+const char * ROM_GetCheatFrequencyDescription( ECheatFrequency cf )
+{
+	if(cf >= 0 && cf < NUM_CF)
+	{
+		return gCheatFreqeuncyDescriptions[ cf ];
 	}
 
 	return "?";

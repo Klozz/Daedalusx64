@@ -39,15 +39,24 @@ enum ETextureHashFrequency
 	THF_DISABLED = 0,
 	THF_EVERY_FRAME,
 	THF_EVERY_2,
-	THF_EVERY_3,
 	THF_EVERY_4,
-	THF_EVERY_5,
-	THF_EVERY_10,
-	THF_EVERY_15,
-	THF_EVERY_20,
-	THF_EVERY_30,
+	THF_EVERY_8,
+	THF_EVERY_16,
+	THF_EVERY_32,
 
 	NUM_THF,
+};
+
+enum ECheatFrequency
+{
+	CF_EVERY_FRAME = 0,
+	CF_EVERY_4,
+	CF_EVERY_8,
+	CF_EVERY_16,
+	CF_EVERY_32,
+	CF_EVERY_64,
+
+	NUM_CF,
 };
 
 enum EFrameskipValue
@@ -152,7 +161,7 @@ struct SRomPreferences
 	EAudioPluginMode			AudioEnabled;
 	f32							ZoomX;
 	bool						CheatsEnabled;
-	u32							CheatType;
+	ECheatFrequency				CheatFrequency;
 	u32							ControllerIndex;
 	u32							PAD1;
 
@@ -187,6 +196,10 @@ class CPreferences : public CSingleton< CPreferences >
 u32						ROM_GetTexureHashFrequencyAsFrames( ETextureHashFrequency thf );
 ETextureHashFrequency	ROM_GetTextureHashFrequencyFromFrames( u32 frames );
 const char *			ROM_GetTextureHashFrequencyDescription( ETextureHashFrequency thf );
+
+u32						ROM_GetCheatFrequencyAsFrames( ECheatFrequency cf );
+ECheatFrequency			ROM_GetCheatFrequencyFromFrames( u32 frames );
+const char *			ROM_GetCheatFrequencyDescription( ECheatFrequency cf );
 
 u32						ROM_GetFrameskipValueAsInt( EFrameskipValue value );
 EFrameskipValue			ROM_GetFrameskipValueFromInt( u32 value );

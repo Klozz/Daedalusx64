@@ -157,8 +157,8 @@ private:
 class CCheatNotFound : public CUISetting
 	{
 	public:
-		CCheatNotFound(  const char * name, const char * description )
-			:	CUISetting( name, description )
+		CCheatNotFound(  const char * name )
+			:	CUISetting( name, "" )
 		{
 		}
 		// Always show as read only when no cheats are found
@@ -172,6 +172,28 @@ class CCheatNotFound : public CUISetting
 
 		virtual const char *	GetSettingName() const	{ return "N/A";	}
 	};
+
+//*************************************************************************************
+//
+//*************************************************************************************
+	class CCheatFrequency : public CUISetting
+	{
+	public:
+		CCheatFrequency( ECheatFrequency * setting, const char * name, const char * description )
+			:	CUISetting( name, description )
+			,	mSetting( setting )
+		{
+		}
+
+		virtual	void			OnNext()				{ *mSetting = ECheatFrequency( ( *mSetting + 1 ) % NUM_CF ); }
+		virtual	void			OnPrevious()			{ *mSetting = ECheatFrequency( ( *mSetting + NUM_CF - 1 ) % NUM_CF ); }
+
+		virtual const char *	GetSettingName() const	{ return ROM_GetCheatFrequencyDescription( *mSetting ); }
+
+	private:
+		ECheatFrequency *	mSetting;
+	};
+
 //*************************************************************************************
 //
 //*************************************************************************************
@@ -211,6 +233,8 @@ ICheatOptionsScreen::ICheatOptionsScreen( CUIContext * p_context, const RomID & 
 	CheatCodes_Read( (char*)mRomName.c_str(), "Daedalus.cht", mRomID.CountryID );
 
 	mElements.Add( new CBoolSetting( &mRomPreferences.CheatsEnabled, "Enable Cheat Codes", "Whether to use cheat codes for this ROM", "Yes", "No" ) );
+	mElements.Add( new CCheatFrequency( &mRomPreferences.CheatFrequency, "Apply Cheat Codes Frequency", "The higher this value, the less cheats will hog the emulator at the expense that certain cheats won't work properly." ) );
+
 	
 	for(u32 i = 0; i < MAX_CHEATCODE_PER_GROUP; i++)
 	{
@@ -230,7 +254,8 @@ ICheatOptionsScreen::ICheatOptionsScreen( CUIContext * p_context, const RomID & 
 			}
 			else
 			{
-				mElements.Add( new CCheatNotFound("No cheat codes found for this entry", "Make sure codes are formatted correctly for this entry. Daedalus supports a max of eight cheats per game." ) );
+				//mElements.Add( new CCheatNotFound("No cheat codes found for this entry", "Make sure codes are formatted correctly for this entry. Daedalus supports a max of eight cheats per game." ) );
+				mElements.Add( new CCheatNotFound("No cheat codes found for this entry" ) );
 			}
 		}
 		else
@@ -238,7 +263,8 @@ ICheatOptionsScreen::ICheatOptionsScreen( CUIContext * p_context, const RomID & 
 			// Display Msg to user if he opens the cheat list without loading the cheatfile or no cheats found
 			//
 			//codegrouplist[i].active = false; // Overkill IMO
-			mElements.Add( new CCheatNotFound("No cheat codes found for this entry", "Make sure codes are formatted correctly for this entry. Daedalus supports a max of eight cheats per game." ) );
+			//mElements.Add( new CCheatNotFound("No cheat codes found for this entry", "Make sure codes are formatted correctly for this entry. Daedalus supports a max of eight cheats per game." ) );
+			mElements.Add( new CCheatNotFound("No cheat codes found for this entry" ) );
 
 		}
 	}

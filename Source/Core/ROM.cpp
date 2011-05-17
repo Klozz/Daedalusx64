@@ -75,15 +75,18 @@ const char *gGameHackNames[ MAX_HACK_NAMES ] =
 	"Disable osSendMesg",
 	"Screen Update Hack",
 	"Disable bcopy and osSendMes Hack",
-	"Ignore Alpha"
+	"Ignore Alpha",
+	"Render Offscreen"
 };
 #endif
 
+#ifdef DAEDALUS_ENABLE_DYNAREC_PROFILE
 //*****************************************************************************
 // This isn't really the most appropriate place. Need to check with
 // the graphics plugin really
 //*****************************************************************************
 u32 g_dwNumFrames = 0;
+#endif
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -415,8 +418,10 @@ void ROM_ReBoot()
 	}
 #endif
 	// XXXX Update this rom's boot info
-
+#ifdef DAEDALUS_ENABLE_DYNAREC_PROFILE
 	g_dwNumFrames = 0;
+#endif
+
 #ifdef DAEDALUS_ENABLE_OS_HOOKS
 	Patch_Reset();
 #endif
@@ -477,6 +482,7 @@ void SpecificGameHacks( const ROMHeader & id )
 	case 0x5144: g_ROM.GameHacks = DONALD;				break;
 	case 0x4643: g_ROM.GameHacks = CLAY_FIGHTER_63;		break;
 	case 0x5a52: g_ROM.GameHacks = RIDGE_RACER;			break;
+	case 0x5053: g_ROM.GameHacks = SUPERMAN64;			break;
 	case 0x3358:	//GEX3
 	case 0x3258:	//GEX64
 		g_ROM.GameHacks = GEX_GECKO;

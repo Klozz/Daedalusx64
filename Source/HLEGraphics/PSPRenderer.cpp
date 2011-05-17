@@ -76,8 +76,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "PopStructPack.h"
 
-extern SImageDescriptor g_CI;		// XXXX SImageDescriptor g_CI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
-extern SImageDescriptor g_DI;		// XXXX SImageDescriptor g_DI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
+//extern SImageDescriptor g_CI;		// XXXX SImageDescriptor g_CI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
+//extern SImageDescriptor g_DI;		// XXXX SImageDescriptor g_DI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
 
 extern "C"
 {
@@ -130,7 +130,7 @@ enum CycleType
 	CYCLE_FILL,
 };
 
-extern bool bN64IsDrawingTextureBuffer;
+extern bool bIsOffScreen;
 
 extern u32 SCR_WIDTH;
 extern u32 SCR_HEIGHT;
@@ -1165,10 +1165,6 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 //*****************************************************************************
 void PSPRenderer::RenderTriangleList( const DaedalusVtx * p_verts, u32 num_verts, bool disable_zbuffer )
 {
-	// Remove offscreen rects, maybe do it early in texrect/fillrect etc?
-	/// Removes the annoying black box in Conker, Note this will break framebuffer effects.
-	if( bN64IsDrawingTextureBuffer )	return;
-
 	DaedalusVtx*	p_vertices( (DaedalusVtx*)sceGuGetMemory(num_verts*sizeof(DaedalusVtx)) );
 	memcpy( p_vertices, p_verts, num_verts*sizeof(DaedalusVtx));
 
@@ -1185,6 +1181,7 @@ void PSPRenderer::RenderTriangleList( const DaedalusVtx * p_verts, u32 num_verts
 //*****************************************************************************
 void PSPRenderer::TexRect( u32 tile_idx, const v2 & xy0, const v2 & xy1, const v2 & uv0, const v2 & uv1 )
 {
+
 	EnableTexturing( tile_idx );
 
 	v2 screen0( ConvertN64ToPsp( xy0 ) );
@@ -1357,7 +1354,7 @@ bool PSPRenderer::AddTri(u32 v0, u32 v1, u32 v2)
 				if( m_bCull_mode == GU_CCW )
 				{
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-					DL_PF("   Tri: %d,%d,%d (Back culled)", v0, v1, v2);
+					DL_PF("   Tri: %d,%d,%d (Back Culled)", v0, v1, v2);
 					++m_dwNumTrisClipped;
 #endif
 					return false;
@@ -1366,11 +1363,22 @@ bool PSPRenderer::AddTri(u32 v0, u32 v1, u32 v2)
 			else if( m_bCull_mode == GU_CW )
 			{
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-				DL_PF("   Tri: %d,%d,%d (Front culled)", v0, v1, v2);
+				DL_PF("   Tri: %d,%d,%d (Front Culled)", v0, v1, v2);
 				++m_dwNumTrisClipped;
 #endif
 				return false;
 			}
+		}
+
+		// Remove off screen tris
+		//
+		if( bIsOffScreen )	
+		{
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+				DL_PF("   Tri: %d,%d,%d (Off-Screen)", v0, v1, v2);
+				++m_dwNumTrisClipped;
+#endif
+			return false;
 		}
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
@@ -1459,8 +1467,7 @@ bool PSPRenderer::FlushTris()
 	}
 
 	// No vertices to render? //Corn
-	// Remove offscreen tris
-	if( num_vertices == 0 || bN64IsDrawingTextureBuffer )
+	if( num_vertices == 0 )
 	{
 		DAEDALUS_ERROR("No Vtx to render");
 		m_dwNumIndices = 0;
@@ -1468,8 +1475,10 @@ bool PSPRenderer::FlushTris()
 		return true;
 	}
 
+	// This no longer needed since we handle this with a cheat.
+	// This hack is left for reference
 	// Hack for Pilotwings 64
-	static bool skipNext=false;
+	/*static bool skipNext=false;
 	if( g_ROM.GameHacks == PILOT_WINGS )
 	{
 		if ( (g_DI.Address == g_CI.Address) && gRDPOtherMode.z_cmp+gRDPOtherMode.z_upd > 0 )
@@ -1487,7 +1496,7 @@ bool PSPRenderer::FlushTris()
 			mVtxClipFlagsUnion = 0;
 			return true;
 		}	
-	}
+	}*/
 	
 	//
 	// Process the software vertex buffer to apply a couple of

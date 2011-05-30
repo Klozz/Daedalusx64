@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "AdvancedOptionsScreen.h"
 #include "SavestateSelectorComponent.h"
 #include "CheatOptionsScreen.h"
+#include "Dialogs.h"
 
 #include "UIContext.h"
 #include "UIScreen.h"
@@ -34,8 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Graphics/ColourValue.h"
 #include "Graphics/GraphicsContext.h"
 #include "SysPSP/Graphics/DrawText.h"
-
-#include "EasyMsg/easymessage.h"
 
 #include "Core/CPU.h"
 #include "Core/Dynamo.h"
@@ -91,8 +90,9 @@ class IPauseOptionsComponent : public CPauseOptionsComponent
 				void				SaveState();
 				void				LoadState();
 				void				TakeScreenshot();
+#ifdef DAEDALUS_DIALOGS
 				void				ExitConfirmation();
-
+#endif
 				void				OnSaveStateSlotSelected( const char * filename );
 				void				OnLoadStateSlotSelected( const char * filename );
 
@@ -247,17 +247,18 @@ void	IPauseOptionsComponent::Render()
 								 VA_BOTTOM );
 	}
 }
+#ifdef DAEDALUS_DIALOGS
 //*************************************************************************************
 //
 //*************************************************************************************
 void IPauseOptionsComponent::ExitConfirmation()
 {
-	if(ShowMessage("Return to main menu?\nAny unsaved progress will be lost", 1))
+	if(gShowDialog.Render( mpContext,"Return to main menu?", false) )
 	{
 		(*mOnReset)();
 	}
 }
-
+#endif
 //*************************************************************************************
 //
 //*************************************************************************************

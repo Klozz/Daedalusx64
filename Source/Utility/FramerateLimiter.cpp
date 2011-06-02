@@ -44,8 +44,6 @@ u32				gVblsSinceFlip( 0 );				// The number of vertical blanks that have occurr
 
 u32				gCurrentAverageTicksPerVbl( 0 );
 
-const u32		NUM_SYNC_SAMPLES( 8 );				// These are all for keeping track of the current sync rate
-
 const u32		gTvFrequencies[] = 
 {
 	50,		//OS_TV_PAL,
@@ -93,6 +91,8 @@ u32 FramerateLimiter_UpdateAverageTicksPerVbl( u32 elapsed_ticks )
 	return (u32)avg;
 }
 #else
+const u32		NUM_SYNC_SAMPLES( 8 );				// These are all for keeping track of the current sync rate
+
 template< typename T > T Average( const T * arr, const u32 count )
 {
 	T sum = 0;
@@ -134,7 +134,7 @@ void FramerateLimiter_Limit()
 
 	u32 elapsed_ticks = (u32)(now - gLastVITime);
 
-	if( gVblsSinceFlip ) gCurrentAverageTicksPerVbl = FramerateLimiter_UpdateAverageTicksPerVbl( elapsed_ticks / gVblsSinceFlip );
+	gCurrentAverageTicksPerVbl = FramerateLimiter_UpdateAverageTicksPerVbl( elapsed_ticks / gVblsSinceFlip );
 
 	if( gSpeedSyncEnabled )
 	{
@@ -146,8 +146,8 @@ void FramerateLimiter_Limit()
 
 		if( delay_ticks > 0 )
 		{
-			//printf( "Delay ticks: %d\n", u32( delay_ticks ) );
-			ThreadSleepTicks( delay_ticks );
+			//printf( "Delay ticks: %d\n", delay_ticks );
+			ThreadSleepTicks( delay_ticks & 0xFFFF );
 		}
 
 		NTiming::GetPreciseTime(&now);

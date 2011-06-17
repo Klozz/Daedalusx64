@@ -21,12 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "stdafx.h"
 
 #include "Cheats.h"
-#include "Rom.h"
 #include "Memory.h"
 
-#include "Utility/IO.h"
 #include "OSHLE/ultra_R4300.h"
-
 #include "ConfigOptions.h"
 
 //
@@ -40,7 +37,7 @@ u32		codegroupcount		= 0;
 s32		currentgroupindex	= -1;
 char	current_rom_name[128];
 
-enum { CHEAT_ALL_COUNTRY, CHEAT_USA, CHEAT_JAPAN, CHEAT_USA_AND_JAPAN, CHEAT_EUR, CHEAT_AUS, CHEAT_FR, CHEAT_GER };
+//enum { CHEAT_ALL_COUNTRY, CHEAT_USA, CHEAT_JAPAN, CHEAT_USA_AND_JAPAN, CHEAT_EUR, CHEAT_AUS, CHEAT_FR, CHEAT_GER };
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -296,86 +293,6 @@ static char * tidy(char * s)
 }
 
 //*****************************************************************************
-//
-//*****************************************************************************
-static bool IsCodeMatchRomCountryCode(u32 cheat_country_code, u8 rom_country_code)
-{
-	//
-	// Added by Witten (witten@pj64cheats.net)
-	//
-	switch (cheat_country_code)
-	{
-	case CHEAT_ALL_COUNTRY: // all countries
-		{
-			return true;
-		}
-	case CHEAT_USA: // USA
-		{
-			if (rom_country_code == 0x45) 
-				return true;
-			else
-				return false;
-		}
-	case CHEAT_JAPAN: // JAP
-		{
-			if (rom_country_code == 0x4A)
-				return true;
-			else
-			    return false;
-		}
-	case CHEAT_USA_AND_JAPAN: // USA&JAP
-		{
-			if (rom_country_code == 0x41)
-				return true;
-			else
-			    return false;
-		}
-	case CHEAT_EUR: // Europe
-		{
-			switch(rom_country_code)
-			{
-			case 0x50:
-			case 0x58:
-			case 0x20:
-			case 0x21:
-			case 0x38:
-			case 0x70:
-					return true;
-			default:
-			    return false;
-			}
-		}
-	case CHEAT_AUS: // Australia
-		{
-			if (rom_country_code == 0x55 || 0x59)
-				return true;
-			else
-				return false;
-		}
-		break;
-	case CHEAT_FR: // France
-		{
-			if (rom_country_code == 0x46)
-				return true;
-			else
-				return false;
-		}
-		break;
-	case CHEAT_GER: // Germany
-		{
-			if (rom_country_code == 0x44)
-				return true;
-			else
-				return false;
-		}
-	default :
-		{
-			return false;
-		}
-		break;
-	}
-}
-//*****************************************************************************
 //  I should not need to write such a stupid function to convert String to Int  .
 //	However, the sscanf() function does not work for me to input hex number from input string. 
 //  I spent some time to debug it, no use, so I wrote  this function to do the converting myself. 
@@ -529,21 +446,13 @@ bool CheatCodes_Read(char *rom_name, char *file, u8 countryID)
 			// Codes for the group are in the string line[]
 			for(c1 = 0; line[c1] != '=' && line[c1] != '\0'; c1++) codegrouplist[codegroupcount].name[c1] = line[c1];
 
-			if(codegrouplist[codegroupcount].name[c1 - 2] != ',')
+			if(codegrouplist[codegroupcount].name[c1 - 1] != ',')
 			{
-				codegrouplist[codegroupcount].country = 0;
 				codegrouplist[codegroupcount].name[c1] = '\0';
 			}
 			else
 			{
-				codegrouplist[codegroupcount].country = codegrouplist[codegroupcount].name[c1 - 1] - '0';
-				codegrouplist[codegroupcount].name[c1 - 2] = '\0';
-
-				if(IsCodeMatchRomCountryCode(codegrouplist[codegroupcount].country, countryID) == false)
-				{
-					//printf("Wrong country id %d for cheatcode\n",codegrouplist[codegroupcount].country);
-					continue;
-				}
+				codegrouplist[codegroupcount].name[c1 - 1] = '\0';
 			}
 
 			if(line[c1 + 1] == '"')
@@ -566,12 +475,9 @@ bool CheatCodes_Read(char *rom_name, char *file, u8 countryID)
 
 			codegrouplist[codegroupcount].active = line[c1 + 1] - '0';
 			codegrouplist[codegroupcount].enable = false;
+			codegrouplist[codegroupcount].codecount = 0;
 
 			c1 += 2;
-
-
-			// BUG FIX - Make sure to initialize codecount, otherwise we'll store bogus counts
-			codegrouplist[codegroupcount].codecount = 0;
 
 			for(c2 = 0; c2 < (strlen(line) - c1 - 1) / 14; c2++, codegrouplist[codegroupcount].codecount++)
 			{

@@ -60,6 +60,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 	#define CATCH_NAN_EXCEPTION(op, valX, valY)
 #endif
 
+#ifndef DAEDALUS_SILENT
+inline void CHECK_R0( u32 op )
+{
+	if(gGPR[0]._u64 != 0) 
+	{
+		DBGConsole_Msg(0, "Warning: Attempted write to r0!"); \
+		gGPR[0]._u64 = 0; // Ensure r0 is always zero (easier than trapping writes?)
+		//return;
+	}
+
+	DAEDALUS_ASSERT( op, "Possible attempt to write to r0!");
+}
+#else
+	inline void CHECK_R0( u32 op ) {}
+#endif
+
+
 //
 //	Abstract away the different rounding modes between targets
 //
@@ -625,7 +642,10 @@ static void R4300_CALL_TYPE R4300_CoPro1_Disabled( R4300_CALL_SIGNATURE )
 }
 */
 // These are the only unimplemented R4300 instructions now:
-static void R4300_CALL_TYPE R4300_LL( R4300_CALL_SIGNATURE ) {  WARN_NOIMPL("LL"); }
+static void R4300_CALL_TYPE R4300_LL( R4300_CALL_SIGNATURE ) 
+{ 
+	WARN_NOIMPL("LL"); 
+}
 static void R4300_CALL_TYPE R4300_LLD( R4300_CALL_SIGNATURE ) {  WARN_NOIMPL("LLD"); }
 
 static void R4300_CALL_TYPE R4300_SC( R4300_CALL_SIGNATURE ) {  WARN_NOIMPL("SC"); }
@@ -805,6 +825,8 @@ static void R4300_CALL_TYPE R4300_DADDI( R4300_CALL_SIGNATURE ) 			// Doubleword
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rt );
+
 	// Check for overflow
 	// Reserved Instruction exception
 
@@ -815,6 +837,8 @@ static void R4300_CALL_TYPE R4300_DADDI( R4300_CALL_SIGNATURE ) 			// Doubleword
 static void R4300_CALL_TYPE R4300_DADDIU( R4300_CALL_SIGNATURE ) 			// Doubleword ADD Immediate Unsigned
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rt );
 
 	// Reserved Instruction exception
 
@@ -827,6 +851,8 @@ static void R4300_CALL_TYPE R4300_ADDI( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rt );
+
 	// Generates overflow exception
 
 	//rt = rs + immediate
@@ -837,6 +863,8 @@ static void R4300_CALL_TYPE R4300_ADDIU( R4300_CALL_SIGNATURE ) 		// Add Immedia
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rt );
+
 	//rt = rs + immediate
 	gGPR[op_code.rt]._s64 = (s64)(s32)(gGPR[op_code.rs]._s32_0 + (s32)(s16)op_code.immediate);
 }
@@ -844,6 +872,8 @@ static void R4300_CALL_TYPE R4300_ADDIU( R4300_CALL_SIGNATURE ) 		// Add Immedia
 static void R4300_CALL_TYPE R4300_SLTI( R4300_CALL_SIGNATURE ) 			// Set on Less Than Immediate
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rt );
 
 	// Cast to s32s to ensure sign is taken into account
 	if (gGPR[op_code.rs]._s64 < (s64)(s32)(s16)op_code.immediate)
@@ -864,6 +894,8 @@ static void R4300_CALL_TYPE R4300_SLTIU( R4300_CALL_SIGNATURE ) 		// Set on Less
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rt );
+
 	// Cast to s32s to ensure sign is taken into account
 	if (gGPR[op_code.rs]._u64 < (u64)(s64)(s32)(s16)op_code.immediate)
 	{
@@ -880,6 +912,8 @@ static void R4300_CALL_TYPE R4300_ANDI( R4300_CALL_SIGNATURE ) 				// AND Immedi
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rt );
+
 	//rt = rs & immediate
 	gGPR[op_code.rt]._u64 = gGPR[op_code.rs]._u64 & (u64)(u16)op_code.immediate;
 }
@@ -889,6 +923,8 @@ static void R4300_CALL_TYPE R4300_ORI( R4300_CALL_SIGNATURE ) 				// OR Immediat
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rt );
+
 	//rt = rs | immediate
 	gGPR[op_code.rt]._u64 = gGPR[op_code.rs]._u64 | (u64)(u16)op_code.immediate;
 }
@@ -897,6 +933,8 @@ static void R4300_CALL_TYPE R4300_XORI( R4300_CALL_SIGNATURE ) 				// XOR Immedi
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rt );
+
 	//rt = rs ^ immediate
 	gGPR[op_code.rt]._u64 = gGPR[op_code.rs]._u64 ^ (u64)(u16)op_code.immediate;
 }
@@ -904,6 +942,8 @@ static void R4300_CALL_TYPE R4300_XORI( R4300_CALL_SIGNATURE ) 				// XOR Immedi
 static void R4300_CALL_TYPE R4300_LUI( R4300_CALL_SIGNATURE ) 				// Load Upper Immediate
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rt );
 
 	gGPR[op_code.rt]._s64 = (s64)(s32)((s32)(s16)op_code.immediate<<16);
 }
@@ -998,6 +1038,8 @@ static void R4300_CALL_TYPE R4300_LB( R4300_CALL_SIGNATURE ) 			// Load Byte
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rt );
+
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 
 	gGPR[op_code.rt]._s64 = (s64)(s8)Read8Bits(address);
@@ -1006,6 +1048,8 @@ static void R4300_CALL_TYPE R4300_LB( R4300_CALL_SIGNATURE ) 			// Load Byte
 static void R4300_CALL_TYPE R4300_LBU( R4300_CALL_SIGNATURE ) 			// Load Byte Unsigned -- Zero extend byte...
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rt );
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate);
 
@@ -1016,6 +1060,8 @@ static void R4300_CALL_TYPE R4300_LH( R4300_CALL_SIGNATURE ) 		// Load Halfword
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rt );
+
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	gGPR[op_code.rt]._s64 = (s64)(s16)Read16Bits(address);
 }
@@ -1023,6 +1069,8 @@ static void R4300_CALL_TYPE R4300_LH( R4300_CALL_SIGNATURE ) 		// Load Halfword
 static void R4300_CALL_TYPE R4300_LHU( R4300_CALL_SIGNATURE )			// Load Halfword Unsigned -- Zero extend word
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rt );
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 
@@ -1033,6 +1081,8 @@ static void R4300_CALL_TYPE R4300_LHU( R4300_CALL_SIGNATURE )			// Load Halfword
 static void R4300_CALL_TYPE R4300_LWL( R4300_CALL_SIGNATURE ) 			// Load Word Left
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rt );
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	u32 nMemory = Read32Bits(address & ~0x3);
@@ -1054,6 +1104,8 @@ static void R4300_CALL_TYPE R4300_LWL( R4300_CALL_SIGNATURE ) 			// Load Word Le
 static void R4300_CALL_TYPE R4300_LDL( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rt );
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	u64 nMemory = Read64Bits(address & ~0x7);
@@ -1080,6 +1132,8 @@ static void R4300_CALL_TYPE R4300_LWR( R4300_CALL_SIGNATURE ) 			// Load Word Ri
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rt );
+
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	u32 nMemory = Read32Bits(address & ~0x3);
 
@@ -1101,6 +1155,8 @@ static void R4300_CALL_TYPE R4300_LWR( R4300_CALL_SIGNATURE ) 			// Load Word Ri
 static void R4300_CALL_TYPE R4300_LDR( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rt );
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	u64 nMemory = Read64Bits(address & ~0x7);
@@ -1127,6 +1183,15 @@ static void R4300_CALL_TYPE R4300_LW( R4300_CALL_SIGNATURE ) 			// Load Word
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rt );
+
+	// This is for San Francisco 2049. An R0 errg.. otherwise it crashes when the race is about to start.
+	if (op_code.rt == 0) 
+	{
+		DAEDALUS_ERROR("Attempted write to r0!");
+		return;	// I think is better to trap it than override it
+	}
+
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	gGPR[op_code.rt]._s64 = (s64)(s32)Read32Bits(address);
 }
@@ -1134,6 +1199,8 @@ static void R4300_CALL_TYPE R4300_LW( R4300_CALL_SIGNATURE ) 			// Load Word
 static void R4300_CALL_TYPE R4300_LWU( R4300_CALL_SIGNATURE ) 			// Load Word Unsigned
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rt );
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	gGPR[op_code.rt]._u64 = (u64)(u32)Read32Bits(address);
@@ -1308,6 +1375,8 @@ static void R4300_CALL_TYPE R4300_LD( R4300_CALL_SIGNATURE ) 				// Load Doublew
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rt );
+
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	gGPR[op_code.rt]._u64 = Read64Bits(address);
 }
@@ -1359,12 +1428,16 @@ static void R4300_CALL_TYPE R4300_Special_SLL( R4300_CALL_SIGNATURE ) 		// Shift
 	// NOP!
 	if ( op_code._u32 == 0 ) return;
 
+	CHECK_R0( op_code.rd );
+
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( (gGPR[ op_code.rt ]._u32_0 << op_code.sa) & 0xFFFFFFFF );
 }
 
 static void R4300_CALL_TYPE R4300_Special_SRL( R4300_CALL_SIGNATURE ) 		// Shift word Right Logical
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rd );
 
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rt ]._u32_0 >> op_code.sa );
 }
@@ -1373,12 +1446,16 @@ static void R4300_CALL_TYPE R4300_Special_SRA( R4300_CALL_SIGNATURE ) 		// Shift
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rd );
+
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rt ]._s32_0 >> op_code.sa );
 }
 
 static void R4300_CALL_TYPE R4300_Special_SLLV( R4300_CALL_SIGNATURE ) 		// Shift word Left Logical Variable
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rd );
 
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( (gGPR[ op_code.rt ]._u32_0 << ( gGPR[ op_code.rs ]._u32_0 & 0x1F ) ) & 0xFFFFFFFF );
 }
@@ -1387,12 +1464,16 @@ static void R4300_CALL_TYPE R4300_Special_SRLV( R4300_CALL_SIGNATURE ) 		// Shif
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rd );
+
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rt ]._u32_0 >> ( gGPR[ op_code.rs ]._u32_0 & 0x1F ) );
 }
 
 static void R4300_CALL_TYPE R4300_Special_SRAV( R4300_CALL_SIGNATURE ) 		// Shift word Right Arithmetic Variable
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rd );
 
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rt ]._s32_0 >> ( gGPR[ op_code.rs ]._u32_0 & 0x1F ) );
 }
@@ -1447,6 +1528,8 @@ static void R4300_CALL_TYPE R4300_Special_MFHI( R4300_CALL_SIGNATURE ) 			// Mov
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rd );
+
 	gGPR[ op_code.rd ]._u64 = gCPUState.MultHi._u64;
 }
 
@@ -1460,6 +1543,8 @@ static void R4300_CALL_TYPE R4300_Special_MTHI( R4300_CALL_SIGNATURE ) 			// Mov
 static void R4300_CALL_TYPE R4300_Special_MFLO( R4300_CALL_SIGNATURE ) 			// Move From MultLO
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rd );
 
 	gGPR[ op_code.rd ]._u64 = gCPUState.MultLo._u64;
 }
@@ -1476,6 +1561,8 @@ static void R4300_CALL_TYPE R4300_Special_DSLLV( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rd );
+
 	// Reserved Instruction exception
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 << ( gGPR[ op_code.rs ]._u32_0 & 0x3F );
 }
@@ -1483,6 +1570,8 @@ static void R4300_CALL_TYPE R4300_Special_DSLLV( R4300_CALL_SIGNATURE )
 static void R4300_CALL_TYPE R4300_Special_DSRLV( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rd );
 
 	// Reserved Instruction exception
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 >> ( gGPR[ op_code.rs ]._u32_0 & 0x3F );
@@ -1492,6 +1581,8 @@ static void R4300_CALL_TYPE R4300_Special_DSRLV( R4300_CALL_SIGNATURE )
 static void R4300_CALL_TYPE R4300_Special_DSRAV( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rd );
 
 	// Reserved Instruction exception
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._s64 >> ( gGPR[ op_code.rs ]._u32_0 & 0x3F );
@@ -1598,6 +1689,8 @@ static void R4300_CALL_TYPE R4300_Special_ADD( R4300_CALL_SIGNATURE ) 			// ADD 
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rd );
+
 	// Can generate overflow exception
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rs ]._s32_0 + gGPR[ op_code.rt ]._s32_0 );
 }
@@ -1606,12 +1699,16 @@ static void R4300_CALL_TYPE R4300_Special_ADDU( R4300_CALL_SIGNATURE ) 			// ADD
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rd );
+
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rs ]._s32_0 + gGPR[ op_code.rt ]._s32_0 );
 }
 
 static void R4300_CALL_TYPE R4300_Special_SUB( R4300_CALL_SIGNATURE ) 			// SUB Signed - may throw exception
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rd );
 
 	// Can generate overflow exception
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rs ]._s32_0 - gGPR[ op_code.rt ]._s32_0 );
@@ -1622,12 +1719,16 @@ static void R4300_CALL_TYPE R4300_Special_SUBU( R4300_CALL_SIGNATURE ) 			// SUB
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rd );
+
 	gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rs ]._s32_0 - gGPR[ op_code.rt ]._s32_0 );
 }
 
 static void R4300_CALL_TYPE R4300_Special_AND( R4300_CALL_SIGNATURE ) 				// logical AND
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rd );
 
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 & gGPR[ op_code.rt ]._u64;
 }
@@ -1636,12 +1737,16 @@ static void R4300_CALL_TYPE R4300_Special_OR( R4300_CALL_SIGNATURE ) 				// logi
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rd );
+
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 | gGPR[ op_code.rt ]._u64;
 }
 
 static void R4300_CALL_TYPE R4300_Special_XOR( R4300_CALL_SIGNATURE ) 				// logical XOR
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rd );
 
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 ^ gGPR[ op_code.rt ]._u64;
 }
@@ -1650,12 +1755,16 @@ static void R4300_CALL_TYPE R4300_Special_NOR( R4300_CALL_SIGNATURE ) 				// log
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rd );
+
 	gGPR[ op_code.rd ]._u64 = ~( gGPR[ op_code.rs ]._u64 | gGPR[ op_code.rt ]._u64 );
 }
 
 static void R4300_CALL_TYPE R4300_Special_SLT( R4300_CALL_SIGNATURE ) 				// Set on Less Than
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rd );
 
 	// Cast to s32s to ensure sign is taken into account
 	if ( gGPR[ op_code.rs ]._s64 < gGPR[ op_code.rt ]._s64 )
@@ -1671,6 +1780,8 @@ static void R4300_CALL_TYPE R4300_Special_SLT( R4300_CALL_SIGNATURE ) 				// Set
 static void R4300_CALL_TYPE R4300_Special_SLTU( R4300_CALL_SIGNATURE ) 				// Set on Less Than Unsigned
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rd );
 
 	// Treated as unsigned....
 	if ( gGPR[ op_code.rs ]._u64 < gGPR[ op_code.rt ]._u64 )
@@ -1689,6 +1800,8 @@ static void R4300_CALL_TYPE R4300_Special_DADD( R4300_CALL_SIGNATURE )//CYRUS64
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rd );
+
 	//gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 + gGPR[ op_code.rs ]._u64;
 	gGPR[ op_code.rd ]._s64 = (s64)( gGPR[ op_code.rt ]._s32_0 + gGPR[ op_code.rs ]._s32_0 );
 
@@ -1697,6 +1810,8 @@ static void R4300_CALL_TYPE R4300_Special_DADD( R4300_CALL_SIGNATURE )//CYRUS64
 static void R4300_CALL_TYPE R4300_Special_DADDU( R4300_CALL_SIGNATURE )//CYRUS64
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rd );
 
 	//gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 + gGPR[ op_code.rs ]._u64;
 	gGPR[ op_code.rd ]._s64 = (s64)( gGPR[ op_code.rt ]._s32_0 + gGPR[ op_code.rs ]._s32_0 ); //BUG FIX for Excite Bike - Salvy
@@ -1707,6 +1822,8 @@ static void R4300_CALL_TYPE R4300_Special_DSUB( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rd );
+
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 - gGPR[ op_code.rs ]._u64;
 }
 
@@ -1714,12 +1831,16 @@ static void R4300_CALL_TYPE R4300_Special_DSUBU( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rd );
+
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 - gGPR[ op_code.rs ]._u64;
 }
 
 static void R4300_CALL_TYPE R4300_Special_DSLL( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rd );
 
 	// Reserved Instruction exception
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 << op_code.sa;
@@ -1729,6 +1850,8 @@ static void R4300_CALL_TYPE R4300_Special_DSRL( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rd );
+
 	// Reserved Instruction exception
     gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 >> op_code.sa;
 }
@@ -1736,6 +1859,8 @@ static void R4300_CALL_TYPE R4300_Special_DSRL( R4300_CALL_SIGNATURE )
 static void R4300_CALL_TYPE R4300_Special_DSRA( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rd );
 
 	// Reserved Instruction exception
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._s64 >> op_code.sa;
@@ -1745,6 +1870,8 @@ static void R4300_CALL_TYPE R4300_Special_DSLL32( R4300_CALL_SIGNATURE ) 			// D
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rd );
+
 	// Reserved Instruction exception
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 << ( 32 + op_code.sa );
 }
@@ -1753,6 +1880,8 @@ static void R4300_CALL_TYPE R4300_Special_DSRL32( R4300_CALL_SIGNATURE ) 			// D
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rd );
+
 	// Reserved Instruction exception
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._u64 >> ( 32 + op_code.sa );
 }
@@ -1760,6 +1889,8 @@ static void R4300_CALL_TYPE R4300_Special_DSRL32( R4300_CALL_SIGNATURE ) 			// D
 static void R4300_CALL_TYPE R4300_Special_DSRA32( R4300_CALL_SIGNATURE ) 			// Double Shift Right Arithmetic 32
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rd );
 
 	// Reserved Instruction exception
 	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rt ]._s64 >> ( 32 + op_code.sa );
@@ -1925,6 +2056,8 @@ static void R4300_CALL_TYPE R4300_Cop0_MFC0( R4300_CALL_SIGNATURE )
 	}
 	else	// Should we handle C0_COUNT??
 	{
+		CHECK_R0( op_code.rt );
+
 		// No specific handling needs for reads to these registers.
 		gGPR[ op_code.rt ]._s64 = (s64)gCPUState.CPUControl[ op_code.fs ]._s32_0;
 	}
@@ -2186,6 +2319,8 @@ static void R4300_CALL_TYPE R4300_Cop1_MFC1( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rt );
+
 	// MFC1 in the manual says this is a sign-extended result
 	gGPR[ op_code.rt ]._s64 = (s64)(s32)LoadFPR_Word( op_code.fs );
 
@@ -2195,6 +2330,8 @@ static void R4300_CALL_TYPE R4300_Cop1_DMFC1( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
+	CHECK_R0( op_code.rt );
+
 	gGPR[ op_code.rt ]._s64 = LoadFPR_Long( op_code.fs );
 }
 
@@ -2202,6 +2339,8 @@ static void R4300_CALL_TYPE R4300_Cop1_DMFC1( R4300_CALL_SIGNATURE )
 static void R4300_CALL_TYPE R4300_Cop1_CFC1( R4300_CALL_SIGNATURE ) 		// move Control word From Copro 1
 {
 	R4300_CALL_MAKE_OP( op_code );
+
+	CHECK_R0( op_code.rt );
 
 	// Only defined for reg 0 or 31
 	if ( op_code.fs == 0 || op_code.fs == 31 )
@@ -2441,9 +2580,16 @@ static void R4300_CALL_TYPE R4300_Cop1_S_DIV( R4300_CALL_SIGNATURE )
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
+	// Should we handle if /0? GoldenEye007 and Exitebike does this.
+	// Not sure if is worth to handle this, I have yet to see a game that fails due this..
+#ifndef DAEDALUS_SILENT
+	if ( fDivisor == 0 )
+	{
+		DAEDALUS_ERROR("Float divide by zero");
+		//fDivisor = 1;
+	}
+#endif
 	// Causes excitebike to freeze when entering the menu
-	// Should we handle if /0?
-	//
 	/*if ( fDivisor == 0 )
 	{
 		if ( gCPUState.FPUControl[ 31 ]._u32_0 & FPCSR_EZ )
@@ -2985,6 +3131,13 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_DIV( R4300
 	d64 fDividend = LoadFPR_Double< FullLength >( op_code.fs );
 	d64 fDivisor = LoadFPR_Double< FullLength >( op_code.ft );
 
+#ifndef DAEDALUS_SILENT
+	if ( fDivisor == 0 )
+	{
+		DAEDALUS_ERROR("Double divide by zero");
+		//fDivisor = 1;
+	}
+#endif
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
 	StoreFPR_Double< FullLength >( op_code.fd,  fDividend / fDivisor );

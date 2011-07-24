@@ -40,12 +40,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 #define	R4300_CALL_MAKE_OP( var )	OpCode	var;	var._u32 = op_code_bits
 
-#define INSTR_TARGET		( (gCPUState.CurrentPC & 0xF0000000) | (op_code.target<<2) )
-#define OFFSET_IMMEDIATE	((s16)(op_code.immediate))
-
-// Cheat to avoid int long long, let's see how it goes..
-#define STORE_LINK(X)	{ gGPR[X]._s32_0 = (s32)(gCPUState.CurrentPC + 8 ); } 
-
 //*************************************************************************************
 //
 //*************************************************************************************
@@ -143,149 +137,99 @@ inline void SpeedHack( u32 pc, OpCode op )
 //		MTC1/MFC1/DMTC1/DMFC1	are unformatted, so no exceptions raised
 //		Word accessed must be 4 byte aligned, DWord accesses must be 8 byte aligned
 //
-
 //*****************************************************************************
 //
 //*****************************************************************************
-template< bool FullLength > inline void StoreFPR_LongT( u32 reg, u64 value )
-{
-	if( FullLength )
-	{
-		gCPUState.FPU[reg]._u64 = value;
-	}
-	else
-	{
-		REG64	r;
-		r._u64 = value;
-
-		// TODO - Don't think these need sign extending...
-		gCPUState.FPU[reg+0]._u32_0 = r._u32_0;
-		gCPUState.FPU[reg+1]._u32_0 = r._u32_1;
-	}
-}
-
 inline void StoreFPR_Long( u32 reg, u64 value )
 {
-	if (gCPUState.CPUControl[C0_SR]._u32_0 & SR_FR)
-	{
-		StoreFPR_LongT<true>( reg, value );
-	}
-	else
-	{
-		StoreFPR_LongT<false>( reg, value );
-	}
+	REG64	r;
+	r._u64 = value;
+		
+	// TODO - Don't think these need sign extending...
+	gCPUState.FPU[reg+0]._u32_0 = r._u32_0;
+	gCPUState.FPU[reg+1]._u32_0 = r._u32_1;
 }
 
 #define SIMULATESIG 0x12345678
+//*****************************************************************************
+//
+//*****************************************************************************
+inline u64 LoadFPR_Long( u32 reg )
+{
+	REG64 res;
+
+	res._u32_1 = gCPUState.FPU[reg+1]._u32_0;
+	res._u32_0 = gCPUState.FPU[reg+0]._u32_0;
+
+	// Disabled, looks suspicious to me, I don't think it does what we want here? ~Salvy
+	/*if (res._u64_sim == SIMULATESIG)
+	{
+		res._f64 = (f64)res._f64_sim;
+	}*/
+
+	return res._u64;
+}
 
 //*****************************************************************************
 //
 //*****************************************************************************
-inline s64 LoadFPR_Long( u32 reg )
+inline d64 LoadFPR_Double( u32 reg )
 {
-	if (gCPUState.CPUControl[C0_SR]._u32_0 & SR_FR)
-	{
-		if (gCPUState.FPU[reg]._f64_unused == SIMULATESIG)
-		{
-			REG64 res;
-			res._f64 = (f64)gCPUState.FPU[reg]._f64_sim;
+	REG64 res;
 
-			return res._s64;
-		}
-		else
-			return gCPUState.FPU[reg]._s64;
-	}
-	else
-	{
-		REG64 res;
+	res._u32_1 = gCPUState.FPU[reg+1]._u32_0;
+	res._u32_0 = gCPUState.FPU[reg+0]._u32_0;
 
-		res._u32_1 = gCPUState.FPU[reg+1]._u32_0;
-		res._u32_0 = gCPUState.FPU[reg+0]._u32_0;
-
-		if (res._f64_unused == SIMULATESIG)
-		{
-			res._f64 = (f64)res._f64_sim;
-		}
-
-		return res._s64;
-	}
-}
-
-template< bool FullLength > __forceinline d64 LoadFPR_Double( u32 reg )
-{
-
-	REG64 regs;
-	if( FullLength )
-	{
-		regs._u64 =  gCPUState.FPU[reg]._u64;
-	}
-	else
-	{
-		regs._u32_1 = gCPUState.FPU[reg+1]._u32_0;
-		regs._u32_0 = gCPUState.FPU[reg+0]._u32_0;
-	}
-
-	if (regs._f64_unused == SIMULATESIG)
+	if (res._u64_sim == SIMULATESIG)
 	{
 		// converted
-		return (d64)regs._f64_sim;
+		return (d64)res._f64_sim;
 	}
 	else
 	{
-		return (d64)regs._f64;
+		return (d64)res._f64;
 	}
-
 }
 
-template< bool FullLength > __forceinline void StoreFPR_Double( u32 reg, d64 value )
+//*****************************************************************************
+//
+//*****************************************************************************
+inline void StoreFPR_Double( u32 reg, d64 value )
 {
-	
-	REG64	r;
-	r._f64_unused = SIMULATESIG;
+	REG64 r; 
+	r._u64_sim = SIMULATESIG;
 	r._f64_sim = f32( value );
 
-	if( FullLength )
+	// This fixes Mario Party's draft mini game.
+	// And green / static textures bug in Conker.
+	if(gSimulateDoubleDisabled)
 	{
-		gCPUState.FPU[reg]._u64 = r._u64;
-	}
-	else
-	{
-		if(gSimulateDoubleDisabled)
-		{
-			r._f64 = f32( value );	// This fixes Mario Party's draft mini game.
-		}
-
-		gCPUState.FPU[reg+0]._u32_0 = r._u32_0;
-		gCPUState.FPU[reg+1]._u32_0 = r._u32_1;
+		r._f64 = f32( value );	
 	}
 
+	gCPUState.FPU[reg+0]._u32_0 = r._u32_0;
+	gCPUState.FPU[reg+1]._u32_0 = r._u32_1;
 }
 
+//*****************************************************************************
+//
+//*****************************************************************************
 // This might seen rebundant, but we have to include it otherwise buck bumble will not work with simulate doubles
 // The reasons : won't work with float and needs double type for value << really important !
 // Check R4300_Cop1_D_ADD for reference.
 //
-template< bool FullLength > __forceinline void StoreFPR_Double_2( u32 reg, b64 value )
+// ToDO : Simplify this or find a workaround for this hack..
+inline void StoreFPR_Double_2( u32 reg, b64 value )
 {
-	
 	REG64	r;
-	r._f64_unused = SIMULATESIG;
-	r._f64_sim = f32( value );
+	r._f64 = f64( value );	// double.. float won't work for buck bumble
 
-	if( FullLength )
-	{
-		gCPUState.FPU[reg]._u64 = r._u64;
-	}
-	else
-	{		
-		r._f64 = f64( value );	// double.. float won't work for buck bumble
-
-		// TODO - Don't think these need sign extending...
-		gCPUState.FPU[reg+0]._u32_0 = r._u32_0;
-		gCPUState.FPU[reg+1]._u32_0 = r._u32_1;
-	}
+	// TODO - Don't think these need sign extending...
+	gCPUState.FPU[reg+0]._u32_0 = r._u32_0;
+	gCPUState.FPU[reg+1]._u32_0 = r._u32_1;
 
 }
+
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -715,11 +659,12 @@ static void R4300_CALL_TYPE R4300_J( R4300_CALL_SIGNATURE ) 				// Jump
 
 	u32 new_pc( (gCPUState.CurrentPC & 0xF0000000) | (op_code.target<<2) );
 
-	if( new_pc == gCPUState.CurrentPC )
+	// Doesn't do anything.. should be gCPUState.CurrentPC == gCPUState.TargetPC, but breaks PMario for some reasons
+	/*if( new_pc == gCPUState.CurrentPC )
 	{
 		SpeedHack( gCPUState.CurrentPC, op_code );
-	}
-	CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+	}*/
+	CPU_TakeBranch( new_pc );
 }
 
 static void R4300_CALL_TYPE R4300_JAL( R4300_CALL_SIGNATURE ) 				// Jump And Link
@@ -727,11 +672,10 @@ static void R4300_CALL_TYPE R4300_JAL( R4300_CALL_SIGNATURE ) 				// Jump And Li
 	R4300_CALL_MAKE_OP( op_code );
 
 	// Store return address
-	STORE_LINK(REG_ra);
+	gGPR[REG_ra]._s64 = (s64)(s32)(gCPUState.CurrentPC + 8);		// Store return address
+	u32	new_pc( (gCPUState.CurrentPC & 0xF0000000) | (op_code.target<<2) );
 
-	u32 new_pc = INSTR_TARGET;
-
-	CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+	CPU_TakeBranch( new_pc );
 }
 
 static void R4300_CALL_TYPE R4300_BEQ( R4300_CALL_SIGNATURE ) 		// Branch on Equal
@@ -751,7 +695,7 @@ static void R4300_CALL_TYPE R4300_BEQ( R4300_CALL_SIGNATURE ) 		// Branch on Equ
 		}
 
 		u32 new_pc( gCPUState.CurrentPC + ((s32)offset<<2) + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 }
 
@@ -772,7 +716,7 @@ static void R4300_CALL_TYPE R4300_BNE( R4300_CALL_SIGNATURE )             // Bra
 		}
 
 		u32	new_pc( gCPUState.CurrentPC + ((s32)offset<<2) + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 }
 
@@ -794,7 +738,7 @@ static void R4300_CALL_TYPE R4300_BLEZ( R4300_CALL_SIGNATURE ) 			// Branch on L
 		}
 
 		u32	new_pc( gCPUState.CurrentPC + ((s32)offset<<2) + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 }
 
@@ -816,7 +760,7 @@ static void R4300_CALL_TYPE R4300_BGTZ( R4300_CALL_SIGNATURE ) 			// Branch on G
 		}
 
 		u32 new_pc( gCPUState.CurrentPC + ((s32)offset<<2) + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 }
 
@@ -963,7 +907,7 @@ static void R4300_CALL_TYPE R4300_BEQL( R4300_CALL_SIGNATURE ) 			// Branch on E
 		}
 
 		u32	new_pc( gCPUState.CurrentPC + ((s32)offset<<2) + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 	else
 	{
@@ -987,7 +931,7 @@ static void R4300_CALL_TYPE R4300_BNEL( R4300_CALL_SIGNATURE ) 			// Branch on N
 		}
 
 		u32	new_pc( gCPUState.CurrentPC + ((s32)offset<<2) + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 	else
 	{
@@ -1008,7 +952,7 @@ static void R4300_CALL_TYPE R4300_BLEZL( R4300_CALL_SIGNATURE ) 		// Branch on L
 			SpeedHack( gCPUState.CurrentPC, op_code );
 		}
 		u32	new_pc( gCPUState.CurrentPC + ((s32)(s16)op_code.immediate<<2) + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 	else
 	{
@@ -1025,7 +969,7 @@ static void R4300_CALL_TYPE R4300_BGTZL( R4300_CALL_SIGNATURE ) 		// Branch on G
 	if ( gGPR[op_code.rs]._s64 > 0 )
 	{
 		u32	new_pc( gCPUState.CurrentPC + ((s32)(s16)op_code.immediate<<2) + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 	else
 	{
@@ -1484,7 +1428,7 @@ static void R4300_CALL_TYPE R4300_Special_JR( R4300_CALL_SIGNATURE ) 			// Jump 
 
 	u32	new_pc( gGPR[ op_code.rs ]._u32_0 );
 
-	CPU_TakeBranch( new_pc, CPU_BRANCH_INDIRECT );
+	CPU_TakeBranch( new_pc );
 }
 
 
@@ -1495,10 +1439,9 @@ static void R4300_CALL_TYPE R4300_Special_JALR( R4300_CALL_SIGNATURE ) 		// Jump
 	// Jump And Link
 	u32	new_pc( gGPR[ op_code.rs ]._u32_0 );
 
-	// Store return address
-	STORE_LINK( op_code.rd );
+	gGPR[ op_code.rd ]._s64 = (s64)(s32)(gCPUState.CurrentPC + 8);		// Store return address;
 
-	CPU_TakeBranch( new_pc, CPU_BRANCH_INDIRECT );
+	CPU_TakeBranch( new_pc );
 }
 
 
@@ -1924,7 +1867,7 @@ static void R4300_CALL_TYPE R4300_RegImm_BLTZ( R4300_CALL_SIGNATURE ) 			// Bran
 		}
 
 		u32	new_pc( gCPUState.CurrentPC + ((s32)offset<<2) + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 }
 
@@ -1936,7 +1879,7 @@ static void R4300_CALL_TYPE R4300_RegImm_BLTZL( R4300_CALL_SIGNATURE ) 			// Bra
 	if ( gGPR[ op_code.rs ]._s64 < 0 )
 	{
 		u32	new_pc( gCPUState.CurrentPC + ((s32)(s16)op_code.immediate<<2) + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 	else
 	{
@@ -1953,12 +1896,12 @@ static void R4300_CALL_TYPE R4300_RegImm_BLTZAL( R4300_CALL_SIGNATURE ) 		// Bra
 	// Store the return address even if branch not taken
 
 	// Store return address
-	STORE_LINK( REG_ra );
+	gGPR[REG_ra]._s64 = (s64)(s32)(gCPUState.CurrentPC + 8);		// Store return address	
 
 	if ( gGPR[ op_code.rs ]._s64 < 0 )
 	{
 		u32	new_pc( gCPUState.CurrentPC + ((s32)(s16)op_code.immediate<<2) + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 }
 
@@ -1977,7 +1920,7 @@ static void R4300_CALL_TYPE R4300_RegImm_BGEZ( R4300_CALL_SIGNATURE ) 			// Bran
 		}
 
 		u32	new_pc( gCPUState.CurrentPC + ((s32)offset<<2) + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 }
 
@@ -1989,7 +1932,7 @@ static void R4300_CALL_TYPE R4300_RegImm_BGEZL( R4300_CALL_SIGNATURE ) 			// Bra
 	if ( gGPR[ op_code.rs ]._s64 >= 0 )
 	{
 		u32	new_pc( gCPUState.CurrentPC + ((s32)(s16)op_code.immediate<<2) + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 	else
 	{
@@ -2005,13 +1948,12 @@ static void R4300_CALL_TYPE R4300_RegImm_BGEZAL( R4300_CALL_SIGNATURE ) 		// Bra
 	//branch if rs >= 0
 	// This always happens, even if branch not taken
 
-	// Store return address
-	STORE_LINK( REG_ra );
+	gGPR[REG_ra]._s64 = (s64)(s32)(gCPUState.CurrentPC + 8);		// Store return address	
 
 	if ( gGPR[ op_code.rs ]._s64 >= 0 )
 	{
 		u32	new_pc( gCPUState.CurrentPC + ((s32)(s16)op_code.immediate<<2) + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 }
 
@@ -2397,7 +2339,7 @@ static void R4300_CALL_TYPE R4300_BC1_BC1F( R4300_CALL_SIGNATURE )		// Branch on
 	if ( !(gCPUState.FPUControl[31]._u64 & FPCSR_C) )
 	{
 		u32	new_pc( gCPUState.CurrentPC + (s32)(s16)op_code.immediate*4 + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 }
 
@@ -2408,7 +2350,7 @@ static void R4300_CALL_TYPE R4300_BC1_BC1T( R4300_CALL_SIGNATURE )	// Branch on 
 	if ( gCPUState.FPUControl[31]._u64 & FPCSR_C )
 	{
 		u32	new_pc( gCPUState.CurrentPC + (s32)(s16)op_code.immediate*4 + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 }
 
@@ -2419,7 +2361,7 @@ static void R4300_CALL_TYPE R4300_BC1_BC1FL( R4300_CALL_SIGNATURE )	// Branch on
 	if ( !(gCPUState.FPUControl[31]._u64 & FPCSR_C) )
 	{
 		u32	new_pc( gCPUState.CurrentPC + (s32)(s16)op_code.immediate*4 + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 	else
 	{
@@ -2435,7 +2377,7 @@ static void R4300_CALL_TYPE R4300_BC1_BC1TL( R4300_CALL_SIGNATURE )		// Branch o
 	if ( gCPUState.FPUControl[31]._u64 & FPCSR_C )
 	{
 		u32	new_pc( gCPUState.CurrentPC + (s32)(s16)op_code.immediate*4 + 4 );
-		CPU_TakeBranch( new_pc, CPU_BRANCH_DIRECT );
+		CPU_TakeBranch( new_pc );
 	}
 	else
 	{
@@ -2476,10 +2418,7 @@ static void R4300_CALL_TYPE R4300_Cop1_W_CVT_D( R4300_CALL_SIGNATURE )
 
 	// Convert using current rounding mode?
 
-	if (gCPUState.CPUControl[C0_SR]._u32_0 & SR_FR)
-		StoreFPR_Double<true>( op_code.fd, s32_to_d64( nTemp ) );
-	else
-		StoreFPR_Double<false>( op_code.fd, s32_to_d64( nTemp ) );
+	StoreFPR_Double( op_code.fd, s32_to_d64( nTemp ) );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -2511,10 +2450,7 @@ static void R4300_CALL_TYPE R4300_Cop1_L_CVT_D( R4300_CALL_SIGNATURE )
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	if (gCPUState.CPUControl[C0_SR]._u32_0 & SR_FR)
-		StoreFPR_Double<true>( op_code.fd, s64_to_d64( nTemp ) );
-	else
-		StoreFPR_Double<false>( op_code.fd, s64_to_d64( nTemp ) );
+	StoreFPR_Double( op_code.fd, s64_to_d64( nTemp ) );
 }
 
 
@@ -2763,11 +2699,7 @@ static void R4300_CALL_TYPE R4300_Cop1_S_CVT_D( R4300_CALL_SIGNATURE )
 
 	f32 fX = LoadFPR_Single( op_code.fs );
 
-
-	if (gCPUState.CPUControl[C0_SR]._u32_0 & SR_FR)
-		StoreFPR_Double<true>( op_code.fd, f32_to_d64( fX ) );
-	else
-		StoreFPR_Double<false>( op_code.fd, f32_to_d64( fX ) );
+	StoreFPR_Double( op_code.fd, f32_to_d64( fX ) );
 }
 
 
@@ -3059,77 +2991,73 @@ static void R4300_CALL_TYPE R4300_Cop1_S_OLT( R4300_CALL_SIGNATURE )
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_Unk( R4300_CALL_SIGNATURE )		{ WARN_NOEXIST("R4300_Cop1_D_Unk"); }
+static void R4300_CALL_TYPE R4300_Cop1_D_Unk( R4300_CALL_SIGNATURE )		{ WARN_NOEXIST("R4300_Cop1_D_Unk"); }
 
 
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ABS( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_ABS( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
+	d64 fX = LoadFPR_Double( op_code.fs );
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Double< FullLength >( op_code.fd, pspFpuAbs(fX) );
+	StoreFPR_Double( op_code.fd, pspFpuAbs(fX) );
 }
 
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ADD( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_ADD( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
 	// fd = fs+ft
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
 	if (gSimulateDoubleDisabled)
 	{
-		// Use doubles.. "hack" for Buck Bumble
-		b64 fM = LoadFPR_Double< FullLength >( op_code.fs );
-		b64 fN = LoadFPR_Double< FullLength >( op_code.ft );
-
-		StoreFPR_Double_2< FullLength >( op_code.fd, fM + fN );
+		StoreFPR_Double_2( op_code.fd, (f64)fX + (f64)fY );
 	}
 	else
 	{
-		StoreFPR_Double< FullLength >( op_code.fd, fX + fY );
-
+		StoreFPR_Double( op_code.fd, fX + fY );
 	}
+
 }
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_SUB( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_SUB( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
 	// fd = fs-ft
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Double< FullLength >( op_code.fd, fX - fY );
+	StoreFPR_Double( op_code.fd, fX - fY );
 }
 
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_MUL( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_MUL( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
 	// fd = fs*ft
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Double< FullLength >( op_code.fd, fX * fY );
+	StoreFPR_Double( op_code.fd, fX * fY );
 }
 
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_DIV( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_DIV( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
 	// fd = fs/ft
-	d64 fDividend = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fDivisor = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fDividend = LoadFPR_Double( op_code.fs );
+	d64 fDivisor = LoadFPR_Double( op_code.ft );
 
 #ifndef DAEDALUS_SILENT
 	if ( fDivisor == 0 )
@@ -3140,133 +3068,133 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_DIV( R4300
 #endif
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Double< FullLength >( op_code.fd,  fDividend / fDivisor );
+	StoreFPR_Double( op_code.fd,  fDividend / fDivisor );
 }
 
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_SQRT( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_SQRT( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
 	// fd = sqrt(fs)
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
+	d64 fX = LoadFPR_Double( op_code.fs );
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Double< FullLength >( op_code.fd, pspFpuSqrt(fX) );
+	StoreFPR_Double( op_code.fd, pspFpuSqrt(fX) );
 }
 
 
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_NEG( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_NEG( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
 	// fd = -(fs)
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
+	d64 fX = LoadFPR_Double( op_code.fs );
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Double< FullLength >( op_code.fd, -fX );
+	StoreFPR_Double( op_code.fd, -fX );
 }
 
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_MOV( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_MOV( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
 	// fd = fs
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
+	d64 fX = LoadFPR_Double( op_code.fs );
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
-	StoreFPR_Double< FullLength >( op_code.fd, fX );
+	StoreFPR_Double( op_code.fd, fX );
 
 	// TODO - Just copy bits - don't interpret!
 }
 
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_TRUNC_W( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_TRUNC_W( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
+	d64 fX = LoadFPR_Double( op_code.fs );
 
 	StoreFPR_Word( op_code.fd, d64_to_s32_trunc( fX ) );
 }
 
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_TRUNC_L( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_TRUNC_L( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
+	d64 fX = LoadFPR_Double( op_code.fs );
 
-	StoreFPR_LongT< FullLength >( op_code.fd, d64_to_s64_trunc( fX ) );
+	StoreFPR_Long( op_code.fd, d64_to_s64_trunc( fX ) );
 }
 
 
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ROUND_W( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_ROUND_W( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
+	d64 fX = LoadFPR_Double( op_code.fs );
 
 	StoreFPR_Word( op_code.fd, d64_to_s32_round( fX ) );
 }
 
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ROUND_L( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_ROUND_L( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
+	d64 fX = LoadFPR_Double( op_code.fs );
 
-	StoreFPR_LongT< FullLength >( op_code.fd, d64_to_s64_round( fX ) );
+	StoreFPR_Long( op_code.fd, d64_to_s64_round( fX ) );
 }
 
 
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_CEIL_W( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_CEIL_W( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
+	d64 fX = LoadFPR_Double( op_code.fs );
 
 	StoreFPR_Word( op_code.fd, d64_to_s32_ceil( fX ) );
 }
 
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_CEIL_L( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_CEIL_L( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
+	d64 fX = LoadFPR_Double( op_code.fs );
 
-	StoreFPR_LongT< FullLength >( op_code.fd, d64_to_s64_ceil( fX ) );
+	StoreFPR_Long( op_code.fd, d64_to_s64_ceil( fX ) );
 }
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_FLOOR_W( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_FLOOR_W( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
+	d64 fX = LoadFPR_Double( op_code.fs );
 
 	StoreFPR_Word( op_code.fd, d64_to_s32_floor( fX ) );
 }
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_FLOOR_L( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_FLOOR_L( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
+	d64 fX = LoadFPR_Double( op_code.fs );
 
-	StoreFPR_LongT< FullLength >( op_code.fd, d64_to_s64_floor( fX ) );
+	StoreFPR_Long( op_code.fd, d64_to_s64_floor( fX ) );
 }
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_CVT_S( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_CVT_S( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	f32 fX = LoadFPR_Double< FullLength >( op_code.fs );
+	f32 fX = LoadFPR_Double( op_code.fs );
 
 	//SET_ROUND_MODE( gRoundingMode );		//XXXX Is this needed?
 
@@ -3276,35 +3204,35 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_CVT_S( R43
 //
 //*****************************************************************************
 // Convert f64 to word...
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_CVT_W( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_CVT_W( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
+	d64 fX = LoadFPR_Double( op_code.fs );
 
 	StoreFPR_Word( op_code.fd, d64_to_s32( fX, gRoundingMode ) );
 }
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_CVT_L( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_CVT_L( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
+	d64 fX = LoadFPR_Double( op_code.fs );
 
-	StoreFPR_LongT< FullLength >( op_code.fd, d64_to_s64( fX, gRoundingMode ) );
+	StoreFPR_Long( op_code.fd, d64_to_s64( fX, gRoundingMode ) );
 }
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_EQ( R4300_CALL_SIGNATURE )				// Compare for Equality
+static void R4300_CALL_TYPE R4300_Cop1_D_EQ( R4300_CALL_SIGNATURE )				// Compare for Equality
 {
 	R4300_CALL_MAKE_OP( op_code );
 
 	// fs == ft?
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( fX == fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
@@ -3314,13 +3242,13 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_EQ( R4300_
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_LE( R4300_CALL_SIGNATURE )				// Compare for Less Than or Equal
+static void R4300_CALL_TYPE R4300_Cop1_D_LE( R4300_CALL_SIGNATURE )				// Compare for Less Than or Equal
 {
 	R4300_CALL_MAKE_OP( op_code );
 
 	// fs <= ft?
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( fX <= fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
@@ -3332,13 +3260,13 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_LE( R4300_
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_LT( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_LT( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
 	// fs < ft?
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( fX < fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
@@ -3349,7 +3277,7 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_LT( R4300_
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_F( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_F( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
@@ -3358,12 +3286,12 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_F( R4300_C
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_UN( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_UN( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( pspFpuIsNaN(fX + fY) )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
@@ -3373,12 +3301,12 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_UN( R4300_
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_UEQ( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_UEQ( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( pspFpuIsNaN(fX + fY) || fX == fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
@@ -3388,12 +3316,12 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_UEQ( R4300
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_OLT( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_OLT( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( !pspFpuIsNaN(fX + fY) && fX < fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
@@ -3403,12 +3331,12 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_OLT( R4300
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ULT( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_ULT( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( pspFpuIsNaN(fX + fY) || fX < fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
@@ -3418,12 +3346,12 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ULT( R4300
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_OLE( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_OLE( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( !pspFpuIsNaN(fX + fY) && fX <= fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
@@ -3433,12 +3361,12 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_OLE( R4300
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ULE( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_ULE( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( pspFpuIsNaN(fX + fY) || fX <= fY )
 		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
@@ -3448,13 +3376,13 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_ULE( R4300
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_SF( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_SF( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
 #ifndef DAEDALUS_SILENT
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	CATCH_NAN_EXCEPTION( "R4300_Cop1_D_SF", fX, fY );
 #endif
@@ -3464,13 +3392,13 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_SF( R4300_
 //*****************************************************************************
 // Same as above..
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_NGLE( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_NGLE( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
 #ifndef DAEDALUS_SILENT
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	CATCH_NAN_EXCEPTION( "R4300_Cop1_D_NGLE", fX, fY );
 #endif
@@ -3480,12 +3408,12 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_NGLE( R430
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_SEQ( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_SEQ( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	CATCH_NAN_EXCEPTION( "R4300_Cop1_D_SEQ", fX, fY );
 
@@ -3498,12 +3426,12 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_SEQ( R4300
 //*****************************************************************************
 // Same as above..
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_NGL( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_NGL( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	CATCH_NAN_EXCEPTION( "R4300_Cop1_D_NGL", fX, fY );
 
@@ -3515,12 +3443,12 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_NGL( R4300
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_NGE( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_NGE( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	CATCH_NAN_EXCEPTION( "R4300_Cop1_D_NGE", fX, fY );
 
@@ -3532,12 +3460,12 @@ template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_NGE( R4300
 //*****************************************************************************
 //
 //*****************************************************************************
-template < bool FullLength > static void R4300_CALL_TYPE R4300_Cop1_D_NGT( R4300_CALL_SIGNATURE )
+static void R4300_CALL_TYPE R4300_Cop1_D_NGT( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	d64 fX = LoadFPR_Double< FullLength >( op_code.fs );
-	d64 fY = LoadFPR_Double< FullLength >( op_code.ft );
+	d64 fX = LoadFPR_Double( op_code.fs );
+	d64 fY = LoadFPR_Double( op_code.ft );
 
 	CATCH_NAN_EXCEPTION( "R4300_Cop1_D_NGT", fX, fY );
 
@@ -3581,9 +3509,6 @@ CPU_Instruction	R4300_GetInstructionHandler( OpCode op_code )
 		case Cop1Op_SInstr:
 			return R4300Cop1SInstruction[ op_code.cop1_funct ];
 		case Cop1Op_DInstr:
-			if (gCPUState.CPUControl[C0_SR]._u32_0 & SR_FR)
-				return R4300Cop1DInstruction_64[ op_code.cop1_funct ];
-			else
 				return R4300Cop1DInstruction_32[ op_code.cop1_funct ];
 
 		}

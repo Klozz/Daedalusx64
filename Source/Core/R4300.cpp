@@ -70,7 +70,15 @@ inline void CHECK_R0( u32 op )
 	inline void CHECK_R0( u32 op ) {}
 #endif
 
-
+#define CHECK_COP1_UNUSUABLE \
+{ \
+	if (!(gCPUState.CPUControl[C0_SR]._u32_0 & SR_CU1)) \
+	{ \
+		DBGConsole_Msg(0, "Thread accessing Cop1, throwing COP1 unusuable exception"); \
+		R4300_Exception_CopUnusuable(); \
+		return; \
+	} \
+}
 //
 //	Abstract away the different rounding modes between targets
 //
@@ -193,19 +201,20 @@ inline d64 LoadFPR_Double( u32 reg )
 //*****************************************************************************
 inline void StoreFPR_Double( u32 reg, d64 value )
 {
-	REG64 r; 
-	r._f64_unused = SIMULATESIG;
-	r._f64_sim	  = f32( value );
-
 	// This fixes Mario Party's draft mini game.
 	// And green / static textures bug in Conker.
 	if(gSimulateDoubleDisabled)
 	{
-		r._f64 = f32( value );	
+		REG64 r; 
+		r._f64 = pspFpuFloatToDouble( value );	//r._f64 = f32( value );	
+		gCPUState.FPU[reg+0]._u32_0 = r._u32_0;
+		gCPUState.FPU[reg+1]._u32_0 = r._u32_1;
 	}
-
-	gCPUState.FPU[reg+0]._u32_0 = r._u32_0;
-	gCPUState.FPU[reg+1]._u32_0 = r._u32_1;
+	else
+	{
+		gCPUState.FPU[reg+0]._u32_0 = SIMULATESIG;
+		gCPUState.FPU[reg+1]._f32_0 = f32( value );
+	}
 }
 
 //*****************************************************************************
@@ -338,9 +347,9 @@ inline s64 d64_to_s64_floor( d64 x )				{ return (s64)floorf( x ); }
 inline s64 d64_to_s64( d64 x, ERoundingMode mode )	{ pspFpuSetRoundmode( gNativeRoundingModes[ mode ] ); return (s64)x; }	// XXXX Need to do a cvt really
 
 
-static void CU1_R4300_CoPro1( R4300_CALL_SIGNATURE );
-static void R4300_CALL_TYPE CU1_R4300_LWC1( R4300_CALL_SIGNATURE );
-static void R4300_CALL_TYPE CU1_R4300_LDC1( R4300_CALL_SIGNATURE );
+//static void CU1_R4300_CoPro1( R4300_CALL_SIGNATURE );
+//static void R4300_CALL_TYPE CU1_R4300_LWC1( R4300_CALL_SIGNATURE );
+//static void R4300_CALL_TYPE CU1_R4300_LDC1( R4300_CALL_SIGNATURE );
 //static void R4300_CALL_TYPE CU1_R4300_SWC1( R4300_CALL_SIGNATURE );
 //static void R4300_CALL_TYPE CU1_R4300_SDC1( R4300_CALL_SIGNATURE );
 
@@ -482,7 +491,7 @@ static void R4300_CALL_TYPE R4300_SetCop1Enable( bool enable )
 //*****************************************************************************
 //Calling this function will disable detection of Coprocessor Unusable Exceptions.
 //*****************************************************************************
-static void DisableFPUUnusableException()
+/*static void DisableFPUUnusableException()
 {
     R4300Instruction[0x11] = R4300_CoPro1;	
 
@@ -493,11 +502,11 @@ static void DisableFPUUnusableException()
 	R4300Instruction[57] = R4300_SWC1;
 	R4300Instruction[61] = R4300_SDC1;
 }
-
+*/
 //*****************************************************************************
 //Calling this function will enable detection of Coprocessor Unusable Exceptions.
 //*****************************************************************************
-static void EnableFPUUnusableException()
+/*static void EnableFPUUnusableException()
 {
 	R4300Instruction[0x11] = CU1_R4300_CoPro1;
 	R4300Instruction[49] = CU1_R4300_LWC1;
@@ -505,7 +514,7 @@ static void EnableFPUUnusableException()
    // R4300Instruction[57] = CU1_R4300_SWC1; // Breaks Kirby
    // R4300Instruction[61] = CU1_R4300_SDC1;
 }
-
+*/
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -526,7 +535,7 @@ void R4300_CALL_TYPE R4300_SetSR( u32 new_value )
 
 	bool interrupts_enabled_before =(gCPUState.CPUControl[C0_SR]._u32_0 & SR_IE) != 0;
 
-	gCPUState.CPUControl[C0_SR]._s64 = (s64)(s32)new_value;
+	gCPUState.CPUControl[C0_SR]._u32_0 = new_value;
 
 	bool interrupts_enabled_after = (gCPUState.CPUControl[C0_SR]._u32_0 & SR_IE) != 0;
 
@@ -554,14 +563,14 @@ void R4300_CALL_TYPE R4300_SetSR( u32 new_value )
 
 	// Based from 1964, all the games work fine, even SSB/Kirby that had issues with the hack I had.
 	//
-	if(new_value & SR_CU1)
+	/*if(new_value & SR_CU1)
 	{
 		DisableFPUUnusableException();
 	}
 	else
 	{
 		EnableFPUUnusableException();
-	}
+	}*/
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -1293,7 +1302,7 @@ static void R4300_CALL_TYPE R4300_CACHE( R4300_CALL_SIGNATURE )
 
 static void R4300_CALL_TYPE R4300_LWC1( R4300_CALL_SIGNATURE ) 				// Load Word to Copro 1 (FPU)
 {
-	R4300_CALL_MAKE_OP( op_code );
+	R4300_CALL_MAKE_OP( op_code );	CHECK_COP1_UNUSUABLE
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	StoreFPR_Word( op_code.ft, Read32Bits(address) );
@@ -1302,7 +1311,7 @@ static void R4300_CALL_TYPE R4300_LWC1( R4300_CALL_SIGNATURE ) 				// Load Word 
 
 static void R4300_CALL_TYPE R4300_LDC1( R4300_CALL_SIGNATURE )				// Load Doubleword to Copro 1 (FPU)
 {
-	R4300_CALL_MAKE_OP( op_code );
+	R4300_CALL_MAKE_OP( op_code );	CHECK_COP1_UNUSUABLE
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	StoreFPR_Long( op_code.ft, Read64Bits(address));
@@ -1322,7 +1331,7 @@ static void R4300_CALL_TYPE R4300_LD( R4300_CALL_SIGNATURE ) 				// Load Doublew
 
 static void R4300_CALL_TYPE R4300_SWC1( R4300_CALL_SIGNATURE ) 			// Store Word From Copro 1
 {
-	R4300_CALL_MAKE_OP( op_code );
+	R4300_CALL_MAKE_OP( op_code );	CHECK_COP1_UNUSUABLE
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	//Write32Bits(address, (u32)gCPUState.FPU[dwFT]);
@@ -1331,7 +1340,7 @@ static void R4300_CALL_TYPE R4300_SWC1( R4300_CALL_SIGNATURE ) 			// Store Word 
 
 static void R4300_CALL_TYPE R4300_SDC1( R4300_CALL_SIGNATURE )		// Store Doubleword From Copro 1
 {
-	R4300_CALL_MAKE_OP( op_code );
+	R4300_CALL_MAKE_OP( op_code );	CHECK_COP1_UNUSUABLE
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 
@@ -1739,7 +1748,7 @@ static void R4300_CALL_TYPE R4300_Special_DADD( R4300_CALL_SIGNATURE )//CYRUS64
 
 	CHECK_R0( op_code.rd );
 
-	gGPR[ op_code.rd ]._s64 = gGPR[ op_code.rt ]._s64 + gGPR[ op_code.rs ]._s64;
+	gGPR[ op_code.rd ]._s64 = gGPR[ op_code.rs ]._s64 + gGPR[ op_code.rt ]._s64;
 
 }
 
@@ -1749,7 +1758,7 @@ static void R4300_CALL_TYPE R4300_Special_DADDU( R4300_CALL_SIGNATURE )//CYRUS64
 
 	CHECK_R0( op_code.rd );
 
-	gGPR[ op_code.rd ]._s64 = gGPR[ op_code.rt ]._s64 + gGPR[ op_code.rs ]._s64;
+	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 + gGPR[ op_code.rt ]._u64;
 
 	//BUG FIX for Excite Bike - Salvy
 	// I don't know why Excite bike only works if the operand is 32bit.. this for sure is wrong as docs say.
@@ -1764,7 +1773,7 @@ static void R4300_CALL_TYPE R4300_Special_DSUB( R4300_CALL_SIGNATURE )
 
 	CHECK_R0( op_code.rd );
 
-	gGPR[ op_code.rd ]._s64 = gGPR[ op_code.rs ]._u64 - gGPR[ op_code.rt ]._s64;
+	gGPR[ op_code.rd ]._s64 = gGPR[ op_code.rs ]._s64 - gGPR[ op_code.rt ]._s64;
 }
 
 static void R4300_CALL_TYPE R4300_Special_DSUBU( R4300_CALL_SIGNATURE )
@@ -1776,7 +1785,7 @@ static void R4300_CALL_TYPE R4300_Special_DSUBU( R4300_CALL_SIGNATURE )
 	// The order of rs and rt was wrong! It should be rs - rt, not rt - rs!!
 	// It caused several lock ups in games ex Animal Crossing, and Conker to crash in last boss
 	// Also signed extended to be safe
-	gGPR[ op_code.rd ]._s64 = gGPR[ op_code.rs ]._s64 - gGPR[ op_code.rt ]._s64;
+	gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 - gGPR[ op_code.rt ]._u64;
 }
 
 static void R4300_CALL_TYPE R4300_Special_DSLL( R4300_CALL_SIGNATURE )
@@ -2045,14 +2054,18 @@ static void R4300_CALL_TYPE R4300_Cop0_MTC0( R4300_CALL_SIGNATURE )
 			//  Other bits are CE (copro error) BD (branch delay), the other
 			// Interrupt pendings and EscCode.
 #ifndef DAEDALUS_SILENT
-			if ( (new_value&~(CAUSE_SW1|CAUSE_SW2)) != (gCPUState.CPUControl[C0_CAUSE]._u64&~(CAUSE_SW1|CAUSE_SW2))  )
+			if ( ((u32)new_value&~0x300) != (gCPUState.CPUControl[C0_CAUSE]._u32_0&~0x300)  )
 			{
 				DBGConsole_Msg( 0, "[MWas previously clobbering CAUSE REGISTER" );
 			}
 #endif
 			DPF( DEBUG_REGS, "CAUSE set to 0x%08x (was: 0x%08x)", (u32)new_value, gGPR[ op_code.rt ]._u32_0 );
-			gCPUState.CPUControl[C0_CAUSE]._u64 &=             ~(CAUSE_SW1|CAUSE_SW2);
-			gCPUState.CPUControl[C0_CAUSE]._u64 |= (new_value & (CAUSE_SW1|CAUSE_SW2));
+			//(CAUSE_SW1|CAUSE_SW2) = 0x300
+			gCPUState.CPUControl[C0_CAUSE]._u32_0 &= ~0x300;
+			gCPUState.CPUControl[C0_CAUSE]._u32_0 |= (u32)new_value & 0x300;
+
+			//gCPUState.CPUControl[C0_CAUSE]._u64 &=             ~(CAUSE_SW1|CAUSE_SW2);
+			//gCPUState.CPUControl[C0_CAUSE]._u64 |= (new_value & (CAUSE_SW1|CAUSE_SW2));
 			break;
 		case C0_SR:
 			// Software can enable/disable interrupts here. We check if Interrupt Enable is
@@ -2204,19 +2217,19 @@ static void R4300_CALL_TYPE R4300_TLB_ERET( R4300_CALL_SIGNATURE )
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	if( gCPUState.CPUControl[C0_SR]._u64 & SR_ERL )
+	if( gCPUState.CPUControl[C0_SR]._u32_0 & SR_ERL )
 	{
 		// Returning from an error trap
 		DPF(DEBUG_INTR, "ERET: Returning from error trap");
 		CPU_SetPC( gCPUState.CPUControl[C0_ERROR_EPC]._u32_0 );
-		gCPUState.CPUControl[C0_SR]._u64 &= ~SR_ERL;
+		gCPUState.CPUControl[C0_SR]._u32_0 &= ~SR_ERL;
 	}
 	else
 	{
 		DPF(DEBUG_INTR, "ERET: Returning from interrupt/exception");
 		// Returning from an exception
 		CPU_SetPC( gCPUState.CPUControl[C0_EPC]._u32_0 );
-		gCPUState.CPUControl[C0_SR]._u64 &= ~SR_EXL;
+		gCPUState.CPUControl[C0_SR]._u32_0 &= ~SR_EXL;
 	}
 	// Point to previous instruction (as we increment the pointer immediately afterwards
 	DECREMENT_PC();
@@ -3476,7 +3489,6 @@ static void R4300_CALL_TYPE R4300_Cop1_D_NGT( R4300_CALL_SIGNATURE )
 }
 
 #include "R4300_Jump.inl"		// Jump table
-#include "COP1Unstable_Jump.inl"
 //*****************************************************************************
 //
 //*****************************************************************************

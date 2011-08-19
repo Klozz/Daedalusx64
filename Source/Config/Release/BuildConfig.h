@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #undef	DAEDALUS_DEBUG_PIF					// Enable to enable various debugging options for PIF (Peripheral interface)
 #undef	DAEDALUS_DEBUG_CONSOLE				// Enable debug console
-#undef DAEDALUS_ALIGN_REGISTERS			// On occasions it seems to slow things down if defined //Corn
+#undef  DAEDALUS_ALIGN_REGISTERS			// On occasions it seems to slow things down if defined //Corn
 #undef  DAEDALUS_DEBUG_DYNAREC				// Enable to enable various debugging options for the dynarec
 #undef  DAEDALUS_ENABLE_SYNCHRONISATION		// Enable for sync testing
 #undef  DAEDALUS_LOG						// Enable various logging
@@ -48,12 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #undef  DAEDALUS_IS_LEGACY					// Old code, unused etc.. Kept for reference, undef to save space on the elf. Will remove soon.
 #define	DAEDALUS_DIALOGS					// Enable this to ask confimation dialogs in the GUI
 
-#undef EXPERIMENTAL_INTERRUPTS				// Experimental, based from 1964, more compatible ex: body harvest etc boots now.
-
 // Define this to turn off various debugging features for public release.
 #define DAEDALUS_PUBLIC_RELEASE
-
-// Define this to use 16bit instead of 32bit screen graphics
-#define DAEDALUS_SCRN_16BIT
 
 #endif // CONFIG_H_

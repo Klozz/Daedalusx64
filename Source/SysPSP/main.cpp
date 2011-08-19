@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility/Preferences.h"
 #include "Utility/Timer.h"
 #include "Utility/Thread.h"
+#include "Utility/ModulePSP.h"
 
 #include "Graphics/GraphicsContext.h"
 
@@ -69,8 +70,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 /* Define to enable Exit Callback */
 // Do not enable this, callbacks don't get along with our exit dialog :p
+// Only needed for gprof
 //
-//#define DAEDALUS_CALLBACKS 
+#ifdef DAEDALUS_PSP_GPROF
+#define DAEDALUS_CALLBACKS 
+#else
+#undef DAEDALUS_CALLBACKS
+#endif
 
 char gDaedalusExePath[MAX_PATH+1] = DAEDALUS_PSP_PATH( "" );
 
@@ -97,8 +103,11 @@ extern int HAVE_DVE;
 extern int PSP_TV_CABLE;
 extern int PSP_TV_LACED;
 
+extern void VolatileMemInit();
 
+bool g32bitColorMode = false;
 bool PSP_IS_SLIM = false;
+static bool bKernelHomeButton = false;
 //*************************************************************************************
 //Set up our initial eviroment settings for the PSP
 //*************************************************************************************
@@ -116,7 +125,7 @@ static void DaedalusError(u32 version)
 {
 	// ToDo : Add more errors for missing/damaged/old rom.db, preferences.ini ohle cache, and other prxs?
 	//
-	if( gButtons.kmode )
+	if( bKernelHomeButton )
 	{
 		pspDebugScreenPrintf( "	Unsupported Firmware Detected : 0x%08X\n", version );
 		pspDebugScreenPrintf( "\n" );
@@ -148,7 +157,7 @@ static void DaedalusFWCheck()
 		fclose(fh);
 	}
 */
-	if( (ver < PSP_FIRMWARE(0x401)) || (ver <= PSP_FIRMWARE(0x550) && !gButtons.kmode) )
+	if( (ver < PSP_FIRMWARE(0x401)) || (ver <= PSP_FIRMWARE(0x550) && !bKernelHomeButton) )
 	{
 		pspDebugScreenInit();
 		pspDebugScreenSetTextColor(0xffffff);
@@ -296,11 +305,6 @@ extern bool bNeedStartME;
 //*************************************************************************************
 static bool	Initialize()
 {
-	// Set up our Kernel Home button or User Button
-	InitHomeButton();
-
-	// Check for unsupported FW
-	DaedalusFWCheck();
 
 	printf( "Cpu was: %dMHz, Bus: %dMHz\n", scePowerGetCpuClockFrequency(), scePowerGetBusClockFrequency() );
 	if (scePowerSetClockFrequency(333, 333, 166) != 0)
@@ -309,17 +313,28 @@ static bool	Initialize()
 	}
 	printf( "Cpu now: %dMHz, Bus: %dMHz\n", scePowerGetCpuClockFrequency(), scePowerGetBusClockFrequency() );
 
+	// Set up our Kernel Home button or User Button
+	bKernelHomeButton = InitHomeButton();
+
+	// If (o) is pressed during boot the Emulator will use 32bit
+	// else use default 16bit color mode
+	SceCtrlData pad;
+	sceCtrlPeekBufferPositive(&pad, 1); 
+	if( pad.Buttons & PSP_CTRL_CIRCLE ) g32bitColorMode = true;
+	else g32bitColorMode = false;
+
+	// Check for unsupported FW
+	DaedalusFWCheck();
+
+	// Initiate MediaEngine
 	InitialiseJobManager();
 
 // Disable for profiling
 //	srand(time(0));
 
 	//Set the debug output to default
-#ifndef DAEDALUS_SCRN_16BIT
-	pspDebugScreenInit();
-#else
-	pspDebugScreenInitEx( NULL , GU_PSM_5650, 1); //Sets debug output to 16bit mode
-#endif
+	if( g32bitColorMode ) pspDebugScreenInit();
+	else pspDebugScreenInitEx( NULL , GU_PSM_5650, 1); //Sets debug output to 16bit mode
 
 // This Breaks gdb, better disable it in debug build
 //
@@ -332,8 +347,11 @@ static bool	Initialize()
 	//Init Panic button thread
 	SetupPanic();
 
-	// We have to Callbacks if kernelbuttons.prx failed
-	if( gButtons.kmode == false )
+	// Init volatile memory
+	VolatileMemInit();
+
+	// let callbacks go in the wild if imposectrl.prx failed
+	if( !bKernelHomeButton )
 	{
 #ifdef DAEDALUS_CALLBACKS
 		//Set up callback for our thread
@@ -349,12 +367,14 @@ static bool	Initialize()
 		//
 		if( bNeedStartME )
 			PSP_IS_SLIM = true;
-
-		HAVE_DVE = pspSdkLoadStartModule("dvemgr.prx", PSP_MEMORY_PARTITION_KERNEL);
+		
+		HAVE_DVE = CModule::Load("dvemgr.prx");
 		if (HAVE_DVE >= 0)
 			PSP_TV_CABLE = pspDveMgrCheckVideoOut();
 		if (PSP_TV_CABLE == 1)
 			PSP_TV_LACED = 1; // composite cable => interlaced
+		else if( PSP_TV_CABLE == 0 )
+			CModule::Unload( HAVE_DVE );	// Stop and unload dvemgr.prx since if no video cable is
 	}
 
 	HAVE_DVE = (HAVE_DVE < 0) ? 0 : 1; // 0 == no dvemgr, 1 == dvemgr

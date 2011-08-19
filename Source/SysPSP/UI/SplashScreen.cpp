@@ -20,10 +20,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "stdafx.h"
 #include "SplashScreen.h"
 
+#include "Graphics/GraphicsContext.h"
+
 #include "UIContext.h"
 #include "UIScreen.h"
 #include "Graphics/ColourValue.h"
 #include "Graphics/NativeTexture.h"
+
+#include "SysPSP/Graphics/DrawText.h"
 
 #include "Math/Math.h"	// VFPU Math
 
@@ -32,6 +36,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <pspctrl.h>
 #include <pspgu.h>
+
+extern bool g32bitColorMode;
 
 namespace
 {
@@ -88,7 +94,6 @@ ISplashScreen::ISplashScreen( CUIContext * p_context )
 ,	mElapsedTime( 0.0f )
 ,	mpTexture( CNativeTexture::CreateFromPng( LOGO_FILENAME, TexFmt_8888 ) )
 {
-
 }
 
 //*************************************************************************************
@@ -131,6 +136,11 @@ void	ISplashScreen::Render()
 
 	mpContext->ClearBackground();
 	mpContext->RenderTexture( mpTexture, (480 - 328)/2, (272-90)/2, colour );
+
+	char msg[64];
+	sprintf (msg, "%s Color Selected", g32bitColorMode? "32Bit" : "16Bit" );
+	mpContext->SetFontStyle( CUIContext::FS_HEADING );
+	mpContext->DrawTextAlign(0,480,AT_CENTRE,272-50,msg,DrawTextUtilities::TextWhite);
 }
 
 //*************************************************************************************

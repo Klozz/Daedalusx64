@@ -21,12 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef GSP_CUSTOM_H
 #define GSP_CUSTOM_H
 
-
-
 //*****************************************************************************
 // Custom
 //*****************************************************************************
-
 UcodeFunc( DLParser_GBI0_DL_SOTE );
 UcodeFunc( DLParser_GBI0_Vtx_SOTE );
 //UcodeFunc( DLParser_GBI0_Line3D_SOTE );
@@ -36,11 +33,12 @@ UcodeFunc( DLParser_RSP_Last_Legion_0x00 );
 UcodeFunc( DLParser_TexRect_Last_Legion );
 UcodeFunc( DLParser_RDPHalf1_GoldenEye );
 UcodeFunc( DLParser_DLInMem );
-UcodeFunc( DLParser_MtxDKR );
+UcodeFunc( DLParser_Mtx_DKR );
 UcodeFunc( DLParser_MoveWord_DKR );
+UcodeFunc( DLParser_Set_Addr_DKR );
 UcodeFunc( DLParser_GBI0_Vtx_DKR );
 UcodeFunc( DLParser_GBI0_Vtx_WRUS );
-UcodeFunc( DLParser_DmaTri );
+UcodeFunc( DLParser_DMA_Tri_DKR );
 UcodeFunc( DLParser_GBI0_Vtx_Gemini );
 UcodeFunc( DLParser_GBI2_Conker );
 UcodeFunc( RSP_MoveMem_Conker );
@@ -48,6 +46,7 @@ UcodeFunc( RSP_MoveWord_Conker );
 UcodeFunc( RSP_Vtx_Conker );
 UcodeFunc( RSP_Set_Vtx_CI_PD );
 UcodeFunc( RSP_Vtx_PD );
+//UcodeFunc( RSP_Tri4_PD );
 
 //*****************************************************************************
 //

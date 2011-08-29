@@ -35,6 +35,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <set>
 #include <map>
 
+class CTexture;
+class CNativeTexture;
+class CBlendStates;
+
 struct ViewportInfo
 {
 	f32  ViWidth;
@@ -43,9 +47,37 @@ struct ViewportInfo
 	bool Update;
 };
 
-class CTexture;
-class CNativeTexture;
-class CBlendStates;
+struct TextureVtx
+{
+	v2  t0;
+	v3  pos;
+};
+
+struct FiddledVtxDKR
+{
+	s16 y;
+	s16 x;
+
+	u8 a;
+	u8 b;
+	s16 z;
+
+	u8 g;
+	u8 r;
+};
+
+struct FiddledVtxPD 
+{
+	s16 y;
+	s16	x;
+
+	u16	cidx;
+	s16 z;
+
+	s16 t;
+	s16 s;
+};
+
 struct FiddledVtx
 {
         s16 y;
@@ -75,6 +107,7 @@ struct FiddledVtx
                 };
         };
 };
+DAEDALUS_STATIC_ASSERT( sizeof(FiddledVtx) == 16 );
 
 struct TextureVtx;
 
@@ -96,6 +129,22 @@ ALIGNED_TYPE(struct, TnLParams, 16)
 	float		TextureScaleY;
 };
 DAEDALUS_STATIC_ASSERT( sizeof( TnLParams ) == 32 );
+
+// Bits for clipping
+// +-+-+-
+// xxyyzz
+
+// NB: These are ordered such that the VFPU can generate them easily - make sure you keep the VFPU code up to date if changing these.
+#define X_NEG  0x01
+#define Y_NEG  0x02
+#define Z_NEG  0x04
+#define X_POS  0x08
+#define Y_POS  0x10
+#define Z_POS  0x20
+
+// Test all but Z_NEG (for No Near Plane microcodes)
+//const u32 CLIP_TEST_FLAGS( X_POS | X_NEG | Y_POS | Y_NEG | Z_POS );
+const u32 CLIP_TEST_FLAGS( X_POS | X_NEG | Y_POS | Y_NEG | Z_POS | Z_NEG );
 
 //*****************************************************************************
 //
@@ -120,7 +169,7 @@ public:
 	inline void			SetLighting(bool enable)				{ if( enable ) mTnLModeFlags |= TNL_LIGHT;	 else mTnLModeFlags &= ~TNL_LIGHT; }
 	inline void			SetTextureGen(bool enable)				{ if( enable ) mTnLModeFlags |= TNL_TEXGEN;  else mTnLModeFlags &= ~TNL_TEXGEN; }
 
-	// PrimDepth will replace the z value if depth_source=1 //Corn
+	// PrimDepth will replace the z value if depth_source=1 (z range 32767-0 while PSP depthbuffer range 0-65535)//Corn
 	inline void			SetPrimitiveDepth( u32 z )				{ mPrimDepth = (f32)( ( ( 32767 - z ) << 1) + 1 ); }
 	inline void			SetPrimitiveColour( c32 colour )		{ mPrimitiveColour = colour; }
 	inline void			SetEnvColour( c32 colour )				{ mEnvColour = colour; }
@@ -161,8 +210,10 @@ public:
 		MATRIX_MUL,
 	};
 
-	void				ResetMatrices();
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	void				PrintActive();
+#endif
+	void				ResetMatrices();
 	void				SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace);
 	void				SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace);
 	inline void			PopProjection() {if (mProjectionTop > 0) --mProjectionTop;	mWorldProjectValid = false;}
@@ -171,10 +222,11 @@ public:
 	void				ForceMatrix(const Matrix4x4 & mat);
 
 	// Vertex stuff	
-	void				SetNewVertexInfoConker(u32 address, u32 v0, u32 n);	// For conker..	
 	void				SetNewVertexInfo(u32 address, u32 v0, u32 n);	// Assumes dwAddress has already been checked!	
-	void				ModifyVertexInfo(u32 whered, u32 vert, u32 val);
+	void				SetNewVertexInfoConker(u32 address, u32 v0, u32 n);	// For conker..	
 	void				SetNewVertexInfoDKR(u32 dwAddress, u32 dwV0, u32 dwNum);	// Assumes dwAddress has already been checked!	
+	void				SetNewVertexInfoPD(u32 dwAddress, u32 dwV0, u32 dwNum);	// Assumes dwAddress has already been checked!	
+	void				ModifyVertexInfo(u32 whered, u32 vert, u32 val);
 	void				SetVtxColor( u32 vert, c32 color );
 	inline void			SetVtxTextureCoord( u32 vert, short tu, short tv ) {mVtxProjected[vert].Texture.x = (f32)tu * (1.0f / 32.0f); mVtxProjected[vert].Texture.y = (f32)tv * (1.0f / 32.0f);}
 	void				SetVtxXY( u32 vert, float x, float y );
@@ -185,12 +237,15 @@ public:
 	void				TexRectFlip( u32 tile_idx, const v2 & xy0, const v2 & xy1, const v2 & uv0, const v2 & uv1 );
 	void				FillRect( const v2 & xy0, const v2 & xy1, u32 color );
 		
-	// Returns true if triangle visible and rendered, false otherwise
+	// Returns true if triangle visible, false otherwise
 	bool				AddTri(u32 v0, u32 v1, u32 v2);
 
-	bool				FlushTris();
+	// Render our current triangle list to screen
+	void				FlushTris();
 	
-	bool				TestVerts( u32 v0, u32 vn ) const;				// Returns true if bounding volume is visible, false if culled
+	// Returns true if bounding volume is visible within NDC box, false if culled
+	inline bool			TestVerts( u32 v0, u32 vn ) const		{ u32 f=mVtxProjected[v0].ClipFlags; for( u32 i=v0+1; i<=vn; i++ ) f&=mVtxProjected[i].ClipFlags; return (f&CLIP_TEST_FLAGS)==0; }
+	inline s32			GetVtxDepth( u32 i ) const				{ return (s32)mVtxProjected[ i ].ProjectedPos.z; }
 	inline v4			GetTransformedVtxPos( u32 i ) const		{ return mVtxProjected[ i ].TransformedPos; }
 	inline v4			GetProjectedVtxPos( u32 i ) const		{ return mVtxProjected[ i ].ProjectedPos; }
 	inline u32			GetVtxFlags( u32 i ) const				{ return mVtxProjected[ i ].ClipFlags; }
@@ -370,27 +425,5 @@ private:
 	std::set< u64 >		mUnhandledCombinerStates;
 #endif
 };
-
-
-struct TextureVtx
-{
-	v2  t0;
-	v3  pos;
-};
-
-struct FiddledVtxDKR
-{
-	s16 y;
-	s16 x;
-
-	u8 a;
-	u8 b;
-	s16 z;
-
-	u8 g;
-	u8 r;
-};
-
-DAEDALUS_STATIC_ASSERT( sizeof(FiddledVtx) == 16 );
 
 #endif // __DAEDALUS_D3DRENDER_H__

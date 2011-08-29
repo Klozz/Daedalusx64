@@ -32,6 +32,10 @@ TEST_DISABLE_UTIL_FUNCS
 	u32 src = gGPR[REG_a1]._u32_0;
 	u32 len = gGPR[REG_a2]._u32_0;
 
+	//NOP! fixes SpiderMan
+	if (len == 0)
+		return PATCH_RET_JR_RA;
+
 #if 1	//1->Fast, 0->Old way
 	memcpy_vfpu_LE( (void *)ReadAddress(dst), (void *)ReadAddress(src), len);
 #else

@@ -145,6 +145,28 @@ inline void SpeedHack( u32 pc, OpCode op )
 //*****************************************************************************
 //
 //*****************************************************************************
+inline void QuickWrite_Long( u32 addr, u32 val0, u32 val1 )
+{
+	u32	*psrc = (u32 *)WriteAddress( addr );
+
+	psrc[0] = val1;	
+	psrc[1] = val0;
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+inline void QuickRead_Long( u32 addr, u32 val0, u32 val1 )
+{
+	u32	*pdst = (u32 *)ReadAddress( addr );
+
+	val1 = pdst[0];
+	val0 = pdst[1];
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
 inline void StoreFPR_Long( u32 reg, u64 value )
 {
 	REG64	r;
@@ -155,10 +177,31 @@ inline void StoreFPR_Long( u32 reg, u64 value )
 	gCPUState.FPU[reg+1]._u32_0 = r._u32_1;
 }
 
-#define SIMULATESIG 0x12345678
 //*****************************************************************************
 //
 //*****************************************************************************
+#define SIMULATESIG 0x1234	//Reduce signature to load value with one OP
+
+#if 1	//1->new way, 0->old way //Corn
+inline u64 LoadFPR_Long( u32 reg )
+{
+	if (gCPUState.FPU[reg+0]._u32_0 == SIMULATESIG)
+	{
+		// convert f32->f64/d64
+		REG64 res;
+		res._f64 = (f64)gCPUState.FPU[reg+1]._f32_0;
+		return res._u64;
+	}
+	else
+	{
+		REG64 res;
+		res._u32_0 = gCPUState.FPU[reg+0]._u32_0;
+		res._u32_1 = gCPUState.FPU[reg+1]._u32_0;
+		return res._u64;
+	}
+}
+
+#else
 inline u64 LoadFPR_Long( u32 reg )
 {
 	REG64 res;
@@ -166,18 +209,36 @@ inline u64 LoadFPR_Long( u32 reg )
 	res._u32_1 = gCPUState.FPU[reg+1]._u32_0;
 	res._u32_0 = gCPUState.FPU[reg+0]._u32_0;
 
-	// Disabled, looks suspicious to me, I don't think it does what we want here? ~Salvy
-	/*if (res._f64_unused == SIMULATESIG)
+	if (res._f64_unused == SIMULATESIG)
 	{
 		res._f64 = (f64)res._f64_sim;
-	}*/
+	}
 
 	return res._u64;
 }
+#endif
 
 //*****************************************************************************
 //
 //*****************************************************************************
+#if 1	//1->new way, 0->old way //Corn
+inline d64 LoadFPR_Double( u32 reg )
+{
+	if (gCPUState.FPU[reg+0]._u32_0 == SIMULATESIG)
+	{
+		// convert f32 -> d64
+		return (d64)gCPUState.FPU[reg+1]._f32_0;
+	}
+	else
+	{
+		REG64 res;
+		res._u32_0 = gCPUState.FPU[reg+0]._u32_0;
+		res._u32_1 = gCPUState.FPU[reg+1]._u32_0;
+		return (d64)res._f64;
+	}
+}
+
+#else
 inline d64 LoadFPR_Double( u32 reg )
 {
 	REG64 res;
@@ -195,7 +256,7 @@ inline d64 LoadFPR_Double( u32 reg )
 		return (d64)res._f64;
 	}
 }
-
+#endif
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -945,7 +1006,7 @@ static void R4300_CALL_TYPE R4300_LBU( R4300_CALL_SIGNATURE ) 			// Load Byte Un
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate);
 
-	gGPR[op_code.rt]._s64 = (s64)(u8)Read8Bits(address);
+	gGPR[op_code.rt]._u64 = (u64)(u8)Read8Bits(address);
 }
 
 static void R4300_CALL_TYPE R4300_LH( R4300_CALL_SIGNATURE ) 		// Load Halfword
@@ -955,6 +1016,7 @@ static void R4300_CALL_TYPE R4300_LH( R4300_CALL_SIGNATURE ) 		// Load Halfword
 	CHECK_R0( op_code.rt );
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
+
 	gGPR[op_code.rt]._s64 = (s64)(s16)Read16Bits(address);
 }
 
@@ -1292,6 +1354,7 @@ static void R4300_CALL_TYPE R4300_LDC1( R4300_CALL_SIGNATURE )				// Load Double
 	R4300_CALL_MAKE_OP( op_code );	CHECK_COP1_UNUSUABLE
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
+
 	StoreFPR_Long( op_code.ft, Read64Bits(address));
 }
 

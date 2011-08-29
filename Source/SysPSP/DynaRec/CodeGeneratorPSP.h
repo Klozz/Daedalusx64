@@ -183,6 +183,9 @@ private:
 				EPspReg				GetRegisterAndLoadLo( EN64Reg n64_reg, EPspReg scratch_reg )	{ return GetRegisterAndLoad( n64_reg, 0, scratch_reg ); }
 				EPspReg				GetRegisterAndLoadHi( EN64Reg n64_reg, EPspReg scratch_reg )	{ return GetRegisterAndLoad( n64_reg, 1, scratch_reg ); }
 
+				EPspFloatReg		GetFloatRegisterAndLoadLo( EN64FloatReg n64_reg, u32 lo_hi_idx )	{ return GetFloatRegisterAndLoad( n64_reg, 0 ); }
+				EPspFloatReg		GetFloatRegisterAndLoadHi( EN64FloatReg n64_reg, u32 lo_hi_idx )	{ return GetFloatRegisterAndLoad( n64_reg, 1 ); }
+
 				void				GetRegisterValue( EPspReg psp_reg, EN64Reg n64_reg, u32 lo_hi_idx );
 
 				void				LoadRegister( EPspReg psp_reg, EN64Reg n64_reg, u32 lo_hi_idx );
@@ -212,7 +215,7 @@ private:
 				void				UpdateRegister( EN64Reg n64_reg, EPspReg psp_reg, EUpdateRegOptions options, EPspReg scratch_reg );
 	
 
-				EPspFloatReg		GetFloatRegisterAndLoad( EN64FloatReg n64_reg );
+				EPspFloatReg		GetFloatRegisterAndLoad( EN64FloatReg n64_reg, u32 lo_hi_idx );
 				void				UpdateFloatRegister( EN64FloatReg n64_reg );
 
 

@@ -247,11 +247,11 @@ PSPRenderer::PSPRenderer()
 ,	mMux( 0 )
 ,	mTnLModeFlags( 0 )
 
-,	m_dwNumLights(0)
-,	m_bZBuffer(false)
+,	mNumLights(0)
+,	mZBuffer(false)
 
-,	m_bCull(true)
-,	m_bCull_mode(GU_CCW)
+,	mCull(false)
+,	mCullMode(GU_CCW)
 
 ,	mAlphaThreshold(0)
 
@@ -492,20 +492,16 @@ void PSPRenderer::BeginScene()
 	mRecordedCombinerStates.clear();
 #endif
 
-	static bool last_rumblepak = false;
-
 	// Update viewport only if user changed it in settings or vi register changed it
 	// Both happen really rare
 	//
-	if( !mView.Update &&				  // We need to update after pause menu?
-		mView.ViWidth == fViWidth    &&  //  VI register changed width? (bug fix GE007) 
-		mView.ViHeight == fViHeight &&   //  VI register changed height?
-		!last_rumblepak & !gRumblePakActive )
+	if( !mView.Update				  &&		//  We need to update after pause menu?
+		mView.ViWidth  == fViWidth    &&		//  VI register changed width? (bug fix GE007) 
+		mView.ViHeight == fViHeight   &&		//  VI register changed height?
+		mView.Rumble   == gRumblePakActive )	//  RumblePak active? Don't bother to update if no rumble feedback too
 	{
 		return;
 	}
-
-	last_rumblepak = gRumblePakActive;
 
 	u32	display_width( 0 );
 	u32 display_height( 0 );
@@ -527,6 +523,7 @@ void PSPRenderer::BeginScene()
 	SetPSPViewport( display_x, display_y, display_width, display_height );
 	SetN64Viewport( scale, trans );
 
+	mView.Rumble	= gRumblePakActive;
 	mView.Update	= false;
 	mView.ViWidth	= fViWidth;
 	mView.ViHeight	= fViHeight;
@@ -629,13 +626,12 @@ void	PSPRenderer::UpdateViewport()
 //*****************************************************************************
 //
 //*****************************************************************************
-	// GE 007 and Megaman can act up on this
-	// We round these value here, so that when we scale up the coords to our screen
-	// coords we don't get any gaps.
-	// Avoid temporary object
-	//
+// GE 007 and Megaman can act up on this
+// We round these value here, so that when we scale up the coords to our screen
+// coords we don't get any gaps.
+//
 #if 1
-v2 PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
+inline v2 PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
 {
 	v2 answ;
 	vfpu_N64_2_PSP( &answ.x, &n64_coords.x, &mN64ToPSPScale.x, &mN64ToPSPTranslate.x);
@@ -826,10 +822,8 @@ void PSPRenderer::RenderUsingRenderSettings( const CBlendStates * states, Daedal
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*****************************************************************************
-//
+// Used for Blend Explorer, or Nasty texture
 //*****************************************************************************
-/// Used for Blend Explorer, or Nasty texture
-//
 bool PSPRenderer::DebugBlendmode( DaedalusVtx * p_vertices, u32 num_vertices, u32 render_flags, u64 mux )
 {
 	if( mNastyTexture && IsCombinerStateDisabled( mux ) )
@@ -979,7 +973,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		}
 
 		// Enable or Disable ZBuffer test
-		if ( (m_bZBuffer & gRDPOtherMode.z_cmp) | gRDPOtherMode.z_upd )
+		if ( (mZBuffer & gRDPOtherMode.z_cmp) | gRDPOtherMode.z_upd )
 		{
 			sceGuEnable(GU_DEPTH_TEST);
 		}
@@ -1018,13 +1012,6 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		{
 			sceGuDisable( GU_BLEND );
 		}
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-		else
-		{
-			// If blender state couldn't be handled, default blending is used
-			//printf("Unhandled Blender State 0x%04x\n",blender);
-		}
-#endif
 	}
 
 	if( (gRDPOtherMode.alpha_compare == G_AC_THRESHOLD) && !gRDPOtherMode.alpha_cvg_sel )
@@ -1169,8 +1156,8 @@ void PSPRenderer::TexRect( u32 tile_idx, const v2 & xy0, const v2 & xy1, const v
 	v2 tex_uv0( uv0 - mTileTopLeft[ 0 ] );
 	v2 tex_uv1( uv1 - mTileTopLeft[ 0 ] );
 
-	//DL_PF( "      Screen:  %f,%f -> %f,%f", screen0.x, screen0.y, screen1.x, screen1.y );
-	//DL_PF( "      Texture: %f,%f -> %f,%f", tex_uv0.x, tex_uv0.y, tex_uv1.x, tex_uv1.y );
+	DL_PF( "      Screen:  %.1f,%.1f -> %.1f,%.1f", screen0.x, screen0.y, screen1.x, screen1.y );
+	DL_PF( "      Texture: %.1f,%.1f -> %.1f,%.1f", tex_uv0.x, tex_uv0.y, tex_uv1.x, tex_uv1.y );
 
 	DaedalusVtx trv[ 6 ];
 
@@ -1214,8 +1201,8 @@ void PSPRenderer::TexRectFlip( u32 tile_idx, const v2 & xy0, const v2 & xy1, con
 	v2 tex_uv0( uv0 - mTileTopLeft[ 0 ] );
 	v2 tex_uv1( uv1 - mTileTopLeft[ 0 ] );
 
-	//DL_PF( "      Screen:  %f,%f -> %f,%f", screen0.x, screen0.y, screen1.x, screen1.y );
-	//DL_PF( "      Texture: %f,%f -> %f,%f", tex_uv0.x, tex_uv0.y, tex_uv1.x, tex_uv1.y );
+	DL_PF( "      Screen:  %.1f,%.1f -> %.1f,%.1f", screen0.x, screen0.y, screen1.x, screen1.y );
+	DL_PF( "      Texture: %.1f,%.1f -> %.1f,%.1f", tex_uv0.x, tex_uv0.y, tex_uv1.x, tex_uv1.y );
 
 	DaedalusVtx trv[ 6 ];
 
@@ -1301,108 +1288,76 @@ bool PSPRenderer::AddTri(u32 v0, u32 v1, u32 v2)
 {
 	//DAEDALUS_PROFILE( "PSPRenderer::AddTri" );
 
-	u8	f0( mVtxProjected[v0].ClipFlags );
-	u8	f1( mVtxProjected[v1].ClipFlags );
-	u8	f2( mVtxProjected[v2].ClipFlags );
+	const u32 & f0( mVtxProjected[v0].ClipFlags );
+	const u32 & f1( mVtxProjected[v1].ClipFlags );
+	const u32 & f2( mVtxProjected[v2].ClipFlags );
 
 	//if ( f0 & f1 & f2 & CLIP_TEST_FLAGS )
 	if ( f0 & f1 & f2 )
 	{
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-		DL_PF("   Tri: %d,%d,%d (Culled against NDC box)", v0, v1, v2);
+		DL_PF("   Tri: %d,%d,%d (Culled -> NDC box)", v0, v1, v2);
 		++m_dwNumTrisClipped;
 #endif
 		return false;
 
 	}
-	else
+
+	//
+	//Cull BACK or FRONT faceing tris early in the pipeline //Corn
+	//
+	if( mCull )
 	{
-		//
-		//Cull BACK or FRONT faceing tris early in the pipeline //Corn
-		//
-		if( m_bCull )
+		const v4 & t0( mVtxProjected[v0].ProjectedPos );
+		const v4 & t1( mVtxProjected[v1].ProjectedPos );
+		const v4 & t2( mVtxProjected[v2].ProjectedPos );
+
+		const f32 & iW0( mVtxProjected[v0].iW );	//Get 1.0f / projW
+		const f32 & iW1( mVtxProjected[v1].iW );
+		const f32 & iW2( mVtxProjected[v2].iW );
+
+		if( (((t1.x*iW1-t0.x*iW0)*(t2.y*iW2-t0.y*iW0) - (t2.x*iW2-t0.x*iW0)*(t1.y*iW1-t0.y*iW0)) * iW0 * iW1 * iW2) <= 0.f )
 		{
-			v4 & t0( mVtxProjected[v0].ProjectedPos );
-			v4 & t1( mVtxProjected[v1].ProjectedPos );
-			v4 & t2( mVtxProjected[v2].ProjectedPos );
-
-			f32 & iW0( mVtxProjected[v0].iW );	//Get 1.0f / projW
-			f32 & iW1( mVtxProjected[v1].iW );
-			f32 & iW2( mVtxProjected[v2].iW );
-
-			if( (((t1.x*iW1-t0.x*iW0)*(t2.y*iW2-t0.y*iW0) - (t2.x*iW2-t0.x*iW0)*(t1.y*iW1-t0.y*iW0)) * iW0 * iW1 * iW2) <= 0.f )
-			{
-				if( m_bCull_mode == GU_CCW )
-				{
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-					DL_PF("   Tri: %d,%d,%d (Culled Back Face)", v0, v1, v2);
-					++m_dwNumTrisClipped;
-#endif
-					return false;
-				}
-			}
-			else if( m_bCull_mode == GU_CW )
+			if( mCullMode == GU_CCW )
 			{
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-				DL_PF("   Tri: %d,%d,%d (Culled Front Face)", v0, v1, v2);
+				DL_PF("   Tri: %d,%d,%d (Culled -> Back Face)", v0, v1, v2);
 				++m_dwNumTrisClipped;
 #endif
 				return false;
 			}
 		}
-
-		// Remove off screen tris
-		//
-		if( bIsOffScreen )	
+		else if( mCullMode == GU_CW )
 		{
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-				DL_PF("   Tri: %d,%d,%d (Culled Off-Screen)", v0, v1, v2);
-				++m_dwNumTrisClipped;
+			DL_PF("   Tri: %d,%d,%d (Culled -> Front Face)", v0, v1, v2);
+			++m_dwNumTrisClipped;
 #endif
 			return false;
 		}
+	}
+
+	if( bIsOffScreen )	
+	{
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+		DL_PF("   Tri: %d,%d,%d (Culled -> Off-Screen)", v0, v1, v2);
+		++m_dwNumTrisClipped;
+#endif
+		return false;
+	}
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-		DL_PF("   Tri: %d,%d,%d", v0, v1, v2);
-		++m_dwNumTrisRendered;
+	DL_PF("   Tri: %d,%d,%d", v0, v1, v2);
+	++m_dwNumTrisRendered;
 #endif
 
-		m_swIndexBuffer[ m_dwNumIndices++ ] = (u16)v0;
-		m_swIndexBuffer[ m_dwNumIndices++ ] = (u16)v1;
-		m_swIndexBuffer[ m_dwNumIndices++ ] = (u16)v2;
+	m_swIndexBuffer[ m_dwNumIndices++ ] = (u16)v0;
+	m_swIndexBuffer[ m_dwNumIndices++ ] = (u16)v1;
+	m_swIndexBuffer[ m_dwNumIndices++ ] = (u16)v2;
 
-		mVtxClipFlagsUnion |= f0 | f1 | f2;
+	mVtxClipFlagsUnion |= f0 | f1 | f2;
 
-		return true;
-	}
-}
-
-//*****************************************************************************
-//
-//*****************************************************************************
-inline v4 PSPRenderer::LightVert( const v3 & norm ) const
-{
-	// Do ambient
-	v4	result( mTnLParams.Ambient );
-
-	for ( u32 i = 0; i < m_dwNumLights; i++ )
-	{
-		f32 fCosT = norm.Dot( mLights[i].Direction );
-		if (fCosT > 0.0f)
-		{
-			result.x += mLights[i].Colour.x * fCosT;
-			result.y += mLights[i].Colour.y * fCosT;
-			result.z += mLights[i].Colour.z * fCosT;
-		}
-	}
-
-	//Clamp to 1.0
-	if( result.x > 1.0f ) result.x = 1.0f;
-	if( result.y > 1.0f ) result.y = 1.0f;
-	if( result.z > 1.0f ) result.z = 1.0f;
-	result.w = 1.0f;
-
-	return result;
+	return true;
 }
 
 //*****************************************************************************
@@ -1505,9 +1460,9 @@ void PSPRenderer::FlushTris()
 	//
 	//	Do BACK/FRONT culling in sceGE
 	//	
-	//if( m_bCull )
+	//if( mCull )
 	//{
-	//	sceGuFrontFace(m_bCull_mode);
+	//	sceGuFrontFace(mCullMode);
 	//	sceGuEnable(GU_CULL_FACE);
 	//}
 	//else
@@ -1698,9 +1653,9 @@ void PSPRenderer::PrepareTrisClipped( DaedalusVtx ** p_p_vertices, u32 * p_num_v
 
 	for(u32 i = 0; i < (m_dwNumIndices - 2);)
 	{
-		u32 idx0 = m_swIndexBuffer[ i++ ];
-		u32 idx1 = m_swIndexBuffer[ i++ ];
-		u32 idx2 = m_swIndexBuffer[ i++ ];
+		const u32 & idx0 = m_swIndexBuffer[ i++ ];
+		const u32 & idx1 = m_swIndexBuffer[ i++ ];
+		const u32 & idx2 = m_swIndexBuffer[ i++ ];
 
 		//Check if any of the vertices are outside the clipbox (NDC), if so we need to clip the triangle
 		if(mVtxProjected[idx0].ClipFlags | mVtxProjected[idx1].ClipFlags | mVtxProjected[idx2].ClipFlags)
@@ -1709,15 +1664,14 @@ void PSPRenderer::PrepareTrisClipped( DaedalusVtx ** p_p_vertices, u32 * p_num_v
 			temp_a[ 1 ] = mVtxProjected[ idx1 ];
 			temp_a[ 2 ] = mVtxProjected[ idx2 ];
 
-			DL_PF("Clip & Tesselate [%d,%d,%d]", i-3, i-2, i-1);
-			DL_PF("%#5.3f, %#5.3f, %#5.3f, %#5.3f", temp_a[0].ProjectedPos.x, temp_a[0].ProjectedPos.y, temp_a[0].ProjectedPos.z, temp_a[0].ProjectedPos.w );
-			DL_PF("%#5.3f, %#5.3f, %#5.3f, %#5.3f", temp_a[1].ProjectedPos.x, temp_a[1].ProjectedPos.y, temp_a[1].ProjectedPos.z, temp_a[1].ProjectedPos.w );
-			DL_PF("%#5.3f, %#5.3f, %#5.3f, %#5.3f", temp_a[2].ProjectedPos.x, temp_a[2].ProjectedPos.y, temp_a[2].ProjectedPos.z, temp_a[2].ProjectedPos.w );
-
 			u32 out = clip_tri_to_frustum( temp_a, temp_b );
 			//If we have less than 3 vertices left after the clipping
 			//we can't make a triangle so we bail and skip rendering it.
-			DL_PF("Retesselate with %d Vtx (if less than 3 skip it)", out);
+			DL_PF("Clip & re-tesselate [%d,%d,%d] with %d vertices", i-3, i-2, i-1, out);
+			DL_PF("%#5.3f, %#5.3f, %#5.3f", mVtxProjected[ idx0 ].ProjectedPos.x*mVtxProjected[ idx0 ].iW, mVtxProjected[ idx0 ].ProjectedPos.y*mVtxProjected[ idx0 ].iW, mVtxProjected[ idx0 ].ProjectedPos.z*mVtxProjected[ idx0 ].iW);
+			DL_PF("%#5.3f, %#5.3f, %#5.3f", mVtxProjected[ idx1 ].ProjectedPos.x*mVtxProjected[ idx1 ].iW, mVtxProjected[ idx1 ].ProjectedPos.y*mVtxProjected[ idx1 ].iW, mVtxProjected[ idx1 ].ProjectedPos.z*mVtxProjected[ idx1 ].iW);
+			DL_PF("%#5.3f, %#5.3f, %#5.3f", mVtxProjected[ idx2 ].ProjectedPos.x*mVtxProjected[ idx2 ].iW, mVtxProjected[ idx2 ].ProjectedPos.y*mVtxProjected[ idx2 ].iW, mVtxProjected[ idx2 ].ProjectedPos.z*mVtxProjected[ idx2 ].iW);
+
 			if( out < 3 )
 				continue;
 
@@ -1789,6 +1743,34 @@ void PSPRenderer::PrepareTrisUnclipped( DaedalusVtx ** p_p_vertices, u32 * p_num
 }
 
 //*****************************************************************************
+//
+//*****************************************************************************
+inline v4 PSPRenderer::LightVert( const v3 & norm ) const
+{
+	// Do ambient
+	v4	result( mTnLParams.Ambient );
+
+	for ( u32 i = 0; i < mNumLights; i++ )
+	{
+		f32 fCosT = norm.Dot( mLights[i].Direction );
+		if (fCosT > 0.0f)
+		{
+			result.x += mLights[i].Colour.x * fCosT;
+			result.y += mLights[i].Colour.y * fCosT;
+			result.z += mLights[i].Colour.z * fCosT;
+		}
+	}
+
+	//Clamp to 1.0
+	if( result.x > 1.0f ) result.x = 1.0f;
+	if( result.y > 1.0f ) result.y = 1.0f;
+	if( result.z > 1.0f ) result.z = 1.0f;
+	//result.w = 1.0f;
+
+	return result;
+}
+
+//*****************************************************************************
 //*****************************************************************************
 //*****************************************************************************
 //*****************************************************************************
@@ -1799,7 +1781,6 @@ void PSPRenderer::PrepareTrisUnclipped( DaedalusVtx ** p_p_vertices, u32 * p_num
 //*****************************************************************************
 //*****************************************************************************
 //*****************************************************************************
-extern u32 gGeometryMode;
 
 #if	1	//1->VFPU, 0->FPU/CPU (for Standard rendering pipeline)
 
@@ -1830,6 +1811,9 @@ void PSPRenderer::SetNewVertexInfo(u32 address, u32 v0, u32 n)
 
 	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );
 
+	DL_PF( "    Ambient color RGB[%f][%f][%f] Texture scale X[%f] Texture scale Y[%f]", mTnLParams.Ambient.x, mTnLParams.Ambient.y, mTnLParams.Ambient.z, mTnLParams.TextureScaleX, mTnLParams.TextureScaleY);
+	DL_PF( "    Light[%s] Texture[%s] EnvMap[%s] Fog[%s]", (mTnLModeFlags&TNL_LIGHT)? "On":"Off", (mTnLModeFlags&TNL_TEXTURE)? "On":"Off", (mTnLModeFlags&TNL_TEXGEN)? (mTnLModeFlags&TNL_TEXGENLIN)? "Linear":"Spherical":"Off", (mTnLModeFlags&TNL_FOG)? "On":"Off");
+
 #ifdef NO_VFPU_FOG
 	switch( mTnLModeFlags & (TNL_TEXTURE|TNL_TEXGEN|TNL_LIGHT) )
 	{
@@ -1840,12 +1824,12 @@ void PSPRenderer::SetNewVertexInfo(u32 address, u32 v0, u32 n)
 	case            TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithColour_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
 
 		// TNL_TEXGEN is ignored when TNL_TEXTURE is disabled
-	case TNL_LIGHT                          : _TransformVerticesWithLighting_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
-	case TNL_LIGHT |             TNL_TEXTURE: _TransformVerticesWithLighting_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
-	case TNL_LIGHT |TNL_TEXGEN              : _TransformVerticesWithLighting_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+	case TNL_LIGHT                          : _TransformVerticesWithLighting_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, mNumLights ); break;
+	case TNL_LIGHT |             TNL_TEXTURE: _TransformVerticesWithLighting_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, mNumLights ); break;
+	case TNL_LIGHT |TNL_TEXGEN              : _TransformVerticesWithLighting_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, mNumLights ); break;
 	case TNL_LIGHT |TNL_TEXGEN | TNL_TEXTURE:
-		if( gGeometryMode & G_TEXTURE_GEN_LINEAR ) _TransformVerticesWithLighting_f0_t3( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights );
-		else _TransformVerticesWithLighting_f0_t2( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights );
+		if( mTnLModeFlags & TNL_TEXGENLIN ) _TransformVerticesWithLighting_f0_t3( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, mNumLights );
+		else _TransformVerticesWithLighting_f0_t2( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, mNumLights );
 		break;
 
 #else
@@ -1862,21 +1846,19 @@ void PSPRenderer::SetNewVertexInfo(u32 address, u32 v0, u32 n)
 	case  TNL_FOG | TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithColour_f1_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
 
 		// TNL_TEXGEN is ignored when TNL_TEXTURE is disabled
-	case TNL_LIGHT                                     : _TransformVerticesWithLighting_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
-	case TNL_LIGHT |                        TNL_TEXTURE: _TransformVerticesWithLighting_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
-	case TNL_LIGHT |           TNL_TEXGEN              : _TransformVerticesWithLighting_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
-	case TNL_LIGHT |           TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithLighting_f0_t2( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
-	case TNL_LIGHT | TNL_FOG                           : _TransformVerticesWithLighting_f1_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
-	case TNL_LIGHT | TNL_FOG |              TNL_TEXTURE: _TransformVerticesWithLighting_f1_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
-	case TNL_LIGHT | TNL_FOG | TNL_TEXGEN              : _TransformVerticesWithLighting_f1_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
-	case TNL_LIGHT | TNL_FOG | TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithLighting_f1_t2( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, m_dwNumLights ); break;
+	case TNL_LIGHT                                     : _TransformVerticesWithLighting_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, mNumLights ); break;
+	case TNL_LIGHT |                        TNL_TEXTURE: _TransformVerticesWithLighting_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, mNumLights ); break;
+	case TNL_LIGHT |           TNL_TEXGEN              : _TransformVerticesWithLighting_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, mNumLights ); break;
+	case TNL_LIGHT |           TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithLighting_f0_t2( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, mNumLights ); break;
+	case TNL_LIGHT | TNL_FOG                           : _TransformVerticesWithLighting_f1_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, mNumLights ); break;
+	case TNL_LIGHT | TNL_FOG |              TNL_TEXTURE: _TransformVerticesWithLighting_f1_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, mNumLights ); break;
+	case TNL_LIGHT | TNL_FOG | TNL_TEXGEN              : _TransformVerticesWithLighting_f1_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, mNumLights ); break;
+	case TNL_LIGHT | TNL_FOG | TNL_TEXGEN | TNL_TEXTURE: _TransformVerticesWithLighting_f1_t2( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams, mLights, mNumLights ); break;
 #endif
 	default:
 		NODEFAULT;
 		break;
 	}
-
-	//TestVFPUVerts( v0, n, pVtxBase, matWorld );
 }
 
 #ifdef DAEDALUS_IS_LEGACY
@@ -1963,12 +1945,12 @@ void PSPRenderer::TestVFPUVerts( u32 v0, u32 num, const FiddledVtx * verts, cons
 //*****************************************************************************
 // Standard rendering pipeline using FPU/CPU
 //*****************************************************************************
-void PSPRenderer::SetNewVertexInfo(u32 dwAddress, u32 dwV0, u32 dwNum)
+void PSPRenderer::SetNewVertexInfo(u32 address, u32 v0, u32 n)
 {
 	//DBGConsole_Msg(0, "In SetNewVertexInfo");
-	FiddledVtx * pVtxBase = (FiddledVtx*)(g_pu8RamBase + dwAddress);
+	FiddledVtx * pVtxBase = (FiddledVtx*)(g_pu8RamBase + address);
 
-	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );
+	const Matrix4x4 & matWorldProject( GetWorldProject() );
 
 	//If WoldProjectmatrix has modified due to insert matrix
 	//we need to update our modelView (fixes NMEs in Kirby and SSB) //Corn
@@ -1986,15 +1968,16 @@ void PSPRenderer::SetNewVertexInfo(u32 dwAddress, u32 dwV0, u32 dwNum)
 		mModelViewStack[mModelViewTop] = mWorldProject * mInvProjection;
 	}
 
-	const Matrix4x4 & matWorldProject( GetWorldProject() );
+	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );
 
-	// Transform and Project + Lighting
-	// or
-	// Transform and Project with Colour
+	DL_PF( "    Ambient color RGB[%f][%f][%f] Texture scale X[%f] Texture scale Y[%f]", mTnLParams.Ambient.x, mTnLParams.Ambient.y, mTnLParams.Ambient.z, mTnLParams.TextureScaleX, mTnLParams.TextureScaleY);
+	DL_PF( "    Light[%s] Texture[%s] EnvMap[%s] Fog[%s]", (mTnLModeFlags&TNL_LIGHT)? "On":"Off", (mTnLModeFlags&TNL_TEXTURE)? "On":"Off", (mTnLModeFlags&TNL_TEXGEN)? (mTnLModeFlags&TNL_TEXGENLIN)? "Linear":"Spherical":"Off", (mTnLModeFlags&TNL_FOG)? "On":"Off");
 
-	for (u32 i = dwV0; i < dwV0 + dwNum; i++)
+	// Transform and Project + Lighting or Transform and Project with Colour
+	//
+	for (u32 i = v0; i < v0 + n; i++)
 	{
-		const FiddledVtx & vert = pVtxBase[i - dwV0];
+		const FiddledVtx & vert = pVtxBase[i - v0];
 
 		v4 w( f32( vert.x ), f32( vert.y ), f32( vert.z ), 1.0f );
 
@@ -2002,7 +1985,7 @@ void PSPRenderer::SetNewVertexInfo(u32 dwAddress, u32 dwV0, u32 dwNum)
 		//
 		v4 & projected( mVtxProjected[i].ProjectedPos );
 		projected = matWorldProject.Transform( w );
-		mVtxProjected[i].iW = 1.0f / mVtxProjected[i].ProjectedPos.w;
+		mVtxProjected[i].iW = 1.0f / mVtxProjected[i].ProjectedPos.w;	//Used for tris front/back culling //Corn
 		mVtxProjected[i].TransformedPos = matWorld.Transform( w );
 
 		//	Initialise the clipping flags
@@ -2018,15 +2001,13 @@ void PSPRenderer::SetNewVertexInfo(u32 dwAddress, u32 dwV0, u32 dwNum)
 		else if (+projected.z > projected.w)	clip_flags |= Z_NEG;
 		mVtxProjected[i].ClipFlags = clip_flags;
 
-		DL_PF( "p%d: (%f,%f,%f) -> (%f,%f,%f,%f)", i, w.x, w.y, w.z, mVtxProjected[i].ProjectedPos.x, mVtxProjected[i].ProjectedPos.y, mVtxProjected[i].ProjectedPos.z, mVtxProjected[i].ProjectedPos.w );
-
 		// LIGHTING OR COLOR
 		//
-		if (mTnLModeFlags & TNL_LIGHT)
+		if ( mTnLModeFlags & TNL_LIGHT )
 		{
 			v3	model_normal(f32( vert.norm_x ), f32( vert.norm_y ), f32( vert.norm_z ) );
 
-			v3 vecTransformedNormal;		// Used only when TNL_LIGHT set
+			v3 vecTransformedNormal;
 			vecTransformedNormal = matWorld.TransformNormal( model_normal );
 			vecTransformedNormal.Normalise();
 
@@ -2039,38 +2020,28 @@ void PSPRenderer::SetNewVertexInfo(u32 dwAddress, u32 dwV0, u32 dwNum)
 			{
 				// Update texture coords n.b. need to divide tu/tv by bogus scale on addition to buffer
 				// If the vert is already lit, then there is no normal (and hence we can't generate tex coord)
-				// Lets use matWorldProject instead of mat_world for nicer effect //Corn
+				#if 1 // 1->Lets use matWorldProject instead of mat_world for nicer effect (see SSV space ship) //Corn
 				vecTransformedNormal = matWorldProject.TransformNormal( model_normal );
 				vecTransformedNormal.Normalise();
-				const v3 & norm = vecTransformedNormal;
+				#endif
 
-				if( gGeometryMode & G_TEXTURE_GEN_LINEAR )
+				const v3 & norm = vecTransformedNormal;
+				
+				if( mTnLModeFlags & TNL_TEXGENLIN )
 				{
-					mVtxProjected[i].Texture.x = 0.5f * ( 1.0f + norm.x);
-					mVtxProjected[i].Texture.y = 0.5f * ( 1.0f + norm.y);
+					mVtxProjected[i].Texture.x = 0.5f * ( 1.0f + norm.x );
+					mVtxProjected[i].Texture.y = 0.5f * ( 1.0f + norm.y );
 				}
 				else
 				{
-					// Assign the spheremap's texture coordinates
-					//mVtxProjected[i].Texture.x = (0.5f * ( 1.0f + ( norm.x*mat_world.m11 +
-					//											    norm.y*mat_world.m21 +
-					//											    norm.z*mat_world.m31 ) ));
-
-					//mVtxProjected[i].Texture.y = (0.5f * ( 1.0f - ( norm.x*mat_world.m12 +
-					//											    norm.y*mat_world.m22 +
-					//											    norm.z*mat_world.m32 ) ));
-					
-					//mVtxProjected[i].Texture.x = acosf(norm.x) / 3.14159265f;
-					//mVtxProjected[i].Texture.y = acosf(norm.y) / 3.14159265f;
-
-					//Cheaper way to do Acos(x)/Pi (abs() fixes star in SM64 sort of) //Corn
+					//Cheap way to do Acos(x)/Pi (abs() fixes star in SM64, sort of) //Corn
 					f32 NormX = pspFpuAbs( norm.x );
 					f32 NormY = pspFpuAbs( norm.y );
 					mVtxProjected[i].Texture.x =  0.5f - 0.25f * NormX - 0.25f * NormX * NormX * NormX; 
 					mVtxProjected[i].Texture.y =  0.5f - 0.25f * NormY - 0.25f * NormY * NormY * NormY;
 				}
 			}
-			else if(mTnLModeFlags & TNL_TEXTURE)
+			else if( mTnLModeFlags & TNL_TEXTURE )
 			{
 				mVtxProjected[i].Texture.x = (float)vert.tu * mTnLParams.TextureScaleX;
 				mVtxProjected[i].Texture.y = (float)vert.tv * mTnLParams.TextureScaleY;
@@ -2080,7 +2051,7 @@ void PSPRenderer::SetNewVertexInfo(u32 dwAddress, u32 dwV0, u32 dwNum)
 		{
 			mVtxProjected[i].Colour = v4( vert.rgba_r * (1.0f / 255.0f), vert.rgba_g * (1.0f / 255.0f), vert.rgba_b * (1.0f / 255.0f), vert.rgba_a * (1.0f / 255.0f) );
 
-			if(mTnLModeFlags & TNL_TEXTURE)
+			if( mTnLModeFlags & TNL_TEXTURE )
 			{
 				mVtxProjected[i].Texture.x = (float)vert.tu * mTnLParams.TextureScaleX;
 				mVtxProjected[i].Texture.y = (float)vert.tv * mTnLParams.TextureScaleY;
@@ -2117,127 +2088,79 @@ void PSPRenderer::SetNewVertexInfo(u32 dwAddress, u32 dwV0, u32 dwNum)
 //*****************************************************************************
 extern u32 gConkerVtxZAddr;
 
+#if 1	//1->VFPU, 0->FPU	//Corn
 void PSPRenderer::SetNewVertexInfoConker(u32 address, u32 v0, u32 n)
 {
-	// Light not handled for Conker
-	// We only handle Env Map for Conker ATM, but using the CPU :(
-	//
 	const FiddledVtx * const pVtxBase( (const FiddledVtx*)(g_pu8RamBase + address) );
 	const Matrix4x4 & matWorldProject( GetWorldProject() );
 	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );
 
-	// TNL_TEXGEN is ignored when TNL_LIGHT is disabled
-	switch( mTnLModeFlags & (TNL_TEXTURE | TNL_TEXGEN) )
+	DL_PF( "    Ambient color RGB[%f][%f][%f] Texture scale X[%f] Texture scale Y[%f]", mTnLParams.Ambient.x, mTnLParams.Ambient.y, mTnLParams.Ambient.z, mTnLParams.TextureScaleX, mTnLParams.TextureScaleY);
+	DL_PF( "    Light[%s] Texture[%s] EnvMap[%s] Fog[%s]", (mTnLModeFlags&TNL_LIGHT)? "On":"Off", (mTnLModeFlags&TNL_TEXTURE)? "On":"Off", (mTnLModeFlags&TNL_TEXGEN)? (mTnLModeFlags&TNL_TEXGENLIN)? "Linear":"Spherical":"Off", (mTnLModeFlags&TNL_FOG)? "On":"Off");
+
+	// Light is not handled for Conker
+	//
+	_TransformVerticesWithColour_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams );
+	
+	// Do Env Mapping using the CPU with an extra pass 
+	// TODO : Port this to VFPU ASM
+	//
+	if( (mTnLModeFlags & (TNL_LIGHT | TNL_TEXGEN | TNL_TEXTURE)) == (TNL_LIGHT | TNL_TEXGEN | TNL_TEXTURE) )
 	{
-	case                                   0: _TransformVerticesWithColour_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
-	case                         TNL_TEXTURE: _TransformVerticesWithColour_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
-	case            TNL_TEXGEN              : _TransformVerticesWithColour_f0_t0( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams ); break;
-	case            TNL_TEXGEN | TNL_TEXTURE:
-		_TransformVerticesWithColour_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnLParams );
-		// Do Env Mapping using the CPU with an extra pass 
-		// TODO : Port this to VFPU ASM
-		//
-		if( (mTnLModeFlags & TNL_LIGHT) == TNL_LIGHT )
+		for (u32 i = v0; i < (v0 + n); i++)
 		{
-			for (u32 i = v0; i < (v0 + n); i++)
+			v3 model_normal( *(s8*)(g_pu8RamBase+ (((i<<1)+0)^3)+gConkerVtxZAddr), *(s8*)(g_pu8RamBase+ (((i<<1)+1)^3)+gConkerVtxZAddr), *(s8*)(g_pu8RamBase+ (((i<<1)+2)^3)+gConkerVtxZAddr) );
+		
+			v3 vecTransformedNormal = matWorld.TransformNormal( model_normal );
+			vecTransformedNormal.Normalise();
+
+			const v3 & norm = vecTransformedNormal;
+
+			if( mTnLModeFlags & TNL_TEXGENLIN )
+			{	//Cheap way to do Acos(x)/Pi //Corn
+				mVtxProjected[i].Texture.x =  0.5f - 0.25f * norm.x - 0.25f * norm.x * norm.x * norm.x;
+				mVtxProjected[i].Texture.y =  0.5f - 0.25f * norm.y - 0.25f * norm.y * norm.y * norm.y;
+			}
+			else
 			{
-				v3	model_normal(f32( (float)*(char*)(g_pu8RamBase+ (((i<<1)+0)^3)+gConkerVtxZAddr) ), f32( (float)*(char*)(g_pu8RamBase+ (((i<<1)+1)^3)+gConkerVtxZAddr) ), f32( (float)*(char*)(g_pu8RamBase+ (((i<<1)+2)^3)+gConkerVtxZAddr) ) );
-			
-				v3 vecTransformedNormal = matWorld.TransformNormal( model_normal );
-				vecTransformedNormal.Normalise();
-
-				const v3 & norm = vecTransformedNormal;
-
-				if( gGeometryMode & G_TEXTURE_GEN_LINEAR )
-				{
-					//Cheaper way to do Acos(x)/Pi //Corn
-					mVtxProjected[i].Texture.x =  0.5f - 0.25f * norm.x - 0.25f * norm.x * norm.x * norm.x;
-					mVtxProjected[i].Texture.y =  0.5f - 0.25f * norm.y - 0.25f * norm.y * norm.y * norm.y;
-				}
-				else
-				{
-					mVtxProjected[i].Texture.x = 0.5f * ( 1.0f + norm.x);
-					mVtxProjected[i].Texture.y = 0.5f * ( 1.0f + norm.y);
-				}
+				mVtxProjected[i].Texture.x = 0.5f * ( 1.0f + norm.x );
+				mVtxProjected[i].Texture.y = 0.5f * ( 1.0f + norm.y );
 			}
 		}
-		break;
-	default:
-		NODEFAULT;
-		break;
 	}
 }
 
-//*****************************************************************************
-// Assumes dwAddress has already been checked!
-// DKR/Jet Force Gemini rendering pipeline
-// Seems to use longer vert info
-//*****************************************************************************
-extern Matrix4x4 gDKRMatrixes[4];
-extern u32 gDKRCMatrixIndex;
-extern u32 gDKRVtxCount;
-extern bool gDKRBillBoard;
+#else
+//FPU/CPU version //Corn
+//extern f32 gCoord_Mod[16];
 
-void PSPRenderer::SetNewVertexInfoDKR(u32 dwAddress, u32 dwV0, u32 dwNum)
+void PSPRenderer::SetNewVertexInfoConker(u32 address, u32 v0, u32 n)
 {
-#ifndef NO_VFPU_FOG
-	s32 nFogR, nFogG, nFogB, nFogA;
-	if (mTnLModeFlags & TNL_FOG)
+	//DBGConsole_Msg(0, "In SetNewVertexInfo");
+	const FiddledVtx * const pVtxBase( (const FiddledVtx*)(g_pu8RamBase + address) );
+	const Matrix4x4 & matWorldProject( GetWorldProject() );
+	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );
+
+	DL_PF( "    Ambient color RGB[%f][%f][%f] Texture scale X[%f] Texture scale Y[%f]", mTnLParams.Ambient.x, mTnLParams.Ambient.y, mTnLParams.Ambient.z, mTnLParams.TextureScaleX, mTnLParams.TextureScaleY);
+	DL_PF( "    Light[%s] Texture[%s] EnvMap[%s] Fog[%s]", (mTnLModeFlags&TNL_LIGHT)? "On":"Off", (mTnLModeFlags&TNL_TEXTURE)? "On":"Off", (mTnLModeFlags&TNL_TEXGEN)? (mTnLModeFlags&TNL_TEXGENLIN)? "Linear":"Spherical":"Off", (mTnLModeFlags&TNL_FOG)? "On":"Off");
+
+	// Transform and Project + Lighting or Transform and Project with Colour
+	//
+	for (u32 i = v0; i < v0 + n; i++)
 	{
-		nFogR = mFogColour.GetR();
-		nFogG = mFogColour.GetG();
-		nFogB = mFogColour.GetB();
-		nFogA = mFogColour.GetA();
-	}
-#endif
+		const FiddledVtx & vert = pVtxBase[i - v0];
 
-	u32 pVtxBase = u32(g_pu8RamBase + dwAddress);
+		v4 w( f32( vert.x ), f32( vert.y ), f32( vert.z ), 1.0f );
 
-	const Matrix4x4 & matWorldProject( gDKRMatrixes[gDKRCMatrixIndex] );
-
-	//ToDo: avoid setting the matrix here all the time //Corn
-	sceGuSetMatrix( GU_PROJECTION, reinterpret_cast< const ScePspFMatrix4 * >( &matWorldProject) );
-
-	bool addbase = !((!gDKRBillBoard) | (gDKRCMatrixIndex != 2));
-
-	if( addbase & (gDKRVtxCount == 0) & (dwNum > 1) ) gDKRVtxCount++;
-
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	DL_PF( "    CMtx[%d] Add base=%s", gDKRCMatrixIndex, addbase? "true":"false");
-#endif
-
-	u32 nOff = 0;
-
-	for (u32 i = dwV0; i < dwV0 + dwNum; i++)
-	{
-		v4 & transformed( mVtxProjected[i].TransformedPos );
-		transformed.x = (f32)*(s16*)((pVtxBase + nOff + 0) ^ 2);
-		transformed.y = (f32)*(s16*)((pVtxBase + nOff + 2) ^ 2);
-		transformed.z = (f32)*(s16*)((pVtxBase + nOff + 4) ^ 2);
-		transformed.w = 1.0f;
-
+		// VTX Transform
+		//
 		v4 & projected( mVtxProjected[i].ProjectedPos );
-		projected = matWorldProject.Transform( transformed );	// Convert to w=1
+		projected = matWorldProject.Transform( w );
+		mVtxProjected[i].iW = 1.0f / mVtxProjected[i].ProjectedPos.w;	//Used for tris front/back culling //Corn
+		mVtxProjected[i].TransformedPos = matWorld.Transform( w );
 
-		//Used for tris front/back culling //Corn
-		mVtxProjected[i].iW = 1.0f / projected.w;
-
-		static v4 gDKRBaseVec;
-		if( (gDKRVtxCount == 0) & (dwNum == 1) )
-		{
-			gDKRBaseVec = transformed;
-		}
-		else if( addbase )
-		{
-			transformed.x += gDKRBaseVec.x;
-			transformed.y += gDKRBaseVec.y;
-			transformed.z += gDKRBaseVec.z;
-			transformed.w  = gDKRBaseVec.w;
-		}
-
-		gDKRVtxCount++;
-
-		// Set Clipflags //Corn
+		//	Initialise the clipping flags
+		//
 		u32 clip_flags = 0;
 		if		(-projected.x > projected.w)	clip_flags |= X_POS;
 		else if (+projected.x > projected.w)	clip_flags |= X_NEG;
@@ -2249,46 +2172,183 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 dwAddress, u32 dwV0, u32 dwNum)
 		else if (+projected.z > projected.w)	clip_flags |= Z_NEG;
 		mVtxProjected[i].ClipFlags = clip_flags;
 
-		v4 colour;
-
-		if (mTnLModeFlags & TNL_LIGHT)
+		// LIGHTING OR COLOR
+		//
+		if ( mTnLModeFlags & TNL_LIGHT )
 		{
-			s16 wA = *(s16*)((pVtxBase + nOff + 6) ^ 2);
-			s16 wB = *(s16*)((pVtxBase + nOff + 8) ^ 2);
+			v4	result( mTnLParams.Ambient );
 
-			s8 r = (s8)(wA >> 8);
-			s8 g = (s8)(wA);
-			s8 b = (s8)(wB >> 8);
-			u8 a = (u8)(wB);
+			for ( u32 k = 1; k < mNumLights; k++ )
+			{
+				result.x += mLights[k].Colour.x;
+				result.y += mLights[k].Colour.y;
+				result.z += mLights[k].Colour.z;
+			}
 
-			v3 mn = v3( (f32)r, (f32)g, (f32)b );		// modelnorm
+			//Clamp to 1.0
+			if( result.x > 1.0f ) result.x = 1.0f;
+			if( result.y > 1.0f ) result.y = 1.0f;
+			if( result.z > 1.0f ) result.z = 1.0f;
 
-			v3 vecTransformedNormal = matWorldProject.TransformNormal( mn );
-			vecTransformedNormal.Normalise();
+			result.x *= (f32)vert.rgba_r * (1.0f / 255.0f);
+			result.y *= (f32)vert.rgba_g * (1.0f / 255.0f);
+			result.z *= (f32)vert.rgba_b * (1.0f / 255.0f);
+			result.w  = (f32)vert.rgba_a * (1.0f / 255.0f);
 
-			colour = LightVert(vecTransformedNormal);
-			colour.w = (f32)a * (1.0f / 255.0f);
+			mVtxProjected[i].Colour = result;
 		}
 		else
 		{
-			u16 wA = *(u16*)((pVtxBase + nOff + 6) ^ 2);
-			u16 wB = *(u16*)((pVtxBase + nOff + 8) ^ 2);
-
-			u8 r = (u8)(wA >> 8);
-			u8 g = (u8)(wA);
-			u8 b = (u8)(wB >> 8);
-			u8 a = (u8)(wB);
-
-			colour = v4( (f32)r * (1.0f / 255.0f), (f32)g * (1.0f / 255.0f), (f32)b * (1.0f / 255.0f), (f32)a * (1.0f / 255.0f) );
+			if( mSmooth )
+			{	//FLAT shade
+				mVtxProjected[i].Colour = v4( (f32)vert.rgba_r * (1.0f / 255.0f), (f32)vert.rgba_g * (1.0f / 255.0f), (f32)vert.rgba_b * (1.0f / 255.0f), (f32)vert.rgba_a * (1.0f / 255.0f) );
+			}
+			else
+			{	//Shade is disabled
+				mVtxProjected[i].Colour = mPrimitiveColour.GetColourV4();
+			}
 		}
 
-		// Assign true vert colour after lighting/fogging
-		mVtxProjected[i].Colour = colour;
+		// ENV MAPPING
+		//
+		if ( (mTnLModeFlags & (TNL_TEXGEN | TNL_LIGHT)) == (TNL_TEXGEN | TNL_LIGHT) )
+		{
+			v3 model_normal( *(s8*)(g_pu8RamBase+ (((i<<1)+0)^3)+gConkerVtxZAddr), *(s8*)(g_pu8RamBase+ (((i<<1)+1)^3)+gConkerVtxZAddr), *(s8*)(g_pu8RamBase+ (((i<<1)+2)^3)+gConkerVtxZAddr) );
+			v3 vecTransformedNormal = matWorld.TransformNormal( model_normal );
+			vecTransformedNormal.Normalise();
 
-		// No texture scaling? (These dont seem to do any good anyway) //Corn
-		//mVtxProjected[i].Texture.x = mVtxProjected[i].Texture.y = 1.0f;
+			const v3 & norm = vecTransformedNormal;
+			
+			if( mTnLModeFlags & TNL_TEXGENLIN )
+			{
+				//Cheap way to do Acos(x)/Pi //Corn
+				mVtxProjected[i].Texture.x =  0.5f - 0.25f * norm.x - 0.25f * norm.x * norm.x * norm.x; 
+				mVtxProjected[i].Texture.y =  0.5f - 0.25f * norm.y - 0.25f * norm.y * norm.y * norm.y;
+			}
+			else
+			{
+				mVtxProjected[i].Texture.x = 0.5f * ( 1.0f + norm.x );
+				mVtxProjected[i].Texture.y = 0.5f * ( 1.0f + norm.y );
+			}
+		}
+		else
+		{
+			mVtxProjected[i].Texture.x = (float)vert.tu * mTnLParams.TextureScaleX;
+			mVtxProjected[i].Texture.y = (float)vert.tv * mTnLParams.TextureScaleY;
+		}
+	}
+}
+#endif
 
-		nOff += 10;
+//*****************************************************************************
+// Assumes address has already been checked!
+// DKR/Jet Force Gemini rendering pipeline
+//*****************************************************************************
+extern Matrix4x4 gDKRMatrixes[4];
+extern u32 gDKRCMatrixIndex;
+extern u32 gDKRVtxCount;
+extern bool gDKRBillBoard;
+
+void PSPRenderer::SetNewVertexInfoDKR(u32 address, u32 v0, u32 n)
+{
+	u32 pVtxBase = u32(g_pu8RamBase + address);
+
+	const Matrix4x4 & matWorldProject( gDKRMatrixes[gDKRCMatrixIndex] );
+
+	bool addbase = gDKRBillBoard & (gDKRCMatrixIndex == 2);
+
+	DL_PF( "    Ambient color RGB[%f][%f][%f] Texture scale X[%f] Texture scale Y[%f]", mTnLParams.Ambient.x, mTnLParams.Ambient.y, mTnLParams.Ambient.z, mTnLParams.TextureScaleX, mTnLParams.TextureScaleY);
+	DL_PF( "    Light[%s] Texture[%s] EnvMap[%s] Fog[%s]", (mTnLModeFlags&TNL_LIGHT)? "On":"Off", (mTnLModeFlags&TNL_TEXTURE)? "On":"Off", (mTnLModeFlags&TNL_TEXGEN)? (mTnLModeFlags&TNL_TEXGENLIN)? "Linear":"Spherical":"Off", (mTnLModeFlags&TNL_FOG)? "On":"Off");
+	DL_PF( "    CMtx[%d] Add base[%s]", gDKRCMatrixIndex, addbase? "On":"Off");
+
+	static v4 gDKRBaseVec;
+	if( (gDKRVtxCount == 0) && (n == 1) )
+	{	//Copy base vector (used for billbording)
+		gDKRVtxCount++;
+
+		sceGuSetMatrix( GU_PROJECTION, reinterpret_cast< const ScePspFMatrix4 * >( &matWorldProject) );
+
+		gDKRBaseVec.x = *(s16*)((pVtxBase + 0) ^ 2);
+		gDKRBaseVec.y = *(s16*)((pVtxBase + 2) ^ 2);
+		gDKRBaseVec.z = *(s16*)((pVtxBase + 4) ^ 2);
+		gDKRBaseVec.w = 1.0f;
+
+		return;
+	}
+
+	u32 nOff = 0;
+
+	if( !addbase )
+	{	//Normal path for transform of triangles
+		//ToDo: avoid setting the matrix here all the time //Corn
+		sceGuSetMatrix( GU_PROJECTION, reinterpret_cast< const ScePspFMatrix4 * >( &matWorldProject) );
+
+		for (u32 i = v0; i < v0 + n; i++)
+		{
+			v4 & transformed( mVtxProjected[i].TransformedPos );
+			transformed.x = *(s16*)((pVtxBase + nOff + 0) ^ 2);
+			transformed.y = *(s16*)((pVtxBase + nOff + 2) ^ 2);
+			transformed.z = *(s16*)((pVtxBase + nOff + 4) ^ 2);
+			transformed.w = 1.0f;
+
+			v4 & projected( mVtxProjected[i].ProjectedPos );
+			projected = matWorldProject.Transform( transformed );	//Do projection
+			mVtxProjected[i].iW = 1.0f / projected.w;	//Used for tris front/back culling //Corn
+
+			// Set Clipflags
+			u32 clip_flags = 0;
+			if		(-projected.x > projected.w)	clip_flags |= X_POS;
+			else if (+projected.x > projected.w)	clip_flags |= X_NEG;
+
+			if		(-projected.y > projected.w)	clip_flags |= Y_POS;
+			else if (+projected.y > projected.w)	clip_flags |= Y_NEG;
+
+			if		(-projected.z > projected.w)	clip_flags |= Z_POS;
+			else if (+projected.z > projected.w)	clip_flags |= Z_NEG;
+			mVtxProjected[i].ClipFlags = clip_flags;
+
+			// Assign true vert colour
+			f32 r = *(u8*)((pVtxBase + nOff + 6) ^ 3);
+			f32 g = *(u8*)((pVtxBase + nOff + 7) ^ 3);
+			f32 b = *(u8*)((pVtxBase + nOff + 8) ^ 3);
+			f32 a = *(u8*)((pVtxBase + nOff + 9) ^ 3);
+
+			mVtxProjected[i].Colour = v4( r * (1.0f / 255.0f), g * (1.0f / 255.0f), b * (1.0f / 255.0f), a * (1.0f / 255.0f) );
+
+			// No texture scaling? (These dont seem to do any good anyway) //Corn
+			//mVtxProjected[i].Texture.x = mVtxProjected[i].Texture.y = 1.0f;
+
+			gDKRVtxCount++;
+			nOff += 10;
+		}
+	}
+	else
+	{	//Copy vertices adding base vector and the color data (No transform)
+		for (u32 i = v0; i < v0 + n; i++)
+		{
+			v4 & transformed( mVtxProjected[i].TransformedPos );
+			transformed.x = gDKRBaseVec.x + (f32)*(s16*)((pVtxBase + nOff + 0) ^ 2);
+			transformed.y = gDKRBaseVec.y + (f32)*(s16*)((pVtxBase + nOff + 2) ^ 2);
+			transformed.z = gDKRBaseVec.z + (f32)*(s16*)((pVtxBase + nOff + 4) ^ 2);
+			transformed.w = 1.0f;
+
+			// Set Clipflags, zero clippflags if billbording //Corn
+			mVtxProjected[i].ClipFlags = 0;
+
+			// Assign true vert colour
+			f32 r = *(u8*)((pVtxBase + nOff + 6) ^ 3);
+			f32 g = *(u8*)((pVtxBase + nOff + 7) ^ 3);
+			f32 b = *(u8*)((pVtxBase + nOff + 8) ^ 3);
+			f32 a = *(u8*)((pVtxBase + nOff + 9) ^ 3);
+
+			mVtxProjected[i].Colour = v4( r * (1.0f / 255.0f), g * (1.0f / 255.0f), b * (1.0f / 255.0f), a * (1.0f / 255.0f) );
+
+			// No texture scaling? (These dont seem to do any good anyway) //Corn
+			//mVtxProjected[i].Texture.x = mVtxProjected[i].Texture.y = 1.0f;
+
+			gDKRVtxCount++;
+			nOff += 10;
+		}
 	}
 }
 
@@ -2297,25 +2357,26 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 dwAddress, u32 dwV0, u32 dwNum)
 //*****************************************************************************
 extern u32 PDCIAddr;
 
-void PSPRenderer::SetNewVertexInfoPD(u32 dwAddress, u32 dwV0, u32 dwNum)
+void PSPRenderer::SetNewVertexInfoPD(u32 address, u32 v0, u32 n)
 {
-	const FiddledVtxPD * const pVtxBase = (const FiddledVtxPD*)(g_pu8RamBase + dwAddress);
+	const FiddledVtxPD * const pVtxBase = (const FiddledVtxPD*)(g_pu8RamBase + address);
 
 	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );
 	const Matrix4x4 & matWorldProject( GetWorldProject() );
 
-	for (u32 i = dwV0; i < dwV0 + dwNum; i++)
+	DL_PF( "    Ambient color RGB[%f][%f][%f] Texture scale X[%f] Texture scale Y[%f]", mTnLParams.Ambient.x, mTnLParams.Ambient.y, mTnLParams.Ambient.z, mTnLParams.TextureScaleX, mTnLParams.TextureScaleY);
+	DL_PF( "    Light[%s] Texture[%s] EnvMap[%s] Fog[%s]", (mTnLModeFlags&TNL_LIGHT)? "On":"Off", (mTnLModeFlags&TNL_TEXTURE)? "On":"Off", (mTnLModeFlags&TNL_TEXGEN)? (mTnLModeFlags&TNL_TEXGENLIN)? "Linear":"Spherical":"Off", (mTnLModeFlags&TNL_FOG)? "On":"Off");
+
+	for (u32 i = v0; i < v0 + n; i++)
 	{
-		const FiddledVtxPD & vert = pVtxBase[i - dwV0];
+		const FiddledVtxPD & vert = pVtxBase[i - v0];
 
 		v4 w( f32( vert.x ), f32( vert.y ), f32( vert.z ), 1.0f );
 
 		v4 & projected( mVtxProjected[i].ProjectedPos );
 		projected = matWorldProject.Transform( w );
-		mVtxProjected[i].iW = 1.0f / mVtxProjected[i].ProjectedPos.w;
+		mVtxProjected[i].iW = 1.0f / mVtxProjected[i].ProjectedPos.w;	//Used for tris front/back culling //Corn
 		mVtxProjected[i].TransformedPos = matWorld.Transform( w );
-
-		DL_PF( "p%d: (%f,%f,%f) -> (%f,%f,%f,%f)", i, w.x, w.y, w.z, projected.x/projected.w, projected.y/projected.w, projected.z/projected.w, projected.w );
 
 		// Set Clipflags //Corn
 		u32 clip_flags = 0;
@@ -2331,10 +2392,10 @@ void PSPRenderer::SetNewVertexInfoPD(u32 dwAddress, u32 dwV0, u32 dwNum)
 
 		if( mTnLModeFlags & TNL_LIGHT )
 		{
-			s8 *addr = (s8*)(g_pu8RamBase + PDCIAddr + (vert.cidx & 0xFF));
+			s8 *addr = (s8*)(g_pu8RamBase + PDCIAddr + vert.cidx);
 			v3	model_normal((f32)addr[3], (f32)addr[2], (f32)addr[1] );
 
-			v3 vecTransformedNormal;		// Used only when TNL_LIGHT set
+			v3 vecTransformedNormal;
 			vecTransformedNormal = matWorld.TransformNormal( model_normal );
 			vecTransformedNormal.Normalise();
 
@@ -2346,38 +2407,37 @@ void PSPRenderer::SetNewVertexInfoPD(u32 dwAddress, u32 dwV0, u32 dwNum)
 				const v3 & norm = vecTransformedNormal;
 
 				//Env mapping
-				if( gGeometryMode & G_TEXTURE_GEN_LINEAR )
-				{
-					//Cheaper way to do Acos(x)/Pi //Corn
+				if( mTnLModeFlags & TNL_TEXGENLIN )
+				{	//Cheap way to do Acos(x)/Pi //Corn
 					mVtxProjected[i].Texture.x =  0.5f - 0.25f * norm.x - 0.25f * norm.x * norm.x * norm.x;
 					mVtxProjected[i].Texture.y =  0.5f - 0.25f * norm.y - 0.25f * norm.y * norm.y * norm.y;
 				}
 				else
 				{
-					mVtxProjected[i].Texture.x = 0.5f * ( 1.0f + norm.x);
-					mVtxProjected[i].Texture.y = 0.5f * ( 1.0f + norm.y);
+					mVtxProjected[i].Texture.x = 0.5f * ( 1.0f + norm.x );
+					mVtxProjected[i].Texture.y = 0.5f * ( 1.0f + norm.y );
 				}
 			}
 			else
 			{
-				mVtxProjected[i].Texture.x = (float)vert.s * mTnLParams.TextureScaleX;
-				mVtxProjected[i].Texture.y = (float)vert.t * mTnLParams.TextureScaleY;
+				mVtxProjected[i].Texture.x = (float)vert.tu * mTnLParams.TextureScaleX;
+				mVtxProjected[i].Texture.y = (float)vert.tv * mTnLParams.TextureScaleY;
 			}
 		}
 		else
 		{
-			if( (gGeometryMode & G_SHADE) == 0 )	//Shade is disabled
-			{
-				mVtxProjected[i].Colour = mPrimitiveColour.GetColourV4();
-			}
-			else	//FLAT shade
-			{
-				u8 *addr = (u8*)(g_pu8RamBase + PDCIAddr + (vert.cidx & 0xFF));
+			if( mSmooth )
+			{	//FLAT shade
+				u8 *addr = (u8*)(g_pu8RamBase + PDCIAddr + vert.cidx);
 				mVtxProjected[i].Colour = v4( (f32)addr[3] * (1.0f / 255.0f), (f32)addr[2] * (1.0f / 255.0f), (f32)addr[1] * (1.0f / 255.0f), (f32)addr[0] * (1.0f / 255.0f) );
 			}
+			else
+			{	//Shade is disabled
+				mVtxProjected[i].Colour = mPrimitiveColour.GetColourV4();
+			}
 
-			mVtxProjected[i].Texture.x = (float)vert.s * mTnLParams.TextureScaleX;
-			mVtxProjected[i].Texture.y = (float)vert.t * mTnLParams.TextureScaleY;
+			mVtxProjected[i].Texture.x = (float)vert.tu * mTnLParams.TextureScaleX;
+			mVtxProjected[i].Texture.y = (float)vert.tv * mTnLParams.TextureScaleY;
 		}
 	}
 }
@@ -2549,7 +2609,7 @@ void PSPRenderer::ResetMatrices()
 //*****************************************************************************
 //
 //*****************************************************************************
-void	PSPRenderer::EnableTexturing( u32 tile_idx )
+inline void	PSPRenderer::EnableTexturing( u32 tile_idx )
 {
 	EnableTexturing( 0, tile_idx );
 
@@ -3020,6 +3080,3 @@ void PSPRenderer::ForceMatrix(const Matrix4x4 & mat)
 	mWorldProject = mat;
 	mWorldProjectValid = true;
 }
-//*****************************************************************************
-//
-//*****************************************************************************

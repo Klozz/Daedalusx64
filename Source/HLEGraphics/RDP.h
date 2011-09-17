@@ -144,24 +144,24 @@ typedef struct
 		struct
 		{
 			// cmd3
-			signed int			dtdy : 16;
-			signed int			dsdx : 16;
+			s32		dtdy : 16;
+			s32		dsdx : 16;
 
 			// cmd2
-			signed int			t : 16;
-			signed int			s : 16;
+			s32		t : 16;
+			s32		s : 16;
 
 			// cmd1
-			unsigned int		y0 : 12;
-			unsigned int		x0 : 12;
-			unsigned int		tile_idx : 3;
-			int					pad1 : 5;
+			u32		y0 : 12;
+			u32		x0 : 12;
+			u32		tile_idx : 3;
+			s32		pad1 : 5;
 
 			// cmd0
-			unsigned int		y1 : 12;
-			unsigned int		x1 : 12;
+			u32		y1 : 12;
+			u32		x1 : 12;
 
-			int					pad0 : 8;
+			u32		cmd : 8;
 		};
 
 	};

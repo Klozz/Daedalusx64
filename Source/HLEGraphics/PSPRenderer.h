@@ -54,6 +54,7 @@ struct TextureVtx
 	v3  pos;
 };
 
+//Cant be used for DKR since pointer start as odd and even addresses //Corn
 struct FiddledVtxDKR
 {
 	s16 y;
@@ -85,7 +86,15 @@ struct FiddledVtx
         s16 y;
         s16 x;
 
-        s16 flag;
+        union
+        {
+			s16 flag;
+            struct
+            {
+				s8 normz;
+				u8 pad;
+            };
+        };
         s16 z;
 
         s16 tv;
@@ -93,25 +102,23 @@ struct FiddledVtx
 
         union
         {
-                struct
-                {
-                        u8 rgba_a;
-                        u8 rgba_b;
-                        u8 rgba_g;
-                        u8 rgba_r;
-                };
-                struct
-                {
-                        s8 norm_a;
-                        s8 norm_z;      // b
-                        s8 norm_y;      // g
-                        s8 norm_x;      // r
-                };
+            struct
+            {
+                    u8 rgba_a;
+                    u8 rgba_b;
+                    u8 rgba_g;
+                    u8 rgba_r;
+            };
+            struct
+            {
+                    s8 norm_a;
+                    s8 norm_z;      // b
+                    s8 norm_y;      // g
+                    s8 norm_x;      // r
+            };
         };
 };
 DAEDALUS_STATIC_ASSERT( sizeof(FiddledVtx) == 16 );
-
-struct TextureVtx;
 
 ALIGNED_TYPE(struct, DaedalusLight, 16)
 {
@@ -137,16 +144,13 @@ DAEDALUS_STATIC_ASSERT( sizeof( TnLParams ) == 32 );
 // xxyyzz
 
 // NB: These are ordered such that the VFPU can generate them easily - make sure you keep the VFPU code up to date if changing these.
-#define X_NEG  0x01
-#define Y_NEG  0x02
-#define Z_NEG  0x04
-#define X_POS  0x08
-#define Y_POS  0x10
-#define Z_POS  0x20
-
-// Test all but Z_NEG (for No Near Plane microcodes)
-//const u32 CLIP_TEST_FLAGS( X_POS | X_NEG | Y_POS | Y_NEG | Z_POS );
-const u32 CLIP_TEST_FLAGS( X_POS | X_NEG | Y_POS | Y_NEG | Z_POS | Z_NEG );
+#define X_NEG  0x01	//left
+#define Y_NEG  0x02	//bottom
+#define Z_NEG  0x04	//far
+#define X_POS  0x08	//right
+#define Y_POS  0x10	//top
+#define Z_POS  0x20	//near
+#define CLIP_TEST_FLAGS ( X_POS | X_NEG | Y_POS | Y_NEG | Z_POS | Z_NEG )
 
 //*****************************************************************************
 //
@@ -257,7 +261,7 @@ public:
 	void				FlushTris();
 	
 	// Returns true if bounding volume is visible within NDC box, false if culled
-	inline bool			TestVerts( u32 v0, u32 vn ) const		{ u32 f=mVtxProjected[v0].ClipFlags; for( u32 i=v0+1; i<=vn; i++ ) f&=mVtxProjected[i].ClipFlags; return (f&CLIP_TEST_FLAGS)==0; }
+	inline bool			TestVerts( u32 v0, u32 vn ) const		{ u32 f=mVtxProjected[v0].ClipFlags; for( u32 i=v0+1; i<=vn; i++ ) f&=mVtxProjected[i].ClipFlags; return f==0; }
 	inline s32			GetVtxDepth( u32 i ) const				{ return (s32)mVtxProjected[ i ].ProjectedPos.z; }
 	inline v4			GetTransformedVtxPos( u32 i ) const		{ return mVtxProjected[ i ].TransformedPos; }
 	inline v4			GetProjectedVtxPos( u32 i ) const		{ return mVtxProjected[ i ].ProjectedPos; }

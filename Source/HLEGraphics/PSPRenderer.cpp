@@ -632,7 +632,7 @@ void	PSPRenderer::UpdateViewport()
 // We round these value here, so that when we scale up the coords to our screen
 // coords we don't get any gaps.
 //
-#if 1
+#ifdef DAEDALUS_PSP_USE_VFPU
 inline v2 PSPRenderer::ConvertN64ToPsp( const v2 & n64_coords ) const
 {
 	v2 answ;
@@ -1046,13 +1046,10 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		case CYCLE_2CYCLE:		blend_entry = LookupBlendState( mMux, true ); break;
 	}
 
-	u32		render_flags( DAEDALUS_VERTEX_FLAGS );
+	u32 render_flags( GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF );
 
-	switch( mode )
-	{
-	case RM_RENDER_2D:		render_flags |= GU_TRANSFORM_2D; break;
-	case RM_RENDER_3D:		render_flags |= GU_TRANSFORM_3D; break;
-	}
+	if( mode == RM_RENDER_2D ) render_flags |= GU_TRANSFORM_2D;
+	else render_flags |= GU_TRANSFORM_3D;
 
 	// Used for Blend Explorer, or Nasty texture
 	//
@@ -1294,7 +1291,6 @@ bool PSPRenderer::AddTri(u32 v0, u32 v1, u32 v2)
 	const u32 & f1( mVtxProjected[v1].ClipFlags );
 	const u32 & f2( mVtxProjected[v2].ClipFlags );
 
-	//if ( f0 & f1 & f2 & CLIP_TEST_FLAGS )
 	if ( f0 & f1 & f2 )
 	{
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
@@ -1314,11 +1310,15 @@ bool PSPRenderer::AddTri(u32 v0, u32 v1, u32 v2)
 		const v4 & t1( mVtxProjected[v1].ProjectedPos );
 		const v4 & t2( mVtxProjected[v2].ProjectedPos );
 
-		const f32 & iW0( mVtxProjected[v0].iW );	//Get 1.0f / projW
-		const f32 & iW1( mVtxProjected[v1].iW );
-		const f32 & iW2( mVtxProjected[v2].iW );
+		//Avoid using 1/w, will use five more mults but save three divides //Corn
+		//Precalc reused w combos so compiler does a proper job
+		const f32 t01(t0.w*t1.w);
+		const f32 t02(t0.w*t2.w);
+		const f32 t12(t1.w*t2.w);
+		const f32 t0x12(t0.x*t12);
+		const f32 t0y12(t0.y*t12);
 
-		if( (((t1.x*iW1-t0.x*iW0)*(t2.y*iW2-t0.y*iW0) - (t2.x*iW2-t0.x*iW0)*(t1.y*iW1-t0.y*iW0)) * iW0 * iW1 * iW2) <= 0.f )
+		if( (((t1.x*t02 - t0x12)*(t2.y*t01 - t0y12) - (t2.x*t01 - t0x12)*(t1.y*t02 - t0y12)) * t01 * t2.w) <= 0.f )
 		{
 			if( mCullMode == GU_CCW )
 			{
@@ -1503,19 +1503,11 @@ const v4 __attribute__((aligned(16))) NDCPlane[6] =
 	v4(  0.f, -1.f,  0.f, -1.f )	// top
 };
 
-//*****************************************************************************
-//*****************************************************************************
-//*****************************************************************************
-//*****************************************************************************
-//*****************************************************************************
-//Triangle clip using VFPU(fast) or FPU/CPU(slow and also broken) 
-//*****************************************************************************
-//*****************************************************************************
-//*****************************************************************************
-//*****************************************************************************
-//*****************************************************************************
-#if 1 //1->VFPU clip, 0->FPU/CPU clip
+//
+//Triangle clip using VFPU(fast)
+//
 
+#ifdef DAEDALUS_PSP_USE_VFPU
 //*****************************************************************************
 //VFPU tris clip
 //*****************************************************************************
@@ -1523,19 +1515,20 @@ u32 clip_tri_to_frustum( DaedalusVtx4 * v0, DaedalusVtx4 * v1 )
 {
 	u32 vOut( 3 );
 
-	vOut = _ClipToHyperPlane( v1, v0, &NDCPlane[0], vOut ); if( vOut < 3 ) return 0;		// near
-	vOut = _ClipToHyperPlane( v0, v1, &NDCPlane[1], vOut ); if( vOut < 3 ) return 0;		// left
-	vOut = _ClipToHyperPlane( v1, v0, &NDCPlane[2], vOut ); if( vOut < 3 ) return 0;		// right
-	vOut = _ClipToHyperPlane( v0, v1, &NDCPlane[3], vOut ); if( vOut < 3 ) return 0;		// bottom
-	vOut = _ClipToHyperPlane( v1, v0, &NDCPlane[4], vOut ); if( vOut < 3 ) return 0;		// top
-	vOut = _ClipToHyperPlane( v0, v1, &NDCPlane[5], vOut );		// far
+	vOut = _ClipToHyperPlane( v1, v0, &NDCPlane[0], vOut ); if( vOut < 3 ) return vOut;		// near
+	vOut = _ClipToHyperPlane( v0, v1, &NDCPlane[1], vOut ); if( vOut < 3 ) return vOut;		// far
+	vOut = _ClipToHyperPlane( v1, v0, &NDCPlane[2], vOut ); if( vOut < 3 ) return vOut;		// left
+	vOut = _ClipToHyperPlane( v0, v1, &NDCPlane[3], vOut ); if( vOut < 3 ) return vOut;		// right
+	vOut = _ClipToHyperPlane( v1, v0, &NDCPlane[4], vOut ); if( vOut < 3 ) return vOut;		// bottom
+	vOut = _ClipToHyperPlane( v0, v1, &NDCPlane[5], vOut );									// top
 
 	return vOut;
 }
 
-#else
+#else	// FPU/CPU(slower) 
+
 //*****************************************************************************
-//CPU tris clip
+//CPU interpolate line parameters
 //*****************************************************************************
 void DaedalusVtx4::Interpolate( const DaedalusVtx4 & lhs, const DaedalusVtx4 & rhs, float factor )
 {
@@ -1547,76 +1540,77 @@ void DaedalusVtx4::Interpolate( const DaedalusVtx4 & lhs, const DaedalusVtx4 & r
 }
 
 //*****************************************************************************
-//CPU tris clip
+//CPU line clip to plane
 //*****************************************************************************
 static u32 clipToHyperPlane( DaedalusVtx4 * dest, const DaedalusVtx4 * source, u32 inCount, const v4 &plane )
 {
-	u32 outCount = 0;
-	DaedalusVtx4 * out = dest;
+	u32 outCount(0);
+	DaedalusVtx4 * out(dest);
 
 	const DaedalusVtx4 * a;
-	const DaedalusVtx4 * b = source;
+	const DaedalusVtx4 * b(source);
 
-	f32 bDotPlane;
-
-	bDotPlane = b->ProjectedPos.Dot( plane );
+	f32 bDotPlane = b->ProjectedPos.Dot( plane );
 
 	for( u32 i = 1; i < inCount + 1; ++i)
 	{
+		//a = &source[i%inCount];
 		const s32 condition = i - inCount;
-		const s32 index = (( ( condition >> 31 ) & ( i ^ condition ) ) ^ condition ) << 1;
+		const s32 index = (( ( condition >> 31 ) & ( i ^ condition ) ) ^ condition ); 
+		a = &source[index];
 
-		a = &source[ index ];
-	
+		f32 aDotPlane = a->ProjectedPos.Dot( plane );
+
 		// current point inside
-		if ( a->ProjectedPos.Dot( plane ) <= 0.f )
+		if ( aDotPlane <= 0.f )
 		{
 			// last point outside
 			if ( bDotPlane > 0.f )
 			{
 				// intersect line segment with plane
 				out->Interpolate( *b, *a, bDotPlane / (b->ProjectedPos - a->ProjectedPos).Dot( plane ) );
-				out += 2;
-				outCount += 1;
+				out++;
+				outCount++;
 			}
 			// copy current to out
-			memcpy( out, a, sizeof( DaedalusVtx4 ) * 2);
+			*out = *a;
 			b = out;
 
-			out += 2;
-			outCount += 1;
+			out++;
+			outCount++;
 		}
 		else
 		{
 			// current point outside
 			if ( bDotPlane <= 0.f )
 			{
-				// previous was inside
-				// intersect line segment with plane
+				// previous was inside, intersect line segment with plane
 				out->Interpolate( *b, *a, bDotPlane / (b->ProjectedPos - a->ProjectedPos).Dot( plane ) );
-
-				out += 2;
-				outCount += 1;
+				out++;
+				outCount++;
 			}
 			b = a;
 		}
 
-		bDotPlane = b->ProjectedPos.Dot( plane );
+		bDotPlane = aDotPlane;
 	}
 
 	return outCount;
 }
 
-u32 clip_tri_to_frustum( DaedalusVtx4 * v0, DaedalusVtx4 * v1 )
+//*****************************************************************************
+//CPU tris clip to frustum
+//*****************************************************************************
+u32 clip_tri_to_frustum( DaedalusVtx4 * v0, DaedalusVtx4 * v1)
 {
-	u32 vOut( 3 );
+	u32 vOut(3);
 
-	vOut = clipToHyperPlane( v1, v0, vOut, NDCPlane[0] ); if( vOut < 3 ) return 0;		// near
-	vOut = clipToHyperPlane( v0, v1, vOut, NDCPlane[1] ); if( vOut < 3 ) return 0;		// left
-	vOut = clipToHyperPlane( v1, v0, vOut, NDCPlane[2] ); if( vOut < 3 ) return 0;		// right
-	vOut = clipToHyperPlane( v0, v1, vOut, NDCPlane[3] ); if( vOut < 3 ) return 0;		// bottom
-	vOut = clipToHyperPlane( v1, v0, vOut, NDCPlane[4] ); if( vOut < 3 ) return 0;		// top
-	vOut = clipToHyperPlane( v0, v1, vOut, NDCPlane[5] );		// far
+	vOut = clipToHyperPlane( v1, v0, vOut, NDCPlane[0] ); if ( vOut < 3 ) return vOut;		// near
+	vOut = clipToHyperPlane( v0, v1, vOut, NDCPlane[1] ); if ( vOut < 3 ) return vOut;		// far
+	vOut = clipToHyperPlane( v1, v0, vOut, NDCPlane[2] ); if ( vOut < 3 ) return vOut;		// left
+	vOut = clipToHyperPlane( v0, v1, vOut, NDCPlane[3] ); if ( vOut < 3 ) return vOut;		// right
+	vOut = clipToHyperPlane( v1, v0, vOut, NDCPlane[4] ); if ( vOut < 3 ) return vOut;		// bottom
+	vOut = clipToHyperPlane( v0, v1, vOut, NDCPlane[5] );									// top
 
 	return vOut;
 }
@@ -1630,7 +1624,7 @@ namespace
 	DaedalusVtx4		temp_a[ 8 ];
 	DaedalusVtx4		temp_b[ 8 ];
 
-	const u32			MAX_CLIPPED_VERTS = 1024;	// Probably excessively large...
+	const u32			MAX_CLIPPED_VERTS = 192;	// Probably excessively large...
 	DaedalusVtx4		clipped_vertices[MAX_CLIPPED_VERTS];
 }
 
@@ -1670,9 +1664,9 @@ void PSPRenderer::PrepareTrisClipped( DaedalusVtx ** p_p_vertices, u32 * p_num_v
 			//If we have less than 3 vertices left after the clipping
 			//we can't make a triangle so we bail and skip rendering it.
 			DL_PF("Clip & re-tesselate [%d,%d,%d] with %d vertices", i-3, i-2, i-1, out);
-			DL_PF("%#5.3f, %#5.3f, %#5.3f", mVtxProjected[ idx0 ].ProjectedPos.x*mVtxProjected[ idx0 ].iW, mVtxProjected[ idx0 ].ProjectedPos.y*mVtxProjected[ idx0 ].iW, mVtxProjected[ idx0 ].ProjectedPos.z*mVtxProjected[ idx0 ].iW);
-			DL_PF("%#5.3f, %#5.3f, %#5.3f", mVtxProjected[ idx1 ].ProjectedPos.x*mVtxProjected[ idx1 ].iW, mVtxProjected[ idx1 ].ProjectedPos.y*mVtxProjected[ idx1 ].iW, mVtxProjected[ idx1 ].ProjectedPos.z*mVtxProjected[ idx1 ].iW);
-			DL_PF("%#5.3f, %#5.3f, %#5.3f", mVtxProjected[ idx2 ].ProjectedPos.x*mVtxProjected[ idx2 ].iW, mVtxProjected[ idx2 ].ProjectedPos.y*mVtxProjected[ idx2 ].iW, mVtxProjected[ idx2 ].ProjectedPos.z*mVtxProjected[ idx2 ].iW);
+			DL_PF("%#5.3f, %#5.3f, %#5.3f", mVtxProjected[ idx0 ].ProjectedPos.x/mVtxProjected[ idx0 ].ProjectedPos.w, mVtxProjected[ idx0 ].ProjectedPos.y/mVtxProjected[ idx0 ].ProjectedPos.w, mVtxProjected[ idx0 ].ProjectedPos.z/mVtxProjected[ idx0 ].ProjectedPos.w);
+			DL_PF("%#5.3f, %#5.3f, %#5.3f", mVtxProjected[ idx1 ].ProjectedPos.x/mVtxProjected[ idx1 ].ProjectedPos.w, mVtxProjected[ idx1 ].ProjectedPos.y/mVtxProjected[ idx1 ].ProjectedPos.w, mVtxProjected[ idx1 ].ProjectedPos.z/mVtxProjected[ idx1 ].ProjectedPos.w);
+			DL_PF("%#5.3f, %#5.3f, %#5.3f", mVtxProjected[ idx2 ].ProjectedPos.x/mVtxProjected[ idx2 ].ProjectedPos.w, mVtxProjected[ idx2 ].ProjectedPos.y/mVtxProjected[ idx2 ].ProjectedPos.w, mVtxProjected[ idx2 ].ProjectedPos.z/mVtxProjected[ idx2 ].ProjectedPos.w);
 
 			if( out < 3 )
 				continue;
@@ -1713,7 +1707,20 @@ void PSPRenderer::PrepareTrisClipped( DaedalusVtx ** p_p_vertices, u32 * p_num_v
 	//	Maybe we should allocate all vertex buffers from VRAM?
 	//
 	DaedalusVtx *	p_vertices( (DaedalusVtx*)sceGuGetMemory(num_vertices*sizeof(DaedalusVtx)) );
+
+#ifdef DAEDALUS_PSP_USE_VFPU
 	_ConvertVertices( p_vertices, clipped_vertices, num_vertices );
+#else 	 
+     for( u32 i = 0; i < num_vertices; ++i ) 	 
+     { 	 
+             p_vertices[ i ].Texture = clipped_vertices[ i ].Texture; 	 
+             p_vertices[ i ].Colour = c32( clipped_vertices[ i ].Colour ); 	 
+             p_vertices[ i ].Position.x = clipped_vertices[ i ].TransformedPos.x; 	 
+             p_vertices[ i ].Position.y = clipped_vertices[ i ].TransformedPos.y; 	 
+             p_vertices[ i ].Position.z = clipped_vertices[ i ].TransformedPos.z; 	 
+     } 	 
+#endif
+
 	*p_p_vertices = p_vertices;
 	*p_num_vertices = num_vertices;
 }
@@ -1739,7 +1746,25 @@ void PSPRenderer::PrepareTrisUnclipped( DaedalusVtx ** p_p_vertices, u32 * p_num
 	//  ToDo: Test Allocating vertex buffers to VRAM
 	//	ToDo: Why Indexed below?
 	DAEDALUS_STATIC_ASSERT( MAX_CLIPPED_VERTS > ARRAYSIZE(m_swIndexBuffer) );
+
+#ifdef DAEDALUS_PSP_USE_VFPU
 	_ConvertVerticesIndexed( p_vertices, mVtxProjected, num_vertices, m_swIndexBuffer );
+#else 	  
+	 // 	 
+	 //      Now we just shuffle all the data across directly (potentially duplicating verts) 	 
+	 // 	 
+	 for( u32 i = 0; i < m_dwNumIndices; ++i ) 	 
+	 { 	 
+			 u32                     index( m_swIndexBuffer[ i ] ); 	 
+
+			 p_vertices[ i ].Texture = mVtxProjected[ index ].Texture; 	 
+			 p_vertices[ i ].Colour = c32( mVtxProjected[ index ].Colour ); 	 
+			 p_vertices[ i ].Position.x = mVtxProjected[ index ].TransformedPos.x; 	 
+			 p_vertices[ i ].Position.y = mVtxProjected[ index ].TransformedPos.y; 	 
+			 p_vertices[ i ].Position.z = mVtxProjected[ index ].TransformedPos.z; 	 
+	 } 	 
+ #endif
+
 	*p_p_vertices = p_vertices;
 	*p_num_vertices = num_vertices;
 }
@@ -1772,20 +1797,11 @@ inline v4 PSPRenderer::LightVert( const v3 & norm ) const
 	return result;
 }
 
-//*****************************************************************************
-//*****************************************************************************
-//*****************************************************************************
-//*****************************************************************************
-//*****************************************************************************
-//Transform using VFPU(fast) or FPU/CPU(slow)  
-//*****************************************************************************
-//*****************************************************************************
-//*****************************************************************************
-//*****************************************************************************
-//*****************************************************************************
+//
+//Transform using VFPU(fast)
+//
 
-#if	1	//1->VFPU, 0->FPU/CPU (for Standard rendering pipeline)
-
+#ifdef DAEDALUS_PSP_USE_VFPU
 //*****************************************************************************
 // Standard rendering pipeline using VFPU
 //*****************************************************************************
@@ -1863,11 +1879,10 @@ void PSPRenderer::SetNewVertexInfo(u32 address, u32 v0, u32 n)
 	}
 }
 
-#ifdef DAEDALUS_IS_LEGACY
 //*****************************************************************************
 //
 //*****************************************************************************
-void PSPRenderer::TestVFPUVerts( u32 v0, u32 num, const FiddledVtx * verts, const Matrix4x4 & mat_world )
+/*void PSPRenderer::TestVFPUVerts( u32 v0, u32 num, const FiddledVtx * verts, const Matrix4x4 & mat_world )
 {
 	bool	env_map( (mTnLModeFlags & (TNL_LIGHT|TNL_TEXGEN)) == (TNL_LIGHT|TNL_TEXGEN) );
 
@@ -1939,11 +1954,13 @@ void PSPRenderer::TestVFPUVerts( u32 v0, u32 num, const FiddledVtx * verts, cons
 		//	printf( "flags wrong: %02x != %02x\n", mVtxProjected[i].ClipFlags, flags );
 		//}
 	}
-}
-#endif	//DAEDALUS_IS_LEGACY
+}*/
 
+//
+//Transform using VFPU(fast) or FPU/CPU(slow)  
+//
 
-#else	//Transform VFPU/FPU
+#else
 //*****************************************************************************
 // Standard rendering pipeline using FPU/CPU
 //*****************************************************************************
@@ -1987,20 +2004,19 @@ void PSPRenderer::SetNewVertexInfo(u32 address, u32 v0, u32 n)
 		//
 		v4 & projected( mVtxProjected[i].ProjectedPos );
 		projected = matWorldProject.Transform( w );
-		mVtxProjected[i].iW = 1.0f / mVtxProjected[i].ProjectedPos.w;	//Used for tris front/back culling //Corn
 		mVtxProjected[i].TransformedPos = matWorld.Transform( w );
 
 		//	Initialise the clipping flags
 		//
 		u32 clip_flags = 0;
-		if		(-projected.x > projected.w)	clip_flags |= X_POS;
-		else if (+projected.x > projected.w)	clip_flags |= X_NEG;
+		if		(projected.x < -projected.w)	clip_flags |= X_POS;
+		else if (projected.x > projected.w)	clip_flags |= X_NEG;
 
-		if		(-projected.y > projected.w)	clip_flags |= Y_POS;
-		else if (+projected.y > projected.w)	clip_flags |= Y_NEG;
+		if		(projected.y < -projected.w)	clip_flags |= Y_POS;
+		else if (projected.y > projected.w)	clip_flags |= Y_NEG;
 
-		if		(-projected.z > projected.w)	clip_flags |= Z_POS;
-		else if (+projected.z > projected.w)	clip_flags |= Z_NEG;
+		if		(projected.z < -projected.w)	clip_flags |= Z_POS;
+		else if (projected.z > projected.w)	clip_flags |= Z_NEG;
 		mVtxProjected[i].ClipFlags = clip_flags;
 
 		// LIGHTING OR COLOR
@@ -2085,10 +2101,10 @@ void PSPRenderer::SetNewVertexInfo(u32 address, u32 v0, u32 n)
 
 #endif	//Transform VFPU/FPU
 
+#ifdef DAEDALUS_PSP_USE_VFPU
 //*****************************************************************************
-// Conker Bad fur day rendering pipeline
+// Conker Bad Fur Day rendering pipeline
 //*****************************************************************************
-#if 1	//1->VFPU, 0->FPU	//Corn
 void PSPRenderer::SetNewVertexInfoConker(u32 address, u32 v0, u32 n)
 {
 	const FiddledVtx * const pVtxBase( (const FiddledVtx*)(g_pu8RamBase + address) );
@@ -2107,9 +2123,12 @@ void PSPRenderer::SetNewVertexInfoConker(u32 address, u32 v0, u32 n)
 	//
 	if( (mTnLModeFlags & (TNL_LIGHT | TNL_TEXGEN | TNL_TEXTURE)) == (TNL_LIGHT | TNL_TEXGEN | TNL_TEXTURE) )
 	{
+		//Model normal base vector
+		const s8 *mn = (s8*)(gAuxAddr);
 		for (u32 i = v0; i < (v0 + n); i++)
 		{
-			v3 model_normal( *(s8*)(g_pu8RamBase+ (((i<<1)+0)^3)+gAuxAddr), *(s8*)(g_pu8RamBase+ (((i<<1)+1)^3)+gAuxAddr), *(s8*)(g_pu8RamBase+ (((i<<1)+2)^3)+gAuxAddr) );
+			const FiddledVtx & vert = pVtxBase[i - v0];
+			v3 model_normal( mn[((i<<1)+0)^3] , mn[((i<<1)+1)^3], vert.normz );
 		
 			v3 vecTransformedNormal = matWorld.TransformNormal( model_normal );
 			vecTransformedNormal.Normalise();
@@ -2144,6 +2163,9 @@ void PSPRenderer::SetNewVertexInfoConker(u32 address, u32 v0, u32 n)
 	DL_PF( "    Ambient color RGB[%f][%f][%f] Texture scale X[%f] Texture scale Y[%f]", mTnLParams.Ambient.x, mTnLParams.Ambient.y, mTnLParams.Ambient.z, mTnLParams.TextureScaleX, mTnLParams.TextureScaleY);
 	DL_PF( "    Light[%s] Texture[%s] EnvMap[%s] Fog[%s]", (mTnLModeFlags&TNL_LIGHT)? "On":"Off", (mTnLModeFlags&TNL_TEXTURE)? "On":"Off", (mTnLModeFlags&TNL_TEXGEN)? (mTnLModeFlags&TNL_TEXGENLIN)? "Linear":"Spherical":"Off", (mTnLModeFlags&TNL_FOG)? "On":"Off");
 
+	//Model normal base vector
+	const s8 *mn = (s8*)(gAuxAddr);
+
 	// Transform and Project + Lighting or Transform and Project with Colour
 	//
 	for (u32 i = v0; i < v0 + n; i++)
@@ -2156,20 +2178,19 @@ void PSPRenderer::SetNewVertexInfoConker(u32 address, u32 v0, u32 n)
 		//
 		v4 & projected( mVtxProjected[i].ProjectedPos );
 		projected = matWorldProject.Transform( w );
-		mVtxProjected[i].iW = 1.0f / mVtxProjected[i].ProjectedPos.w;	//Used for tris front/back culling //Corn
 		mVtxProjected[i].TransformedPos = matWorld.Transform( w );
 
 		//	Initialise the clipping flags
 		//
 		u32 clip_flags = 0;
-		if		(-projected.x > projected.w)	clip_flags |= X_POS;
-		else if (+projected.x > projected.w)	clip_flags |= X_NEG;
+		if		(projected.x < -projected.w)	clip_flags |= X_POS;
+		else if (projected.x > projected.w)	clip_flags |= X_NEG;
 
-		if		(-projected.y > projected.w)	clip_flags |= Y_POS;
-		else if (+projected.y > projected.w)	clip_flags |= Y_NEG;
+		if		(projected.y < -projected.w)	clip_flags |= Y_POS;
+		else if (projected.y > projected.w)	clip_flags |= Y_NEG;
 
-		if		(-projected.z > projected.w)	clip_flags |= Z_POS;
-		else if (+projected.z > projected.w)	clip_flags |= Z_NEG;
+		if		(projected.z < -projected.w)	clip_flags |= Z_POS;
+		else if (projected.z > projected.w)	clip_flags |= Z_NEG;
 		mVtxProjected[i].ClipFlags = clip_flags;
 
 		// LIGHTING OR COLOR
@@ -2196,6 +2217,34 @@ void PSPRenderer::SetNewVertexInfoConker(u32 address, u32 v0, u32 n)
 			result.w  = (f32)vert.rgba_a * (1.0f / 255.0f);
 
 			mVtxProjected[i].Colour = result;
+
+			// ENV MAPPING
+			//
+			if ( mTnLModeFlags & TNL_TEXGEN )
+			{
+				v3 model_normal( mn[((i<<1)+0)^3] , mn[((i<<1)+1)^3], vert.normz );
+				v3 vecTransformedNormal = matWorld.TransformNormal( model_normal );
+				vecTransformedNormal.Normalise();
+
+				const v3 & norm = vecTransformedNormal;
+				
+				if( mTnLModeFlags & TNL_TEXGENLIN )
+				{
+					//Cheap way to do Acos(x)/Pi //Corn
+					mVtxProjected[i].Texture.x =  0.5f - 0.25f * norm.x - 0.25f * norm.x * norm.x * norm.x; 
+					mVtxProjected[i].Texture.y =  0.5f - 0.25f * norm.y - 0.25f * norm.y * norm.y * norm.y;
+				}
+				else
+				{
+					mVtxProjected[i].Texture.x = 0.5f * ( 1.0f + norm.x );
+					mVtxProjected[i].Texture.y = 0.5f * ( 1.0f + norm.y );
+				}
+			}
+			else
+			{	//TEXTURE
+				mVtxProjected[i].Texture.x = (float)vert.tu * mTnLParams.TextureScaleX;
+				mVtxProjected[i].Texture.y = (float)vert.tv * mTnLParams.TextureScaleY;
+			}
 		}
 		else
 		{
@@ -2207,32 +2256,8 @@ void PSPRenderer::SetNewVertexInfoConker(u32 address, u32 v0, u32 n)
 			{	//Shade is disabled
 				mVtxProjected[i].Colour = mPrimitiveColour.GetColourV4();
 			}
-		}
 
-		// ENV MAPPING
-		//
-		if ( (mTnLModeFlags & (TNL_TEXGEN | TNL_LIGHT)) == (TNL_TEXGEN | TNL_LIGHT) )
-		{
-			v3 model_normal( *(s8*)(g_pu8RamBase+ (((i<<1)+0)^3)+gAuxAddr), *(s8*)(g_pu8RamBase+ (((i<<1)+1)^3)+gAuxAddr), *(s8*)(g_pu8RamBase+ (((i<<1)+2)^3)+gAuxAddr) );
-			v3 vecTransformedNormal = matWorld.TransformNormal( model_normal );
-			vecTransformedNormal.Normalise();
-
-			const v3 & norm = vecTransformedNormal;
-			
-			if( mTnLModeFlags & TNL_TEXGENLIN )
-			{
-				//Cheap way to do Acos(x)/Pi //Corn
-				mVtxProjected[i].Texture.x =  0.5f - 0.25f * norm.x - 0.25f * norm.x * norm.x * norm.x; 
-				mVtxProjected[i].Texture.y =  0.5f - 0.25f * norm.y - 0.25f * norm.y * norm.y * norm.y;
-			}
-			else
-			{
-				mVtxProjected[i].Texture.x = 0.5f * ( 1.0f + norm.x );
-				mVtxProjected[i].Texture.y = 0.5f * ( 1.0f + norm.y );
-			}
-		}
-		else
-		{
+			//TEXTURE
 			mVtxProjected[i].Texture.x = (float)vert.tu * mTnLParams.TextureScaleX;
 			mVtxProjected[i].Texture.y = (float)vert.tv * mTnLParams.TextureScaleY;
 		}
@@ -2323,18 +2348,17 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 address, u32 v0, u32 n)
 
 			v4 & projected( mVtxProjected[i].ProjectedPos );
 			projected = matWorldProject.Transform( transformed );	//Do projection
-			mVtxProjected[i].iW = 1.0f / projected.w;	//Used for tris front/back culling //Corn
 
 			// Set Clipflags
 			u32 clip_flags = 0;
-			if		(-projected.x > projected.w)	clip_flags |= X_POS;
-			else if (+projected.x > projected.w)	clip_flags |= X_NEG;
+			if		(projected.x < -projected.w)	clip_flags |= X_POS;
+			else if (projected.x > projected.w)	clip_flags |= X_NEG;
 
-			if		(-projected.y > projected.w)	clip_flags |= Y_POS;
-			else if (+projected.y > projected.w)	clip_flags |= Y_NEG;
+			if		(projected.y < -projected.w)	clip_flags |= Y_POS;
+			else if (projected.y > projected.w)	clip_flags |= Y_NEG;
 
-			if		(-projected.z > projected.w)	clip_flags |= Z_POS;
-			else if (+projected.z > projected.w)	clip_flags |= Z_NEG;
+			if		(projected.z < -projected.w)	clip_flags |= Z_POS;
+			else if (projected.z > projected.w)	clip_flags |= Z_NEG;
 			mVtxProjected[i].ClipFlags = clip_flags;
 
 			// Assign true vert colour
@@ -2367,6 +2391,11 @@ void PSPRenderer::SetNewVertexInfoPD(u32 address, u32 v0, u32 n)
 	DL_PF( "    Ambient color RGB[%f][%f][%f] Texture scale X[%f] Texture scale Y[%f]", mTnLParams.Ambient.x, mTnLParams.Ambient.y, mTnLParams.Ambient.z, mTnLParams.TextureScaleX, mTnLParams.TextureScaleY);
 	DL_PF( "    Light[%s] Texture[%s] EnvMap[%s] Fog[%s]", (mTnLModeFlags&TNL_LIGHT)? "On":"Off", (mTnLModeFlags&TNL_TEXTURE)? "On":"Off", (mTnLModeFlags&TNL_TEXGEN)? (mTnLModeFlags&TNL_TEXGENLIN)? "Linear":"Spherical":"Off", (mTnLModeFlags&TNL_FOG)? "On":"Off");
 
+	//Model normal base vector
+	const s8 *mn  = (s8*)(gAuxAddr);
+	//Color base vector
+	const u8 *col = (u8*)(gAuxAddr);
+
 	for (u32 i = v0; i < v0 + n; i++)
 	{
 		const FiddledVtxPD & vert = pVtxBase[i - v0];
@@ -2375,32 +2404,30 @@ void PSPRenderer::SetNewVertexInfoPD(u32 address, u32 v0, u32 n)
 
 		v4 & projected( mVtxProjected[i].ProjectedPos );
 		projected = matWorldProject.Transform( w );
-		mVtxProjected[i].iW = 1.0f / mVtxProjected[i].ProjectedPos.w;	//Used for tris front/back culling //Corn
 		mVtxProjected[i].TransformedPos = matWorld.Transform( w );
 
 		// Set Clipflags //Corn
 		u32 clip_flags = 0;
-		if		(-projected.x > projected.w)	clip_flags |= X_POS;
-		else if (+projected.x > projected.w)	clip_flags |= X_NEG;
+		if		(projected.x < -projected.w)	clip_flags |= X_POS;
+		else if (projected.x > projected.w)	clip_flags |= X_NEG;
 
-		if		(-projected.y > projected.w)	clip_flags |= Y_POS;
-		else if (+projected.y > projected.w)	clip_flags |= Y_NEG;
+		if		(projected.y < -projected.w)	clip_flags |= Y_POS;
+		else if (projected.y > projected.w)	clip_flags |= Y_NEG;
 
-		if		(-projected.z > projected.w)	clip_flags |= Z_POS;
-		else if (+projected.z > projected.w)	clip_flags |= Z_NEG;
+		if		(projected.z < -projected.w)	clip_flags |= Z_POS;
+		else if (projected.z > projected.w)	clip_flags |= Z_NEG;
 		mVtxProjected[i].ClipFlags = clip_flags;
 
 		if( mTnLModeFlags & TNL_LIGHT )
 		{
-			s8 *addr = (s8*)(g_pu8RamBase + gAuxAddr + vert.cidx);
-			v3	model_normal((f32)addr[3], (f32)addr[2], (f32)addr[1] );
+			v3	model_normal((f32)mn[vert.cidx+3], (f32)mn[vert.cidx+2], (f32)mn[vert.cidx+1] );
 
 			v3 vecTransformedNormal;
 			vecTransformedNormal = matWorld.TransformNormal( model_normal );
 			vecTransformedNormal.Normalise();
 
 			mVtxProjected[i].Colour = LightVert(vecTransformedNormal);
-			mVtxProjected[i].Colour.w = (f32)addr[0] * (1.0f / 255.0f);
+			mVtxProjected[i].Colour.w = (f32)col[vert.cidx+0] * (1.0f / 255.0f);
 
 			if ( mTnLModeFlags & TNL_TEXGEN )
 			{
@@ -2428,8 +2455,7 @@ void PSPRenderer::SetNewVertexInfoPD(u32 address, u32 v0, u32 n)
 		{
 			if( mSmooth )
 			{	//FLAT shade
-				u8 *addr = (u8*)(g_pu8RamBase + gAuxAddr + vert.cidx);
-				mVtxProjected[i].Colour = v4( (f32)addr[3] * (1.0f / 255.0f), (f32)addr[2] * (1.0f / 255.0f), (f32)addr[1] * (1.0f / 255.0f), (f32)addr[0] * (1.0f / 255.0f) );
+				mVtxProjected[i].Colour = v4( (f32)col[vert.cidx+3] * (1.0f / 255.0f), (f32)col[vert.cidx+2] * (1.0f / 255.0f), (f32)col[vert.cidx+1] * (1.0f / 255.0f), (f32)col[vert.cidx+0] * (1.0f / 255.0f) );
 			}
 			else
 			{	//Shade is disabled

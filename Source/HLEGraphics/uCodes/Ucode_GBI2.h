@@ -63,7 +63,6 @@ void DLParser_GBI2_Vtx( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_Mtx( MicroCodeCommand command )
 {
-	gAuxAddr = 0;	// For Conker BFD
 	u32 address = RDPSegAddr(command.mtx2.addr);
 
 	DL_PF("    Command: %s %s %s Length %d Address 0x%08x",
@@ -408,6 +407,10 @@ void DLParser_GBI2_DL_Count( MicroCodeCommand command )
 	gDlistStackPointer++;
 	gDlistStack[gDlistStackPointer].pc = address;
 	gDlistStack[gDlistStackPointer].countdown = ((command.inst.cmd0)&0xFFFF);
+
+	DL_PF("    Address=0x%08x %s", address, (command.dlist.param==G_DL_NOPUSH)? "Jump" : (command.dlist.param==G_DL_PUSH)? "Push" : "?");
+	DL_PF("\\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/");
+	DL_PF("############################################");
 }
 
 //***************************************************************************** 

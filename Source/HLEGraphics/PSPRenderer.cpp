@@ -121,6 +121,8 @@ extern bool gRumblePakActive;
 extern u32 SCR_WIDTH;
 extern u32 SCR_HEIGHT;
 
+extern u32 gAuxAddr;
+
 static f32 fViWidth = 320.0f;
 static f32 fViHeight = 240.0f;
 static u32 uViWidth = 320;
@@ -2086,8 +2088,6 @@ void PSPRenderer::SetNewVertexInfo(u32 address, u32 v0, u32 n)
 //*****************************************************************************
 // Conker Bad fur day rendering pipeline
 //*****************************************************************************
-extern u32 gConkerVtxZAddr;
-
 #if 1	//1->VFPU, 0->FPU	//Corn
 void PSPRenderer::SetNewVertexInfoConker(u32 address, u32 v0, u32 n)
 {
@@ -2109,7 +2109,7 @@ void PSPRenderer::SetNewVertexInfoConker(u32 address, u32 v0, u32 n)
 	{
 		for (u32 i = v0; i < (v0 + n); i++)
 		{
-			v3 model_normal( *(s8*)(g_pu8RamBase+ (((i<<1)+0)^3)+gConkerVtxZAddr), *(s8*)(g_pu8RamBase+ (((i<<1)+1)^3)+gConkerVtxZAddr), *(s8*)(g_pu8RamBase+ (((i<<1)+2)^3)+gConkerVtxZAddr) );
+			v3 model_normal( *(s8*)(g_pu8RamBase+ (((i<<1)+0)^3)+gAuxAddr), *(s8*)(g_pu8RamBase+ (((i<<1)+1)^3)+gAuxAddr), *(s8*)(g_pu8RamBase+ (((i<<1)+2)^3)+gAuxAddr) );
 		
 			v3 vecTransformedNormal = matWorld.TransformNormal( model_normal );
 			vecTransformedNormal.Normalise();
@@ -2213,7 +2213,7 @@ void PSPRenderer::SetNewVertexInfoConker(u32 address, u32 v0, u32 n)
 		//
 		if ( (mTnLModeFlags & (TNL_TEXGEN | TNL_LIGHT)) == (TNL_TEXGEN | TNL_LIGHT) )
 		{
-			v3 model_normal( *(s8*)(g_pu8RamBase+ (((i<<1)+0)^3)+gConkerVtxZAddr), *(s8*)(g_pu8RamBase+ (((i<<1)+1)^3)+gConkerVtxZAddr), *(s8*)(g_pu8RamBase+ (((i<<1)+2)^3)+gConkerVtxZAddr) );
+			v3 model_normal( *(s8*)(g_pu8RamBase+ (((i<<1)+0)^3)+gAuxAddr), *(s8*)(g_pu8RamBase+ (((i<<1)+1)^3)+gAuxAddr), *(s8*)(g_pu8RamBase+ (((i<<1)+2)^3)+gAuxAddr) );
 			v3 vecTransformedNormal = matWorld.TransformNormal( model_normal );
 			vecTransformedNormal.Normalise();
 
@@ -2252,43 +2252,73 @@ extern bool gDKRBillBoard;
 void PSPRenderer::SetNewVertexInfoDKR(u32 address, u32 v0, u32 n)
 {
 	u32 pVtxBase = u32(g_pu8RamBase + address);
-
 	const Matrix4x4 & matWorldProject( gDKRMatrixes[gDKRCMatrixIndex] );
-
-	bool addbase = gDKRBillBoard & (gDKRCMatrixIndex == 2);
 
 	DL_PF( "    Ambient color RGB[%f][%f][%f] Texture scale X[%f] Texture scale Y[%f]", mTnLParams.Ambient.x, mTnLParams.Ambient.y, mTnLParams.Ambient.z, mTnLParams.TextureScaleX, mTnLParams.TextureScaleY);
 	DL_PF( "    Light[%s] Texture[%s] EnvMap[%s] Fog[%s]", (mTnLModeFlags&TNL_LIGHT)? "On":"Off", (mTnLModeFlags&TNL_TEXTURE)? "On":"Off", (mTnLModeFlags&TNL_TEXGEN)? (mTnLModeFlags&TNL_TEXGENLIN)? "Linear":"Spherical":"Off", (mTnLModeFlags&TNL_FOG)? "On":"Off");
-	DL_PF( "    CMtx[%d] Add base[%s]", gDKRCMatrixIndex, addbase? "On":"Off");
+	DL_PF( "    CMtx[%d] Add base[%s]", gDKRCMatrixIndex, gDKRBillBoard? "On":"Off");
 
-	static v4 gDKRBaseVec;
-	if( (gDKRVtxCount == 0) && (n == 1) )
-	{	//Copy base vector (used for billbording)
-		gDKRVtxCount++;
+	if( gDKRBillBoard )
+	{	//Copy vertices adding base vector and the color data
+		mWPmodified = false;
 
-		sceGuSetMatrix( GU_PROJECTION, reinterpret_cast< const ScePspFMatrix4 * >( &matWorldProject) );
+		v4 & BaseVec( mVtxProjected[0].TransformedPos );
+	
+		//Hack to worldproj matrix to scale and rotate billbords //Corn
+		Matrix4x4 mat( gDKRMatrixes[0]);
+		mat.mRaw[0] *= gDKRMatrixes[2].mRaw[0] * 0.33f;
+		mat.mRaw[4] *= gDKRMatrixes[2].mRaw[0] * 0.33f;
+		mat.mRaw[8] *= gDKRMatrixes[2].mRaw[0] * 0.33f;
+		mat.mRaw[1] *= gDKRMatrixes[2].mRaw[0] * 0.25f;
+		mat.mRaw[5] *= gDKRMatrixes[2].mRaw[0] * 0.25f;
+		mat.mRaw[9] *= gDKRMatrixes[2].mRaw[0] * 0.25f;
+		mat.mRaw[2] *= gDKRMatrixes[2].mRaw[10] * 0.33f;
+		mat.mRaw[6] *= gDKRMatrixes[2].mRaw[10] * 0.33f;
+		mat.mRaw[10] *= gDKRMatrixes[2].mRaw[10] * 0.33f;
 
-		gDKRBaseVec.x = *(s16*)((pVtxBase + 0) ^ 2);
-		gDKRBaseVec.y = *(s16*)((pVtxBase + 2) ^ 2);
-		gDKRBaseVec.z = *(s16*)((pVtxBase + 4) ^ 2);
-		gDKRBaseVec.w = 1.0f;
+		for (u32 i = v0; i < v0 + n; i++)
+		{
+			v3 w( *(s16*)((pVtxBase + 0) ^ 2), *(s16*)((pVtxBase + 2) ^ 2), *(s16*)((pVtxBase + 4) ^ 2));
+			w = mat.TransformNormal( w );
 
-		return;
+			v4 & transformed( mVtxProjected[i].TransformedPos );
+			transformed.x = BaseVec.x + w.x;
+			transformed.y = BaseVec.y + w.y;
+			transformed.z = BaseVec.z + w.z;
+			transformed.w = 1.0f;
+
+			// Set Clipflags, zero clippflags if billbording //Corn
+			mVtxProjected[i].ClipFlags = 0;
+
+			// Assign true vert colour
+			f32 r = (1.0f / 255.0f) * (f32)*(u8*)((pVtxBase + 6) ^ 3);
+			f32 g = (1.0f / 255.0f) * (f32)*(u8*)((pVtxBase + 7) ^ 3);
+			f32 b = (1.0f / 255.0f) * (f32)*(u8*)((pVtxBase + 8) ^ 3);
+			f32 a = (1.0f / 255.0f) * (f32)*(u8*)((pVtxBase + 9) ^ 3);
+
+			mVtxProjected[i].Colour = v4( r, g, b, a );
+
+			// No texture scaling? (These dont seem to do any good anyway) //Corn
+			//mVtxProjected[i].Texture.x = mVtxProjected[i].Texture.y = 1.0f;
+
+			gDKRVtxCount++;
+			pVtxBase += 10;
+		}
 	}
-
-	u32 nOff = 0;
-
-	if( !addbase )
+	else
 	{	//Normal path for transform of triangles
-		//ToDo: avoid setting the matrix here all the time //Corn
-		sceGuSetMatrix( GU_PROJECTION, reinterpret_cast< const ScePspFMatrix4 * >( &matWorldProject) );
+		if( mWPmodified )
+		{	//Only reload matrix if it has been changed and no billbording //Corn
+			mWPmodified = false;
+			sceGuSetMatrix( GU_PROJECTION, reinterpret_cast< const ScePspFMatrix4 * >( &matWorldProject) );
+		}
 
 		for (u32 i = v0; i < v0 + n; i++)
 		{
 			v4 & transformed( mVtxProjected[i].TransformedPos );
-			transformed.x = *(s16*)((pVtxBase + nOff + 0) ^ 2);
-			transformed.y = *(s16*)((pVtxBase + nOff + 2) ^ 2);
-			transformed.z = *(s16*)((pVtxBase + nOff + 4) ^ 2);
+			transformed.x = *(s16*)((pVtxBase + 0) ^ 2);
+			transformed.y = *(s16*)((pVtxBase + 2) ^ 2);
+			transformed.z = *(s16*)((pVtxBase + 4) ^ 2);
 			transformed.w = 1.0f;
 
 			v4 & projected( mVtxProjected[i].ProjectedPos );
@@ -2308,46 +2338,18 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 address, u32 v0, u32 n)
 			mVtxProjected[i].ClipFlags = clip_flags;
 
 			// Assign true vert colour
-			f32 r = *(u8*)((pVtxBase + nOff + 6) ^ 3);
-			f32 g = *(u8*)((pVtxBase + nOff + 7) ^ 3);
-			f32 b = *(u8*)((pVtxBase + nOff + 8) ^ 3);
-			f32 a = *(u8*)((pVtxBase + nOff + 9) ^ 3);
+			f32 r = (1.0f / 255.0f) * (f32)*(u8*)((pVtxBase + 6) ^ 3);
+			f32 g = (1.0f / 255.0f) * (f32)*(u8*)((pVtxBase + 7) ^ 3);
+			f32 b = (1.0f / 255.0f) * (f32)*(u8*)((pVtxBase + 8) ^ 3);
+			f32 a = (1.0f / 255.0f) * (f32)*(u8*)((pVtxBase + 9) ^ 3);
 
-			mVtxProjected[i].Colour = v4( r * (1.0f / 255.0f), g * (1.0f / 255.0f), b * (1.0f / 255.0f), a * (1.0f / 255.0f) );
-
-			// No texture scaling? (These dont seem to do any good anyway) //Corn
-			//mVtxProjected[i].Texture.x = mVtxProjected[i].Texture.y = 1.0f;
-
-			gDKRVtxCount++;
-			nOff += 10;
-		}
-	}
-	else
-	{	//Copy vertices adding base vector and the color data (No transform)
-		for (u32 i = v0; i < v0 + n; i++)
-		{
-			v4 & transformed( mVtxProjected[i].TransformedPos );
-			transformed.x = gDKRBaseVec.x + (f32)*(s16*)((pVtxBase + nOff + 0) ^ 2);
-			transformed.y = gDKRBaseVec.y + (f32)*(s16*)((pVtxBase + nOff + 2) ^ 2);
-			transformed.z = gDKRBaseVec.z + (f32)*(s16*)((pVtxBase + nOff + 4) ^ 2);
-			transformed.w = 1.0f;
-
-			// Set Clipflags, zero clippflags if billbording //Corn
-			mVtxProjected[i].ClipFlags = 0;
-
-			// Assign true vert colour
-			f32 r = *(u8*)((pVtxBase + nOff + 6) ^ 3);
-			f32 g = *(u8*)((pVtxBase + nOff + 7) ^ 3);
-			f32 b = *(u8*)((pVtxBase + nOff + 8) ^ 3);
-			f32 a = *(u8*)((pVtxBase + nOff + 9) ^ 3);
-
-			mVtxProjected[i].Colour = v4( r * (1.0f / 255.0f), g * (1.0f / 255.0f), b * (1.0f / 255.0f), a * (1.0f / 255.0f) );
+			mVtxProjected[i].Colour = v4( r, g, b, a );
 
 			// No texture scaling? (These dont seem to do any good anyway) //Corn
 			//mVtxProjected[i].Texture.x = mVtxProjected[i].Texture.y = 1.0f;
 
 			gDKRVtxCount++;
-			nOff += 10;
+			pVtxBase += 10;
 		}
 	}
 }
@@ -2355,8 +2357,6 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 address, u32 v0, u32 n)
 //*****************************************************************************
 // Perfect Dark rendering pipeline
 //*****************************************************************************
-extern u32 PDCIAddr;
-
 void PSPRenderer::SetNewVertexInfoPD(u32 address, u32 v0, u32 n)
 {
 	const FiddledVtxPD * const pVtxBase = (const FiddledVtxPD*)(g_pu8RamBase + address);
@@ -2392,7 +2392,7 @@ void PSPRenderer::SetNewVertexInfoPD(u32 address, u32 v0, u32 n)
 
 		if( mTnLModeFlags & TNL_LIGHT )
 		{
-			s8 *addr = (s8*)(g_pu8RamBase + PDCIAddr + vert.cidx);
+			s8 *addr = (s8*)(g_pu8RamBase + gAuxAddr + vert.cidx);
 			v3	model_normal((f32)addr[3], (f32)addr[2], (f32)addr[1] );
 
 			v3 vecTransformedNormal;
@@ -2428,7 +2428,7 @@ void PSPRenderer::SetNewVertexInfoPD(u32 address, u32 v0, u32 n)
 		{
 			if( mSmooth )
 			{	//FLAT shade
-				u8 *addr = (u8*)(g_pu8RamBase + PDCIAddr + vert.cidx);
+				u8 *addr = (u8*)(g_pu8RamBase + gAuxAddr + vert.cidx);
 				mVtxProjected[i].Colour = v4( (f32)addr[3] * (1.0f / 255.0f), (f32)addr[2] * (1.0f / 255.0f), (f32)addr[1] * (1.0f / 255.0f), (f32)addr[0] * (1.0f / 255.0f) );
 			}
 			else

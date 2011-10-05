@@ -36,8 +36,12 @@
 //*****************************************************************************
 RDP_OtherMode		gRDPOtherMode;
 
-//u8		gTextureMemory[ 4096 ];
-u8 *gTextureMemory;
+#ifndef DAEDALUS_TMEM
+//Granularity down to 8bytes (64bit) is good enuff also only need to address the upper half //Corn
+u32* gTextureMemory[ 4096 >> 4 ];
+#else
+u32 gTextureMemory[ 4096 >> 2 ];
+#endif
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 //*****************************************************************************

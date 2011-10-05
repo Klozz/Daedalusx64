@@ -290,9 +290,12 @@ typedef struct
 //*****************************************************************************
 extern RDP_OtherMode		gRDPOtherMode;
 
+#ifndef DAEDALUS_TMEM
+extern u32* gTextureMemory[ 4096 >> 4 ];
+#else
+extern u32 gTextureMemory[ 4096 >> 2 ];
+#endif
 
-//extern u8 gTextureMemory[ 4096 ];
-extern u8 *gTextureMemory;
 extern	u32 gTextureTile;
 
 

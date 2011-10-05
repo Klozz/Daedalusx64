@@ -83,8 +83,9 @@ const char *	gDisplayListDumpPathFormat = "dl%04d.txt";
 #define RDPSegAddr(seg) ( (gSegments[((seg)>>24)&0x0F]&0x00ffffff) + ((seg)&0x00FFFFFF) )
 
 static void RDP_Force_Matrix(u32 address);
+void RDP_MoveMemViewport(u32 address);
 void MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address );
-void DLParser_PopDL();
+static void DLParser_PopDL();
 void DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 data_size );
 void RDP_MoveMemLight(u32 light_idx, u32 address);
 void DLParser_InitGeometryMode();
@@ -107,14 +108,7 @@ inline void	DLParser_FetchNextCommand( MicroCodeCommand * p_command )
 	// Current PC is the last value on the stack
 	u32			pc( gDlistStack[gDlistStackPointer].pc );
 
-	// 1-> Copy command in 64bit in one go
-	//
-#if 1	
 	*p_command = *(MicroCodeCommand*)&g_pu32RamBase[(pc>>2)];
-#else
-	p_command->inst.cmd0 = g_pu32RamBase[(pc>>2)+0];
-	p_command->inst.cmd1 = g_pu32RamBase[(pc>>2)+1];
-#endif
 
 	gDlistStack[gDlistStackPointer].pc += 8;
 
@@ -153,7 +147,6 @@ enum CycleType
 	CYCLE_FILL,
 };
 
-
 bool bIsOffScreen = false;
 u32	gSegments[16];
 static RDP_Scissor scissors;
@@ -162,11 +155,10 @@ SImageDescriptor g_TI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
 SImageDescriptor g_CI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
 SImageDescriptor g_DI = { G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, 0 };
 
-//u32		gPalAddresses[ 4096 ];
-
 DListStack	gDlistStack[MAX_DL_STACK_SIZE];
 s32			gDlistStackPointer = -1;
 
+MicroCodeInstruction gInstructionLookupCustom[256];
 const MicroCodeInstruction *gUcode = gInstructionLookup[0];
 
 #if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
@@ -306,16 +298,6 @@ bool DLParser_Initialise()
 	scissors.right = 320;
 	scissors.bottom = 240;
 
-	//
-	// Reset all the RDP registers
-	//
-	//gRDPOtherMode._u64 = 0;
-	gRDPOtherMode.L = 0;
-	gRDPOtherMode.H = 0;
-
-	gRDPOtherMode.pad = G_RDP_RDPSETOTHERMODE;
-	gRDPOtherMode.blender = 0x0050;
-
 	return true;
 }
 
@@ -368,13 +350,10 @@ static void DLParser_DumpMux( u64 mux )
 	DL_PF("    RGB1: (%s - %s) * %s + %s", sc_colcombtypes16[aRGB1], sc_colcombtypes16[bRGB1], sc_colcombtypes32[cRGB1], sc_colcombtypes8[dRGB1]);		
 	DL_PF("    A1  : (%s - %s) * %s + %s", sc_colcombtypes8[aA1],  sc_colcombtypes8[bA1], sc_colcombtypes8[cA1],  sc_colcombtypes8[dA1]);
 }
-#endif
-
 
 //*****************************************************************************
 //
 //*****************************************************************************
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 static void	DLParser_DumpTaskInfo( const OSTask * pTask )
 {
 	DL_PF( "Task:         %08x",      pTask->t.type  );
@@ -397,8 +376,43 @@ static void	DLParser_DumpTaskInfo( const OSTask * pTask )
 	DL_PF( "YieldData:    %08x", (u32)pTask->t.yield_data_ptr );
 	DL_PF( "YieldDataSize:%08x",      pTask->t.yield_data_size );
 }
-#endif
+
+//*************************************************************************************
+// 
+//*************************************************************************************
+static void HandleDumpDisplayList( OSTask * pTask )
+{
+	if (gDumpNextDisplayList)
+	{
+		DBGConsole_Msg( 0, "Dumping display list" );
+		static u32 count = 0;
+
+		char szFilePath[MAX_PATH+1];
+		char szFileName[MAX_PATH+1];
+		char szDumpDir[MAX_PATH+1];
+
+		IO::Path::Combine(szDumpDir, g_ROM.settings.GameName.c_str(), gDisplayListRootPath);
 	
+		Dump_GetDumpDirectory(szFilePath, szDumpDir);
+
+		sprintf(szFileName, "dl%04d.txt", count++);
+
+		IO::Path::Append(szFilePath, szFileName);
+
+		gDisplayListFile = fopen( szFilePath, "w" );
+		if (gDisplayListFile != NULL)
+			DBGConsole_Msg(0, "RDP: Dumping Display List as %s", szFilePath);
+		else
+			DBGConsole_Msg(0, "RDP: Couldn't create dumpfile %s", szFilePath);
+
+		DLParser_DumpTaskInfo( pTask );
+
+		// Clear flag as we're done
+		gDumpNextDisplayList = false;
+	}
+}
+#endif
+
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -437,7 +451,7 @@ void DLParser_CallDisplayList( const DList & dl )
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_PopDL()
+static void DLParser_PopDL()
 {
 	DL_PF("Returning from DisplayList: level=%d", gDlistStackPointer+1);
 	DL_PF("############################################");
@@ -447,43 +461,122 @@ void DLParser_PopDL()
 	gDlistStackPointer--;
 }
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+#define UCODE_SIZE 1024 
+
+#define SetCommand( cmd, func )					\
+		gInstructionLookupCustom[ cmd ] = func;
+
+#define SetCustom( ucode, stride, size )			\
+			gVertexStride = stride;					\
+			gUcode = gInstructionLookupCustom;		\
+			memcpy( &gInstructionLookupCustom, 		\
+				    &gInstructionLookup[ ucode ], size );
+
+#define SetNormal( ucode, stride )			\
+			gVertexStride = stride;					\
+			gUcode = gInstructionLookup[ ucode ];
+
 //*************************************************************************************
 // 
 //*************************************************************************************
-static void HandleDumpDisplayList( OSTask * pTask )
-{
-	if (gDumpNextDisplayList)
+void DLParser_SetUcode( u32 ucode )
+{	
+	// This is the multiplier applied to vertex indices. 
+	const u32 stride[] =
 	{
-		DBGConsole_Msg( 0, "Dumping display list" );
-		static u32 count = 0;
+		10,		// Super Mario 64, Tetrisphere, Demos
+		2,		// Mario Kart, Star Fox
+		2,		// Zelda, and newer games
+		2,		// Yoshi's Story, Pokemon Puzzle League
+		5,		// Wave Racer USA
+		10,		// Diddy Kong Racing, Gemini, and Mickey
+		2,		// Last Legion, Toukon, Toukon 2
+		5,		// Shadows of the Empire (SOTE)
+		10,		// Golden Eye
+		2,		// Conker BFD
+		10,		// Perfect Dark
+	};
 
-		char szFilePath[MAX_PATH+1];
-		char szFileName[MAX_PATH+1];
-		char szDumpDir[MAX_PATH+1];
+	// This a normal ucode, just retrive the correct ucode table
+	if( !current.custom )
+	{
+		SetNormal( ucode, stride[ ucode ] );
+		return;
+	}
 
-		IO::Path::Combine(szDumpDir, g_ROM.settings.GameName.c_str(), gDisplayListRootPath);
-	
-		Dump_GetDumpDirectory(szFilePath, szDumpDir);
+	//
+	// Reserved for custom ucodes
+	//
 
-		sprintf(szFileName, "dl%04d.txt", count++);
+	const u32 info[] =
+	{
+		0,		// Modified uCode 0 - RSP SW 2.0D EXT
+		0,		// Modified uCode 0 - RSP SW 2.0 Diddy
+		1,		// Modified uCode 1 - F3DEX Last Legion
+		0,		// Modified uCode 0 - RSP SW 2.0D EXT
+		0,		// Modified uCode 0 - RSP SW 2.0X
+		2,		// Modified uCode 2:  F3DEXBGxx Conker
+		0,		// Modified uCode 0 - Unknown
+	};
 
-		IO::Path::Append(szFilePath, szFileName);
+	// First build array based from a normal uCode table
+	SetCustom( info[ ucode-MAX_UCODE ], stride[ ucode ], UCODE_SIZE);
 
-		gDisplayListFile = fopen( szFilePath, "w" );
-		if (gDisplayListFile != NULL)
-			DBGConsole_Msg(0, "RDP: Dumping Display List as %s", szFilePath);
-		else
-			DBGConsole_Msg(0, "RDP: Couldn't create dumpfile %s", szFilePath);
-
-		DLParser_DumpTaskInfo( pTask );
-
-		// Clear flag as we're done
-		gDumpNextDisplayList = false;
+	// Now let's patch it, to create our custom ucode ;)
+	switch( ucode )
+	{
+		case GBI_GE:
+			SetCommand( G_GBI1_RDPHALF_1, DLParser_RDPHalf1_GoldenEye );
+			break;
+		case GBI_WR:
+			SetCommand( G_GBI1_VTX,  DLParser_GBI0_Vtx_WRUS );
+			SetCommand( G_GBI1_TRI2, DLParser_Nothing ); // Just in case
+			break;
+		case GBI_SE:
+			SetCommand( G_GBI1_VTX, DLParser_GBI0_Vtx_SOTE );
+			SetCommand( G_GBI1_DL,  DLParser_GBI0_DL_SOTE );
+			break;
+		case GBI_LL:
+			SetCommand( 0x80,		   DLParser_RSP_Last_Legion_0x80 );
+			SetCommand( 0x00,		   DLParser_RSP_Last_Legion_0x00 );
+			SetCommand( G_RDP_TEXRECT, DLParser_TexRect_Last_Legion );
+			break;
+		case GBI_PD:
+			SetCommand( G_GBI1_VTX,		  RSP_Vtx_PD );
+			SetCommand( G_GBI1_RESERVED2, RSP_Set_Vtx_CI_PD );
+			SetCommand( G_GBI1_RDPHALF_1, DLParser_RDPHalf1_GoldenEye );
+			break;
+		case GBI_DKR:
+			SetCommand( G_GBI1_MTX,		  DLParser_Mtx_DKR );
+			SetCommand( G_GBI1_VTX,		  DLParser_GBI0_Vtx_DKR );
+			SetCommand( G_GBI1_RESERVED1, DLParser_DMA_Tri_DKR );
+			SetCommand( G_GBI1_RESERVED2, DLParser_DLInMem );
+			SetCommand( G_GBI1_MOVEWORD,  DLParser_MoveWord_DKR );
+			SetCommand( G_GBI1_TRI1,	  DLParser_Set_Addr_DKR );
+			break;
+		case GBI_CONKER:
+			SetCommand( 0x01, RSP_Vtx_Conker );
+			SetCommand( 0x10, DLParser_GBI2_Conker );
+			SetCommand( 0x11, DLParser_GBI2_Conker );
+			SetCommand( 0x12, DLParser_GBI2_Conker );
+			SetCommand( 0x13, DLParser_GBI2_Conker );
+			SetCommand( 0x14, DLParser_GBI2_Conker );
+			SetCommand( 0x15, DLParser_GBI2_Conker );
+			SetCommand( 0x16, DLParser_GBI2_Conker );
+			SetCommand( 0x17, DLParser_GBI2_Conker );
+			SetCommand( 0x18, DLParser_GBI2_Conker );
+			SetCommand( 0x19, DLParser_GBI2_Conker );
+			SetCommand( 0x1a, DLParser_GBI2_Conker );
+			SetCommand( 0x1b, DLParser_GBI2_Conker );
+			SetCommand( 0x1c, DLParser_GBI2_Conker );
+			SetCommand( 0x1d, DLParser_GBI2_Conker );
+			SetCommand( 0x1e, DLParser_GBI2_Conker );
+			SetCommand( 0x1f, DLParser_GBI2_Conker );
+			SetCommand( 0xdb, RSP_MoveWord_Conker );
+			SetCommand( 0xdc, RSP_MoveMem_Conker );
+			break;
 	}
 }
-#endif
-
 //*****************************************************************************
 // 
 //*****************************************************************************
@@ -492,49 +585,29 @@ void DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 da
 	// Start ucode detector
 	u32 ucode = GBIMicrocode_DetectVersion( code_base, code_size, data_base, data_size );
 	
-	//
-	// This is the multiplier applied to vertex indices. 
-	//
-	const u32 vertex_stride[] =
-	{
-		10,		// Super Mario 64, Tetrisphere, Demos
-		2,		// Mario Kart, Star Fox
-		2,		// Zelda, and newer games
-		5,		// Wave Racer USA
-		10,		// Diddy Kong Racing
-		2,		// Last Legion, Toukon, Toukon 2
-		5,		// Shadows of the Empire (SOTE)
-		10,		// Golden Eye
-		2,		// Conker BFD
-		10,		// Perfect Dark
-		2,		// Yoshi's Story, Pokemon Puzzle League
-	};
-
-	//printf("ucode=%d\n", ucode);
-	// Detect correct ucode table
-	gUcode = gInstructionLookup[ ucode ];
-
-	// Detect Correct Vtx Stride
-	gVertexStride = vertex_stride[ ucode ];
-
+	// Store useful information about this ucode for caching purpose
 	current.code_base = code_base;
-	current.ucode	   = ucode; 
+	current.ucode	  = ucode; 
+	current.custom	  = ( ucode > GBI_1_S2DEX );
+
+	// Set up ucode table, patch custom ucodes, set up vtx multiplier etc
+	DLParser_SetUcode( ucode );
 
 	//if ucode version is other than 0,1 or 2 then default to 2 (with potentially non valid function names) 
 	//
 #if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
 	switch (ucode)
 	{
-		case 0:	//GBI0
-		case 1:	//GBI1
-		case 2:	//GBI2	
+		case GBI_0:	//GBI0
+		case GBI_1:	//GBI1
+		case GBI_2:	//GBI2	
 			gucode_ver = ucode;
 			break;
-		case 4:	//DKR	
-		case 10:	//PD	
+		case GBI_DKR:	//DKR	
+		case GBI_PD:	//PD	
 			gucode_ver = 0;
 			break;
-		case 9:	//Conker
+		case GBI_CONKER:	//Conker
 			gucode_ver = 3;
 			break;
 		default:	//Default to 2 otherwise
@@ -664,13 +737,8 @@ void DLParser_Process()
 	//
 	// Not sure what to init this with. We should probably read it from the dmem
 	//
-	//gRDPOtherMode._u64 = 0;	//Better clear this here at Dlist start
-	gRDPOtherMode.L = 0;
+	gRDPOtherMode.L = 0x00500001;
 	gRDPOtherMode.H = 0;
-
-	gRDPOtherMode.pad = G_RDP_RDPSETOTHERMODE;
-	gRDPOtherMode.blender = 0x0050;
-	gRDPOtherMode.alpha_compare = 1;
 
 	gRDPFrame++;
 
@@ -700,7 +768,6 @@ void DLParser_Process()
 	extern bool gFrameskipActive;
 	if(!gFrameskipActive)
 	{
-	// ZBuffer/BackBuffer clearing is caught elsewhere, but we could force it here
 		PSPRenderer::Get()->SetVIScales();
 		PSPRenderer::Get()->Reset();
 		PSPRenderer::Get()->BeginScene();
@@ -1011,501 +1078,42 @@ void DLParser_RDPFullSync( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_InitGeometryMode()
 {
-	DL_PF("  ZBuffer %s", (gGeometryMode & G_ZBUFFER) ? "On" : "Off");
-	DL_PF("  Culling %s", (gGeometryMode & G_CULL_BACK) ? "Back face" : (gGeometryMode & G_CULL_FRONT) ? "Front face" : "Off");
-	DL_PF("  Shade %s", (gGeometryMode & G_SHADE) ? "On" : "Off");
-	DL_PF("  Smooth Shading %s", (gGeometryMode & G_SHADING_SMOOTH) ? "On" : "Off");
-	DL_PF("  Lighting %s", (gGeometryMode & G_LIGHTING) ? "On" : "Off");
-	DL_PF("  Texture %s", (gGeometryMode & G_TEXTURE_ENABLE) ? "On" : "Off");
-	DL_PF("  Texture Gen %s", (gGeometryMode & G_TEXTURE_GEN) ? "On" : "Off");
-	DL_PF("  Texture Gen Linear %s", (gGeometryMode & G_TEXTURE_GEN_LINEAR) ? "On" : "Off");
-	DL_PF("  Fog %s", (gGeometryMode & G_FOG) ? "On" : "Off");
-	DL_PF("  LOD %s", (gGeometryMode & G_LOD) ? "On" : "Off");
-
 	// CULL_BACK has priority, Fixes Mortal Kombat 4
-	PSPRenderer::Get()->SetCullMode( gGeometryMode & G_CULL_FRONT, gGeometryMode & G_CULL_BACK );
+	bool bCullFront         = (gGeometryMode & G_CULL_FRONT)		? true : false;
+	bool bCullBack          = (gGeometryMode & G_CULL_BACK)			? true : false;
+	PSPRenderer::Get()->SetCullMode(bCullFront, bCullBack);
 
-	PSPRenderer::Get()->SetSmooth( gGeometryMode & G_SHADE );
+	bool bShade				= (gGeometryMode & G_SHADE)				? true : false;
+	PSPRenderer::Get()->SetSmooth( bShade );
 
-	PSPRenderer::Get()->SetSmoothShade( gGeometryMode & G_SHADING_SMOOTH );
+	bool bShadeSmooth       = (gGeometryMode & G_SHADING_SMOOTH)	? true : false;
+	PSPRenderer::Get()->SetSmoothShade( bShadeSmooth );
 
-	PSPRenderer::Get()->SetFogEnable( gGeometryMode & G_FOG );
+	bool bFog				= (gGeometryMode & G_FOG)				? true : false;
+	PSPRenderer::Get()->SetFogEnable( bFog );
 
-	PSPRenderer::Get()->SetTextureGen( gGeometryMode & G_TEXTURE_GEN );
+	bool bTextureGen        = (gGeometryMode & G_TEXTURE_GEN)		? true : false;
+	PSPRenderer::Get()->SetTextureGen(bTextureGen);
 
-	PSPRenderer::Get()->SetTextureGenLin( gGeometryMode & G_TEXTURE_GEN_LINEAR );
+	bool bTextureGenLin        = (gGeometryMode & G_TEXTURE_GEN_LINEAR)			? true : false;
+	PSPRenderer::Get()->SetTextureGenLin( bTextureGenLin );
 
-	PSPRenderer::Get()->SetLighting( gGeometryMode & G_LIGHTING );
+	bool bLighting			= (gGeometryMode & G_LIGHTING)			? true : false;
+	PSPRenderer::Get()->SetLighting( bLighting );
 
-	PSPRenderer::Get()->ZBufferEnable( gGeometryMode & G_ZBUFFER );
-}
-//*****************************************************************************
-//
-//*****************************************************************************
-void DLParser_GBI1_MoveWord( MicroCodeCommand command )
-{
-	// Type of movement is in low 8bits of cmd0.
+	bool bZBuffer           = (gGeometryMode & G_ZBUFFER)			? true : false;
+	PSPRenderer::Get()->ZBufferEnable( bZBuffer );
 
-	switch (command.mw1.type)
-	{
-	case G_MW_MATRIX:
-		DL_PF("    G_MW_MATRIX(1)");
-		PSPRenderer::Get()->InsertMatrix(command.inst.cmd0, command.inst.cmd1);
-		break;
-	case G_MW_NUMLIGHT:
-		//#define NUML(n)		(((n)+1)*32 + 0x80000000)
-		{
-			u32 num_lights = ((command.mw1.value-0x80000000)/32) - 1;
-
-			DL_PF("    G_MW_NUMLIGHT: Val:%d", num_lights);
-
-			gAmbientLightIdx = num_lights;
-			PSPRenderer::Get()->SetNumLights(num_lights);
-
-		}
-		break;
-	case G_MW_CLIP:	// Seems to be unused?
-		{
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-			switch (command.mw1.offset)
-			{
-			case G_MWO_CLIP_RNX:
-			case G_MWO_CLIP_RNY:
-			case G_MWO_CLIP_RPX:
-			case G_MWO_CLIP_RPY:
-				break;
-			default:					
-				DL_PF("    G_MW_CLIP  ?   : 0x%08x", command.inst.cmd1);					
-				break;
-			}
-#endif
-		}
-		break;
-	case G_MW_SEGMENT:
-		{
-			u32 segment = (command.mw1.offset >> 2) & 0xF;
-			u32 base = command.mw1.value;
-			DL_PF("    G_MW_SEGMENT Seg[%d] = 0x%08x", segment, base);
-			gSegments[segment] = base;
-		}
-		break;
-	case G_MW_FOG: // WIP, only works for a few games
-		{
-			f32 a = command.mw1.value >> 16;
-			f32 b = command.mw1.value & 0xFFFF;
-
-			//f32 min = b - a;
-			//f32 max = b + a;
-			//min = min * (1.0f / 16.0f);
-			//max = max * (1.0f / 4.0f);
-			f32 min = a / 256.0f;
-			f32 max = b / 6.0f;
-
-			//DL_PF(" G_MW_FOG. Mult = 0x%04x (%f), Off = 0x%04x (%f)", wMult, 255.0f * fMult, wOff, 255.0f * fOff );
-
-			PSPRenderer::Get()->SetFogMinMax(min, max);
-
-			//printf("1Fog %.0f | %.0f || %.0f | %.0f\n", min, max, a, b);
-		}
-		break;
-	case G_MW_LIGHTCOL:
-		{
-			u32 light_idx = command.mw1.offset / 0x20;
-			u32 field_offset = (command.mw1.offset & 0x7);
-
-			DL_PF("    G_MW_LIGHTCOL/0x%08x: 0x%08x", command.mw1.offset, command.inst.cmd1);
-
-			switch (field_offset)
-			{
-			case 0:
-				//g_N64Lights[light_idx].Colour = command->cmd1;
-				// Light col, not the copy
-				if (light_idx == gAmbientLightIdx)
-				{
-					u32 n64col( command.mw1.value );
-
-					PSPRenderer::Get()->SetAmbientLight( v4( N64COL_GETR_F(n64col), N64COL_GETG_F(n64col), N64COL_GETB_F(n64col), 1.0f ) );
-				}
-				else
-				{
-					PSPRenderer::Get()->SetLightCol(light_idx, command.mw1.value);
-				}
-				break;
-
-			case 4:
-				break;
-
-			default:
-				//DBGConsole_Msg(0, "G_MW_LIGHTCOL with unknown offset 0x%08x", field_offset);
-				break;
-			}
-		}
-
-		break;
-	case G_MW_POINTS:	// Used in FIFA 98
-		{
-			u32 vtx = command.mw1.offset/40;
-			u32 offset = command.mw1.offset%40;
-			u32 val = command.mw1.value;
-
-			DL_PF("    G_MW_POINTS");
-
-			PSPRenderer::Get()->ModifyVertexInfo(offset, vtx, val);
-		}
- 		break;
-	case G_MW_PERSPNORM:
-		DL_PF("    G_MW_PERSPNORM");
-		//RDP_NOIMPL_WARN("G_MW_PESPNORM Not Implemented");		// Used in Starfox - sets to 0xa
-	//	if ((short)command->cmd1 != 10)
-	//		DBGConsole_Msg(0, "PerspNorm: 0x%04x", (short)command->cmd1);	
-		break;
-	default:
-		DL_PF("    Type: Unknown");
-		RDP_NOIMPL_WARN("Unknown MoveWord");
-		break;
-	}
-}
-
-//*****************************************************************************
-//
-//*****************************************************************************
-//0016A710: DB020000 00000018 CMD Zelda_MOVEWORD  Mem[2][00]=00000018 Lightnum=0
-//001889F0: DB020000 00000030 CMD Zelda_MOVEWORD  Mem[2][00]=00000030 Lightnum=2
-void DLParser_GBI2_MoveWord( MicroCodeCommand command )
-{
-
-	switch (command.mw2.type)
-	{
-	case G_MW_MATRIX:
-		DL_PF("    G_MW_MATRIX(2)");
-		PSPRenderer::Get()->InsertMatrix(command.inst.cmd0, command.inst.cmd1);
-		break;
-	case G_MW_NUMLIGHT:
-		{
-			// Lightnum
-			// command->cmd1:
-			// 0x18 = 24 = 0 lights
-			// 0x30 = 48 = 2 lights
-
-			u32 num_lights = command.mw2.value/24;
-			DL_PF("     G_MW_NUMLIGHT: %d", num_lights);
-
-			gAmbientLightIdx = num_lights;
-			PSPRenderer::Get()->SetNumLights(num_lights);
-		}
-		break;
-
-	case G_MW_CLIP:	// Seems to be unused?
-		{
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-			switch (command.mw2.offset)
-			{
-			case G_MWO_CLIP_RNX:
-			case G_MWO_CLIP_RNY:
-			case G_MWO_CLIP_RPX:
-			case G_MWO_CLIP_RPY:
-				break;
-			default:					
-				DL_PF("     G_MW_CLIP");											
-				break;
-			}
-#endif
-		}
-		break;
-
-	case G_MW_SEGMENT:
-		{
-			u32 segment = command.mw2.offset / 4;
-			u32 address	= command.mw2.value;
-
-			DL_PF( "      G_MW_SEGMENT Segment[%d] = 0x%08x", segment, address );
-
-			gSegments[segment] = address;
-		}
-		break;
-	case G_MW_FOG: // WIP, only works for a few games
-		{
-			f32 a = command.mw2.value >> 16;
-			f32 b = command.mw2.value & 0xFFFF;
-
-			//f32 min = b - a;
-			//f32 max = b + a;
-			//min = min * (1.0f / 16.0f);
-			//max = max * (1.0f / 4.0f);
-			f32 min = a / 256.0f;
-			f32 max = b / 6.0f;
-
-			//DL_PF(" G_MW_FOG. Mult = 0x%04x (%f), Off = 0x%04x (%f)", wMult, 255.0f * fMult, wOff, 255.0f * fOff );
-
-			PSPRenderer::Get()->SetFogMinMax(min, max);
-
-			//printf("1Fog %.0f | %.0f || %.0f | %.0f\n", min, max, a, b);
-		}
-		break;
-	case G_MW_LIGHTCOL:
-		{
-			u32 light_idx = command.mw2.offset / 0x18;
-			u32 field_offset = (command.mw2.offset & 0x7);
-
-			DL_PF("     G_MW_LIGHTCOL/0x%08x: 0x%08x", command.mw2.offset, command.mw2.value);
-
-			switch (field_offset)
-			{
-			case 0:
-				//g_N64Lights[light_idx].Colour = command->cmd1;
-				// Light col, not the copy
-				if (light_idx == gAmbientLightIdx)
-				{
-					u32 n64col( command.mw2.value );
-
-					PSPRenderer::Get()->SetAmbientLight( v4( N64COL_GETR_F(n64col), N64COL_GETG_F(n64col), N64COL_GETB_F(n64col), 1.0f ) );
-				}
-				else
-				{
-					PSPRenderer::Get()->SetLightCol(light_idx, command.mw2.value);
-				}
-				break;
-
-			case 4:
-				break;
-
-			default:
-				//DBGConsole_Msg(0, "G_MW_LIGHTCOL with unknown offset 0x%08x", field_offset);
-				break;
-			}
-		}
-		break;
-
-	case G_MW_PERSPNORM:
-		DL_PF("     G_MW_PERSPNORM 0x%04x", (s16)command.inst.cmd1);
-		break;
-
-	case G_MW_POINTS:
-		DL_PF("     G_MW_POINTS : Ignored");
-		break;
-
-	default:
-		{
-			DL_PF("      Ignored!!");
-
-		}
-		break;
-	}
-}
-
-//*****************************************************************************
-//
-//*****************************************************************************
-void DLParser_GBI1_MoveMem( MicroCodeCommand command )
-{
-	u32 type     = (command.inst.cmd0>>16)&0xFF;
-	u32 length   = (command.inst.cmd0)&0xFFFF;
-	u32 address  = RDPSegAddr(command.inst.cmd1);
-
-	use(length);
-
-	switch (type)
-	{
-		case G_MV_VIEWPORT:
-			{
-				DL_PF("    G_MV_VIEWPORT. Address: 0x%08x, Length: 0x%04x", address, length);
-				RDP_MoveMemViewport( address );
-			}
-			break;
-		case G_MV_LOOKATY:
-			DL_PF("    G_MV_LOOKATY");
-			break;
-		case G_MV_LOOKATX:
-			DL_PF("    G_MV_LOOKATX");
-			break;
-		case G_MV_L0:
-		case G_MV_L1:
-		case G_MV_L2:
-		case G_MV_L3:
-		case G_MV_L4:
-		case G_MV_L5:
-		case G_MV_L6:
-		case G_MV_L7:
-			{
-				u32 light_idx = (type-G_MV_L0)/2;
-				DL_PF("    G_MV_L%d", light_idx);
-				DL_PF("    Light%d: Length:0x%04x, Address: 0x%08x", light_idx, length, address);
-
-				RDP_MoveMemLight(light_idx, address);
-			}
-			break;
-		case G_MV_TXTATT:
-			DL_PF("    G_MV_TXTATT");
-			break;
-		case G_MV_MATRIX_1:
-			DL_PF("		Force Matrix(1): addr=%08X", address);
-			RDP_Force_Matrix(address);
-			//gDlistStack[gDlistStackPointer].pc += 24;	// Next 3 cmds are part of ForceMtx, skip 'em
-			break;
-		//Next 3 MATRIX commands should not appear, since they were in the previous command.
-		case G_MV_MATRIX_2:	/*IGNORED*/	DL_PF("     G_MV_MATRIX_2");											break;
-		case G_MV_MATRIX_3:	/*IGNORED*/	DL_PF("     G_MV_MATRIX_3");											break;
-		case G_MV_MATRIX_4:	/*IGNORED*/	DL_PF("     G_MV_MATRIX_4");											break;
-		default:
-			DL_PF("    MoveMem Type: Unknown");
-			DBGConsole_Msg(0, "MoveMem: Unknown, cmd=%08X, %08X", command.inst.cmd0, command.inst.cmd1);
-			break;
-	}
-}
-
-
-//*****************************************************************************
-//
-//*****************************************************************************
-/*
-
-001889F8: DC08060A 80188708 CMD Zelda_MOVEMEM  Movemem[0806] <- 80188708
-!light 0 color 0.12 0.16 0.35 dir 0.01 0.00 0.00 0.00 (2 lights) [ 1E285A00 1E285A00 01000000 00000000 ]
-data(00188708): 1E285A00 1E285A00 01000000 00000000 
-00188A00: DC08090A 80188718 CMD Zelda_MOVEMEM  Movemem[0809] <- 80188718
-!light 1 color 0.23 0.25 0.30 dir 0.01 0.00 0.00 0.00 (2 lights) [ 3C404E00 3C404E00 01000000 00000000 ]
-data(00188718): 3C404E00 3C404E00 01000000 00000000 
-00188A08: DC080C0A 80188700 CMD Zelda_MOVEMEM  Movemem[080C] <- 80188700
-!light 2 color 0.17 0.16 0.26 dir 0.23 0.31 0.70 0.00 (2 lights) [ 2C294300 2C294300 1E285A00 1E285A00 ]
-*/
-/*
-ZeldaMoveMem: 0xdc080008 0x801984d8
-SetScissor: x0=416 y0=72 x1=563 y1=312 mode=0
-// Mtx
-ZeldaMoveWord:0xdb0e0000 0x00000041 Ignored
-ZeldaMoveMem: 0xdc08000a 0x80198538
-ZeldaMoveMem: 0xdc08030a 0x80198548
-
-ZeldeMoveMem: Unknown Type. 0xdc08000a 0x80198518
-ZeldeMoveMem: Unknown Type. 0xdc08030a 0x80198528
-ZeldeMoveMem: Unknown Type. 0xdc08000a 0x80198538
-ZeldeMoveMem: Unknown Type. 0xdc08030a 0x80198548
-ZeldeMoveMem: Unknown Type. 0xdc08000a 0x80198518
-ZeldeMoveMem: Unknown Type. 0xdc08030a 0x80198528
-ZeldeMoveMem: Unknown Type. 0xdc08000a 0x80198538
-ZeldeMoveMem: Unknown Type. 0xdc08030a 0x80198548
-
-
-0xa4001120: <0x0c000487> JAL       0x121c        Seg2Addr(t8)				dram
-0xa4001124: <0x332100fe> ANDI      at = t9 & 0x00fe
-0xa4001128: <0x937309c1> LBU       s3 <- 0x09c1(k1)							len
-0xa400112c: <0x943402f0> LHU       s4 <- 0x02f0(at)							dmem
-0xa4001130: <0x00191142> SRL       v0 = t9 >> 0x0005
-0xa4001134: <0x959f0336> LHU       ra <- 0x0336(t4)
-0xa4001138: <0x080007f6> J         0x1fd8        SpMemXfer
-0xa400113c: <0x0282a020> ADD       s4 = s4 + v0								dmem
-
-ZeldaMoveMem: 0xdc08000a 0x8010e830 Type: 0a Len: 08 Off: 4000
-ZeldaMoveMem: 0xdc08030a 0x8010e840 Type: 0a Len: 08 Off: 4018
-// Light
-ZeldaMoveMem: 0xdc08060a 0x800ff368 Type: 0a Len: 08 Off: 4030
-ZeldaMoveMem: 0xdc08090a 0x800ff360 Type: 0a Len: 08 Off: 4048
-//VP
-ZeldaMoveMem: 0xdc080008 0x8010e3c0 Type: 08 Len: 08 Off: 4000
-
-*/
-
-//*****************************************************************************
-//
-//*****************************************************************************
-
-void DLParser_GBI2_MoveMem( MicroCodeCommand command )
-{
-
-	u32 address	 = RDPSegAddr(command.inst.cmd1);
-	//u32 offset = (command.inst.cmd0 >> 8) & 0xFFFF;
-	u32 type	 = (command.inst.cmd0     ) & 0xFE;
-	//u32 length  = (command.inst.cmd0 >> 16) & 0xFF;
-
-	switch (type)
-	{
-	case G_GBI2_MV_VIEWPORT:
-		{
-			RDP_MoveMemViewport( address );
-		}
-		break;
-	case G_GBI2_MV_LIGHT:
-		{
-			u32 offset2 = (command.inst.cmd0 >> 5) & 0x3FFF;
-
-		switch (offset2)
-		{
-		case 0x00:
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-			{
-				s8 * pcBase = g_ps8RamBase + address;
-				DL_PF("    G_MV_LOOKATX %f %f %f", f32(pcBase[8 ^ 0x3]), f32(pcBase[9 ^ 0x3]), f32(pcBase[10 ^ 0x3]));
-			}
-#endif
-			break;
-		case 0x18:
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-			{
-				s8 * pcBase = g_ps8RamBase + address;
-				DL_PF("    G_MV_LOOKATY %f %f %f", f32(pcBase[8 ^ 0x3]), f32(pcBase[9 ^ 0x3]), f32(pcBase[10 ^ 0x3]));
-			}
-#endif
-			break;
-		default:		//0x30/48/60
-			{
-				u32 light_idx = (offset2 - 0x30)/0x18;
-				DL_PF("    Light %d:", light_idx);
-				RDP_MoveMemLight(light_idx, address);
-			}
-			break;
-		}
-		break;
-
-		}
-	 case G_GBI2_MV_MATRIX:
-		DL_PF("		Force Matrix(2): addr=%08X", address);
-		RDP_Force_Matrix(address);
-		break;
-	case G_GBI2_MVO_L0:
-	case G_GBI2_MVO_L1:
-	case G_GBI2_MVO_L2:
-	case G_GBI2_MVO_L3:
-	case G_GBI2_MVO_L4:
-	case G_GBI2_MVO_L5:
-	case G_GBI2_MVO_L6:
-	case G_GBI2_MVO_L7:
-		DL_PF("Zelda Move Light");
-		RDP_NOIMPL_WARN("Zelda Move Light Not Implemented");
-		break;
-	case G_GBI2_MV_POINT:
-		DL_PF("Zelda Move Point");
-		RDP_NOIMPL_WARN("Zelda Move Point Not Implemented");
-		break;
-	case G_GBI2_MVO_LOOKATX:
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-		if( (command.inst.cmd0) == 0xDC170000 && ((command.inst.cmd1)&0xFF000000) == 0x80000000 )
-		{
-			// Ucode for Evangelion.v64, the ObjMatrix cmd
-			// DLParser_S2DEX_ObjMoveMem(command);
-			// XXX DLParser_S2DEX_ObjMoveMem not implemented yet anyways..
-			RDP_NOIMPL_WARN("G_GBI2_MVO_LOOKATX Not Implemented");
-		}
-#endif
-		break;
-	case G_GBI2_MVO_LOOKATY:
-		RDP_NOIMPL_WARN("Not implemented ZeldaMoveMem LOOKATY");
-		break;
-	case 0x02:
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-		if( (command.inst.cmd0) == 0xDC070002 && ((command.inst.cmd1)&0xFF000000) == 0x80000000 )
-		{
-			// DLParser_S2DEX_ObjMoveMem(command);
-			// XXX DLParser_S2DEX_ObjMoveMem not implemented yet anyways..
-			RDP_NOIMPL_WARN("G_GBI2_MV_0x02 Not Implemented");
-			
-		}
-#endif
-		break;
-	default:
-		DL_PF("    GBI2 MoveMem Type: Unknown");
-		DBGConsole_Msg(0, "GBI2 MoveMem: Unknown Type. 0x%08x 0x%08x", command.inst.cmd0, command.inst.cmd1);
-		break;
-	}
+	DL_PF("  ZBuffer %s", bZBuffer ? "On" : "Off");
+	DL_PF("  Culling %s", bCullBack ? "Back face" : bCullFront ? "Front face" : "Off");
+	DL_PF("  Shade %s", bShade ? "On" : "Off");
+	DL_PF("  Smooth Shading %s", bShadeSmooth ? "On" : "Off");
+	DL_PF("  Lighting %s", bLighting ? "On" : "Off");
+	DL_PF("  Texture %s", (gGeometryMode & G_TEXTURE_ENABLE) ? "On" : "Off");
+	DL_PF("  Texture Gen %s", bTextureGen ? "On" : "Off");
+	DL_PF("  Texture Gen Linear %s", bTextureGenLin ? "On" : "Off");
+	DL_PF("  Fog %s", bFog ? "On" : "Off");
+	DL_PF("  LOD %s", (gGeometryMode & G_LOD) ? "On" : "Off");
 }
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
@@ -1679,35 +1287,35 @@ void DLParser_LoadTLut( MicroCodeCommand command )
 	//This corresponds to the number of palette entries (16 or 256)
 	//Seems partial load of palette is allowed -> count != 16 or 256 (MM, SSB, Starfox64, MRC) //Corn
 	u32 count = (lrs - uls) + 1;
+	use(count);
 
 	// Format is always 16bpp - RGBA16 or IA16:
 	u32 offset = (uls + ult * g_TI.Width) << 1;
 
-	const RDP_Tile &	rdp_tile( gRDPStateManager.GetTile( tile_idx ) );
+	const RDP_Tile & rdp_tile( gRDPStateManager.GetTile( tile_idx ) );
 
+#ifndef DAEDALUS_TMEM
+	//Store address of PAL (assuming PAL is only stored in upper half of TMEM) //Corn
+	gTextureMemory[ rdp_tile.tmem & 0xFF ] = (u32*)&g_pu8RamBase[ g_TI.Address + offset ];
+#else
 	//Copy PAL to the PAL memory
-	u32 tmem = rdp_tile.tmem << 3;
 	u16 * p_source = (u16*)&g_pu8RamBase[ g_TI.Address + offset ];
-	u16 * p_dest   = (u16*)&gTextureMemory[ tmem ];
+	u16 * p_dest   = (u16*)&gTextureMemory[ rdp_tile.tmem << 1 ];
 
 	//printf("Addr %08X : TMEM %03X : Tile %d : PAL %d : Offset %d\n",g_TI.Address + offset, tmem, tile_idx, count, offset); 
 
-#if 1
 	memcpy_vfpu_BE(p_dest, p_source, count << 1);
-#else
-	for (u32 i=0; i<count; i++)
-	{
-		p_dest[ i ] = p_source[ i ];
-		//if(count & 0x10) printf("%04X ",p_source[ i ]);
-	}
+
+	//for (u32 i=0; i<count; i++)
+	//{
+	//	p_dest[ i ] = p_source[ i ];
+	//	//if(count & 0x10) printf("%04X ",p_source[ i ]);
+	//}
 	//if(count & 0x10) printf("\n");
 #endif
 
 	// Format is always 16bpp - RGBA16 or IA16:
 	// I've no idea why these two are added - seems to work for 007!
-
-	//const RDP_Tile &	rdp_tile( gRDPStateManager.GetTile( tile_idx ) );
-	//gPalAddresses[ rdp_tile.tmem ] = g_TI.Address + offset;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	u32 lrt = command.loadtile.th >> 2;
@@ -2208,6 +1816,14 @@ void MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address )
 	s16 hi;
 	u16 lo;
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+	if (address + 64 > MAX_RAM_ADDRESS)
+	{
+		DBGConsole_Msg(0, "Mtx: Address invalid (0x%08x)", address);
+		return;
+	}
+#endif
+
 	for (u32 i = 0; i < 4; i++)
 	{
 		hi = *(s16 *)(base + address+(i<<3)+(((0)     )^0x2));
@@ -2236,21 +1852,13 @@ void MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address )
 static void RDP_Force_Matrix(u32 address)
 {
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST	
-	if (address + 64 > MAX_RAM_ADDRESS)
-	{
-		DBGConsole_Msg(0, "ForceMtx: Address invalid (0x%08x)", address);
-		return;
-	}
-#endif
-
 	Matrix4x4 mat;
-
 	MatrixFromN64FixedPoint(mat,address);
 
 #if 1	//1->Proper, 0->Hacky way :)
 	PSPRenderer::Get()->ForceMatrix(mat);
 #else
+	//WWF games dont like proper way need to figure out why...
 	PSPRenderer::Get()->SetProjection(mat, true, true);
 #endif
 }

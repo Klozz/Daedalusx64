@@ -72,14 +72,6 @@ void DLParser_GBI2_Mtx( MicroCodeCommand command )
 		command.mtx2.nopush == 0 ? "Push" : "No Push",
 		command.mtx2.len, address);
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	if (address + 64 > MAX_RAM_ADDRESS)
-	{
-		DBGConsole_Msg(0, "ZeldaMtx: Address invalid (0x%08x)", address);
-		return;
-	}
-#endif
-
 	// Load matrix from address
 	Matrix4x4 mat;
 	MatrixFromN64FixedPoint( mat, address );
@@ -107,6 +99,261 @@ void DLParser_GBI2_PopMtx( MicroCodeCommand command )
 
 	PSPRenderer::Get()->PopWorldView();
 }
+
+//*****************************************************************************
+//
+//*****************************************************************************
+//0016A710: DB020000 00000018 CMD Zelda_MOVEWORD  Mem[2][00]=00000018 Lightnum=0
+//001889F0: DB020000 00000030 CMD Zelda_MOVEWORD  Mem[2][00]=00000030 Lightnum=2
+void DLParser_GBI2_MoveWord( MicroCodeCommand command )
+{
+	switch (command.mw2.type)
+	{
+	case G_MW_MATRIX:
+		{
+			DL_PF("    G_MW_MATRIX(2)");
+			PSPRenderer::Get()->InsertMatrix(command.inst.cmd0, command.inst.cmd1);
+		}
+		break;
+	case G_MW_NUMLIGHT:
+		{
+			// Lightnum
+			// command->cmd1:
+			// 0x18 = 24 = 0 lights
+			// 0x30 = 48 = 2 lights
+
+			u32 num_lights = command.mw2.value/24;
+			DL_PF("     G_MW_NUMLIGHT: %d", num_lights);
+
+			gAmbientLightIdx = num_lights;
+			PSPRenderer::Get()->SetNumLights(num_lights);
+		}
+		break;
+/*
+	case G_MW_CLIP:	// Seems to be unused?
+		{
+			DL_PF("     G_MW_CLIP");
+		}
+		break;
+*/
+	case G_MW_SEGMENT:
+		{
+			u32 segment = command.mw2.offset / 4;
+			u32 address	= command.mw2.value;
+
+			DL_PF( "      G_MW_SEGMENT Segment[%d] = 0x%08x", segment, address );
+
+			gSegments[segment] = address;
+		}
+		break;
+	case G_MW_FOG: // WIP, only works for a few games
+		{
+			f32 a = command.mw2.value >> 16;
+			f32 b = command.mw2.value & 0xFFFF;
+
+			//f32 min = b - a;
+			//f32 max = b + a;
+			//min = min * (1.0f / 16.0f);
+			//max = max * (1.0f / 4.0f);
+			f32 min = a / 256.0f;
+			f32 max = b / 6.0f;
+
+			//DL_PF(" G_MW_FOG. Mult = 0x%04x (%f), Off = 0x%04x (%f)", wMult, 255.0f * fMult, wOff, 255.0f * fOff );
+
+			PSPRenderer::Get()->SetFogMinMax(min, max);
+
+			//printf("1Fog %.0f | %.0f || %.0f | %.0f\n", min, max, a, b);
+		}
+		break;
+	case G_MW_LIGHTCOL:
+		{
+			u32 light_idx = command.mw2.offset / 0x18;
+			u32 field_offset = (command.mw2.offset & 0x7);
+
+			DL_PF("     G_MW_LIGHTCOL/0x%08x: 0x%08x", command.mw2.offset, command.mw2.value);
+
+			if (field_offset == 0)
+			{
+				//g_N64Lights[light_idx].Colour = command->cmd1;
+				// Light col, not the copy
+				if (light_idx == gAmbientLightIdx)
+				{
+					u32 n64col( command.mw2.value );
+
+					PSPRenderer::Get()->SetAmbientLight( v4( N64COL_GETR_F(n64col), N64COL_GETG_F(n64col), N64COL_GETB_F(n64col), 1.0f ) );
+				}
+				else
+				{
+					PSPRenderer::Get()->SetLightCol(light_idx, command.mw2.value);
+				}
+			}
+			//else if(field_offset != 4)
+			//{
+				//DBGConsole_Msg(0, "G_MW_LIGHTCOL with unknown offset 0x%08x", field_offset);
+			//}
+		}
+		break;
+/*
+	case G_MW_PERSPNORM:
+		DL_PF("     G_MW_PERSPNORM 0x%04x", (s16)command.inst.cmd1);
+		break;
+
+	case G_MW_POINTS:
+		DL_PF("     G_MW_POINTS : Ignored");
+		break;
+*/
+	default:
+		{
+			DL_PF("      Ignored!!");
+
+		}
+		break;
+	}
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+/*
+
+001889F8: DC08060A 80188708 CMD Zelda_MOVEMEM  Movemem[0806] <- 80188708
+!light 0 color 0.12 0.16 0.35 dir 0.01 0.00 0.00 0.00 (2 lights) [ 1E285A00 1E285A00 01000000 00000000 ]
+data(00188708): 1E285A00 1E285A00 01000000 00000000 
+00188A00: DC08090A 80188718 CMD Zelda_MOVEMEM  Movemem[0809] <- 80188718
+!light 1 color 0.23 0.25 0.30 dir 0.01 0.00 0.00 0.00 (2 lights) [ 3C404E00 3C404E00 01000000 00000000 ]
+data(00188718): 3C404E00 3C404E00 01000000 00000000 
+00188A08: DC080C0A 80188700 CMD Zelda_MOVEMEM  Movemem[080C] <- 80188700
+!light 2 color 0.17 0.16 0.26 dir 0.23 0.31 0.70 0.00 (2 lights) [ 2C294300 2C294300 1E285A00 1E285A00 ]
+*/
+/*
+ZeldaMoveMem: 0xdc080008 0x801984d8
+SetScissor: x0=416 y0=72 x1=563 y1=312 mode=0
+// Mtx
+ZeldaMoveWord:0xdb0e0000 0x00000041 Ignored
+ZeldaMoveMem: 0xdc08000a 0x80198538
+ZeldaMoveMem: 0xdc08030a 0x80198548
+
+ZeldeMoveMem: Unknown Type. 0xdc08000a 0x80198518
+ZeldeMoveMem: Unknown Type. 0xdc08030a 0x80198528
+ZeldeMoveMem: Unknown Type. 0xdc08000a 0x80198538
+ZeldeMoveMem: Unknown Type. 0xdc08030a 0x80198548
+ZeldeMoveMem: Unknown Type. 0xdc08000a 0x80198518
+ZeldeMoveMem: Unknown Type. 0xdc08030a 0x80198528
+ZeldeMoveMem: Unknown Type. 0xdc08000a 0x80198538
+ZeldeMoveMem: Unknown Type. 0xdc08030a 0x80198548
+
+
+0xa4001120: <0x0c000487> JAL       0x121c        Seg2Addr(t8)				dram
+0xa4001124: <0x332100fe> ANDI      at = t9 & 0x00fe
+0xa4001128: <0x937309c1> LBU       s3 <- 0x09c1(k1)							len
+0xa400112c: <0x943402f0> LHU       s4 <- 0x02f0(at)							dmem
+0xa4001130: <0x00191142> SRL       v0 = t9 >> 0x0005
+0xa4001134: <0x959f0336> LHU       ra <- 0x0336(t4)
+0xa4001138: <0x080007f6> J         0x1fd8        SpMemXfer
+0xa400113c: <0x0282a020> ADD       s4 = s4 + v0								dmem
+
+ZeldaMoveMem: 0xdc08000a 0x8010e830 Type: 0a Len: 08 Off: 4000
+ZeldaMoveMem: 0xdc08030a 0x8010e840 Type: 0a Len: 08 Off: 4018
+// Light
+ZeldaMoveMem: 0xdc08060a 0x800ff368 Type: 0a Len: 08 Off: 4030
+ZeldaMoveMem: 0xdc08090a 0x800ff360 Type: 0a Len: 08 Off: 4048
+//VP
+ZeldaMoveMem: 0xdc080008 0x8010e3c0 Type: 08 Len: 08 Off: 4000
+
+*/
+
+//*****************************************************************************
+//
+//*****************************************************************************
+
+void DLParser_GBI2_MoveMem( MicroCodeCommand command )
+{
+
+	u32 address	 = RDPSegAddr(command.inst.cmd1);
+	//u32 offset = (command.inst.cmd0 >> 8) & 0xFFFF;
+	u32 type	 = (command.inst.cmd0     ) & 0xFE;
+	//u32 length  = (command.inst.cmd0 >> 16) & 0xFF;
+
+	switch (type)
+	{
+	case G_GBI2_MV_VIEWPORT:
+		{
+			RDP_MoveMemViewport( address );
+		}
+		break;
+
+	case G_GBI2_MV_LIGHT:
+		{
+			u32 offset2 = (command.inst.cmd0 >> 5) & 0x3FFF;
+
+		switch (offset2)
+		{
+		case 0x00:
+		case 0x18:
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+			{
+				s8 * pcBase = g_ps8RamBase + address;
+				DL_PF("    G_MV_LOOKAT %f %f %f", f32(pcBase[8 ^ 0x3]), f32(pcBase[9 ^ 0x3]), f32(pcBase[10 ^ 0x3]));
+			}
+#endif
+			break;
+		default:		//0x30/48/60
+			{
+				u32 light_idx = (offset2 - 0x30)/0x18;
+				DL_PF("    Light %d:", light_idx);
+				RDP_MoveMemLight(light_idx, address);
+			}
+			break;
+		}
+		break;
+
+		}
+		break;
+
+	case G_GBI2_MV_MATRIX:
+		{
+			DL_PF("		Force Matrix(2): addr=%08X", address);
+			RDP_Force_Matrix(address);
+		}
+		break;
+/*
+	case G_GBI2_MVO_L0:
+	case G_GBI2_MVO_L1:
+	case G_GBI2_MVO_L2:
+	case G_GBI2_MVO_L3:
+	case G_GBI2_MVO_L4:
+	case G_GBI2_MVO_L5:
+	case G_GBI2_MVO_L6:
+	case G_GBI2_MVO_L7:
+		DL_PF("MoveMem Light(2)");
+		break;
+	case G_GBI2_MV_POINT:
+		DL_PF("MoveMem Point(2)");
+		break;
+
+	case G_GBI2_MVO_LOOKATY:
+		DL_PF("MoveMem LOOKATY(2)");
+		break;
+*/
+
+	case 0x00:
+	case 0x02:
+		{
+			// Ucode for Evangelion.v64
+			// 0 ObjMtx
+			// 2 SubMtx
+			// XXX DLParser_S2DEX_ObjMoveMem not implemented yet anyways..
+			RDP_NOIMPL_WARN("MoveMem(2) 0x02/0x00 : Not Implemented");
+		}
+		break;
+
+	default:
+		DL_PF("    GBI2 MoveMem Type: Unknown");
+		DBGConsole_Msg(0, "GBI2 MoveMem: Unknown Type. 0x%08x 0x%08x", command.inst.cmd0, command.inst.cmd1);
+		break;
+	}
+}
+
 //*****************************************************************************
 // 
 //*****************************************************************************
@@ -182,36 +429,61 @@ void DLParser_GBI2_GeometryMode( MicroCodeCommand command )
     u32 and_bits = (command.inst.cmd0) & 0x00FFFFFF;
     u32 or_bits  = (command.inst.cmd1) & 0x00FFFFFF;
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+    if (gDisplayListFile != NULL)
+    {
+            DL_PF("    0x%08x 0x%08x =(x & 0x%08x) | 0x%08x", command.inst.cmd0, command.inst.cmd1, and_bits, or_bits);
+
+            if ((~and_bits) & G_ZELDA_ZBUFFER)						DL_PF("  Disabling ZBuffer");
+            if ((~and_bits) & G_ZELDA_SHADING_SMOOTH)				DL_PF("  Disabling Flat Shading");
+            if ((~and_bits) & G_ZELDA_CULL_FRONT)                   DL_PF("  Disabling Front Culling");
+            if ((~and_bits) & G_ZELDA_CULL_BACK)                    DL_PF("  Disabling Back Culling");
+            if ((~and_bits) & G_ZELDA_FOG)							DL_PF("  Disabling Fog");
+            if ((~and_bits) & G_ZELDA_LIGHTING)						DL_PF("  Disabling Lighting");
+            if ((~and_bits) & G_ZELDA_TEXTURE_GEN)                  DL_PF("  Disabling Texture Gen");
+			if ((~and_bits) & G_ZELDA_TEXTURE_GEN_LINEAR)			DL_PF("  Enabling Texture Gen Linear");
+
+            if (or_bits & G_ZELDA_ZBUFFER)							DL_PF("  Enabling ZBuffer");
+            if (or_bits & G_ZELDA_SHADING_SMOOTH)					DL_PF("  Enabling Flat Shading");
+            if (or_bits & G_ZELDA_CULL_FRONT)						DL_PF("  Enabling Front Culling");
+            if (or_bits & G_ZELDA_CULL_BACK)						DL_PF("  Enabling Back Culling");
+            if (or_bits & G_ZELDA_FOG)								DL_PF("  Enabling Fog");
+            if (or_bits & G_ZELDA_LIGHTING)							DL_PF("  Enabling Lighting");
+            if (or_bits & G_ZELDA_TEXTURE_GEN)						DL_PF("  Enabling Texture Gen");
+			if (or_bits & G_ZELDA_TEXTURE_GEN_LINEAR)               DL_PF("  Enabling Texture Gen Linear");
+    }
+#endif
+
     gGeometryMode &= and_bits;
     gGeometryMode |= or_bits;
 
-	DL_PF("  0x%08x 0x%08x =(x & 0x%08x) | 0x%08x", command.inst.cmd0, command.inst.cmd1, and_bits, or_bits);
-	DL_PF("  ZBuffer %s", (gGeometryMode & G_ZELDA_ZBUFFER) ? "On" : "Off");
-	DL_PF("  Culling %s", (gGeometryMode & G_ZELDA_CULL_BACK) ? "Back face" : (gGeometryMode & G_ZELDA_CULL_FRONT) ? "Front face" : "Off");
-	DL_PF("  Flat Shading %s", (gGeometryMode & G_ZELDA_SHADING_SMOOTH) ? "On" : "Off");
-	DL_PF("  Lighting %s", (gGeometryMode & G_ZELDA_LIGHTING) ? "On" : "Off");
-	DL_PF("  Texture Gen %s", (gGeometryMode & G_ZELDA_TEXTURE_GEN) ? "On" : "Off");
-	DL_PF("  Texture Gen Linear %s", (gGeometryMode & G_ZELDA_TEXTURE_GEN_LINEAR) ? "On" : "Off");
-	DL_PF("  Fog %s", (gGeometryMode & G_ZELDA_FOG) ? "On" : "Off");
+    bool bCullFront         = (gGeometryMode & G_ZELDA_CULL_FRONT)			? true : false;
+    bool bCullBack          = (gGeometryMode & G_ZELDA_CULL_BACK)			? true : false;
+    PSPRenderer::Get()->SetCullMode(bCullFront, bCullBack);
 
-    PSPRenderer::Get()->SetCullMode( gGeometryMode & G_ZELDA_CULL_FRONT, gGeometryMode & G_ZELDA_CULL_BACK );
-
-	//bool bShade				= (gGeometryMode & G_SHADE)						? true : false;
-	//bool bFlatShade         = (gGeometryMode & G_ZELDA_SHADING_SMOOTH)		? true : false;
+//  bool bShade				= (gGeometryMode & G_SHADE)						? true : false;
+//  bool bFlatShade         = (gGeometryMode & G_ZELDA_SHADING_SMOOTH)		? true : false;
 
 	bool bFlatShade         = (gGeometryMode & G_ZELDA_TEXTURE_GEN_LINEAR & (g_ROM.GameHacks != TIGERS_HONEY_HUNT))	? true : false;
+
     PSPRenderer::Get()->SetSmooth( !bFlatShade );
+
+    bool bFog				= (gGeometryMode & G_ZELDA_FOG)					? true : false;
+    PSPRenderer::Get()->SetFogEnable( bFog );
+
+	bool bTextureGen        = (gGeometryMode & G_ZELDA_TEXTURE_GEN)			? true : false;
+    PSPRenderer::Get()->SetTextureGen(bTextureGen);
+
+	bool bTextureGenLin        = (gGeometryMode & G_ZELDA_TEXTURE_GEN_LINEAR)			? true : false;
+	PSPRenderer::Get()->SetTextureGenLin( bTextureGenLin );
+
+    bool bLighting			= (gGeometryMode & G_ZELDA_LIGHTING)			? true : false;
+    PSPRenderer::Get()->SetLighting( bLighting );
+
+	bool bZBuffer           = (gGeometryMode & G_ZELDA_ZBUFFER)				? true : false;
+    PSPRenderer::Get()->ZBufferEnable( bZBuffer );
+
     PSPRenderer::Get()->SetSmoothShade( true );             // Always do this - not sure which bit to use
-
-    PSPRenderer::Get()->SetFogEnable( gGeometryMode & G_ZELDA_FOG );
-
-    PSPRenderer::Get()->SetTextureGen( gGeometryMode & G_ZELDA_TEXTURE_GEN );
-
-	PSPRenderer::Get()->SetTextureGenLin( gGeometryMode & G_ZELDA_TEXTURE_GEN_LINEAR );
-
-    PSPRenderer::Get()->SetLighting( gGeometryMode & G_ZELDA_LIGHTING );
-
-    PSPRenderer::Get()->ZBufferEnable( gGeometryMode & G_ZELDA_ZBUFFER );
 }
 
 //*****************************************************************************

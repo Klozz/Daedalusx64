@@ -227,7 +227,6 @@ u32 gRDPHalf1		 = 0;
 u32 gRDPFrame		 = 0;
 u32 gAuxAddr		 = (u32)g_pu8RamBase;
 RDP_GeometryMode gGeometryMode;
-u32 gRDPddress[512];        // 512 addresses (used to determine address loaded from)
 //*****************************************************************************
 // Include ucode header files
 //*****************************************************************************
@@ -359,6 +358,11 @@ bool DLParser_Initialise()
 	scissors.left = 0;
 	scissors.right = 320;
 	scissors.bottom = 240;
+
+#ifndef DAEDALUS_TMEM
+	//Clear pointers in TMEM block //Corn
+	memset(&gTextureMemory[0] ,0 , 1024);
+#endif	
 
 	return true;
 }
@@ -511,14 +515,14 @@ void DLParser_SetCustom( u32 ucode )
 			SetCommand( 0x06, DLParser_GBI0_DL_SOTE,  "G_DL_SOTE" );
 			break;
 		case GBI_LL:
-			SetCommand( 0x80, DLParser_RSP_Last_Legion_0x80, "G_Last_Legion_0x80" );
-			SetCommand( 0x00, DLParser_RSP_Last_Legion_0x00, "G_Last_Legion_0x00" );
+			SetCommand( 0x80, DLParser_Last_Legion_0x80, "G_Last_Legion_0x80" );
+			SetCommand( 0x00, DLParser_Last_Legion_0x00, "G_Last_Legion_0x00" );
 			SetCommand( 0xaf, DLParser_GBI1_SpNoop,			 "G_Nothing" );
 			SetCommand( 0xe4, DLParser_TexRect_Last_Legion,  "G_TexRect_Last_Legion" );
 			break;
 		case GBI_PD:
-			SetCommand( 0x04, RSP_Vtx_PD,					"G_Vtx_PD" );
-			SetCommand( 0x07, RSP_Set_Vtx_CI_PD,			"G_Set_Vtx_CI_PD" );
+			SetCommand( 0x04, DLParser_Vtx_PD,					"G_Vtx_PD" );
+			SetCommand( 0x07, DLParser_Set_Vtx_CI_PD,			"G_Set_Vtx_CI_PD" );
 			SetCommand( 0xb4, DLParser_RDPHalf1_GoldenEye,  "G_RDPHalf1_GoldenEye" );
 			break;
 		case GBI_DKR:
@@ -530,25 +534,25 @@ void DLParser_SetCustom( u32 ucode )
 			SetCommand( 0xbf, DLParser_Set_Addr_DKR, "G_Set_Addr_DKR" );
 			break;
 		case GBI_CONKER:
-			SetCommand( 0x01, RSP_Vtx_Conker,		"G_Vtx_Conker" );
-			SetCommand( 0x10, DLParser_GBI2_Conker, "G_Tri4_Conker" );
-			SetCommand( 0x11, DLParser_GBI2_Conker, "G_Tri4_Conker" );
-			SetCommand( 0x12, DLParser_GBI2_Conker, "G_Tri4_Conker" );
-			SetCommand( 0x13, DLParser_GBI2_Conker, "G_Tri4_Conker" );
-			SetCommand( 0x14, DLParser_GBI2_Conker, "G_Tri4_Conker" );
-			SetCommand( 0x15, DLParser_GBI2_Conker, "G_Tri4_Conker" );
-			SetCommand( 0x16, DLParser_GBI2_Conker, "G_Tri4_Conker" );
-			SetCommand( 0x17, DLParser_GBI2_Conker, "G_Tri4_Conker" );
-			SetCommand( 0x18, DLParser_GBI2_Conker, "G_Tri4_Conker" );
-			SetCommand( 0x19, DLParser_GBI2_Conker, "G_Tri4_Conker" );
-			SetCommand( 0x1a, DLParser_GBI2_Conker, "G_Tri4_Conker" );
-			SetCommand( 0x1b, DLParser_GBI2_Conker, "G_Tri4_Conker" );
-			SetCommand( 0x1c, DLParser_GBI2_Conker, "G_Tri4_Conker" );
-			SetCommand( 0x1d, DLParser_GBI2_Conker, "G_Tri4_Conker" );
-			SetCommand( 0x1e, DLParser_GBI2_Conker, "G_Tri4_Conker" );
-			SetCommand( 0x1f, DLParser_GBI2_Conker, "G_Tri4_Conker" );
-			SetCommand( 0xdb, RSP_MoveWord_Conker,  "G_MoveWord_Conker");
-			SetCommand( 0xdc, RSP_MoveMem_Conker,   "G_MoveMem_Conker" );
+			SetCommand( 0x01, DLParser_Vtx_Conker,		"G_Vtx_Conker" );
+			SetCommand( 0x10, DLParser_Tri4_Conker, "G_Tri4_Conker" );
+			SetCommand( 0x11, DLParser_Tri4_Conker, "G_Tri4_Conker" );
+			SetCommand( 0x12, DLParser_Tri4_Conker, "G_Tri4_Conker" );
+			SetCommand( 0x13, DLParser_Tri4_Conker, "G_Tri4_Conker" );
+			SetCommand( 0x14, DLParser_Tri4_Conker, "G_Tri4_Conker" );
+			SetCommand( 0x15, DLParser_Tri4_Conker, "G_Tri4_Conker" );
+			SetCommand( 0x16, DLParser_Tri4_Conker, "G_Tri4_Conker" );
+			SetCommand( 0x17, DLParser_Tri4_Conker, "G_Tri4_Conker" );
+			SetCommand( 0x18, DLParser_Tri4_Conker, "G_Tri4_Conker" );
+			SetCommand( 0x19, DLParser_Tri4_Conker, "G_Tri4_Conker" );
+			SetCommand( 0x1a, DLParser_Tri4_Conker, "G_Tri4_Conker" );
+			SetCommand( 0x1b, DLParser_Tri4_Conker, "G_Tri4_Conker" );
+			SetCommand( 0x1c, DLParser_Tri4_Conker, "G_Tri4_Conker" );
+			SetCommand( 0x1d, DLParser_Tri4_Conker, "G_Tri4_Conker" );
+			SetCommand( 0x1e, DLParser_Tri4_Conker, "G_Tri4_Conker" );
+			SetCommand( 0x1f, DLParser_Tri4_Conker, "G_Tri4_Conker" );
+			SetCommand( 0xdb, DLParser_MoveWord_Conker,  "G_MoveWord_Conker");
+			SetCommand( 0xdc, DLParser_MoveMem_Conker,   "G_MoveMem_Conker" );
 			break;
 	}
 }
@@ -842,19 +846,19 @@ void RDP_MoveMemViewport(u32 address)
 		return;
 	}
 #endif
-	s16 scale[4];
-	s16 trans[4];
+	s16 scale[3];
+	s16 trans[3];
 
 	// address is offset into RD_RAM of 8 x 16bits of data...
 	scale[0] = *(s16 *)(g_pu8RamBase + ((address+(0*2))^0x2));
 	scale[1] = *(s16 *)(g_pu8RamBase + ((address+(1*2))^0x2));
 	scale[2] = *(s16 *)(g_pu8RamBase + ((address+(2*2))^0x2));
-	scale[3] = *(s16 *)(g_pu8RamBase + ((address+(3*2))^0x2));
+//	scale[3] = *(s16 *)(g_pu8RamBase + ((address+(3*2))^0x2));
 
 	trans[0] = *(s16 *)(g_pu8RamBase + ((address+(4*2))^0x2));
 	trans[1] = *(s16 *)(g_pu8RamBase + ((address+(5*2))^0x2));
 	trans[2] = *(s16 *)(g_pu8RamBase + ((address+(6*2))^0x2));
-	trans[3] = *(s16 *)(g_pu8RamBase + ((address+(7*2))^0x2));
+//	trans[3] = *(s16 *)(g_pu8RamBase + ((address+(7*2))^0x2));
 
 	// With D3D we had to ensure that the vp coords are positive, so
 	// we truncated them to 0. This happens a lot, as things
@@ -865,8 +869,8 @@ void RDP_MoveMemViewport(u32 address)
 
 	PSPRenderer::Get()->SetN64Viewport( vec_scale, vec_trans );
 
-	DL_PF("        Scale: %d %d %d %d", scale[0], scale[1], scale[2], scale[3]);
-	DL_PF("        Trans: %d %d %d %d", trans[0], trans[1], trans[2], trans[3]);
+	DL_PF("        Scale: %d %d %d", scale[0], scale[1], scale[2]);
+	DL_PF("        Trans: %d %d %d", trans[0], trans[1], trans[2]);
 }
 
 //*****************************************************************************
@@ -1055,12 +1059,6 @@ void DLParser_LoadBlock( MicroCodeCommand command )
 	//u32 lrs			= command.loadtile.sh;		// Number of bytes-1
 	u32 dxt			= command.loadtile.th;		// 1.11 fixed point
 
-	if(g_ROM.GameHacks == YOSHI)
-	{
-		const RDP_Tile & rdp_tile( gRDPStateManager.GetTile( tile_idx ) );
-		gRDPddress[rdp_tile.tmem] = g_TI.Address;
-	}
-
 	bool	swapped = (dxt) ? false : true;
 
 	u32		src_offset = g_TI.Address + ult * (g_TI.Width << g_TI.Size >> 1) + (uls << g_TI.Size >> 1);
@@ -1079,12 +1077,6 @@ void DLParser_LoadTile( MicroCodeCommand command )
 	RDP_TileSize tile;
 	tile.cmd0 = command.inst.cmd0;
 	tile.cmd1 = command.inst.cmd1;
-
-	if(g_ROM.GameHacks == YOSHI)
-	{
-		const RDP_Tile & rdp_tile( gRDPStateManager.GetTile( tile.tile_idx ) );
-		gRDPddress[rdp_tile.tmem] = g_TI.Address;
-	}
 
 	DL_PF("    Tile:%d (%d,%d) -> (%d,%d) [%d x %d]",	tile.tile_idx, tile.left/4, tile.top/4, tile.right/4 + 1, tile.bottom / 4 + 1, (tile.right - tile.left)/4+1, (tile.bottom - tile.top)/4+1);
 	DL_PF("    Offset: 0x%08x",							g_TI.GetOffset( tile.left, tile.top ) );
@@ -1385,8 +1377,6 @@ void DLParser_SetZImg( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-//#define STORE_CI	{g_CI.Address = newaddr;g_CI.Format = format;g_CI.Size = size;g_CI.Width = width;g_CI.Bpl=Bpl;}
-
 void DLParser_SetCImg( MicroCodeCommand command )
 {
 	u32 format = command.img.fmt;
@@ -1398,23 +1388,13 @@ void DLParser_SetCImg( MicroCodeCommand command )
 	DL_PF("    Image: 0x%08x", RDPSegAddr(command.inst.cmd1));
 	DL_PF("    Fmt: %s Size: %s Width: %d", gFormatNames[ format ], gSizeNames[ size ], width);
 
-	// Not sure if this really necesary.
-	//
-	/*
-	if( g_CI.Address == newaddr && g_CI.Format == format && g_CI.Size == size && g_CI.Width == width )
-	{
-		DL_PF("    Set CIMG to the same address, no change, skipped");
-		//DBGConsole_Msg(0, "SetCImg: Addr=0x%08X, Fmt:%s-%sb, Width=%d\n", g_CI.Address, gFormatNames[ format ], gSizeNames[ size ], width);
-		return;
-	}*/
-
 	//g_CI.Bpl = bpl;
 	g_CI.Address = newaddr;
-	g_CI.Format = format;
-	g_CI.Size = size;
-	g_CI.Width = width;
+	g_CI.Format  = format;
+	g_CI.Size    = size;
+	g_CI.Width   = width;
 
-	// Used to remove offscreen, it removes the black box in the right side of the screen too :)
+	// Used to remove offscreen, it removes the black box in the right side of Conker :)
 	// This will break FB, maybe add an option for this when FB is implemented?
 	// Borrowed from Rice Video
 	// Do not check texture size, it breaks Superman and Doom64..

@@ -152,9 +152,8 @@ void DLParser_S2DEX_BgCopy( MicroCodeCommand command )
 	CRefPtr<CTexture>       texture( CTextureCache::Get()->GetTexture( &ti ) );
 	texture->GetTexture()->InstallTexture();
 
-	PSPRenderer::Get()->Draw2DTexture( (float)imageX, (float)imageY, (float)frameX ,(float)frameY, (float)imageW, (float)imageH, (float)frameW, (float)frameH);
+	PSPRenderer::Get()->Draw2DTexture( (float)frameX, (float)frameY, (float)frameW, (float)frameH, (float)imageX, (float)imageY, (float)imageW, (float)imageH );
 }
-
 //*****************************************************************************
 // YoshiStory - 0x04
 //*****************************************************************************
@@ -244,21 +243,24 @@ void Yoshi_MemRect( MicroCodeCommand command )
 	tex_rect.cmd2 = command2.inst.cmd1;
 	tex_rect.cmd3 = command3.inst.cmd1;
 
+	const RDP_Tile & rdp_tile( gRDPStateManager.GetTile( tex_rect.tile_idx ) );
+
 	u32	x0 = tex_rect.x0 >> 2;
 	u32	y0 = tex_rect.y0 >> 2;
 	u32	x1 = tex_rect.x1 >> 2;
 	u32	y1 = tex_rect.y1 >> 2;
 
+	// Get base address of texture
+	u32 tile_addr = gRDPStateManager.GetTileAddress( rdp_tile.tmem );
+
 	if (y1 > scissors.bottom)
 		y1 = scissors.bottom;
 
-	DL_PF ("MemRect (%d, %d, %d, %d), Width: %d\n", x0, y0, x1, y1, g_CI.Width);
-
-	const RDP_Tile & rdp_tile( gRDPStateManager.GetTile( tex_rect.tile_idx ) );
+	DL_PF ("MemRect : addr =0x%08x -(%d, %d, %d, %d), Width: %d\n", tile_addr, x0, y0, x1, y1, g_CI.Width);
 
 	u32 y, width = x1 - x0;
 	u32 tex_width = rdp_tile.line << 3;
-	u8 * texaddr = g_pu8RamBase + gRDPddress[rdp_tile.tmem] + tex_width*(tex_rect.s/32) + (tex_rect.t/32);
+	u8 * texaddr = g_pu8RamBase + tile_addr + tex_width*(tex_rect.s/32) + (tex_rect.t/32);
 	u8 * fbaddr = g_pu8RamBase + g_CI.Address + x0;
 
 	for (y = y0; y < y1; y++)
@@ -328,16 +330,27 @@ void DLParser_S2DEX_Bg1cyc( MicroCodeCommand command )
 
 	uObjScaleBg *objBg = (uObjScaleBg *)(g_pu8RamBase + RDPSegAddr(command.inst.cmd1));
 
-	u16 imageX = objBg->imageX >> 5;
-	u16 imageY = objBg->imageY >> 5;
+	s16 frameX = objBg->frameX / 4;
+	s16 frameY = objBg->frameY / 4;
 
-	u16 imageW = objBg->imageW >> 2;
-	u16 imageH = objBg->imageH >> 2;
+	u16 frameW = objBg->frameW / 4;
+	u16 frameH = objBg->frameH / 4;
 
-	s16 frameX = objBg->frameX >> 2;
-	s16 frameY = objBg->frameY >> 2;
-	u16 frameW = objBg->frameW >> 2;
-	u16 frameH = objBg->frameH >> 2;
+	u16 imageX = objBg->imageX / 32;
+	u16 imageY = objBg->imageY / 32;
+
+	u16 scaleX = objBg->scaleW/1024;
+	u16 scaleY = objBg->scaleH/1024;
+
+	u16 imageW = objBg->imageW/4;
+	u16 imageH = objBg->imageH/4;
+
+	u32 x2 = frameX + (imageW-imageX)/scaleX;
+	u32 y2 = frameY + (imageH-imageY)/scaleY;
+
+	u32 u1 = (frameW-x2)*scaleX;
+	u32 v1 = (frameH-y2)*scaleY;
+
 
 	TextureInfo ti;
 
@@ -376,7 +389,17 @@ void DLParser_S2DEX_Bg1cyc( MicroCodeCommand command )
 	CRefPtr<CTexture>       texture( CTextureCache::Get()->GetTexture( &ti ) );
 	texture->GetTexture()->InstallTexture();
 
-	PSPRenderer::Get()->Draw2DTexture( (float)imageX, (float)imageY, (float)frameX ,(float)frameY, (float)imageW, (float)imageH, (float)frameW, (float)frameH);
+	if (g_ROM.GameHacks != YOSHI)
+	{
+		PSPRenderer::Get()->Draw2DTexture( (float)frameX, (float)frameY, (float)frameW, (float)frameH, (float)imageX, (float)imageY, (float)imageW, (float)imageH );
+	}
+	else
+	{
+		PSPRenderer::Get()->Draw2DTexture((float)frameX, (float)frameY, (float)x2, (float)y2, (float)imageX, (float)imageY, (float)imageW, (float)imageH);
+		PSPRenderer::Get()->Draw2DTexture((float)x2, (float)frameY, (float)frameW, (float)y2, 0, (float)imageY, (float)u1, (float)imageH);
+		PSPRenderer::Get()->Draw2DTexture((float)frameX, (float)y2, (float)x2, (float)frameH, (float)imageX, 0, (float)imageW, (float)v1);
+		PSPRenderer::Get()->Draw2DTexture((float)x2, (float)y2, (float)frameW, (float)frameH, 0, 0, (float)u1, (float)v1);
+	}
 }
 
 //*****************************************************************************

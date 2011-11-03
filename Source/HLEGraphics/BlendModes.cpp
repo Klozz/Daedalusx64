@@ -102,11 +102,12 @@ void PrintMux( FILE * fh, u64 mux )
 	u32 cA1    = (mux1>>18)&0x07;	// c2 a3		// Ac1
 	u32 dA1    = (mux1    )&0x07;	// c2 a4		// Ad1
 	
-	fprintf(fh, "\n\t\tcase 0x%08x%08xLL:\n", mux0, mux1);
-	fprintf(fh, "\t\t//aRGB0: (%s - %s) * %s + %s\n", sc_colcombtypes16[aRGB0], sc_colcombtypes16[bRGB0], sc_colcombtypes32[cRGB0], sc_colcombtypes8[dRGB0]);		
-	fprintf(fh, "\t\t//aA0  : (%s - %s) * %s + %s\n", sc_colcombtypes8[aA0], sc_colcombtypes8[bA0], sc_colcombtypes8[cA0], sc_colcombtypes8[dA0]);
-	fprintf(fh, "\t\t//aRGB1: (%s - %s) * %s + %s\n", sc_colcombtypes16[aRGB1], sc_colcombtypes16[bRGB1], sc_colcombtypes32[cRGB1], sc_colcombtypes8[dRGB1]);		
-	fprintf(fh, "\t\t//aA1  : (%s - %s) * %s + %s\n", sc_colcombtypes8[aA1],  sc_colcombtypes8[bA1], sc_colcombtypes8[cA1],  sc_colcombtypes8[dA1]);
+	fprintf(fh, "//case 0x%08x%08xLL:\n", mux0, mux1);
+	fprintf(fh, "//aRGB0: (%s - %s) * %s + %s\n", sc_colcombtypes16[aRGB0], sc_colcombtypes16[bRGB0], sc_colcombtypes32[cRGB0], sc_colcombtypes8[dRGB0]);		
+	fprintf(fh, "//aA0  : (%s - %s) * %s + %s\n", sc_colcombtypes8[aA0], sc_colcombtypes8[bA0], sc_colcombtypes8[cA0], sc_colcombtypes8[dA0]);
+	fprintf(fh, "//aRGB1: (%s - %s) * %s + %s\n", sc_colcombtypes16[aRGB1], sc_colcombtypes16[bRGB1], sc_colcombtypes32[cRGB1], sc_colcombtypes8[dRGB1]);		
+	fprintf(fh, "//aA1  : (%s - %s) * %s + %s\n", sc_colcombtypes8[aA1],  sc_colcombtypes8[bA1], sc_colcombtypes8[cA1],  sc_colcombtypes8[dA1]);
+	fprintf(fh, "void BlendMode_0x%08x%08xLL( BLEND_MODE_ARGS )\n{\n}\n\n", mux0, mux1);
 }
 #endif
 /* To Devs,
@@ -378,6 +379,30 @@ void BlendMode_0x00ffac80ff0d93ffLL (BLEND_MODE_ARGS)
 	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
 }
 
+//Diddy kong Racing plane streamers
+//case 0x001218acf00ffe3fLL:
+//aRGB0: (Texel0       - 0           ) * Shade        + 0
+//aA0  : (Texel0       - 0           ) * Shade        + 0
+//aRGB1: (Env          - Combined    ) * Env_Alpha    + Combined
+//aA1  : (Combined     - 0           ) * Primitive    + 0
+void BlendMode_0x001218acf00ffe3fLL (BLEND_MODE_ARGS)
+{
+	details.ColourAdjuster.ModulateA( details.PrimColour );
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
+}
+
+//Diddy kong Racing car slids
+//case 0x00567e034f0e79ffLL:
+//aRGB0: (Env          - Shade       ) * Env_Alpha    + Shade
+//aA0  : (0            - 0           ) * 0            + Shade
+//aRGB1: (Combined     - 0           ) * Primitive    + 0
+//aA1  : (Combined     - 0           ) * Primitive    + 0
+void BlendMode_0x00567e034f0e79ffLL (BLEND_MODE_ARGS)
+{
+	details.ColourAdjuster.ModulateA( details.PrimColour );
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
+}
+					
 // Diddy Kong Racing - Diddy Kong Intro / Taj / Clock Guy
 // case 0x001596a430fdfe38LL:
 //aRGB0: (Texel0       - Primitive   ) * Shade_Alpha  + Primitive
@@ -427,6 +452,17 @@ void BlendMode_0x005616ac112cfe7fLL (BLEND_MODE_ARGS)
 /*
  //#E
  */ 
+//Extreme-G2
+//case 0x00127ffffffff438LL:
+//aRGB0: (Texel0       - 0           ) * Shade        + 0
+//aA0  : (0            - 0           ) * 0            + Texel1
+//aRGB1: (0            - 0           ) * 0            + Combined
+//aA1  : (0            - 0           ) * 0            + Combined
+void BlendMode_0x00127ffffffff438LL( BLEND_MODE_ARGS )
+{
+	details.ColourAdjuster.SetA( details.PrimColour );
+	sceGuTexFunc(GU_TFX_MODULATE,GU_TCC_RGBA);
+}
 
 /* 
  //#F
@@ -639,6 +675,19 @@ void BlendMode_0x0030b2615566db6dLL( BLEND_MODE_ARGS )
  //#M
  */ 
 
+// Mario Kart 64
+//case 0x0060b2c15565feffLL:
+//aRGB0: (1            - Env         ) * Texel0       + Primitive
+//aA0  : (Primitive    - 0           ) * Texel0       + 0
+//aRGB1: (1            - Env         ) * Texel0       + Primitive
+//aA1  : (Primitive    - 0           ) * Texel0       + 0
+void BlendMode_0x0060b2c15565feffLL (BLEND_MODE_ARGS)
+{
+	details.ColourAdjuster.SetRGB( details.PrimColour );
+	details.ColourAdjuster.ModulateA( details.PrimColour );
+	sceGuTexFunc(GU_TFX_ADD,GU_TCC_RGBA);
+}
+				
 // MRC - Car Windows
 // case 0x0030fe045ffef7f8LL:
 //aRGB0: (Primitive    - Env         ) * Texel0       + Env
@@ -1191,6 +1240,24 @@ void BlendMode_0x0022ffff1ffcfa38LL (BLEND_MODE_ARGS)
  //#X
  */
 
+/*
+ //#Y
+ */
+
+
+//Yoshi Story - Dust
+//case 0x00161a6025fd2578LL:
+//aRGB0: (Texel0       - Texel1      ) * Env_Alpha    + Texel1
+//aA0  : (Texel0       - Texel1      ) * Env          + Texel1
+//aRGB1: (Primitive    - Env         ) * Combined     + Env
+//aA1  : (0            - 0           ) * 0            + Combined
+void BlendMode_0x00161a6025fd2578LL (BLEND_MODE_ARGS)
+{
+	// Nice blend of brown and white ;)
+	details.ColourAdjuster.SetRGB( details.EnvColour );
+	details.ColourAdjuster.SetA( details.PrimColour  );
+	sceGuTexFunc(GU_TFX_BLEND,GU_TCC_RGBA);
+}
 
 /*
  //#Z
@@ -1751,6 +1818,7 @@ bool	IsInexactDefault( OverrideBlendModeFn Fn )
 
 //*****************************************************************************
 // This only for hacks etc these are non-inexact blendmodes
+// Be carefull when adding these since they can potentially break other games
 //*****************************************************************************
 OverrideBlendModeFn		LookupOverrideBlendModeForced( u64 mux )
 {
@@ -1762,8 +1830,10 @@ OverrideBlendModeFn		LookupOverrideBlendModeForced( u64 mux )
 #define BLEND_MODE( x )		case (x):	return BlendMode_##x;
 			//BLEND_MODE(0x00119623ff2fffffLL); // Pokemon Stadium 2 HUD //Ruins RR64
 			BLEND_MODE(0x00121824ff33ffffLL); // Tarzan
+			BLEND_MODE(0x00127ffffffff438LL); // Extreme-G2
 			BLEND_MODE(0x00457fff3ffcfe3fLL); // Pokemon Stadium 2 Arena Floor
 			BLEND_MODE(0x00522bfffffffe38LL); // Donald Duck rain (makes it transparent not really a fix)
+			BLEND_MODE(0x0060b2c15565feffLL); // Mario Kart 64		
 			//BLEND_MODE(0x00627fff3ffe7e3fLL); // Pokemon Stadium 2 N64 Logo //Dangerous!!
 			BLEND_MODE(0x0050fea144fe7339LL); // Duke Nukem Menu and HUD
 			BLEND_MODE(0x00ffffffff09f63fLL); // THPS Text
@@ -1787,13 +1857,13 @@ OverrideBlendModeFn		LookupOverrideBlendModeInexact( u64 mux )
 #endif
 	switch(mux)
 	{
-			
 #define BLEND_MODE( x )		case (x):	return BlendMode_##x;
 			BLEND_MODE(0x001114a7f3fffef8LL); // Sin and Punishment - Sky <----- Needs work
 			BLEND_MODE(0x00117e80f5fff438LL); // Paper Mario block texture partial fix
 			BLEND_MODE(0x0011fe2344fe7339LL); // Mortal Kombat 4 - Text
 			BLEND_MODE(0x0011fe2355fefd7eLL); // Mortal Kombat 4 -Character Selection screen background / Tower
 			BLEND_MODE(0x00121603ff5bfff8LL); // Zelda Paths
+			BLEND_MODE(0x001218acf00ffe3fLL); // DKR plane streamers
 			BLEND_MODE(0x00127624ffef93c9LL); // Mario Party - River
 			BLEND_MODE(0x00127e2433fdf8fcLL); // Wetrix Background / Banjo Kazooie
 			BLEND_MODE(0x00127eacf0fff238LL); // SSB Link bomb
@@ -1805,6 +1875,7 @@ OverrideBlendModeFn		LookupOverrideBlendModeInexact( u64 mux )
 			BLEND_MODE(0x00149460f50fff7fLL); // Animal Crossing Gold
 			BLEND_MODE(0x001596a430fdfe38LL); // DKR Intro Plane
 			BLEND_MODE(0x0015fec4f0fff83cLL); // Pilot Wings 64 sky
+			BLEND_MODE(0x00161a6025fd2578LL); // Yoshi - Dust
 			BLEND_MODE(0x00167e6035fcff7eLL); // OOT, MM Intro (N64 Logo)
 			BLEND_MODE(0x0017166035fcff78LL); // OOT Deku tree Flash
 			BLEND_MODE(0x0017166045fe7f78LL); // Animal Crossing Leaves
@@ -1876,6 +1947,7 @@ OverrideBlendModeFn		LookupOverrideBlendModeInexact( u64 mux )
 			BLEND_MODE(0x0055a68730fd923eLL); // F1 World GP Sky
 			BLEND_MODE(0x005616ac112cfe7fLL); // DKR Dialog Text
 			BLEND_MODE(0x00567e034f0e77ffLL); // DKR Turtle Shell
+			BLEND_MODE(0x00567e034f0e79ffLL); // DKR car slids
 			BLEND_MODE(0x0061a5ff1f10d23fLL); // Paper Mario - Intro Lighting
 			BLEND_MODE(0x00627fff1ffcfc38LL); // Pilot Wings 64 sky
 			BLEND_MODE(0x00629bff1ffcfe38LL); // Quest 64 - Bubbles

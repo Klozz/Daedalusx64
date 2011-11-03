@@ -130,9 +130,6 @@ u32	TextureInfo::GetWidthInBytes() const
 u32 TextureInfo::GenerateHashValue() const
 {
 	//Rewritten to use less recources //Corn
-	//Number of places to do fragment hash from in texture
-	//More rows will use more CPU...
-	const u32 CHK_ROW = 5;
 
 	DAEDALUS_PROFILE( "TextureInfo::GenerateHashValue" );
 	
@@ -141,33 +138,42 @@ u32 TextureInfo::GenerateHashValue() const
 
 	//DAEDALUS_ASSERT( (GetLoadAddress() + Height * Pitch) < 4*1024*1024, "Address of texture is out of bounds" );
 
-	u8 *ptr_b = g_pu8RamBase + GetLoadAddress();
+	//Number of places to do fragment hash from in texture
+	//More rows will use more CPU...
+	u32 CHK_ROW = 5;
+
+	if( g_ROM.GameHacks == YOSHI ) CHK_ROW = 49;
+
+	u8 *ptr_u8 = g_pu8RamBase + GetLoadAddress();
 	u32 hash_value = 0;
 
 	//u32 step = Height * Width * (1<<Size) >> 1;	//Get size in bytes
 	u32 step = Height * Pitch;	//Get size in bytes, seems to be more accurate
 
-	if((u32)ptr_b & 0x3)	//Check if aligned to 4 bytes if not then align
+	if((u32)ptr_u8 & 0x3)	//Check if aligned to 4 bytes if not then align
 	{
-		ptr_b += 4 - ((u32)ptr_b & 0x3);
-		step  -= 4 - ((u32)ptr_b & 0x3);
+		ptr_u8 += 4 - ((u32)ptr_u8 & 0x3);
+		step  -= 4 - ((u32)ptr_u8 & 0x3);
 	}
 
-	u32 *ptr = (u32*)ptr_b;	//use 32bit access
+	u32 *ptr_u32 = (u32*)ptr_u8;	//use 32bit access
 	step = step >> 2;	//convert to 32bit access
 
 	//We want to sample the texture data as far apart as possible
-	if (step < (CHK_ROW * 4))	//if texture is small hash all of it
+	if (step < (CHK_ROW << 2))	//if texture is small hash all of it
 	{
-		for (u32 z = 0; z < step; z++) hash_value = ((hash_value << 1) | (hash_value >> 0x1F)) ^ ptr[z];
+		for (u32 z = 0; z < step; z++) hash_value = ((hash_value << 1) | (hash_value >> 0x1F)) ^ ptr_u32[z];
 	}
 	else	//if texture is big, hash only some parts inside it
 	{
 		step = (step - 4) / CHK_ROW;
 		for (u32 y = 0; y < CHK_ROW; y++)
 		{
-			for (u32 z = 0; z < 4; z++)	hash_value = ((hash_value << 1) | (hash_value >> 0x1F)) ^ ptr[z];
-			ptr += step;
+			hash_value = ((hash_value << 1) | (hash_value >> 0x1F)) ^ ptr_u32[0];
+			hash_value = ((hash_value << 1) | (hash_value >> 0x1F)) ^ ptr_u32[1];
+			hash_value = ((hash_value << 1) | (hash_value >> 0x1F)) ^ ptr_u32[2];
+			hash_value = ((hash_value << 1) | (hash_value >> 0x1F)) ^ ptr_u32[3];
+			ptr_u32 += step;
 		}
 	}
 	
@@ -178,9 +184,8 @@ u32 TextureInfo::GenerateHashValue() const
 	//Used in OOT for the sky, really minor so is not worth the CPU time to always check for it
 	/*if (GetFormat() == G_IM_FMT_CI)  
 	{
-		const u32* ptr = reinterpret_cast< const u32 * >( GetPalettePtr() );
-		if ( GetSize() == G_IM_SIZ_4b )	for (u32 z = 0; z < 16; z++) hash_value ^= *ptr++;
-		else							for (u32 z = 0; z < 256; z++) hash_value ^= *ptr++;
+		const u32* ptr_u32 = (u32*)GetPalettePtr();
+		for (u32 z = 0; z < ((GetSize() == G_IM_SIZ_4b)? 16 : 256); z++) hash_value ^= *ptr_u32++;
 	}*/
 
 	//printf("%08X %d S%d P%d H%d W%d B%d\n", hash_value, step, Size, Pitch, Height, Width, Height * Pitch);
@@ -223,12 +228,7 @@ u32 TextureInfo::GenerateHashValue() const
 
 	if (GetFormat() == G_IM_FMT_CI)
 	{
-		u32 bytes;
-		if ( GetSize() == G_IM_SIZ_4b )	bytes = 16  * 4;
-		else							bytes = 256 * 4;
-
-		p_bytes = reinterpret_cast< const u8 * >( GetPalettePtr() );
-		hash_value = murmur2_neutral_hash( p_bytes, bytes, hash_value );
+		hash_value = murmur2_neutral_hash( GetPalettePtr(), (GetSize() == G_IM_SIZ_4b)? 16*4 : 256*4, hash_value );
 	}
 
 	return hash_value;

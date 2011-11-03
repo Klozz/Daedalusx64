@@ -54,7 +54,7 @@ void DLParser_DumpVtxInfoDKR(u32 address, u32 v0_idx, u32 num_verts)
 			const v4 & t = PSPRenderer::Get()->GetTransformedVtxPos( idx );
 			const v4 & p = PSPRenderer::Get()->GetProjectedVtxPos( idx );
 
-			DL_PF(" #%02d Pos:{% 3f,% 3f,% 3f}->{% 3f,% 3f,% 3f} Proj:{% 3f,% 3f,% 3f,% 3f} RGBA:{%02x%02x%02x%02x}",
+			DL_PF("    #%02d Pos:{% 3f,% 3f,% 3f}->{% 3f,% 3f,% 3f} Proj:{% 3f,% 3f,% 3f,% 3f} RGBA:{%02x%02x%02x%02x}",
 				idx, x, y, z, t.x, t.y, t.z, p.x/p.w, p.y/p.w, p.z/p.w, p.w, a, b, c, d );
 
 			psSrc+=10;
@@ -133,8 +133,8 @@ void DLParser_DLInMem( MicroCodeCommand command )
 	gDlistStack[gDlistStackPointer].countdown = (command.inst.cmd0 >> 16) & 0xFF;
 
 	DL_PF("    Address=0x%08x %s", command.inst.cmd1, (command.dlist.param==G_DL_NOPUSH)? "Jump" : (command.dlist.param==G_DL_PUSH)? "Push" : "?");
-	DL_PF("\\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/");
-	DL_PF("############################################");
+	DL_PF("    \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/");
+	DL_PF("    ############################################");
 }
 
 //*****************************************************************************
@@ -187,21 +187,16 @@ void DLParser_Mtx_DKR( MicroCodeCommand command )
 
 	PSPRenderer::Get()->Mtxchanged();
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	if (gDisplayListFile != NULL)
-	{
-		DL_PF("    Mtx_DKR: Index %d %s Address 0x%08x\n"
-			" %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-			" %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-			" %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-			" %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n",
+	DL_PF("    Mtx_DKR: Index %d %s Address 0x%08x\n"
+			"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
+			"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
+			"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
+			"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n",
 			mtx_command, mul ? "Mul" : "Load", address,
 			mat.m[0][0], mat.m[0][1], mat.m[0][2], mat.m[0][3],
 			mat.m[1][0], mat.m[1][1], mat.m[1][2], mat.m[1][3],
 			mat.m[2][0], mat.m[2][1], mat.m[2][2], mat.m[2][3],
 			mat.m[3][0], mat.m[3][1], mat.m[3][2], mat.m[3][3]);
-	}
-#endif
 }
 
 //*****************************************************************************
@@ -264,6 +259,27 @@ void DLParser_DMA_Tri_DKR( MicroCodeCommand command )
 		u32 v1_idx = (info >>  8) & 0x1F;
 		u32 v2_idx = (info      ) & 0x1F;
 
+		PSPRenderer::Get()->SetCullMode( !(info & 0x40000000), !(info & 0x40000000) );
+
+		//if( info & 0x40000000 )
+		//{	// no cull
+		//	PSPRenderer::Get()->SetCullMode( false, false );
+		//}
+		//else
+		//{
+		//	// back culling
+		//	PSPRenderer::Get()->SetCullMode( true, true );
+
+		//	//if (RDP_View_Scales_X < 0)
+		//	//{   // back culling
+		//	//	PSPRenderer::Get()->SetCullMode( true, true );
+		//	//}
+		//	//else
+		//	//{   // front cull
+		//	//	PSPRenderer::Get()->SetCullMode( true, false );
+		//	//}
+		//}
+	
 		if( PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx) )
 		{
 			tris_added = true;

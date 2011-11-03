@@ -173,6 +173,7 @@ public:
 	// Various rendering states
 	inline void			SetTnLMode(u32 mode)					{ mTnLModeFlags._u32 = (mTnLModeFlags._u32 & TNL_TEXTURE) | mode; if(gFogEnabled) (mTnLModeFlags.Fog)? sceGuEnable(GU_FOG) : sceGuDisable(GU_FOG); sceGuShadeModel( mTnLModeFlags.Shade ? GU_SMOOTH : GU_FLAT ); }
 	inline void			SetTextureEnable(bool enable)			{ mTnLModeFlags.Texture = enable; }
+	inline void			SetCullMode(bool enable, bool mode)		{ mTnLModeFlags.TriCull = enable; mTnLModeFlags.CullBack = mode; }
 
 	// Fog stuff
 	inline void			SetFogMinMax(float fMin, float fMax)	{ sceGuFog(fMin, fMax, mFogColour.GetColour()); }
@@ -196,6 +197,8 @@ public:
 	// Texture stuff
 	inline void			SetTextureScale(float fScaleX, float fScaleY)	{ mTnLParams.TextureScaleX = fScaleX; mTnLParams.TextureScaleY = fScaleY; }
 	void                Draw2DTexture(float, float, float, float, float, float, float, float);
+	void				Draw2DTextureR( f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2, f32 x3, f32 y3, f32 s, f32 t);
+
 
 	// Viewport stuff
 	void				SetN64Viewport( const v3 & scale, const v3 & trans );

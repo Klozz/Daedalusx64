@@ -44,8 +44,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <vector>
 
-extern u32 gRDPFrame;
-
 using namespace PixelFormats;
 
 //*****************************************************************************
@@ -73,7 +71,7 @@ namespace
 	bool	GenerateTexels( void ** p_texels, void ** p_palette, const TextureInfo & texture_info, ETextureFormat texture_format, u32 pitch, u32 buffer_size )
 	{
 		TextureDestInfo dst( texture_format );
-		if( gTexelBuffer.size() < buffer_size || gTexelBuffer.size() > (64 * 1024))//Cut off for downsizing may need to be adjusted to prevent some thrashing
+		if( gTexelBuffer.size() < buffer_size || gTexelBuffer.size() > (128 * 1024))//Cut off for downsizing may need to be adjusted to prevent some thrashing
 		{
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 				printf( "Resizing texel buffer to %d bytes. Texture is %dx%d\n", buffer_size, texture_info.GetWidth(), texture_info.GetHeight() );
@@ -631,13 +629,13 @@ bool	CTexture::IsFresh() const
 //*************************************************************************************
 bool	CTexture::HasExpired() const
 {
-	//This will force a texture to be reloaded if hash has changed //Corn
-	if ( !IsFresh() )
+	if(!IsFresh())
 	{
 		//Hack to make WONDER PROJECT J2 work (need to reload some textures every frame!) //Corn
 		if( (g_ROM.GameHacks == WONDER_PROJECTJ2) && (mTextureInfo.GetTLutFormat() == G_TT_RGBA16) && (mTextureInfo.GetSize() == G_IM_SIZ_8b) ) return true;
 
-		if( mTextureContentsHash != mTextureInfo.GenerateHashValue() ) return true;
+		//Hack for Zelda OOT & MM text
+		if( ((g_ROM.GameHacks == ZELDA_OOT) | (g_ROM.GameHacks == ZELDA_MM)) && (mTextureInfo.GetSize() == G_IM_SIZ_4b) && mTextureContentsHash != mTextureInfo.GenerateHashValue() ) return true;
 	}
 
 	//Otherwise we wait 30+random(7) frames before trashing the texture if unused

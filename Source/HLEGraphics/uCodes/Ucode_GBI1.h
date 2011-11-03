@@ -210,7 +210,7 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 	case G_MW_NUMLIGHT:
 		//#define NUML(n)		(((n)+1)*32 + 0x80000000)
 		{
-			u32 num_lights = ((command.mw1.value-0x80000000)/32) - 1;
+			u32 num_lights = ((command.mw1.value - 0x80000000) >> 5) - 1;
 
 			DL_PF("    G_MW_NUMLIGHT: Val:%d", num_lights);
 
@@ -265,7 +265,7 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 		break;
 	case G_MW_LIGHTCOL:
 		{
-			u32 light_idx = command.mw1.offset / 0x20;
+			u32 light_idx = command.mw1.offset >> 5;
 			u32 field_offset = (command.mw1.offset & 0x7);
 
 			DL_PF("    G_MW_LIGHTCOL/0x%08x: 0x%08x", command.mw1.offset, command.inst.cmd1);
@@ -299,8 +299,8 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 		break;
 	case G_MW_POINTS:	// Used in FIFA 98
 		{
-			u32 vtx = command.mw1.offset/40;
-			u32 offset = command.mw1.offset%40;
+			u32 vtx = command.mw1.offset / 40;
+			u32 offset = command.mw1.offset % 40;
 			u32 val = command.mw1.value;
 
 			DL_PF("    G_MW_POINTS");
@@ -308,12 +308,11 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 			PSPRenderer::Get()->ModifyVertexInfo(offset, vtx, val);
 		}
  		break;
+
 	case G_MW_PERSPNORM:
-		DL_PF("    G_MW_PERSPNORM");
-		//RDP_NOIMPL_WARN("G_MW_PESPNORM Not Implemented");		// Used in Starfox - sets to 0xa
-	//	if ((short)command->cmd1 != 10)
-	//		DBGConsole_Msg(0, "PerspNorm: 0x%04x", (short)command->cmd1);	
+		DL_PF("    G_MW_PERSPNORM");	
 		break;
+
 	default:
 		DL_PF("    Type: Unknown");
 		RDP_NOIMPL_WARN("Unknown MoveWord");
@@ -420,32 +419,49 @@ void DLParser_GBI1_LoadUCode( MicroCodeCommand command )
 	DLParser_InitMicrocode( code_base, code_size, data_base, data_size ); 
 }
 
-//***************************************************************************** 
-// 
-//*****************************************************************************
-void DLParser_GBI1_ClearGeometryMode( MicroCodeCommand command )
-{
-    u32 mask = (command.inst.cmd1);
-    
-    gGeometryMode &= ~mask;
-
-    DL_PF("  Clearing mask -> 0x%08x", mask);
-
-	DLParser_InitGeometryMode();
-}
-
 //*****************************************************************************
 //
 //*****************************************************************************
-void DLParser_GBI1_SetGeometryMode(  MicroCodeCommand command  )
+void DLParser_GBI1_GeometryMode( MicroCodeCommand command )
 {
-    u32 mask = command.inst.cmd1;
+	const u32 mask = command.inst.cmd1;
 
-    gGeometryMode |= mask;
+	if(command.inst.cmd & 1)
+	{
+		gGeometryMode._u32 |= mask;
+		DL_PF("  Setting mask -> 0x%08x", mask);
+	}
+	else
+	{
+		gGeometryMode._u32 &= ~mask;
+		DL_PF("  Clearing mask -> 0x%08x", mask);
+	}
 
-    DL_PF("  Setting mask -> 0x%08x", mask);
+	TnLPSP TnLMode;
 
-	DLParser_InitGeometryMode();
+	TnLMode.Light = gGeometryMode.GBI1_Lighting;
+	TnLMode.Texture = 0;	//Force this to false
+	TnLMode.TextGen = gGeometryMode.GBI1_TextGen;
+	TnLMode.TextGenLin = gGeometryMode.GBI1_TextGenLin;
+	TnLMode.Fog = gGeometryMode.GBI1_Fog;
+	TnLMode.Shade = gGeometryMode.GBI1_Shade & gGeometryMode.GBI1_ShadingSmooth;
+	TnLMode.Zbuffer = gGeometryMode.GBI1_Zbuffer;
+	// CULL_BACK has priority, Fixes Mortal Kombat 4
+	TnLMode.TriCull = gGeometryMode.GBI1_CullFront | gGeometryMode.GBI1_CullBack;
+	TnLMode.CullBack = gGeometryMode.GBI1_CullBack;
+
+	PSPRenderer::Get()->SetTnLMode( TnLMode._u32 );
+
+	DL_PF("  ZBuffer %s", (gGeometryMode.GBI1_Zbuffer) ? "On" : "Off");
+	DL_PF("  Culling %s", (gGeometryMode.GBI1_CullBack) ? "Back face" : (gGeometryMode.GBI1_CullFront) ? "Front face" : "Off");
+	DL_PF("  Shade %s", (gGeometryMode.GBI1_Shade) ? "On" : "Off");
+	DL_PF("  Smooth Shading %s", (gGeometryMode.GBI1_ShadingSmooth) ? "On" : "Off");
+	DL_PF("  Lighting %s", (gGeometryMode.GBI1_Lighting) ? "On" : "Off");
+	DL_PF("  Texture %s", (gGeometryMode.GBI1_Texture) ? "On" : "Off");
+	DL_PF("  Texture Gen %s", (gGeometryMode.GBI1_TextGen) ? "On" : "Off");
+	DL_PF("  Texture Gen Linear %s", (gGeometryMode.GBI1_TextGenLin) ? "On" : "Off");
+	DL_PF("  Fog %s", (gGeometryMode.GBI1_Fog) ? "On" : "Off");
+	DL_PF("  LOD %s", (gGeometryMode.GBI1_Lod) ? "On" : "Off");
 }
 
 //*****************************************************************************
@@ -453,7 +469,7 @@ void DLParser_GBI1_SetGeometryMode(  MicroCodeCommand command  )
 //*****************************************************************************
 void DLParser_GBI1_SetOtherModeL( MicroCodeCommand command )
 {
-    u32 mask		= ((1 << command.othermode.len) - 1) << command.othermode.sft;
+    const u32 mask = ((1 << command.othermode.len) - 1) << command.othermode.sft;
 
     gRDPOtherMode.L = (gRDPOtherMode.L&(~mask)) | command.othermode.data;
 
@@ -467,7 +483,7 @@ void DLParser_GBI1_SetOtherModeL( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI1_SetOtherModeH( MicroCodeCommand command )
 {
-    u32 mask		= ((1 << command.othermode.len) - 1) << command.othermode.sft;
+    const u32 mask = ((1 << command.othermode.len) - 1) << command.othermode.sft;
 
     gRDPOtherMode.H = (gRDPOtherMode.H&(~mask)) | command.othermode.data;
 
@@ -500,7 +516,51 @@ void DLParser_GBI1_Texture( MicroCodeCommand command )
 	DL_PF("    ScaleS: %f, ScaleT: %f", scale_s*32.0f, scale_t*32.0f);
 	PSPRenderer::Get()->SetTextureScale( scale_s, scale_t );
 }
+//*****************************************************************************
+//
+//*****************************************************************************
+void DLParser_GBI1_Reserved( MicroCodeCommand command )
+{	
+	// Not implemented!
+	DL_UNIMPLEMENTED_ERROR( "RDP: Reserved" );
+}
 
+//*****************************************************************************
+//
+//*****************************************************************************
+void DLParser_GBI1_Noop( MicroCodeCommand command )
+{
+}
+//*****************************************************************************
+//
+//*****************************************************************************
+void DLParser_GBI1_SpNoop( MicroCodeCommand command )
+{
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void DLParser_GBI1_RDPHalf_Cont( MicroCodeCommand command )
+{
+	//DBGConsole_Msg( 0, "Unexpected RDPHalf_Cont: %08x %08x", command.inst.cmd0, command.inst.cmd1 );
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void DLParser_GBI1_RDPHalf_2( MicroCodeCommand command )
+{
+//	DBGConsole_Msg( 0, "Unexpected RDPHalf_2: %08x %08x", command.inst.cmd0, command.inst.cmd1 );
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void DLParser_GBI1_RDPHalf_1( MicroCodeCommand command )
+{
+	gRDPHalf1 = command.inst.cmd1;
+}
 
 //*****************************************************************************
 //
@@ -619,6 +679,5 @@ void DLParser_GBI1_Tri1( MicroCodeCommand command )
 		PSPRenderer::Get()->FlushTris();
 	}
 }
-
 
 #endif // UCODE1_H__

@@ -33,24 +33,20 @@ typedef void(*MicroCodeInstruction)(MicroCodeCommand);
 
 extern const u32 ucode_stride[];
 extern const u32 ucode_modify[];
-extern const MicroCodeInstruction gInstructionLookup[MAX_UCODE][256];
+extern const MicroCodeInstruction gNormalInstruction[MAX_UCODE][256];
 
 #if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
-extern const char * gInstructionName[4][256];
+extern const char * gNormalInstructionName[MAX_UCODE][256];
 #endif
 
 UcodeFunc( DLParser_GBI1_CullDL );
-UcodeFunc( DLParser_GBI2_CullDL );
 UcodeFunc( DLParser_GBI1_DL );
-UcodeFunc( DLParser_GBI2_DL );
 UcodeFunc( DLParser_GBI1_EndDL );
-UcodeFunc( DLParser_GBI2_EndDL );
 UcodeFunc( DLParser_GBI1_BranchZ );
 UcodeFunc( DLParser_GBI1_LoadUCode );
 UcodeFunc( DLParser_GBI2_LoadUCode );
 
-UcodeFunc( DLParser_GBI1_SetGeometryMode );
-UcodeFunc( DLParser_GBI1_ClearGeometryMode );
+UcodeFunc( DLParser_GBI1_GeometryMode );
 UcodeFunc( DLParser_GBI2_GeometryMode );
 UcodeFunc( DLParser_GBI1_SetOtherModeL );
 UcodeFunc( DLParser_GBI1_SetOtherModeH );
@@ -71,7 +67,6 @@ UcodeFunc( DLParser_GBI1_PopMtx );
 UcodeFunc( DLParser_GBI2_PopMtx );
 
 UcodeFunc( DLParser_GBI0_Tri4 );
-UcodeFunc( DLParser_GBI0_Quad );
 
 UcodeFunc( DLParser_GBI2_Quad );
 UcodeFunc( DLParser_GBI2_Line3D );

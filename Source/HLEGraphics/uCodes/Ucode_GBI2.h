@@ -33,7 +33,7 @@ void DLParser_GBI2_Vtx( MicroCodeCommand command )
     u32 n      = command.vtx2.n;
     u32 v0	   = vend - n;
 
-	DL_PF( "    Address 0x%08x, vEnd: %d, v0: %d, Num: %d", address, vend, v0, n );
+	DL_PF( "    Address[0x%08x] vEnd[%d] v0[%d] Num[%d]", address, vend, v0, n );
 
     if ( vend > 64 )
     {
@@ -285,7 +285,7 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 		default:		//0x30/48/60
 			{
 				u32 light_idx = (offset2 - 0x30)/0x18;
-				DL_PF("    Light %d:", light_idx);
+				//DL_PF("    Light %d:", light_idx);
 				RDP_MoveMemLight(light_idx, address);
 			}
 			break;
@@ -419,18 +419,18 @@ void DLParser_GBI2_GeometryMode( MicroCodeCommand command )
 	DL_PF("    Culling %s", (gGeometryMode.GBI2_CullBack) ? "Back face" : (gGeometryMode.GBI2_CullFront) ? "Front face" : "Off");
 	DL_PF("    Flat Shading %s", (gGeometryMode.GBI2_ShadingSmooth) ? "On" : "Off");
 	DL_PF("    Lighting %s", (gGeometryMode.GBI2_Lighting) ? "On" : "Off");
-	DL_PF("    Texture Gen %s", (gGeometryMode.GBI2_TextGen) ? "On" : "Off");
-	DL_PF("    Texture Gen Linear %s", (gGeometryMode.GBI2_TextGenLin) ? "On" : "Off");
+	DL_PF("    Texture Gen %s", (gGeometryMode.GBI2_TexGen) ? "On" : "Off");
+	DL_PF("    Texture Gen Linear %s", (gGeometryMode.GBI2_TexGenLin) ? "On" : "Off");
 	DL_PF("    Fog %s", (gGeometryMode.GBI2_Fog) ? "On" : "Off");
 
 	TnLPSP TnLMode;
 
 	TnLMode.Light = gGeometryMode.GBI2_Lighting;
 	TnLMode.Texture = 0;	//Force this to false
-	TnLMode.TextGen = gGeometryMode.GBI2_TextGen;
-	TnLMode.TextGenLin = gGeometryMode.GBI2_TextGenLin;
+	TnLMode.TexGen = gGeometryMode.GBI2_TexGen;
+	TnLMode.TexGenLin = gGeometryMode.GBI2_TexGenLin;
 	TnLMode.Fog = gGeometryMode.GBI2_Fog;
-	TnLMode.Shade = !(gGeometryMode.GBI2_TextGenLin & (g_ROM.GameHacks != TIGERS_HONEY_HUNT));
+	TnLMode.Shade = !(gGeometryMode.GBI2_TexGenLin & (g_ROM.GameHacks != TIGERS_HONEY_HUNT));
 	TnLMode.Zbuffer = gGeometryMode.GBI2_Zbuffer;
 	TnLMode.TriCull = gGeometryMode.GBI2_CullFront | gGeometryMode.GBI2_CullBack;
 	TnLMode.CullBack = gGeometryMode.GBI2_CullBack;
@@ -480,7 +480,7 @@ void DLParser_GBI2_Texture( MicroCodeCommand command )
 
     bool enable = command.texture.enable_gbi2;                        // Seems to use 0x02
 
-	DL_PF("    Level: %d Tile: %d %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
+	DL_PF("    Level[%d] Tile[%d] %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
     PSPRenderer::Get()->SetTextureEnable( enable );
 
 	if( !enable )	return;
@@ -488,7 +488,7 @@ void DLParser_GBI2_Texture( MicroCodeCommand command )
 	f32 scale_s = f32(command.texture.scaleS) / (65536.0f * 32.0f);
 	f32 scale_t = f32(command.texture.scaleT)  / (65536.0f * 32.0f);
 
-	DL_PF("    ScaleS: %f, ScaleT: %f", scale_s*32.0f, scale_t*32.0f);
+	DL_PF("    ScaleS[%f], ScaleT[%f]", scale_s*32.0f, scale_t*32.0f);
 	PSPRenderer::Get()->SetTextureScale( scale_s, scale_t );
 }
 
@@ -519,7 +519,7 @@ void DLParser_GBI2_Quad( MicroCodeCommand command )
 	bool tris_added = false;
 
     do{
-        DL_PF("    0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, "G_GBI2_QUAD");
+        //DL_PF("    0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, "G_GBI2_QUAD");
 
 		// Vertex indices are multiplied by 2
         u32 v0_idx = command.gbi2line3d.v0 >> 1;
@@ -562,7 +562,7 @@ void DLParser_GBI2_Line3D( MicroCodeCommand command )
     bool tris_added = false;
 
     do{
-        DL_PF("    0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, "G_GBI2_LINE3D");
+        //DL_PF("    0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, "G_GBI2_LINE3D");
 
 		u32 v0_idx = command.gbi2line3d.v0 >> 1;
         u32 v1_idx = command.gbi2line3d.v1 >> 1;
@@ -607,7 +607,7 @@ void DLParser_GBI2_Tri1( MicroCodeCommand command )
     bool tris_added = false;
 
     do{
-        DL_PF("    0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, "G_GBI2_TRI1");
+        //DL_PF("    0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, "G_GBI2_TRI1");
 
 		u32 v0_idx = command.gbi2tri1.v0 >> 1;
 		u32 v1_idx = command.gbi2tri1.v1 >> 1;
@@ -646,7 +646,7 @@ void DLParser_GBI2_Tri2( MicroCodeCommand command )
     bool tris_added = false;
 
     do{
-        DL_PF("    0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, "G_GBI2_TRI2");
+        //DL_PF("    0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, "G_GBI2_TRI2");
 
 		// Vertex indices already divided in ucodedef
         u32 v0_idx = command.gbi2tri2.v0;

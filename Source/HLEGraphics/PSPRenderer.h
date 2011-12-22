@@ -187,8 +187,8 @@ public:
 	inline void			SetEnvColour( c32 colour )				{ mEnvColour = colour; }
 
 	inline void			SetNumLights(u32 num)					{ mNumLights = num; }
-	void				SetLightCol(u32 light, u32 colour);
-	void				SetLightDirection(u32 l, float x, float y, float z);
+	inline void			SetLightCol(u32 light, u32 colour)		{ mLights[light].Colour = v4( (((colour >> 24)&0xFF)/255.0f), (((colour >> 16)&0xFF)/255.0f), (((colour >> 8)&0xFF)/255.0f), 1.0f); }
+	inline void			SetLightDirection(u32 l, v3 n)			{ n.Normalise(); mLights[l].Direction.x = n.x; mLights[l].Direction.y = n.y; mLights[l].Direction.z = n.z; mLights[l].Padding0 = 0.0f; }
 	inline void			SetAmbientLight( const v4 & colour )	{ mTnLParams.Ambient = colour; }
 
 	inline void			SetMux( u64 mux )						{ mMux = mux; }
@@ -203,14 +203,14 @@ public:
 	// Viewport stuff
 	void				SetN64Viewport( const v3 & scale, const v3 & trans );
 	void				SetScissor( u32 x0, u32 y0, u32 x1, u32 y1 );
-
+/*
 	// Matrix stuff
 	enum EMatrixLoadStyle
 	{
 		MATRIX_LOAD,
 		MATRIX_MUL,
 	};
-
+*/
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	void				PrintActive();
 #endif
@@ -230,9 +230,10 @@ public:
 	void				SetNewVertexInfoPD(u32 address, u32 v0, u32 n);	// Assumes dwAddress has already been checked!	
 	void				ModifyVertexInfo(u32 whered, u32 vert, u32 val);
 	void				SetVtxColor( u32 vert, c32 color );
-	inline void			SetVtxTextureCoord( u32 vert, short tu, short tv ) {mVtxProjected[vert].Texture.x = (f32)tu * (1.0f / 32.0f); mVtxProjected[vert].Texture.y = (f32)tv * (1.0f / 32.0f);}
+	inline void			SetVtxTextureCoord( u32 vert, s16 tu, s16 tv ) { mVtxProjected[vert].Texture.x = (f32)tu * (1.0f / 32.0f); mVtxProjected[vert].Texture.y = (f32)tv * (1.0f / 32.0f); }
 	inline void			SetVtxXY( u32 vert, float x, float y );
 	void				SetVtxZ( u32 vert, float z );
+	inline void			CopyVtx( u32 vert_src, u32 vert_dst ) { mVtxProjected[vert_dst] = mVtxProjected[vert_src]; }
 
 	// TextRect stuff
 	void				TexRect( u32 tile_idx, const v2 & xy0, const v2 & xy1, const v2 & uv0, const v2 & uv1 );
@@ -294,15 +295,15 @@ private:
 	void				UpdateViewport();
 
 	v2					ConvertN64ToPsp( const v2 & n64_coords ) const;
-
+/*
 	enum ERenderMode
 	{
 		RM_RENDER_2D,
 		RM_RENDER_3D,
 	};
-
+*/
 	void				RenderUsingRenderSettings( const CBlendStates * states, DaedalusVtx * p_vertices, u32 num_vertices, u32 render_flags );
-	void				RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num_vertices, ERenderMode mode, bool disable_zbuffer );
+	void				RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num_vertices, u32 render_mode, bool disable_zbuffer );
 // Old code, kept for reference
 #ifdef DAEDALUS_IS_LEGACY
 	void 				TestVFPUVerts( u32 v0, u32 num, const FiddledVtx * verts, const Matrix4x4 & mat_world );

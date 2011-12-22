@@ -168,8 +168,8 @@ void DLParser_GBI1_MoveMem( MicroCodeCommand command )
 		case G_MV_L7:
 			{
 				u32 light_idx = (type-G_MV_L0)/2;
-				DL_PF("    G_MV_L%d", light_idx);
-				DL_PF("    Light%d: Length:0x%04x, Address: 0x%08x", light_idx, length, address);
+				//DL_PF("    G_MV_L%d", light_idx);
+				//DL_PF("    Light%d: Length:0x%04x, Address: 0x%08x", light_idx, length, address);
 
 				RDP_MoveMemLight(light_idx, address);
 			}
@@ -439,8 +439,8 @@ void DLParser_GBI1_GeometryMode( MicroCodeCommand command )
 	//Force this to false
 	TnLMode.Texture		= 0;
 
-	TnLMode.TextGen		= gGeometryMode.GBI1_TextGen;
-	TnLMode.TextGenLin  = gGeometryMode.GBI1_TextGenLin;
+	TnLMode.TexGen		= gGeometryMode.GBI1_TexGen;
+	TnLMode.TexGenLin   = gGeometryMode.GBI1_TexGenLin;
 	TnLMode.Fog			= gGeometryMode.GBI1_Fog;
 	TnLMode.Shade		= gGeometryMode.GBI1_Shade & gGeometryMode.GBI1_ShadingSmooth;
 	TnLMode.Zbuffer		= gGeometryMode.GBI1_Zbuffer;
@@ -453,12 +453,12 @@ void DLParser_GBI1_GeometryMode( MicroCodeCommand command )
 
 	DL_PF("    ZBuffer %s",			 (gGeometryMode.GBI1_Zbuffer)		? "On" : "Off");
 	DL_PF("    Culling %s",			 (gGeometryMode.GBI1_CullBack)		? "Back face" : (gGeometryMode.GBI1_CullFront) ? "Front face" : "Off");
-	DL_PF("    Shade %s",				 (gGeometryMode.GBI1_Shade)			? "On" : "Off");
+	DL_PF("    Shade %s",			 (gGeometryMode.GBI1_Shade)			? "On" : "Off");
 	DL_PF("    Smooth Shading %s",	 (gGeometryMode.GBI1_ShadingSmooth) ? "On" : "Off");
-	DL_PF("    Lighting %s",			 (gGeometryMode.GBI1_Lighting)		? "On" : "Off");
+	DL_PF("    Lighting %s",		 (gGeometryMode.GBI1_Lighting)		? "On" : "Off");
 	DL_PF("    Texture %s",			 (gGeometryMode.GBI1_Texture)		? "On" : "Off");
-	DL_PF("    Texture Gen %s",		 (gGeometryMode.GBI1_TextGen)		? "On" : "Off");
-	DL_PF("    Texture Gen Linear %s", (gGeometryMode.GBI1_TextGenLin)	? "On" : "Off");
+	DL_PF("    Texture Gen %s",		 (gGeometryMode.GBI1_TexGen)		? "On" : "Off");
+	DL_PF("    Texture Gen Linear %s", (gGeometryMode.GBI1_TexGenLin)	? "On" : "Off");
 	DL_PF("    Fog %s",				 (gGeometryMode.GBI1_Fog)			? "On" : "Off");
 	DL_PF("    LOD %s",				 (gGeometryMode.GBI1_Lod)			? "On" : "Off");
 }
@@ -504,7 +504,7 @@ void DLParser_GBI1_Texture( MicroCodeCommand command )
 	// Force enable texture in DKR Ucode, fixes static texture bug etc
     bool enable = command.texture.enable_gbi0 || (current.ucode == GBI_DKR);
 	
-	DL_PF("    Level: %d Tile: %d %s", gTextureLevel, gTextureTile, enable? "enabled":"disabled");
+	DL_PF("    Level[%d] Tile[%d] %s", gTextureLevel, gTextureTile, enable? "enabled":"disabled");
 	PSPRenderer::Get()->SetTextureEnable( enable );
 
 	if( !enable )	return;
@@ -512,7 +512,7 @@ void DLParser_GBI1_Texture( MicroCodeCommand command )
 	f32 scale_s = f32(command.texture.scaleS)  / (65536.0f * 32.0f);
 	f32 scale_t = f32(command.texture.scaleT)  / (65536.0f * 32.0f);
 
-	DL_PF("    ScaleS: %f, ScaleT: %f", scale_s*32.0f, scale_t*32.0f);
+	DL_PF("    ScaleS[%f] ScaleT[%f]", scale_s*32.0f, scale_t*32.0f);
 	PSPRenderer::Get()->SetTextureScale( scale_s, scale_t );
 }
 //*****************************************************************************
@@ -574,7 +574,7 @@ void DLParser_GBI1_Tri2( MicroCodeCommand command )
     bool tris_added = false;
 
     do{
-        DL_PF("    0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, "G_GBI1_TRI2");
+        //DL_PF("    0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, "G_GBI1_TRI2");
 
 		// Vertex indices are multiplied by 10 for GBI0, by 2 for GBI1
 		u32 v0_idx = command.gbi1tri2.v0 >> 1;
@@ -622,7 +622,7 @@ void DLParser_GBI1_Line3D( MicroCodeCommand command )
     bool tris_added = false;
 
 	do{
-        DL_PF("    0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, "G_GBI1_LINE3D");
+        //DL_PF("    0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, "G_GBI1_LINE3D");
 
 		u32 v0_idx   = command.gbi1line3d.v0 / gVertexStride;
 		u32 v1_idx   = command.gbi1line3d.v1 / gVertexStride;
@@ -658,7 +658,7 @@ void DLParser_GBI1_Tri1( MicroCodeCommand command )
     bool tris_added = false;
 
     do{
-        DL_PF("    0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, "G_GBI1_TRI1");
+        //DL_PF("    0x%08x: %08x %08x %-10s", pc-8, command.inst.cmd0, command.inst.cmd1, "G_GBI1_TRI1");
 
 		// Vertex indices are multiplied by 10 for Mario64, by 2 for MarioKart
         u32 v0_idx = command.gbi1tri1.v0 / gVertexStride;

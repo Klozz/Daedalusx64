@@ -343,9 +343,7 @@ void DLParser_GBI1_CullDL( MicroCodeCommand command )
 	DL_PF("    No vertices were visible, culling rest of display list");
 
 	DLParser_PopDL();
-
 }
-
 
 //*****************************************************************************
 // 

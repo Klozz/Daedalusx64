@@ -139,9 +139,7 @@ inline void 	FinishRDPJob()
 inline void	DLParser_FetchNextCommand( MicroCodeCommand * p_command )
 {
 	// Current PC is the last value on the stack
-	u32			pc( gDlistStack[gDlistStackPointer].pc );
-
-	*p_command = *(MicroCodeCommand*)&g_pu32RamBase[(pc>>2)];
+	*p_command = *(MicroCodeCommand*)&g_pu32RamBase[ (gDlistStack[gDlistStackPointer].pc >> 2) ];
 
 	gDlistStack[gDlistStackPointer].pc += 8;
 
@@ -189,7 +187,7 @@ const MicroCodeInstruction *gUcodeFunc = NULL;
 MicroCodeInstruction gCustomInstruction[256];
 
 #if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
-char ** gUcodeName = NULL;
+char ** gUcodeName = (char **)gNormalInstructionName[ 0 ];
 char * gCustomInstructionName[256];
 #endif
 
@@ -482,7 +480,7 @@ static void HandleDumpDisplayList( OSTask * pTask )
 //*****************************************************************************
 //
 //*****************************************************************************
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+#if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
 #define SetCommand( cmd, func, name )	gCustomInstruction[ cmd ] = func;	gCustomInstructionName[ cmd ] = (char *)name;
 #else
 #define SetCommand( cmd, func, name )	gCustomInstruction[ cmd ] = func;
@@ -496,7 +494,7 @@ void DLParser_SetCustom( u32 ucode )
 	// Let's build an array based from a normal uCode table
 	memcpy( &gCustomInstruction, &gNormalInstruction[ ucode_modify[ ucode-MAX_UCODE ] ], 1024 );
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+#if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
 	memcpy( gCustomInstructionName, gNormalInstructionName[ ucode_modify[ ucode-MAX_UCODE ] ], 1024 );
 #endif
 
@@ -573,7 +571,7 @@ void DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 da
 	current.ucode	  = ucode; 
 
 	// Used for fetching ucode names (Debug Only)
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+#if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
 	gUcodeName = (ucode <= GBI_1_S2DEX) ? (char **)gNormalInstructionName[ ucode ] : gCustomInstructionName;
 #endif
 
@@ -600,7 +598,7 @@ SProfileItemHandle * gpProfileItemHandles[ 256 ];
 #define PROFILE_DL_CMD( cmd )								\
 	if(gpProfileItemHandles[ (cmd) ] == NULL)				\
 	{														\
-			gpProfileItemHandles[ (cmd) ] = new SProfileItemHandle( CProfiler::Get()->AddItem( gUcodeName[ cmd ] );		\
+			gpProfileItemHandles[ (cmd) ] = new SProfileItemHandle( CProfiler::Get()->AddItem( gUcodeName[ cmd ] ));		\
 	}														\
 	CAutoProfile		_auto_profile( *gpProfileItemHandles[ (cmd) ] )
 
@@ -636,8 +634,12 @@ static void	DLParser_ProcessDList()
 		//
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		//use the gInstructionName table for fecthing names.
-		DL_PF("[%05d] 0x%08x: %08x %08x %-10s", gCurrentInstructionCount, pc, command.inst.cmd0, command.inst.cmd1, gUcodeName[command.inst.cmd ]);
 		gCurrentInstructionCount++;
+		DL_PF("[%05d] 0x%08x: %08x %08x %-10s", gCurrentInstructionCount, pc, command.inst.cmd0, command.inst.cmd1, gUcodeName[command.inst.cmd ]);
+
+		PROFILE_DL_CMD( command.inst.cmd );
+
+		gUcodeFunc[ command.inst.cmd ]( command ); 
 
 		if( gInstructionCountLimit != UNLIMITED_INSTRUCTION_COUNT )
 		{
@@ -646,13 +648,12 @@ static void	DLParser_ProcessDList()
 				return;
 			}
 		}
-#endif
-		//if(!(gCurrentInstructionCount % 1024)) printf("%d\n",gCurrentInstructionCount);
+#else
 
 		PROFILE_DL_CMD( command.inst.cmd );
 
 		gUcodeFunc[ command.inst.cmd ]( command ); 
-
+#endif
 		// Check limit
 		if ( --gDlistStack[gDlistStackPointer].countdown < 0 && gDlistStackPointer >= 0)
 		{
@@ -890,7 +891,7 @@ void DLParser_Nothing( MicroCodeCommand command )
 //*****************************************************************************
 //
 //*****************************************************************************
-static void DLParser_PopDL()
+void DLParser_PopDL( void )
 {
 	DL_PF("    Returning from DisplayList: level=%d", gDlistStackPointer+1);
 	DL_PF("    ############################################");

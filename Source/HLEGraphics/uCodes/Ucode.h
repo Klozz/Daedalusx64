@@ -41,7 +41,6 @@ extern const char * gNormalInstructionName[MAX_UCODE][256];
 
 UcodeFunc( DLParser_GBI1_CullDL );
 UcodeFunc( DLParser_GBI1_DL );
-UcodeFunc( DLParser_GBI1_EndDL );
 UcodeFunc( DLParser_GBI1_BranchZ );
 UcodeFunc( DLParser_GBI1_LoadUCode );
 UcodeFunc( DLParser_GBI2_LoadUCode );
@@ -87,6 +86,7 @@ UcodeFunc( DLParser_GBI2_DL_Count );
 //*****************************************************************************
 
 UcodeFunc( DLParser_Nothing);
+UcodeFunc( DLParser_GBI1_EndDL );
 UcodeFunc( DLParser_GBI1_SpNoop );
 UcodeFunc( DLParser_GBI1_MoveMem );
 UcodeFunc( DLParser_GBI1_Reserved );
@@ -130,7 +130,6 @@ UcodeFunc( DLParser_S2DEX_RDPHalf_0 );
 UcodeFunc( DLParser_S2DEX_ObjMoveMem );
 UcodeFunc( DLParser_S2DEX_Bg1cyc );
 UcodeFunc( DLParser_S2DEX_ObjRectangleR );
-UcodeFunc( Yoshi_MemRect );
 //*****************************************************************************
 // RDP Commands
 //*****************************************************************************

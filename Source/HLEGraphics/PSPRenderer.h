@@ -304,8 +304,8 @@ private:
 		RM_RENDER_3D,
 	};
 */
-	void				RenderUsingRenderSettings( const CBlendStates * states, DaedalusVtx * p_vertices, u32 num_vertices, u32 render_flags );
-	void				RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num_vertices, u32 render_mode, bool disable_zbuffer );
+	void				RenderUsingRenderSettings( const CBlendStates * states, DaedalusVtx * p_vertices, u32 num_vertices, u32 triangle_mode, u32 render_flags );
+	void				RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num_vertices, u32 triangle_mode, u32 render_mode, bool disable_zbuffer );
 // Old code, kept for reference
 #ifdef DAEDALUS_IS_LEGACY
 	void 				TestVFPUVerts( u32 v0, u32 num, const FiddledVtx * verts, const Matrix4x4 & mat_world );
@@ -318,8 +318,6 @@ private:
 
 	v4					LightVert( const v3 & norm ) const;
 
-	void				RenderTriangleList( const DaedalusVtx * p_verts, u32 num_verts, bool disable_zbuffer );
-
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST	
 	enum EPlaceholderTextureType
 	{
@@ -329,8 +327,8 @@ private:
 	};
 
 	void				SelectPlaceholderTexture( EPlaceholderTextureType type );
-	bool				DebugBlendmode( DaedalusVtx * p_vertices, u32 num_vertices, u32 render_flags, u64 mux );
-	void				DebugMux( const CBlendStates * states, DaedalusVtx * p_vertices, u32 num_vertices, u32 render_flags, u64 mux);
+	bool				DebugBlendmode( DaedalusVtx * p_vertices, u32 num_vertices, u32 triangle_mode, u32 render_flags, u64 mux );
+	void				DebugMux( const CBlendStates * states, DaedalusVtx * p_vertices, u32 num_vertices, u32 triangle_mode, u32 render_flags, u64 mux);
 #endif
 private:
 	enum { MAX_VERTS = 80 };		// F3DLP.Rej supports up to 80 verts!

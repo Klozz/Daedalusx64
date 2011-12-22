@@ -475,20 +475,19 @@ void DLParser_GBI2_SetOtherModeL( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_Texture( MicroCodeCommand command )
 {
-    gTextureLevel = command.texture.level;
-    gTextureTile  = command.texture.tile;
+	 
+	u32 tile    = command.texture.tile;
+    bool enable = command.texture.enable_gbi2;   // Seems to use 0x02                    
 
-    bool enable = command.texture.enable_gbi2;                        // Seems to use 0x02
+	DL_PF("    Level[%d] Tile[%d] %s", command.texture.level, tile, enable ? "enable":"disable");
 
-	DL_PF("    Level[%d] Tile[%d] %s", gTextureLevel, gTextureTile, enable ? "enabled":"disabled");
+	PSPRenderer::Get()->SetTextureTile( tile );
     PSPRenderer::Get()->SetTextureEnable( enable );
-
-	if( !enable )	return;
 	
-	f32 scale_s = f32(command.texture.scaleS) / (65536.0f * 32.0f);
-	f32 scale_t = f32(command.texture.scaleT)  / (65536.0f * 32.0f);
+	f32 scale_s = f32(command.texture.scaleS) / (65535.0f * 32.0f);
+	f32 scale_t = f32(command.texture.scaleT)  / (65535.0f * 32.0f);
 
-	DL_PF("    ScaleS[%f], ScaleT[%f]", scale_s*32.0f, scale_t*32.0f);
+	DL_PF("    ScaleS[%0.4f], ScaleT[%0.4f]", scale_s*32.0f, scale_t*32.0f);
 	PSPRenderer::Get()->SetTextureScale( scale_s, scale_t );
 }
 

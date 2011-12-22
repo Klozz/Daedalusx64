@@ -250,7 +250,8 @@ void Load_ObjSprite( uObjSprite *sprite, uObjTxtr *txtr )
 	
 	if( txtr == NULL )
 	{
-		ti = gRDPStateManager.GetTextureDescriptor( gTextureTile );
+		u32 idx = PSPRenderer::Get()->GetTextureTile();
+		ti = gRDPStateManager.GetTextureDescriptor( idx );
 	}
 	else
 	{
@@ -264,6 +265,8 @@ void Load_ObjSprite( uObjSprite *sprite, uObjTxtr *txtr )
 		case S2DEX_OBJLT_TXTRBLOCK:
 			ti.SetWidth            (sprite->imageW/32);
 			ti.SetHeight           (sprite->imageH/32);
+			if( sprite->imageW >= 0x8000 ) ti.SetWidth        ( (0x10000-sprite->imageW)/32);
+			if( sprite->imageH >= 0x8000 ) ti.SetHeight       ( (0x10000-sprite->imageH)/32);
 			ti.SetPitch			   ( (2047/(txtr->block.tline-1)) << 3 );
 			break;
 		case S2DEX_OBJLT_TXTRTILE:
@@ -676,13 +679,6 @@ void DLParser_S2DEX_Bg1cyc( MicroCodeCommand command )
 	f32 imageW = objBg->imageW/4.0f;
 	f32 imageH = objBg->imageH/4.0f;
 
-	f32 x2 = frameX + (imageW-imageX)/scaleX;
-	f32 y2 = frameY + (imageH-imageY)/scaleY;
-
-	f32 u1 = (frameW-x2)*scaleX;
-	f32 v1 = (frameH-y2)*scaleY;
-
-
 	TextureInfo ti;
 
 	ti.SetFormat           (objBg->imageFmt);
@@ -705,10 +701,19 @@ void DLParser_S2DEX_Bg1cyc( MicroCodeCommand command )
 
 	if (g_ROM.GameHacks != YOSHI)
 	{
-		PSPRenderer::Get()->Draw2DTexture( frameX, frameY, frameW, frameH, imageX, imageY, imageW, imageH );
+		f32 s1 = (frameW-frameX)*scaleX + imageX;
+		f32 t1 = (frameH-frameY)*scaleY + imageY;
+
+		PSPRenderer::Get()->Draw2DTexture( frameX, frameY, frameW, frameH, imageX, imageY, s1, t1 );
 	}
 	else
 	{
+		f32 x2 = frameX + (imageW-imageX)/scaleX;
+		f32 y2 = frameY + (imageH-imageY)/scaleY;
+
+		f32 u1 = (frameW-x2)*scaleX;
+		f32 v1 = (frameH-y2)*scaleY;
+
 		PSPRenderer::Get()->Draw2DTexture(frameX, frameY, x2, y2, imageX, imageY, imageW, imageH);
 		PSPRenderer::Get()->Draw2DTexture(x2, frameY, frameW, y2, 0, imageY, u1, imageH);
 		PSPRenderer::Get()->Draw2DTexture(frameX, y2, x2, frameH, imageX, 0, imageW, v1);

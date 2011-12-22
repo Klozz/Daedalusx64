@@ -245,12 +245,9 @@ PSPRenderer::PSPRenderer()
 :	mN64ToPSPScale( 2.0f, 2.0f )
 ,	mN64ToPSPTranslate( 0.0f, 0.0f )
 ,	mMux( 0 )
-//,	mTnLModeFlags( 0 )
 
 ,	mNumLights(0)
-
-,	mCull(false)
-,	mCullMode(GU_CCW)
+,	mTextureTile(0)
 
 ,	mAlphaThreshold(0)
 
@@ -999,8 +996,8 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		sceGuDepthMask( gRDPOtherMode.z_upd ? GL_FALSE : GL_TRUE );
 	}
 
+	// Initiate Texture Filter
 	//
-	// Initiate Filter
 	// G_TF_AVERAGE : 1, G_TF_BILERP : 2 (linear)
 	// G_TF_POINT   : 0 (nearest)
 	//
@@ -1012,20 +1009,16 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	{
 		sceGuTexFilter(GU_NEAREST,GU_NEAREST);
 	}
+
 	// Initiate Blender
 	//
 	if(gRDPOtherMode.cycle_type < CYCLE_COPY)
 	{
-		if( gRDPOtherMode.force_bl ) //gRDPOtherMode.L & 0x4000 -> gRDPOtherMode.force_bl
-		{
-			InitBlenderMode( gRDPOtherMode.blender );	//gRDPOtherMode.L >> 16
-		}
-		else if ( gRDPOtherMode.alpha_cvg_sel )	// gRDPOtherMode.L & 0x2000 -> gRDPOtherMode.alpha_cvg_sel This is a special case for Tarzan's characters
-		{
-			sceGuDisable( GU_BLEND );
-		}
+		gRDPOtherMode.force_bl ? InitBlenderMode( gRDPOtherMode.blender ) : sceGuDisable( GU_BLEND );
 	}
 
+	// Initiate Alpha test
+	//
 	if( (gRDPOtherMode.alpha_compare == G_AC_THRESHOLD) && !gRDPOtherMode.alpha_cvg_sel )
 	{
 		// G_AC_THRESHOLD || G_AC_DITHER
@@ -1435,7 +1428,7 @@ void PSPRenderer::FlushTris()
 	//
 	if( mTnLModeFlags.Texture )
 	{
-		EnableTexturing( gTextureTile );
+		EnableTexturing( mTextureTile );
 
 		// Bias points in decal mode
 		// Is this for Z-fight? not working to well for that, at least not on PSP//Corn

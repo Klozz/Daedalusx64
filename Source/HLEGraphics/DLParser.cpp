@@ -589,10 +589,10 @@ void DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 da
 
 	// Used for fetching ucode names (Debug Only)
 #if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
-	gUcodeName = (ucode <= GBI_2_S2DEX) ? (char **)gNormalInstructionName[ ucode ] : gCustomInstructionName;
+	gUcodeName = (ucode < MAX_UCODE) ? (char **)gNormalInstructionName[ ucode ] : gCustomInstructionName;
 #endif
 
-	if( ucode <= GBI_2_S2DEX  )
+	if( ucode < MAX_UCODE )
 	{
 		// If this a normal ucode, just fetch the correct uCode table and name
 		gUcodeFunc = gNormalInstruction[ ucode ];
@@ -778,8 +778,6 @@ void DLParser_Process()
 
 	gTotalInstructionCount = gCurrentInstructionCount;
 
-	//printf("%d\n", gTotalInstructionCount);
-	//if(gTotalInstructionCount == 6) ThreadSleepMs(500);
 #endif
 
 #ifdef DAEDALUS_BATCH_TEST_ENABLED
@@ -1010,9 +1008,9 @@ void DLParser_SetTile( MicroCodeCommand command )
 	
 	gRDPStateManager.SetTile( tile );
 
-	DL_PF( "    Tile[%d]  Fmt:%s/%s Line:%d TMem:0x%04x Palette:%d", tile.tile_idx, gFormatNames[tile.format], gSizeNames[tile.size], tile.line, tile.tmem, tile.palette);
-	DL_PF( "         S: Clamp:%s Mirror:%s Mask:0x%x Shift:0x%x", gOnOffNames[tile.clamp_s],gOnOffNames[tile.mirror_s], tile.mask_s, tile.shift_s );
-	DL_PF( "         T: Clamp:%s Mirror:%s Mask:0x%x Shift:0x%x", gOnOffNames[tile.clamp_t],gOnOffNames[tile.mirror_t], tile.mask_t, tile.shift_t );
+	DL_PF( "    Tile[%d] Format[%s/%s] Line[%d] TMEM[0x%03x] Palette[%d]", tile.tile_idx, gFormatNames[tile.format], gSizeNames[tile.size], tile.line, tile.tmem, tile.palette);
+	DL_PF( "      S: Clamp[%s] Mirror[%s] Mask[0x%x] Shift[0x%x]", gOnOffNames[tile.clamp_s],gOnOffNames[tile.mirror_s], tile.mask_s, tile.shift_s );
+	DL_PF( "      T: Clamp[%s] Mirror[%s] Mask[0x%x] Shift[0x%x]", gOnOffNames[tile.clamp_t],gOnOffNames[tile.mirror_t], tile.mask_t, tile.shift_t );
 }
 
 //*****************************************************************************
@@ -1043,9 +1041,10 @@ void DLParser_SetTImg( MicroCodeCommand command )
 	g_TI.Size		= command.img.siz;
 	g_TI.Width		= command.img.width + 1;
 	g_TI.Address	= RDPSegAddr(command.img.addr);
-	//g_TI.bpl		= g_TI.Width << g_TI.Size >> 1; // Do we need to handle?
+	//g_TI.bpl		= g_TI.Width << g_TI.Size >> 1;
 
-	DL_PF("    TImg Adr[0x%08x] Fmt[%s/%s] Width[%d] Pitch[%d] Bytes/line[%d]", g_TI.Address, gFormatNames[g_TI.Format], gSizeNames[g_TI.Size], g_TI.Width, g_TI.GetPitch(), g_TI.Width << g_TI.Size >> 1 );
+	DL_PF("    TImg Adr[0x%08x] Format[%s/%s] Width[%d] Pitch[%d] Bytes/line[%d]",
+		g_TI.Address, gFormatNames[g_TI.Format], gSizeNames[g_TI.Size], g_TI.Width, g_TI.GetPitch(), g_TI.Width << g_TI.Size >> 1 );
 }
 
 //*****************************************************************************
@@ -1053,26 +1052,25 @@ void DLParser_SetTImg( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_LoadBlock( MicroCodeCommand command )
 {
-	u32 uls			= command.loadtile.sl;
-	u32 ult			= command.loadtile.tl;
+	u32 uls			= command.loadtile.sl;	//Left
+	u32 ult			= command.loadtile.tl;	//Top
+	u32 dxt			= command.loadtile.th;	// 1.11 fixed point
 	u32 tile_idx	= command.loadtile.tile;
-	//u32 lrs			= command.loadtile.sh;		// Number of bytes-1
-	u32 dxt			= command.loadtile.th;		// 1.11 fixed point
+	u32 address		= g_TI.GetAddress( uls, ult );
+	//u32 ByteSize	= (command.loadtile.sh + 1) << (g_TI.Size == G_IM_SIZ_32b);
 
 	bool	swapped = (dxt) ? false : true;
 
-	u32		src_offset = g_TI.Address + ult * (g_TI.Width << g_TI.Size >> 1) + (uls << g_TI.Size >> 1);
-
-	DL_PF("    Tile[%d] (%d,%d - %d) DXT:0x%04x = %d Bytes => %d pixels/line Offset: 0x%08x",
+	DL_PF("    Tile[%d] (%d,%d - %d) DXT[0x%04x] = [%d]Bytes/line => [%d]Pixels/line Address[0x%08x]",
 		tile_idx,
 		uls, ult,
 		command.loadtile.sh,
 		dxt,
 		(g_TI.Width << g_TI.Size >> 1),
 		bytes2pixels( (g_TI.Width << g_TI.Size >> 1), g_TI.Size ),
-		src_offset);
+		address);
 
-	gRDPStateManager.LoadBlock( tile_idx, src_offset, swapped );
+	gRDPStateManager.LoadBlock( tile_idx, address, swapped );
 }
 
 //*****************************************************************************
@@ -1080,17 +1078,18 @@ void DLParser_LoadBlock( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_LoadTile( MicroCodeCommand command )
 {
-	RDP_TileSize tile;
-	tile.cmd0 = command.inst.cmd0;
-	tile.cmd1 = command.inst.cmd1;
+	u32 uls			= command.loadtile.sl;	//Left
+	u32 ult			= command.loadtile.tl;	//Top
+	u32 tile_idx	= command.loadtile.tile;
+	u32 address		= g_TI.GetAddress( uls / 4, ult / 4 );
 
-	DL_PF("    Tile[%d] (%d,%d) -> (%d,%d) [%d x %d] Offset: 0x%08x",
-		tile.tile_idx,
-		tile.left/4, tile.top/4, tile.right/4 + 1, tile.bottom / 4 + 1,
-		(tile.right - tile.left)/4+1, (tile.bottom - tile.top)/4+1,
-		g_TI.GetOffset( tile.left, tile.top ));
+	DL_PF("    Tile[%d] (%d,%d)->(%d,%d) [%d x %d] Address[0x%08x]",
+		tile_idx,
+		command.loadtile.sl / 4, command.loadtile.tl / 4, command.loadtile.sh / 4 + 1, command.loadtile.th / 4 + 1,
+		(command.loadtile.sh - command.loadtile.sl) / 4 + 1, (command.loadtile.th - command.loadtile.tl) / 4 + 1,
+		address);
 
-	gRDPStateManager.LoadTile( tile );
+	gRDPStateManager.LoadTile( tile_idx, address );
 }
 
 //*****************************************************************************
@@ -1098,56 +1097,51 @@ void DLParser_LoadTile( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_LoadTLut( MicroCodeCommand command )
 {
-	u32 uls     = command.loadtile.sl >> 2;
-	u32 ult		= command.loadtile.tl >> 2;
-	u32 tile_idx= command.loadtile.tile;
-	u32 lrs     = command.loadtile.sh >> 2;
+	// Tlut fmt is sometimes wrong (in 007) and is set after tlut load, but before tile load
+	// Format is always 16bpp - RGBA16 or IA16:
 
-	//This corresponds to the number of palette entries (16 or 256)
+	u32 uls     = command.loadtile.sl >> 2;	//Left
+	u32 ult		= command.loadtile.tl >> 2;	//Top
+	u32 lrs     = command.loadtile.sh >> 2;	//Right
+	u32 tile_idx= command.loadtile.tile;
+	u32 address = (u32)g_pu8RamBase + g_TI.Address + ((uls + ult * g_TI.Width) << 1);
+
+	//This corresponds to the number of palette entries (16 or 256) 16bit
 	//Seems partial load of palette is allowed -> count != 16 or 256 (MM, SSB, Starfox64, MRC) //Corn
 	u32 count = (lrs - uls) + 1;
 	use(count);
-
-	// Format is always 16bpp - RGBA16 or IA16:
-	u32 offset = (uls + ult * g_TI.Width) << 1;
 
 	const RDP_Tile & rdp_tile( gRDPStateManager.GetTile( tile_idx ) );
 
 #ifndef DAEDALUS_TMEM
 	//Store address of PAL (assuming PAL is only stored in upper half of TMEM) //Corn
-	gTextureMemory[ rdp_tile.tmem & 0xFF ] = (u32*)&g_pu8RamBase[ g_TI.Address + offset ];
+	gTextureMemory[ rdp_tile.tmem & 0xFF ] = (u32*)address;
 #else
 	//Copy PAL to the PAL memory
-	u16 * p_source = (u16*)&g_pu8RamBase[ g_TI.Address + offset ];
+	u16 * p_source = (u16*)address;
 	u16 * p_dest   = (u16*)&gTextureMemory[ rdp_tile.tmem << 1 ];
 
-	//printf("Addr %08X : TMEM %03X : Tile %d : PAL %d : Offset %d\n",g_TI.Address + offset, tmem, tile_idx, count, offset); 
+	//printf("Addr %08X : TMEM %03X : Tile %d : PAL %d\n",address, tmem, tile_idx, count); 
 
-	memcpy_vfpu_BE(p_dest, p_source, count << 1);
-
-	//for (u32 i=0; i<count; i++) p_dest[ i ] = p_source[ i ];
+	memcpy_vfpu_BE(p_dest, p_source, count << 1);	//for (u32 i=0; i<count; i++) p_dest[ i ] = p_source[ i ];
 #endif
 
-	// Format is always 16bpp - RGBA16 or IA16:
-	// I've no idea why these two are added - seems to work for 007!
-
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	u32 lrt = command.loadtile.th >> 2;
+	u32 lrt = command.loadtile.th >> 2;	//Bottom
 
+	DL_PF("    TLut Addr[0x%08x] TMEM[0x%03x] Tile[%d] Count[%d] Format[%s] (%d,%d)->(%d,%d)",
+		address, rdp_tile.tmem, tile_idx, count, gTLUTTypeName[gRDPOtherMode.text_tlut], uls, ult, lrs, lrt);
+
+	// This code dumps the palette colors
+	//
+	/*
 	if (gDisplayListFile != NULL)
 	{
 		char str[300] = "";
 		char item[300];
-		u16 * pBase = (u16 *)(g_pu8RamBase + (g_TI.Address + offset));
-		u32 i;
+		u16 *pBase = (u16*)address;
 
-
-		DL_PF("    TLut Addr[0x%08x] Offset[0x%05x] TMEM[0x%03x] Tile[%d] Count[%d] Fmt[%s] (%d,%d)->(%d,%d)", g_TI.Address, offset, rdp_tile.tmem,
-			tile_idx, count, gTLUTTypeName[gRDPOtherMode.text_tlut], uls, ult, lrs, lrt);
-
-		// Tlut fmt is sometimes wrong (in 007) and is set after tlut load, but before tile load
-
-		for (i = 0; i < count; i++)
+		for (u32 i = 0; i < count; i++)
 		{
 			u16 wEntry = pBase[i ^ 0x1];
 
@@ -1167,6 +1161,7 @@ void DLParser_LoadTLut( MicroCodeCommand command )
 		}
 		DL_PF(str);
 	}
+	*/
 #endif
 }
 
@@ -1364,8 +1359,8 @@ void DLParser_FillRect( MicroCodeCommand command )
 	//
 	if ( gRDPOtherMode.cycle_type >= CYCLE_COPY )
 	{
-		xy1.x++;
-		xy1.y++;
+		xy1.x += 1.0f;
+		xy1.y += 1.0f;
 	}
 
 	// TODO - In 1/2cycle mode, skip bottom/right edges!?
@@ -1389,19 +1384,13 @@ void DLParser_SetZImg( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_SetCImg( MicroCodeCommand command )
 {
-	u32 format = command.img.fmt;
-	u32 size   = command.img.siz;
-	u32 width  = command.img.width + 1;
-	u32 newaddr	= RDPSegAddr(command.img.addr);
-	//u32 bpl		= width << size >> 1;	// Do we need to handle?
+	g_CI.Format = command.img.fmt;
+	g_CI.Size   = command.img.siz;
+	g_CI.Width  = command.img.width + 1;
+	g_CI.Address = RDPSegAddr(command.img.addr);
+	//g_CI.Bpl		= g_CI.Width << g_CI.Size >> 1;
 
-	DL_PF("    CImg Adr[0x%08x] Fmt[%s] Size[%s] Width[%d]", RDPSegAddr(command.inst.cmd1), gFormatNames[ format ], gSizeNames[ size ], width);
-
-	//g_CI.Bpl = bpl;
-	g_CI.Address = newaddr;
-	g_CI.Format  = format;
-	g_CI.Size    = size;
-	g_CI.Width   = width;
+	DL_PF("    CImg Adr[0x%08x] Format[%s] Size[%s] Width[%d]", RDPSegAddr(command.inst.cmd1), gFormatNames[ g_CI.Format ], gSizeNames[ g_CI.Size ], g_CI.Width);
 
 	// Used to remove offscreen, it removes the black box in the right side of Conker :)
 	// This will break FB, maybe add an option for this when FB is implemented?
@@ -1409,7 +1398,6 @@ void DLParser_SetCImg( MicroCodeCommand command )
 	// Do not check texture size, it breaks Superman and Doom64..
 	//
 	bIsOffScreen = ( /*g_CI.Size != G_IM_SIZ_16b ||*/ g_CI.Format != G_IM_FMT_RGBA || g_CI.Width < 200 );
-//	bIsOffScreen = false;
 }
 
 //*****************************************************************************

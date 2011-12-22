@@ -209,18 +209,16 @@ void DLParser_MoveWord_DKR( MicroCodeCommand command )
 	switch( command.inst.cmd0 & 0xFF )
 	{
 	case G_MW_NUMLIGHT:
-		gDKRBillBoard = command.inst.cmd1 & 0x7;
+		gDKRBillBoard = command.inst.cmd1 & 0x1;
 		DL_PF("    DKR BillBoard: %d", gDKRBillBoard);
-
-		// Doesn't seem needed
-		//gAmbientLightIdx = num_lights;
-		//PSPRenderer::Get()->SetNumLights(num_lights);
 		break;
+
 	case G_MW_LIGHTCOL:
 		gDKRCMatrixIndex = (command.inst.cmd1 >> 6) & 0x7;
 		PSPRenderer::Get()->Mtxchanged();
 		DL_PF("    DKR MtxIndx: %d", gDKRCMatrixIndex);
 		break;
+
 	default:
 		DLParser_GBI1_MoveWord( command );
 		break;
@@ -242,12 +240,11 @@ void DLParser_Set_Addr_DKR( MicroCodeCommand command )
 //DKR: 00229BA8: 05710080 001E4AF0 CMD G_DMATRI  Triangles 9 at 801E4AF0
 void DLParser_DMA_Tri_DKR( MicroCodeCommand command )
 {
-	//If bit is set then do backface culling on tris
-	//PSPRenderer::Get()->SetCullMode((command.inst.cmd0 & 0x00010000), true);
-
 	u32 address = RDPSegAddr(command.inst.cmd1);
 	u32 count = (command.inst.cmd0 >> 4) & 0xFFF;
-	u32 * pData = &g_pu32RamBase[address >> 2];
+
+	// Unlike normal tris ucodes this has the tris info in rdram
+	TriDKR *tri = (TriDKR*)&g_pu32RamBase[ address >> 2 ];
 
 	DAEDALUS_ASSERT( count < 16, "DKR to many triangles, indexing outside mVtxProjected array" );
 
@@ -255,13 +252,11 @@ void DLParser_DMA_Tri_DKR( MicroCodeCommand command )
 
 	for (u32 i = 0; i < count; i++)
 	{
-		u32 info = pData[ 0 ];
+		u32 v0_idx = tri->v0;
+		u32 v1_idx = tri->v1;
+		u32 v2_idx = tri->v2;
 
-		u32 v0_idx = (info >> 16) & 0x1F;
-		u32 v1_idx = (info >>  8) & 0x1F;
-		u32 v2_idx = (info      ) & 0x1F;
-
-		PSPRenderer::Get()->SetCullMode( !(info & 0x40000000), true );
+		PSPRenderer::Get()->SetCullMode( !(tri->flag & 0x40), true );
 
 		//if( info & 0x40000000 )
 		//{	// no cull
@@ -282,21 +277,11 @@ void DLParser_DMA_Tri_DKR( MicroCodeCommand command )
 		//	//}
 		//}
 	
-		// Generate texture coordinates...
-		const s16 s0( s16(pData[1] >> 16) );
-		const s16 t0( s16(pData[1] & 0xFFFF) );
-
-		const s16 s1( s16(pData[2] >> 16) );
-		const s16 t1( s16(pData[2] & 0xFFFF) );
-
-		const s16 s2( s16(pData[3] >> 16) );
-		const s16 t2( s16(pData[3] & 0xFFFF) );
-
 		DL_PF("    Index[%d %d %d] Cull[%s] uv_TexCoord[%0.2f|%0.2f] [%0.2f|%0.2f] [%0.2f|%0.2f]",
-			v0_idx, v1_idx, v2_idx, !(info & 0x40000000)? "On":"Off",
-			(f32)s0/32.0f, (f32)t0/32.0f,
-			(f32)s1/32.0f, (f32)t1/32.0f,
-			(f32)s2/32.0f, (f32)t2/32.0f);
+			v0_idx, v1_idx, v2_idx, !(tri->flag & 0x40)? "On":"Off",
+			(f32)tri->s0/32.0f, (f32)tri->t0/32.0f,
+			(f32)tri->s1/32.0f, (f32)tri->t1/32.0f,
+			(f32)tri->s2/32.0f, (f32)tri->t2/32.0f);
 
 #if 1	//1->Fixes texture scaling, 0->Render as is and get some texture scaling errors
 		//
@@ -309,20 +294,22 @@ void DLParser_DMA_Tri_DKR( MicroCodeCommand command )
 		if( PSPRenderer::Get()->AddTri(i*3+32, i*3+33, i*3+34) )
 		{
 			tris_added = true;
-			PSPRenderer::Get()->SetVtxTextureCoord( i*3+32, s0, t0 );
-			PSPRenderer::Get()->SetVtxTextureCoord( i*3+33, s1, t1 );
-			PSPRenderer::Get()->SetVtxTextureCoord( i*3+34, s2, t2 );
+			// Generate texture coordinates...
+			PSPRenderer::Get()->SetVtxTextureCoord( i*3+32, tri->s0, tri->t0 );
+			PSPRenderer::Get()->SetVtxTextureCoord( i*3+33, tri->s1, tri->t1 );
+			PSPRenderer::Get()->SetVtxTextureCoord( i*3+34, tri->s2, tri->t2 );
 		}
 #else
 		if( PSPRenderer::Get()->AddTri(v0_idx, v1_idx, v2_idx) )
 		{
 			tris_added = true;
-			PSPRenderer::Get()->SetVtxTextureCoord( v0_idx, s0, t0 );
-			PSPRenderer::Get()->SetVtxTextureCoord( v1_idx, s1, t1 );
-			PSPRenderer::Get()->SetVtxTextureCoord( v2_idx, s2, t2 );
+			// Generate texture coordinates...
+			PSPRenderer::Get()->SetVtxTextureCoord( v0_idx, tri->s0, tri->t0 );
+			PSPRenderer::Get()->SetVtxTextureCoord( v1_idx, tri->s1, tri->t1 );
+			PSPRenderer::Get()->SetVtxTextureCoord( v2_idx, tri->s2, tri->t2 );
 		}
 #endif
-		pData += 4;
+		tri++;
 	}
 
 	if(tris_added)	

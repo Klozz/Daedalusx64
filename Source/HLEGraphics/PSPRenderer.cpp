@@ -79,10 +79,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern "C"
 {
-void	_TransformVerticesWithColour_f0_t1( const Matrix4x4 * world_matrix, const Matrix4x4 * projection_matrix, const FiddledVtx * p_in, const DaedalusVtx4 * p_out, u32 num_vertices, const TnLParams * params );
-
 void	_TnLVFPU( const Matrix4x4 * world_matrix, const Matrix4x4 * projection_matrix, const FiddledVtx * p_in, const DaedalusVtx4 * p_out, u32 num_vertices, const TnLParams * params );
 void	_TnLVFPUDKR( u32 num_vertices, const Matrix4x4 * projection_matrix, const FiddledVtx * p_in, const DaedalusVtx4 * p_out );
+void	_TnLVFPUDKRB( u32 num_vertices, const Matrix4x4 * projection_matrix, const FiddledVtx * p_in, const DaedalusVtx4 * p_out );
 void	_TnLVFPUCBFD( const Matrix4x4 * world_matrix, const Matrix4x4 * projection_matrix, const FiddledVtx * p_in, const DaedalusVtx4 * p_out, u32 num_vertices, const TnLParams * params, const s8 * model_norm , u32 v0 );
 void	_TnLVFPUPD( const Matrix4x4 * world_matrix, const Matrix4x4 * projection_matrix, const FiddledVtxPD * p_in, const DaedalusVtx4 * p_out, u32 num_vertices, const TnLParams * params, const u8 * model_norm );
 
@@ -481,10 +480,10 @@ void PSPRenderer::BeginScene()
 	// Update viewport only if user changed it in settings or vi register changed it
 	// Both happen really rare
 	//
-	if( !mView.Update				  &&		//  We need to update after pause menu?
-		mView.ViWidth  == uViWidth    &&		//  VI register changed width? (bug fix GE007) 
-		mView.ViHeight == uViHeight   &&		//  VI register changed height?
-		mView.Rumble   == gRumblePakActive )	//  RumblePak active? Don't bother to update if no rumble feedback too
+	if( !mView.Update					&		//  We need to update after pause menu?
+		(mView.ViWidth  == uViWidth)    &		//  VI register changed width? (bug fix GE007) 
+		(mView.ViHeight == uViHeight)   &		//  VI register changed height?
+		(mView.Rumble   == gRumblePakActive) )	//  RumblePak active? Don't bother to update if no rumble feedback too
 	{
 		return;
 	}
@@ -496,15 +495,14 @@ void PSPRenderer::BeginScene()
 
 	DAEDALUS_ASSERT( display_width && display_height, "Unhandled viewport type" );
 
-
 	u32 frame_width(  gGlobalPreferences.TVEnable ? 720 : 480 );
 	u32	frame_height( gGlobalPreferences.TVEnable ? 480 : 272 );
 
 	v3 scale( 640.0f*0.25f, 480.0f*0.25f, 511.0f*0.25f );
 	v3 trans( 640.0f*0.25f, 480.0f*0.25f, 511.0f*0.25f );
 
-	s32		display_x( (frame_width - display_width)/2 );
-	s32		display_y( (frame_height - display_height)/2 );
+	s32 display_x( (frame_width - display_width) / 2 );
+	s32 display_y( (frame_height - display_height) / 2 );
 
 	SetPSPViewport( display_x, display_y, display_width, display_height );
 	SetN64Viewport( scale, trans );
@@ -2085,42 +2083,8 @@ void PSPRenderer::SetNewVertexInfoConker(u32 address, u32 v0, u32 n)
 
 	// Light is not handled for Conker
 	//
-#if 1	
 	const s8 *mn = (s8*)(gAuxAddr);
 	_TnLVFPUCBFD( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnL, mn, v0<<1 );
-#else	
-	_TransformVerticesWithColour_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnL );
-	
-	// Do Env Mapping using the CPU with an extra pass 
-	// TODO : Port this to VFPU ASM
-	//
-	if( (mTnL.Flags._u32 & (TNL_LIGHT | TNL_TEXGEN | TNL_TEXTURE)) == (TNL_LIGHT | TNL_TEXGEN | TNL_TEXTURE) )
-	{
-		//Model normal base vector
-		const s8 *mn = (s8*)(gAuxAddr);
-		for (u32 i = v0; i < (v0 + n); i++)
-		{
-			const FiddledVtx & vert = pVtxBase[i - v0];
-			v3 model_normal( mn[((i<<1)+0)^3] , mn[((i<<1)+1)^3], vert.normz );
-		
-			v3 vecTransformedNormal = matWorld.TransformNormal( model_normal );
-			vecTransformedNormal.Normalise();
-
-			const v3 & norm = vecTransformedNormal;
-
-			if( mTnL.Flags.TexGenLin )
-			{	//Cheap way to do Acos(x)/Pi //Corn
-				mVtxProjected[i].Texture.x =  0.5f - 0.25f * norm.x - 0.25f * norm.x * norm.x * norm.x;
-				mVtxProjected[i].Texture.y =  0.5f - 0.25f * norm.y - 0.25f * norm.y * norm.y * norm.y;
-			}
-			else
-			{
-				mVtxProjected[i].Texture.x = 0.5f * ( 1.0f + norm.x );
-				mVtxProjected[i].Texture.y = 0.5f * ( 1.0f + norm.y );
-			}
-		}
-	}
-#endif
 }
 
 #else
@@ -2252,6 +2216,8 @@ extern bool gDKRBillBoard;
 
 void PSPRenderer::SetNewVertexInfoDKR(u32 address, u32 v0, u32 n)
 {
+	gDKRVtxCount += n;
+
 	u32 pVtxBase = u32(g_pu8RamBase + address);
 	const Matrix4x4 & matWorldProject( mProjectionStack[gDKRCMatrixIndex] );
 
@@ -2263,19 +2229,22 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 address, u32 v0, u32 n)
 	{	//Copy vertices adding base vector and the color data
 		mWPmodified = false;
 
+#ifdef DAEDALUS_PSP_USE_VFPU
+		_TnLVFPUDKRB( n, &mProjectionStack[0], (const FiddledVtx*)pVtxBase, &mVtxProjected[v0] );
+#else
 		v4 & BaseVec( mVtxProjected[0].TransformedPos );
 	
 		//Hack to worldproj matrix to scale and rotate billbords //Corn
 		Matrix4x4 mat( mProjectionStack[0]);
-		mat.mRaw[0] *= mProjectionStack[2].mRaw[0] * 0.33f;
-		mat.mRaw[4] *= mProjectionStack[2].mRaw[0] * 0.33f;
-		mat.mRaw[8] *= mProjectionStack[2].mRaw[0] * 0.33f;
-		mat.mRaw[1] *= mProjectionStack[2].mRaw[0] * 0.25f;
-		mat.mRaw[5] *= mProjectionStack[2].mRaw[0] * 0.25f;
-		mat.mRaw[9] *= mProjectionStack[2].mRaw[0] * 0.25f;
-		mat.mRaw[2] *= mProjectionStack[2].mRaw[10] * 0.33f;
-		mat.mRaw[6] *= mProjectionStack[2].mRaw[10] * 0.33f;
-		mat.mRaw[10] *= mProjectionStack[2].mRaw[10] * 0.33f;
+		mat.mRaw[0] *= mProjectionStack[2].mRaw[0] * 0.5f;
+		mat.mRaw[4] *= mProjectionStack[2].mRaw[0] * 0.5f;
+		mat.mRaw[8] *= mProjectionStack[2].mRaw[0] * 0.5f;
+		mat.mRaw[1] *= mProjectionStack[2].mRaw[0] * 0.375f;
+		mat.mRaw[5] *= mProjectionStack[2].mRaw[0] * 0.375f;
+		mat.mRaw[9] *= mProjectionStack[2].mRaw[0] * 0.375f;
+		mat.mRaw[2] *= mProjectionStack[2].mRaw[10] * 0.5f;
+		mat.mRaw[6] *= mProjectionStack[2].mRaw[10] * 0.5f;
+		mat.mRaw[10] *= mProjectionStack[2].mRaw[10] * 0.5f;
 
 		for (u32 i = v0; i < v0 + n; i++)
 		{
@@ -2306,6 +2275,7 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 address, u32 v0, u32 n)
 
 			pVtxBase += 10;
 		}
+#endif
 	}
 	else
 	{	//Normal path for transform of triangles
@@ -2353,7 +2323,6 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 address, u32 v0, u32 n)
 		}
 #endif
 	}
-	gDKRVtxCount += n;
 }
 
 //*****************************************************************************
@@ -2623,19 +2592,19 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 	DAEDALUS_ASSERT( tile_idx < 8, "Invalid tile index %d", tile_idx );
 	DAEDALUS_ASSERT( index < NUM_N64_TEXTURES, "Invalid texture index %d", index );
 
-	const TextureInfo &		ti( gRDPStateManager.GetTextureDescriptor( tile_idx ) );
+	const TextureInfo & ti( gRDPStateManager.GetTextureDescriptor( tile_idx ) );
 
+#ifndef DAEDALUS_DEBUG_DISPLAYLIST
 	// Avoid texture update, if texture is the same as last time around.
 	if( (mpTexture[ index ] != NULL) && (mpTexture[ index ]->GetTextureInfo() == ti) ) return;
+#endif
 
-	//
 	//	Initialise the wrapping/texture offset first, which can be set
 	//	independently of the actual texture.
 	//
-	const RDP_Tile &		rdp_tile( gRDPStateManager.GetTile( tile_idx ) );
-	const RDP_TileSize &	tile_size( gRDPStateManager.GetTileSize( tile_idx ) );
+	const RDP_Tile & rdp_tile( gRDPStateManager.GetTile( tile_idx ) );
+	const RDP_TileSize & tile_size( gRDPStateManager.GetTileSize( tile_idx ) );
 
-	//
 	// Initialise the clamping state. When the mask is 0, it forces clamp mode.
 	//
 	u32 mode_u = (rdp_tile.clamp_s | ( rdp_tile.mask_s == 0)) ? GU_CLAMP : GU_REPEAT;
@@ -2651,7 +2620,7 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 	//	It sets up a texture with a mask_s/t of 6/6 (64x64), but sets the tile size to
 	//	256*128. clamp_s/t are set, meaning the texture wraps 4x and 2x.
 	//
-	if( tile_size.GetWidth()  > ti.GetWidth()  )
+	if( tile_size.GetWidth() > ti.GetWidth() )
 	{
 		// This breaks the Sun, and other textures in Zelda. Breaks Mario's hat in SSB, and other textures, and foes in Kirby 64's cutscenes
 		// ToDo : Find a proper workaround for this, if this disabled the castle in Link's stage in SSB is broken :/
@@ -2670,14 +2639,19 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 	sceGuTexWrap( mode_u, mode_v );
 
 	// XXXX Double check this
-	mTileTopLeft[ index ].x = f32(tile_size.left) /4.0f;
-	mTileTopLeft[ index ].y = f32(tile_size.top) /4.0f;
+	mTileTopLeft[ index ].x = f32(tile_size.left) / 4.0f;
+	mTileTopLeft[ index ].y = f32(tile_size.top) / 4.0f;
 
-	DL_PF( "    Use Tile[%d] as Texture[%d] [%dx%d] [%s] [%dbpp] [%s u, %s v] -> Adr[0x%08x] PAL[0x%x] Hash[0x%08x] Pitch[%d] TopLeft[%0.3f|%0.3f] Scale[%0.3f|%0.3f]",
+	DL_PF( "    Use Tile[%d] as Texture[%d] [%dx%d] [%s/%dbpp] [%s u, %s v] -> Adr[0x%08x] PAL[0x%x] Hash[0x%08x] Pitch[%d] TopLeft[%0.3f|%0.3f] Scale[%0.3f|%0.3f]",
 			tile_idx, index, ti.GetWidth(), ti.GetHeight(), ti.GetFormatName(), ti.GetSizeInBits(),
 			(mode_u==GU_CLAMP)? "Clamp" : "Repeat", (mode_v==GU_CLAMP)? "Clamp" : "Repeat",
 			ti.GetLoadAddress(), (u32)ti.GetPalettePtr(), ti.GetHashCode(), ti.GetPitch(),
 			mTileTopLeft[ index ].x, mTileTopLeft[ index ].y, mTileScale[ index ].x, mTileScale[ index ].y );
+
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+	// Avoid texture update, if texture is the same as last time around.
+	if( (mpTexture[ index ] != NULL) && (mpTexture[ index ]->GetTextureInfo() == ti) ) return;
+#endif
 
 	// Check for 0 width/height textures
 	if( (ti.GetWidth() == 0) || (ti.GetHeight() == 0) )
@@ -3020,41 +2994,41 @@ void PSPRenderer::MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address )
 	}
 
 #else
-	struct N64Fmat
+	struct N64Imat
 	{
-		s16	mh01;	s16	mh00;	s16	mh03;	s16	mh02;
-		s16	mh11;	s16	mh10;	s16	mh13;	s16	mh12;
-		s16	mh21;	s16	mh20;	s16	mh23;	s16	mh22;
-		s16	mh31;	s16	mh30;	s16	mh33;	s16	mh32;
+		s16	H01, H00, H03, H02;
+		s16	H11, H10, H13, H12;
+		s16	H21, H20, H23, H22;
+		s16	H31, H30, H33, H32;
 
-		u16	ml01;	u16	ml00;	u16	ml03;	u16	ml02;
-		u16	ml11;	u16	ml10;	u16	ml13;	u16	ml12;
-		u16	ml21;	u16	ml20;	u16	ml23;	u16	ml22;
-		u16	ml31;	u16	ml30;	u16	ml33;	u16	ml32;
+		u16	L01, L00, L03, L02;
+		u16	L11, L10, L13, L12;
+		u16	L21, L20, L23, L22;
+		u16	L31, L30, L33, L32;
 	};
 
-	const N64Fmat *Imat = (N64Fmat *)( g_pu8RamBase + address );
+	const N64Imat *Imat = (N64Imat *)( g_pu8RamBase + address );
 	const f32 fRecip = 1.0f / 65536.0f;
 
-	mat.m[0][0] = (f32)((Imat->mh00 << 16) | (Imat->ml00)) * fRecip;
-	mat.m[0][1] = (f32)((Imat->mh01 << 16) | (Imat->ml01)) * fRecip;
-	mat.m[0][2] = (f32)((Imat->mh02 << 16) | (Imat->ml02)) * fRecip;
-	mat.m[0][3] = (f32)((Imat->mh03 << 16) | (Imat->ml03)) * fRecip;
+	mat.m[0][0] = (f32)((Imat->H00 << 16) | (Imat->L00)) * fRecip;
+	mat.m[0][1] = (f32)((Imat->H01 << 16) | (Imat->L01)) * fRecip;
+	mat.m[0][2] = (f32)((Imat->H02 << 16) | (Imat->L02)) * fRecip;
+	mat.m[0][3] = (f32)((Imat->H03 << 16) | (Imat->L03)) * fRecip;
 
-	mat.m[1][0] = (f32)((Imat->mh10 << 16) | (Imat->ml10)) * fRecip;
-	mat.m[1][1] = (f32)((Imat->mh11 << 16) | (Imat->ml11)) * fRecip;
-	mat.m[1][2] = (f32)((Imat->mh12 << 16) | (Imat->ml12)) * fRecip;
-	mat.m[1][3] = (f32)((Imat->mh13 << 16) | (Imat->ml13)) * fRecip;
+	mat.m[1][0] = (f32)((Imat->H10 << 16) | (Imat->L10)) * fRecip;
+	mat.m[1][1] = (f32)((Imat->H11 << 16) | (Imat->L11)) * fRecip;
+	mat.m[1][2] = (f32)((Imat->H12 << 16) | (Imat->L12)) * fRecip;
+	mat.m[1][3] = (f32)((Imat->H13 << 16) | (Imat->L13)) * fRecip;
 
-	mat.m[2][0] = (f32)((Imat->mh20 << 16) | (Imat->ml20)) * fRecip;
-	mat.m[2][1] = (f32)((Imat->mh21 << 16) | (Imat->ml21)) * fRecip;
-	mat.m[2][2] = (f32)((Imat->mh22 << 16) | (Imat->ml22)) * fRecip;
-	mat.m[2][3] = (f32)((Imat->mh23 << 16) | (Imat->ml23)) * fRecip;
+	mat.m[2][0] = (f32)((Imat->H20 << 16) | (Imat->L20)) * fRecip;
+	mat.m[2][1] = (f32)((Imat->H21 << 16) | (Imat->L21)) * fRecip;
+	mat.m[2][2] = (f32)((Imat->H22 << 16) | (Imat->L22)) * fRecip;
+	mat.m[2][3] = (f32)((Imat->H23 << 16) | (Imat->L23)) * fRecip;
 
-	mat.m[3][0] = (f32)((Imat->mh30 << 16) | (Imat->ml30)) * fRecip;
-	mat.m[3][1] = (f32)((Imat->mh31 << 16) | (Imat->ml31)) * fRecip;
-	mat.m[3][2] = (f32)((Imat->mh32 << 16) | (Imat->ml32)) * fRecip;
-	mat.m[3][3] = (f32)((Imat->mh33 << 16) | (Imat->ml33)) * fRecip;
+	mat.m[3][0] = (f32)((Imat->H30 << 16) | (Imat->L30)) * fRecip;
+	mat.m[3][1] = (f32)((Imat->H31 << 16) | (Imat->L31)) * fRecip;
+	mat.m[3][2] = (f32)((Imat->H32 << 16) | (Imat->L32)) * fRecip;
+	mat.m[3][3] = (f32)((Imat->H33 << 16) | (Imat->L33)) * fRecip;
 #endif
 }
 //*****************************************************************************
@@ -3120,7 +3094,7 @@ void PSPRenderer::ForceMatrix(const u32 address)
 
 		mModelViewStack[mModelViewTop] = mWorldProject * invTarzan;
 	}
-	else if( g_ROM.GameHacks == DONALD )
+	/*else if( g_ROM.GameHacks == DONALD )
 	{
 		
 		//The inverted projection matrix for Donald duck
@@ -3130,7 +3104,7 @@ void PSPRenderer::ForceMatrix(const u32 address)
 									0.0f, 0.0f, -0.9845562638123093f, 0.015443736187690802f );
 
 		mModelViewStack[mModelViewTop] = mWorldProject * invDonald;
-	}
+	}*/
 	else
 	{
 		//Check if current projection matrix has changed

@@ -191,12 +191,12 @@ struct SetTImg
 
 struct LoadTile
 {
-	u32	tl:12;
-	u32	sl:12;
+	u32	tl:12;	//Top
+	u32	sl:12;	//Left
 	u32	cmd:8;
 
-	u32	th:12;
-	u32	sh:12;
+	u32	th:12;	//Bottom
+	u32	sh:12;	//Right
 	u32	tile:3;
 	u32	pad:5;
 };
@@ -407,6 +407,14 @@ struct SetOthermode
 	u32	sft:8;
 	u32	cmd:8;
 	u32	data;
+};
+
+struct TriDKR
+{
+    u8	v2, v1, v0, flag;
+    s16	t0, s0;
+    s16	t1, s1;
+    s16	t2, s2;
 };
 
 /*

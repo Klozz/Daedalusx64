@@ -37,13 +37,14 @@ public:
 
 	void							Reset();
 
+	inline const u32				GetTmemAdr( u32 idx ) const				{ return mTiles[ idx ].tmem; }
 	inline const RDP_Tile &			GetTile( u32 idx ) const				{ return mTiles[ idx ]; }
 	inline const RDP_TileSize &		GetTileSize( u32 idx ) const			{ return mTileSizes[ idx ]; }
 
 	void							SetTile( const RDP_Tile & tile );
 	void							SetTileSize( const RDP_TileSize & tile_size );
 	void							LoadBlock( u32 idx, u32 address, bool swapped );
-	void							LoadTile( const RDP_TileSize & tile_size );
+	void							LoadTile( u32 idx, u32 address );
 
 // Retrive tile addr loading. used by Yoshi_MemRect
 	inline u32						GetTileAddress( const u32 tmem ) { LoadDetailsMap::const_iterator it( mLoadMap.find( tmem ) ); const SLoadDetails &	load_details( it->second ); return load_details.Address; }

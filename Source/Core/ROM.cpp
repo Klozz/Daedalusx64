@@ -62,7 +62,6 @@ const char *gGameHackNames[ MAX_HACK_NAMES ] =
 	"Flat Shade Disabled Hack",
 	"S2DEX Palette Hack",
 	"Tarzan Misc Hacks",
-	"Force Mtx Donald Duck Hack",
 	"Disable LW MemAcces Optimisation",
 	"Gex Depth Hack",
 	"Disable osRestoreInt"
@@ -86,7 +85,6 @@ u32 g_dwNumFrames = 0;
 //
 //*****************************************************************************
 RomInfo g_ROM;
-bool gTLUTalt_mode;
 
 #ifndef DAEDALUS_SILENT
 //*****************************************************************************
@@ -453,47 +451,55 @@ void ROM_Unload()
 //*****************************************************************************
 void SpecificGameHacks( const ROMHeader & id )
 {
-	printf("ROM ID:%04X\n", id.CartID);
+	printf("ROM ID[%04X]\n", id.CartID);
 
-	g_ROM.GameHacks = NO_GAME_HACK;	//Default to no game hacks
-	gTLUTalt_mode	= false;		//Alternate Texture mode
+	g_ROM.HACKS_u32 = 0;	//Default to no game hacks
 	
 	switch( id.CartID )
 	{
 	case 0x324a: g_ROM.GameHacks = WONDER_PROJECTJ2;	break;
 	case 0x4547: g_ROM.GameHacks = GOLDEN_EYE;			break;
 	case 0x5742: g_ROM.GameHacks = SUPER_BOWLING;		break;
-	case 0x4c5a: g_ROM.GameHacks = ZELDA_OOT;			break;
 	case 0x514D: g_ROM.GameHacks = PMARIO;				break;
 	case 0x3954: g_ROM.GameHacks = TIGERS_HONEY_HUNT;	break;
 	case 0x5632: g_ROM.GameHacks = CHAMELEON_TWIST_2;	break;
-	case 0x5941: g_ROM.GameHacks = AIDYN_CRONICLES;		break;
 	case 0x344b: g_ROM.GameHacks = KIRBY64;				break;
 	case 0x4154: g_ROM.GameHacks = TARZAN;				break;
-	case 0x5144: g_ROM.GameHacks = DONALD;				break;
 	case 0x4643: g_ROM.GameHacks = CLAY_FIGHTER_63;		break;
 	case 0x5a52: g_ROM.GameHacks = RIDGE_RACER;			break;
 	case 0x504A: g_ROM.GameHacks = ISS64;				break;
 	case 0x5944: g_ROM.GameHacks = DKR;					break;
 	case 0x4450: g_ROM.GameHacks = PERFECT_DARK;		break;
 	case 0x3247: g_ROM.GameHacks = EXTREME_G2;			break;
-	case 0x3259: g_ROM.GameHacks = RAYMAN2;				break;
 	case 0x5359: g_ROM.GameHacks = YOSHI;				break;
+	case 0x5941:
+		g_ROM.ALPHA_HACK = true;
+		g_ROM.GameHacks = AIDYN_CRONICLES;
+		break;
+	case 0x5144:	//Donald Duck
+	case 0x3259:	//Rayman2
+		g_ROM.T1_HACK = true;
+		break;
 	case 0x3358:	//GEX3
 	case 0x3258:	//GEX64
 		g_ROM.GameHacks = GEX_GECKO;
 		break;
+	case 0x4c5a:
+		g_ROM.ZELDA_HACK = true;
+		g_ROM.GameHacks = ZELDA_OOT;
+		break;
 	case 0x535a:
-		gTLUTalt_mode = true;
+		g_ROM.TLUT_HACK = true;
+		g_ROM.ZELDA_HACK = true;
 		g_ROM.GameHacks = ZELDA_MM;
 		break;
 	case 0x5547:	//Sin and punishment		
 	case 0x4446:	//Flying Dragon	
 	case 0x5653:	//SSV
-		gTLUTalt_mode = true;
+		g_ROM.TLUT_HACK = true;
 		break;
 	case 0x4641:	//Animal crossing
-		gTLUTalt_mode = true;
+		g_ROM.TLUT_HACK = true;
 		g_ROM.GameHacks = ANIMAL_CROSSING;
 		break;
 	case 0x4842:	//Body Harvest

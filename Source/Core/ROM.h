@@ -111,7 +111,6 @@ enum EGameHacks
 	TIGERS_HONEY_HUNT,
 	KIRBY64,
 	TARZAN,
-	DONALD,
 	PMARIO,
 	GEX_GECKO,
 	RIDGE_RACER,
@@ -126,8 +125,7 @@ enum EGameHacks
 	PERFECT_DARK,
 	YOSHI,
 	EXTREME_G2,
-	RAYMAN2,
-	LAST_ENTRY
+	LAST_ENTRY	//DONT CHANGE THIS! AND SHOULD BE LAST ENTRY
 };
 
 #define MAX_HACK_NAMES LAST_ENTRY
@@ -144,7 +142,30 @@ struct RomInfo
 	RomSettings settings;				// Settings for this rom
 	u32			TvType;					// OS_TV_NTSC etc
 	ECicType	cic_chip;				// CIC boot chip type
-	EGameHacks	GameHacks;				// Hacks for specific games
+	union
+	{
+		u32 HACKS_u32;
+		struct
+		{
+			EGameHacks	GameHacks:16;	// Hacks for specific games
+			u32			T1_HACK:1;	//T1 texture hack
+			u32			ZELDA_HACK:1;	//for both MM and OOT
+			u32			TLUT_HACK:1;	//Texture look up table hack for palette
+			u32			ALPHA_HACK:1;	//HACK for AIDYN CHRONICLES
+			u32			Pad4:1;	//free
+			u32			Pad5:1;	//free
+			u32			Pad6:1;	//free
+			u32			Pad7:1;	//free
+			u32			Pad8:1;	//free
+			u32			Pad9:1;	//free
+			u32			PadA:1;	//free
+			u32			PadB:1;	//free
+			u32			PadC:1;	//free
+			u32			PadD:1;	//free
+			u32			PadE:1;	//free
+			u32			PadF:1;	//free
+		};
+	};
 };
 
 //*****************************************************************************
@@ -168,7 +189,6 @@ const char *	ROM_GetCicTypeName( ECicType cic_type );
 // Externs (urgh)
 //*****************************************************************************
 extern RomInfo g_ROM;
-extern bool gTLUTalt_mode;
 
 #ifdef DAEDALUS_ENABLE_DYNAREC_PROFILE
 extern u32 g_dwNumFrames;

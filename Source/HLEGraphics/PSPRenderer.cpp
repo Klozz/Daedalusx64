@@ -82,6 +82,9 @@ extern "C"
 void	_TransformVerticesWithColour_f0_t1( const Matrix4x4 * world_matrix, const Matrix4x4 * projection_matrix, const FiddledVtx * p_in, const DaedalusVtx4 * p_out, u32 num_vertices, const TnLParams * params );
 
 void	_TnLVFPU( const Matrix4x4 * world_matrix, const Matrix4x4 * projection_matrix, const FiddledVtx * p_in, const DaedalusVtx4 * p_out, u32 num_vertices, const TnLParams * params );
+void	_TnLVFPUDKR( u32 num_vertices, const Matrix4x4 * projection_matrix, const FiddledVtx * p_in, const DaedalusVtx4 * p_out );
+void	_TnLVFPUCBFD( const Matrix4x4 * world_matrix, const Matrix4x4 * projection_matrix, const FiddledVtx * p_in, const DaedalusVtx4 * p_out, u32 num_vertices, const TnLParams * params, const s8 * model_norm , u32 v0 );
+void	_TnLVFPUPD( const Matrix4x4 * world_matrix, const Matrix4x4 * projection_matrix, const FiddledVtxPD * p_in, const DaedalusVtx4 * p_out, u32 num_vertices, const TnLParams * params, const u8 * model_norm );
 
 void	_ConvertVertice( DaedalusVtx * dest, const DaedalusVtx4 * source );
 void	_ConvertVerticesIndexed( DaedalusVtx * dest, const DaedalusVtx4 * source, u32 num_vertices, const u16 * indices );
@@ -2093,6 +2096,10 @@ void PSPRenderer::SetNewVertexInfoConker(u32 address, u32 v0, u32 n)
 
 	// Light is not handled for Conker
 	//
+#if 1	
+	const s8 *mn = (s8*)(gAuxAddr);
+	_TnLVFPUCBFD( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnL, mn, v0<<1 );
+#else	
 	_TransformVerticesWithColour_f0_t1( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnL );
 	
 	// Do Env Mapping using the CPU with an extra pass 
@@ -2124,6 +2131,7 @@ void PSPRenderer::SetNewVertexInfoConker(u32 address, u32 v0, u32 n)
 			}
 		}
 	}
+#endif
 }
 
 #else
@@ -2300,12 +2308,14 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 address, u32 v0, u32 n)
 			mVtxProjected[i].ClipFlags = 0;
 
 			// Assign true vert colour
-			mVtxProjected[i].Colour.x = (1.0f / 255.0f) * (f32)*(u8*)((pVtxBase + 6) ^ 3);
-			mVtxProjected[i].Colour.y = (1.0f / 255.0f) * (f32)*(u8*)((pVtxBase + 7) ^ 3);
-			mVtxProjected[i].Colour.z = (1.0f / 255.0f) * (f32)*(u8*)((pVtxBase + 8) ^ 3);
-			mVtxProjected[i].Colour.w = (1.0f / 255.0f) * (f32)*(u8*)((pVtxBase + 9) ^ 3);
+			const u32 WL = *(u16*)((pVtxBase + 6) ^ 2);
+			const u32 WH = *(u16*)((pVtxBase + 8) ^ 2);
 
-			gDKRVtxCount++;
+			mVtxProjected[i].Colour.x = (1.0f / 255.0f) * (WL >> 8);
+			mVtxProjected[i].Colour.y = (1.0f / 255.0f) * (WL & 0xFF);
+			mVtxProjected[i].Colour.z = (1.0f / 255.0f) * (WH >> 8);
+			mVtxProjected[i].Colour.w = (1.0f / 255.0f) * (WH & 0xFF);
+
 			pVtxBase += 10;
 		}
 	}
@@ -2316,7 +2326,9 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 address, u32 v0, u32 n)
 			mWPmodified = false;
 			sceGuSetMatrix( GU_PROJECTION, reinterpret_cast< const ScePspFMatrix4 * >( &matWorldProject) );
 		}
-
+#ifdef DAEDALUS_PSP_USE_VFPU
+		_TnLVFPUDKR( n, &matWorldProject, (const FiddledVtx*)pVtxBase, &mVtxProjected[v0] );
+#else
 		for (u32 i = v0; i < v0 + n; i++)
 		{
 			v4 & transformed( mVtxProjected[i].TransformedPos );
@@ -2341,20 +2353,42 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 address, u32 v0, u32 n)
 			mVtxProjected[i].ClipFlags = clip_flags;
 
 			// Assign true vert colour
-			mVtxProjected[i].Colour.x = (1.0f / 255.0f) * (f32)*(u8*)((pVtxBase + 6) ^ 3);
-			mVtxProjected[i].Colour.y = (1.0f / 255.0f) * (f32)*(u8*)((pVtxBase + 7) ^ 3);
-			mVtxProjected[i].Colour.z = (1.0f / 255.0f) * (f32)*(u8*)((pVtxBase + 8) ^ 3);
-			mVtxProjected[i].Colour.w = (1.0f / 255.0f) * (f32)*(u8*)((pVtxBase + 9) ^ 3);
+			const u32 WL = *(u16*)((pVtxBase + 6) ^ 2);
+			const u32 WH = *(u16*)((pVtxBase + 8) ^ 2);
 
-			gDKRVtxCount++;
+			mVtxProjected[i].Colour.x = (1.0f / 255.0f) * (WL >> 8);
+			mVtxProjected[i].Colour.y = (1.0f / 255.0f) * (WL & 0xFF);
+			mVtxProjected[i].Colour.z = (1.0f / 255.0f) * (WH >> 8);
+			mVtxProjected[i].Colour.w = (1.0f / 255.0f) * (WH & 0xFF);
+
 			pVtxBase += 10;
 		}
+#endif
 	}
+	gDKRVtxCount += n;
 }
 
 //*****************************************************************************
 // Perfect Dark rendering pipeline
 //*****************************************************************************
+#ifdef DAEDALUS_PSP_USE_VFPU
+void PSPRenderer::SetNewVertexInfoPD(u32 address, u32 v0, u32 n)
+{
+	const FiddledVtxPD * const pVtxBase = (const FiddledVtxPD*)(g_pu8RamBase + address);
+
+	const Matrix4x4 & matWorld( mModelViewStack[mModelViewTop] );
+	const Matrix4x4 & matWorldProject( GetWorldProject() );
+
+	DL_PF( "    Ambient color RGB[%f][%f][%f] Texture scale X[%f] Texture scale Y[%f]", mTnL.Ambient.x, mTnL.Ambient.y, mTnL.Ambient.z, mTnL.TextureScaleX, mTnL.TextureScaleY);
+	DL_PF( "    Light[%s] Texture[%s] EnvMap[%s] Fog[%s]", (mTnL.Flags.Light)? "On":"Off", (mTnL.Flags.Texture)? "On":"Off", (mTnL.Flags.TexGen)? (mTnL.Flags.TexGenLin)? "Linear":"Spherical":"Off", (mTnL.Flags.Fog)? "On":"Off");
+
+	//Model & Color base vector
+	const u8 *mn = (u8*)gAuxAddr;
+
+	_TnLVFPUPD( &matWorld, &matWorldProject, pVtxBase, &mVtxProjected[v0], n, &mTnL, mn );
+}
+
+#else
 void PSPRenderer::SetNewVertexInfoPD(u32 address, u32 v0, u32 n)
 {
 	const FiddledVtxPD * const pVtxBase = (const FiddledVtxPD*)(g_pu8RamBase + address);
@@ -2444,6 +2478,7 @@ void PSPRenderer::SetNewVertexInfoPD(u32 address, u32 v0, u32 n)
 		}
 	}
 }
+#endif
 
 //*****************************************************************************
 //

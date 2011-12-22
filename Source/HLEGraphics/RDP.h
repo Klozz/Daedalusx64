@@ -234,12 +234,12 @@ typedef struct
 			u32	aRGB0	: 4;
 		};
 
-		//u64	mux;
-		struct
+		u64	mux;
+		/*struct
 		{
 			u32	mux1;
 			u32	mux0;
-		};
+		};*/
 	};
 }RDP_Combine;
 
@@ -278,7 +278,6 @@ typedef struct
 
 			u32		cmd : 8;
 		};
-
 	};
 } RDP_TexRect;
 

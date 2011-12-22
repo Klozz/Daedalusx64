@@ -20,7 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef UCODE_DKR_H__
 #define UCODE_DKR_H__
 
-Matrix4x4 gDKRMatrixes[4];
 u32 gDKRCMatrixIndex = 0;
 u32 gDKRMatrixAddr = 0;
 u32 gDKRAddr = 0;
@@ -171,32 +170,35 @@ void DLParser_Mtx_DKR( MicroCodeCommand command )
 	}
 
 	// Load matrix from address
-	Matrix4x4 mat;
-	MatrixFromN64FixedPoint( mat, address );
 
 	if( mul )
 	{
-		gDKRMatrixes[ mtx_command ] = mat * gDKRMatrixes[0];
+		Matrix4x4 mat;
+		PSPRenderer::Get()->MatrixFromN64FixedPoint( mat, address );
+		*PSPRenderer::Get()->DKRMtxPtr( mtx_command ) = mat * *PSPRenderer::Get()->DKRMtxPtr( 0 );
 	}
 	else
 	{
-		gDKRMatrixes[ mtx_command ] = mat;
+		PSPRenderer::Get()->MatrixFromN64FixedPoint( *PSPRenderer::Get()->DKRMtxPtr( mtx_command ), address );
 	}
 
 	gDKRCMatrixIndex = mtx_command;
 
 	PSPRenderer::Get()->Mtxchanged();
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+	const Matrix4x4 & mtx( *PSPRenderer::Get()->DKRMtxPtr( mtx_command ) );
 	DL_PF("    Mtx_DKR: Index %d %s Address 0x%08x\n"
 			"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
 			"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
 			"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
 			"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n",
 			mtx_command, mul ? "Mul" : "Load", address,
-			mat.m[0][0], mat.m[0][1], mat.m[0][2], mat.m[0][3],
-			mat.m[1][0], mat.m[1][1], mat.m[1][2], mat.m[1][3],
-			mat.m[2][0], mat.m[2][1], mat.m[2][2], mat.m[2][3],
-			mat.m[3][0], mat.m[3][1], mat.m[3][2], mat.m[3][3]);
+			mtx.m[0][0], mtx.m[0][1], mtx.m[0][2], mtx.m[0][3],
+			mtx.m[1][0], mtx.m[1][1], mtx.m[1][2], mtx.m[1][3],
+			mtx.m[2][0], mtx.m[2][1], mtx.m[2][2], mtx.m[2][3],
+			mtx.m[3][0], mtx.m[3][1], mtx.m[3][2], mtx.m[3][3]);
+#endif
 }
 
 //*****************************************************************************

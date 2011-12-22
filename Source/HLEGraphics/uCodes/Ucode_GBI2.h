@@ -72,16 +72,13 @@ void DLParser_GBI2_Mtx( MicroCodeCommand command )
 		command.mtx2.len, address);
 
 	// Load matrix from address
-	Matrix4x4 mat;
-	MatrixFromN64FixedPoint( mat, address );
-
 	if (command.mtx2.projection)
 	{
-		PSPRenderer::Get()->SetProjection(mat, command.mtx2.nopush==0, command.mtx2.load);
+		PSPRenderer::Get()->SetProjection(address, command.mtx2.nopush==0, command.mtx2.load);
 	}
 	else
 	{
-		PSPRenderer::Get()->SetWorldView(mat, command.mtx2.nopush==0, command.mtx2.load);
+		PSPRenderer::Get()->SetWorldView(address, command.mtx2.nopush==0, command.mtx2.load);
 	}
 }
 
@@ -92,6 +89,7 @@ void DLParser_GBI2_Mtx( MicroCodeCommand command )
 //001889F0: DB020000 00000030 CMD Zelda_MOVEWORD  Mem[2][00]=00000030 Lightnum=2
 void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 {
+
 	switch (command.mw2.type)
 	{
 	case G_MW_MATRIX:
@@ -100,6 +98,7 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 			PSPRenderer::Get()->InsertMatrix(command.inst.cmd0, command.inst.cmd1);
 		}
 		break;
+
 	case G_MW_NUMLIGHT:
 		{
 			// Lightnum
@@ -131,6 +130,7 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 			gSegments[segment] = address;
 		}
 		break;
+
 	case G_MW_FOG: // WIP, only works for a few games
 		{
 			f32 a = command.mw2.value >> 16;
@@ -150,6 +150,7 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 			//printf("1Fog %.0f | %.0f || %.0f | %.0f\n", min, max, a, b);
 		}
 		break;
+
 	case G_MW_LIGHTCOL:
 		{
 			u32 light_idx = command.mw2.offset / 0x18;
@@ -159,23 +160,17 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 
 			if (field_offset == 0)
 			{
-				//g_N64Lights[light_idx].Colour = command->cmd1;
 				// Light col, not the copy
 				if (light_idx == gAmbientLightIdx)
 				{
-					u32 n64col( command.mw2.value );
-
-					PSPRenderer::Get()->SetAmbientLight( v4( N64COL_GETR_F(n64col), N64COL_GETG_F(n64col), N64COL_GETB_F(n64col), 1.0f ) );
+					v3 col( N64COL_GETR_F(command.mw2.value), N64COL_GETG_F(command.mw2.value), N64COL_GETB_F(command.mw2.value) );
+					PSPRenderer::Get()->SetAmbientLight( col );
 				}
 				else
 				{
 					PSPRenderer::Get()->SetLightCol(light_idx, command.mw2.value);
 				}
 			}
-			//else if(field_offset != 4)
-			//{
-				//DBGConsole_Msg(0, "G_MW_LIGHTCOL with unknown offset 0x%08x", field_offset);
-			//}
 		}
 		break;
 /*
@@ -298,7 +293,13 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 	case G_GBI2_MV_MATRIX:
 		{
 			DL_PF("    Force Matrix(2): addr=%08X", address);
-			RDP_Force_Matrix(address);
+			// Rayman 2, Donald Duck, Tarzan, all wrestling games use this
+			#if 1	//1->Proper, 0->Hacky way :)
+				PSPRenderer::Get()->ForceMatrix( address );
+			#else
+				//WWF games dont like proper way need to figure out why...
+				PSPRenderer::Get()->SetProjection( address, true, true);
+			#endif
 		}
 		break;
 /*
@@ -425,15 +426,15 @@ void DLParser_GBI2_GeometryMode( MicroCodeCommand command )
 
 	TnLPSP TnLMode;
 
-	TnLMode.Light = gGeometryMode.GBI2_Lighting;
-	TnLMode.Texture = 0;	//Force this to false
-	TnLMode.TexGen = gGeometryMode.GBI2_TexGen;
-	TnLMode.TexGenLin = gGeometryMode.GBI2_TexGenLin;
-	TnLMode.Fog = gGeometryMode.GBI2_Fog;
-	TnLMode.Shade = !(gGeometryMode.GBI2_TexGenLin & (g_ROM.GameHacks != TIGERS_HONEY_HUNT));
-	TnLMode.Zbuffer = gGeometryMode.GBI2_Zbuffer;
-	TnLMode.TriCull = gGeometryMode.GBI2_CullFront | gGeometryMode.GBI2_CullBack;
-	TnLMode.CullBack = gGeometryMode.GBI2_CullBack;
+	TnLMode.Light		= gGeometryMode.GBI2_Lighting;
+	TnLMode.Texture		= 0;	//Force this to false
+	TnLMode.TexGen		= gGeometryMode.GBI2_TexGen;
+	TnLMode.TexGenLin	= gGeometryMode.GBI2_TexGenLin;
+	TnLMode.Fog			= gGeometryMode.GBI2_Fog;
+	TnLMode.Shade		= !(gGeometryMode.GBI2_TexGenLin & (g_ROM.GameHacks != TIGERS_HONEY_HUNT));
+	TnLMode.Zbuffer		= gGeometryMode.GBI2_Zbuffer;
+	TnLMode.TriCull		= gGeometryMode.GBI2_CullFront | gGeometryMode.GBI2_CullBack;
+	TnLMode.CullBack	= gGeometryMode.GBI2_CullBack;
 
 	PSPRenderer::Get()->SetTnLMode( TnLMode._u32 );
 }
@@ -505,11 +506,6 @@ void DLParser_GBI2_DMA_IO( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_Quad( MicroCodeCommand command )
 {
-	if (command.inst.arg0 == 0x2F)
-	{
-		DLParser_S2DEX_ObjLdtxRect( command );
-		return;
-	}
 
     // While the next command pair is Tri2, add vertices
 	u32 pc = gDlistStack[gDlistStackPointer].pc;
@@ -593,11 +589,6 @@ void DLParser_GBI2_Line3D( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_Tri1( MicroCodeCommand command )
 {
-	if (command.inst.arg0 == 0x17)
-	{
-		DLParser_S2DEX_ObjLoadTxtr( command );
-		return;
-	}
 
     // While the next command pair is Tri1, add vertices
 	u32 pc = gDlistStack[gDlistStackPointer].pc;
@@ -632,12 +623,6 @@ void DLParser_GBI2_Tri1( MicroCodeCommand command )
 //*****************************************************************************
 void DLParser_GBI2_Tri2( MicroCodeCommand command )
 {
-	
-	if (command.inst.arg0 == 0x2F)
-	{
-		DLParser_S2DEX_ObjLdtxSprite( command );
-		return;
-	}
 
 	u32 pc = gDlistStack[gDlistStackPointer].pc;
     u32 * pCmdBase = (u32 *)(g_pu8RamBase + pc);

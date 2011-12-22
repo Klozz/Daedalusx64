@@ -410,8 +410,8 @@ void PSPRenderer::SetVIScales()
 	u32 ScaleX = Memory_VI_GetRegister( VI_X_SCALE_REG ) & 0xFFF;
 	u32 ScaleY = Memory_VI_GetRegister( VI_Y_SCALE_REG ) & 0xFFF;
 
-	f32 fScaleX = (f32)ScaleX / (1<<10);
-	f32 fScaleY = (f32)ScaleY / (1<<10);
+	f32 fScaleX = (f32)ScaleX / 1024.0f;
+	f32 fScaleY = (f32)ScaleY / 2048.0f;
 
 	u32 HStartReg = Memory_VI_GetRegister( VI_H_START_REG );
 	u32 VStartReg = Memory_VI_GetRegister( VI_V_START_REG );
@@ -422,31 +422,22 @@ void PSPRenderer::SetVIScales()
 	u32	vstart = VStartReg >> 16;
 	u32	vend = VStartReg & 0xffff;
 
-	fViWidth  =  (hend-hstart)    * fScaleX;
-	fViHeight = ((vend-vstart)/2) * fScaleY;
+	// Sometimes HStartReg can be zero.. ex PD, Lode Runner, Cyber Tiger
+	if (hend == hstart)
+	{
+		hend = (u32)(width / fScaleX);
+	}
 
-	//If we are close to 240 in height then set to 240 //Corn
-	if( abs(240 - fViHeight) < 4 ) 
-		fViHeight = 240.0f;
-	
+	fViWidth  =  (hend-hstart)    * fScaleX;
+	fViHeight =  (vend-vstart)    * fScaleY * 1.0126582f;
+
 	// XXX Need to check PAL games.
 	//if(g_ROM.TvType != OS_TV_NTSC) sRatio = 9/11.0f;
 
-	//This sets the correct height in various games ex : Megaman 64
+	//This corrects height in various games ex : Megaman 64, CyberTiger
 	if( width > 0x300 )	
+	{
 		fViHeight *= 2.0f;
-
-	// Sometimes HStartReg and VStartReg are zero
-	// This fixes gaps is some games ex: CyberTiger
-	// Height has priority - Bug fix for Load Runner
-	//
-	if( fViHeight < 100) 
-	{
-		fViHeight = fViWidth * 0.75f; //sRatio
-	}
-	else if( fViWidth < 100) 
-	{
-		fViWidth = (f32)Memory_VI_GetRegister( VI_WIDTH_REG );
 	}
 
 	//Used to set a limit on Scissors //Corn
@@ -491,8 +482,8 @@ void PSPRenderer::BeginScene()
 	// Both happen really rare
 	//
 	if( !mView.Update				  &&		//  We need to update after pause menu?
-		mView.ViWidth  == fViWidth    &&		//  VI register changed width? (bug fix GE007) 
-		mView.ViHeight == fViHeight   &&		//  VI register changed height?
+		mView.ViWidth  == uViWidth    &&		//  VI register changed width? (bug fix GE007) 
+		mView.ViHeight == uViHeight   &&		//  VI register changed height?
 		mView.Rumble   == gRumblePakActive )	//  RumblePak active? Don't bother to update if no rumble feedback too
 	{
 		return;
@@ -520,8 +511,8 @@ void PSPRenderer::BeginScene()
 
 	mView.Rumble	= gRumblePakActive;
 	mView.Update	= false;
-	mView.ViWidth	= fViWidth;
-	mView.ViHeight	= fViHeight;
+	mView.ViWidth	= uViWidth;
+	mView.ViHeight	= uViHeight;
 }
 
 //*****************************************************************************
@@ -1438,10 +1429,8 @@ void PSPRenderer::FlushTris()
 
 		if( (mTnL.Flags._u32 & (TNL_LIGHT|TNL_TEXGEN)) != (TNL_LIGHT|TNL_TEXGEN) )
 		{
-			v2 offset = -mTileTopLeft[ 0 ];
-			v2 scale = mTileScale[ 0 ];
-			sceGuTexOffset( offset.x * scale.x, offset.y * scale.y );
-			sceGuTexScale( scale.x, scale.y );
+			sceGuTexOffset( -mTileTopLeft[ 0 ].x * mTileScale[ 0 ].x, -mTileTopLeft[ 0 ].y * mTileScale[ 0 ].y );
+			sceGuTexScale( mTileScale[ 0 ].x, mTileScale[ 0 ].y );
 		}
 		else
 		{
@@ -2257,7 +2246,6 @@ void PSPRenderer::SetNewVertexInfoConker(u32 address, u32 v0, u32 n)
 // Assumes address has already been checked!
 // DKR/Jet Force Gemini rendering pipeline
 //*****************************************************************************
-extern Matrix4x4 gDKRMatrixes[4];
 extern u32 gDKRCMatrixIndex;
 extern u32 gDKRVtxCount;
 extern bool gDKRBillBoard;
@@ -2265,7 +2253,7 @@ extern bool gDKRBillBoard;
 void PSPRenderer::SetNewVertexInfoDKR(u32 address, u32 v0, u32 n)
 {
 	u32 pVtxBase = u32(g_pu8RamBase + address);
-	const Matrix4x4 & matWorldProject( gDKRMatrixes[gDKRCMatrixIndex] );
+	const Matrix4x4 & matWorldProject( mProjectionStack[gDKRCMatrixIndex] );
 
 	DL_PF( "    Ambient color RGB[%f][%f][%f] Texture scale X[%f] Texture scale Y[%f]", mTnL.Ambient.x, mTnL.Ambient.y, mTnL.Ambient.z, mTnL.TextureScaleX, mTnL.TextureScaleY);
 	DL_PF( "    Light[%s] Texture[%s] EnvMap[%s] Fog[%s]", (mTnL.Flags.Light)? "On":"Off", (mTnL.Flags.Texture)? "On":"Off", (mTnL.Flags.TexGen)? (mTnL.Flags.TexGenLin)? "Linear":"Spherical":"Off", (mTnL.Flags.Fog)? "On":"Off");
@@ -2278,16 +2266,16 @@ void PSPRenderer::SetNewVertexInfoDKR(u32 address, u32 v0, u32 n)
 		v4 & BaseVec( mVtxProjected[0].TransformedPos );
 	
 		//Hack to worldproj matrix to scale and rotate billbords //Corn
-		Matrix4x4 mat( gDKRMatrixes[0]);
-		mat.mRaw[0] *= gDKRMatrixes[2].mRaw[0] * 0.33f;
-		mat.mRaw[4] *= gDKRMatrixes[2].mRaw[0] * 0.33f;
-		mat.mRaw[8] *= gDKRMatrixes[2].mRaw[0] * 0.33f;
-		mat.mRaw[1] *= gDKRMatrixes[2].mRaw[0] * 0.25f;
-		mat.mRaw[5] *= gDKRMatrixes[2].mRaw[0] * 0.25f;
-		mat.mRaw[9] *= gDKRMatrixes[2].mRaw[0] * 0.25f;
-		mat.mRaw[2] *= gDKRMatrixes[2].mRaw[10] * 0.33f;
-		mat.mRaw[6] *= gDKRMatrixes[2].mRaw[10] * 0.33f;
-		mat.mRaw[10] *= gDKRMatrixes[2].mRaw[10] * 0.33f;
+		Matrix4x4 mat( mProjectionStack[0]);
+		mat.mRaw[0] *= mProjectionStack[2].mRaw[0] * 0.33f;
+		mat.mRaw[4] *= mProjectionStack[2].mRaw[0] * 0.33f;
+		mat.mRaw[8] *= mProjectionStack[2].mRaw[0] * 0.33f;
+		mat.mRaw[1] *= mProjectionStack[2].mRaw[0] * 0.25f;
+		mat.mRaw[5] *= mProjectionStack[2].mRaw[0] * 0.25f;
+		mat.mRaw[9] *= mProjectionStack[2].mRaw[0] * 0.25f;
+		mat.mRaw[2] *= mProjectionStack[2].mRaw[10] * 0.33f;
+		mat.mRaw[6] *= mProjectionStack[2].mRaw[10] * 0.33f;
+		mat.mRaw[10] *= mProjectionStack[2].mRaw[10] * 0.33f;
 
 		for (u32 i = v0; i < v0 + n; i++)
 		{
@@ -2572,15 +2560,7 @@ inline void PSPRenderer::SetVtxZ( u32 vert, float z )
 {
 	DAEDALUS_ASSERT( vert < MAX_VERTS, " SetVtxZ : Reached max of verts");
 
-#if 1
 	mVtxProjected[vert].TransformedPos.z = z;
-#else
-	mVtxProjected[vert].ProjectedPos.z = z;
-
-	mVtxProjected[vert].TransformedPos.x = x * mVtxProjected[vert].TransformedPos.w;
-	mVtxProjected[vert].TransformedPos.y = y * mVtxProjected[vert].TransformedPos.w;
-	mVtxProjected[vert].TransformedPos.z = z * mVtxProjected[vert].TransformedPos.w;
-#endif
 }
 */
 //*****************************************************************************
@@ -2590,17 +2570,8 @@ inline void PSPRenderer::SetVtxXY( u32 vert, float x, float y )
 {
 	DAEDALUS_ASSERT( vert < MAX_VERTS, " SetVtxXY : Reached max of verts %d",vert);
 
-#if 1
 	mVtxProjected[vert].TransformedPos.x = x;
 	mVtxProjected[vert].TransformedPos.y = y;
-#else
-	mVtxProjected[vert].ProjectedPos.x = x;
-	mVtxProjected[vert].ProjectedPos.y = y;
-
-	mVtxProjected[vert].TransformedPos.x = x * mVtxProjected[vert].TransformedPos.w;
-	mVtxProjected[vert].TransformedPos.y = y * mVtxProjected[vert].TransformedPos.w;
-	mVtxProjected[vert].TransformedPos.z = mVtxProjected[vert].ProjectedPos.z * mVtxProjected[vert].TransformedPos.w;
-#endif
 }
 
 //*****************************************************************************
@@ -2654,6 +2625,9 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 
 	const TextureInfo &		ti( gRDPStateManager.GetTextureDescriptor( tile_idx ) );
 
+	// Avoid texture update, if texture is the same as last time around.
+	if( (mpTexture[ index ] != NULL) && (mpTexture[ index ]->GetTextureInfo() == ti) ) return;
+
 	//
 	//	Initialise the wrapping/texture offset first, which can be set
 	//	independently of the actual texture.
@@ -2696,15 +2670,14 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 	sceGuTexWrap( mode_u, mode_v );
 
 	// XXXX Double check this
-	mTileTopLeft[ index ] = v2( f32( tile_size.left) * (1.0f / 4.0f), f32(tile_size.top)* (1.0f / 4.0f) );
+	mTileTopLeft[ index ].x = f32(tile_size.left) /4.0f;
+	mTileTopLeft[ index ].y = f32(tile_size.top) /4.0f;
 
 	DL_PF( "    Use Tile[%d] as Texture[%d] [%dx%d] [%s] [%dbpp] [%s u, %s v] -> Adr[0x%08x] PAL[0x%x] Hash[0x%08x] Pitch[%d] TopLeft[%0.3f|%0.3f] Scale[%0.3f|%0.3f]",
 			tile_idx, index, ti.GetWidth(), ti.GetHeight(), ti.GetFormatName(), ti.GetSizeInBits(),
 			(mode_u==GU_CLAMP)? "Clamp" : "Repeat", (mode_v==GU_CLAMP)? "Clamp" : "Repeat",
 			ti.GetLoadAddress(), (u32)ti.GetPalettePtr(), ti.GetHashCode(), ti.GetPitch(),
 			mTileTopLeft[ index ].x, mTileTopLeft[ index ].y, mTileScale[ index ].x, mTileScale[ index ].y );
-
-	if( (mpTexture[ index ] != NULL) && (mpTexture[ index ]->GetTextureInfo() == ti) ) return;
 
 	// Check for 0 width/height textures
 	if( (ti.GetWidth() == 0) || (ti.GetHeight() == 0) )
@@ -2760,31 +2733,8 @@ void	PSPRenderer::SetScissor( u32 x0, u32 y0, u32 x1, u32 y1 )
 //*****************************************************************************
 //
 //*****************************************************************************
-void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace)
+void PSPRenderer::SetProjection(const u32 address, bool bPush, bool bReplace)
 {
-
-#if 0	//1-> show matrix, 0-> skip
-	for(u32 i=0;i<4;i++) printf("%+9.3f ",mat.mRaw[i]);
-	printf("\n");
-	for(u32 i=4;i<8;i++) printf("%+9.3f ",mat.mRaw[i]);
-	printf("\n");
-	for(u32 i=8;i<12;i++) printf("%+9.3f ",mat.mRaw[i]);
-	printf("\n");
-	for(u32 i=12;i<16;i++) printf("%+9.3f ",mat.mRaw[i]);
-	printf("\n\n");
-#endif
-
-	DL_PF("    Level = %d\n"
-		"    %#+12.5f %#+12.5f %#+12.7f %#+12.5f\n"
-		"    %#+12.5f %#+12.5f %#+12.7f %#+12.5f\n"
-		"    %#+12.5f %#+12.5f %#+12.7f %#+12.5f\n"
-		"    %#+12.5f %#+12.5f %#+12.7f %#+12.5f\n",
-		mProjectionTop,
-		mat.m[0][0], mat.m[0][1], mat.m[0][2], mat.m[0][3],
-		mat.m[1][0], mat.m[1][1], mat.m[1][2], mat.m[1][3],
-		mat.m[2][0], mat.m[2][1], mat.m[2][2], mat.m[2][3],
-		mat.m[3][0], mat.m[3][1], mat.m[3][2], mat.m[3][3]);
-
 	// Projection
 	if (bPush)
 	{
@@ -2794,17 +2744,23 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace
 			++mProjectionTop;
 
 		if (bReplace)
+		{
 			// Load projection matrix
-			mProjectionStack[mProjectionTop] = mat;
+			MatrixFromN64FixedPoint( mProjectionStack[mProjectionTop], address);
+		}
 		else
+		{
+			Matrix4x4 mat;
+			MatrixFromN64FixedPoint( mat, address);
 			mProjectionStack[mProjectionTop] = mat * mProjectionStack[mProjectionTop-1];
+		}
 	}
 	else
 	{
 		if (bReplace)
 		{
 			// Load projection matrix
-			mProjectionStack[mProjectionTop] = mat;
+			MatrixFromN64FixedPoint( mProjectionStack[mProjectionTop], address);
 
 			//Hack needed to show heart in OOT & MM
 			//it renders at Z cordinate = 0.0f that gets clipped away.
@@ -2814,43 +2770,35 @@ void PSPRenderer::SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace
 				mProjectionStack[mProjectionTop].mRaw[14] += 0.4f;
 		}
 		else
+		{
+			Matrix4x4 mat;
+			MatrixFromN64FixedPoint( mat, address);
 			mProjectionStack[mProjectionTop] = mat * mProjectionStack[mProjectionTop];
+		}
 	}
 
 	sceGuSetMatrix( GU_PROJECTION, reinterpret_cast< const ScePspFMatrix4 * >( &mProjectionStack[mProjectionTop]) );
 	
 	mProjisNew = true;	// Note when a new P-matrix has been loaded
 	mWorldProjectValid = false;
+
+	DL_PF("    Level = %d\n"
+		"    %#+12.5f %#+12.5f %#+12.7f %#+12.5f\n"
+		"    %#+12.5f %#+12.5f %#+12.7f %#+12.5f\n"
+		"    %#+12.5f %#+12.5f %#+12.7f %#+12.5f\n"
+		"    %#+12.5f %#+12.5f %#+12.7f %#+12.5f\n",
+		mProjectionTop,
+		mProjectionStack[mProjectionTop].m[0][0], mProjectionStack[mProjectionTop].m[0][1], mProjectionStack[mProjectionTop].m[0][2], mProjectionStack[mProjectionTop].m[0][3],
+		mProjectionStack[mProjectionTop].m[1][0], mProjectionStack[mProjectionTop].m[1][1], mProjectionStack[mProjectionTop].m[1][2], mProjectionStack[mProjectionTop].m[1][3],
+		mProjectionStack[mProjectionTop].m[2][0], mProjectionStack[mProjectionTop].m[2][1], mProjectionStack[mProjectionTop].m[2][2], mProjectionStack[mProjectionTop].m[2][3],
+		mProjectionStack[mProjectionTop].m[3][0], mProjectionStack[mProjectionTop].m[3][1], mProjectionStack[mProjectionTop].m[3][2], mProjectionStack[mProjectionTop].m[3][3]);
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace)
+void PSPRenderer::SetWorldView(const u32 address, bool bPush, bool bReplace)
 {
-
-#if 0	//1-> show matrix, 0-> skip
-	for(u32 i=0;i<4;i++) printf("%+9.3f ",mat.mRaw[i]);
-	printf("\n");
-	for(u32 i=4;i<8;i++) printf("%+9.3f ",mat.mRaw[i]);
-	printf("\n");
-	for(u32 i=8;i<12;i++) printf("%+9.3f ",mat.mRaw[i]);
-	printf("\n");
-	for(u32 i=12;i<16;i++) printf("%+9.3f ",mat.mRaw[i]);
-	printf("\n\n");
-#endif
-
-	DL_PF("    Level = %d\n"
-		"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-		"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-		"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-		"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n",
-		mModelViewTop,
-		mat.m[0][0], mat.m[0][1], mat.m[0][2], mat.m[0][3],
-		mat.m[1][0], mat.m[1][1], mat.m[1][2], mat.m[1][3],
-		mat.m[2][0], mat.m[2][1], mat.m[2][2], mat.m[2][3],
-		mat.m[3][0], mat.m[3][1], mat.m[3][2], mat.m[3][3]);
-
 	// ModelView
 	if (bPush)
 	{
@@ -2863,12 +2811,14 @@ void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace)
 		if (bReplace)
 		{
 			// Load ModelView matrix
+			MatrixFromN64FixedPoint( mModelViewStack[mModelViewTop], address);
 			//Hack to make GEX games work, need to multiply all elements with 2.0 //Corn
-			if( g_ROM.GameHacks == GEX_GECKO ) for(u32 i=0;i<16;i++) mModelViewStack[mModelViewTop].mRaw[i] = 2.0f * mat.mRaw[i];
-			else mModelViewStack[mModelViewTop] = mat;
+			if( g_ROM.GameHacks == GEX_GECKO ) for(u32 i=0;i<16;i++) mModelViewStack[mModelViewTop].mRaw[i] *= 2.0f;
 		}
 		else			// Multiply ModelView matrix
 		{
+			Matrix4x4 mat;
+			MatrixFromN64FixedPoint( mat, address);
 			mModelViewStack[mModelViewTop] = mat * mModelViewStack[mModelViewTop-1];
 		}
 	}
@@ -2877,16 +2827,29 @@ void PSPRenderer::SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace)
 		if (bReplace)
 		{
 			// Load ModelView matrix
-			mModelViewStack[mModelViewTop] = mat;
+			MatrixFromN64FixedPoint( mModelViewStack[mModelViewTop], address);
 		}
 		else
 		{
 			// Multiply ModelView matrix
+			Matrix4x4 mat;
+			MatrixFromN64FixedPoint( mat, address);
 			mModelViewStack[mModelViewTop] = mat * mModelViewStack[mModelViewTop];
 		}
 	}
 
 	mWorldProjectValid = false;
+
+	DL_PF("    Level = %d\n"
+		"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
+		"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
+		"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
+		"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n",
+		mModelViewTop,
+		mModelViewStack[mModelViewTop].m[0][0], mModelViewStack[mModelViewTop].m[0][1], mModelViewStack[mModelViewTop].m[0][2], mModelViewStack[mModelViewTop].m[0][3],
+		mModelViewStack[mModelViewTop].m[1][0], mModelViewStack[mModelViewTop].m[1][1], mModelViewStack[mModelViewTop].m[1][2], mModelViewStack[mModelViewTop].m[1][3],
+		mModelViewStack[mModelViewTop].m[2][0], mModelViewStack[mModelViewTop].m[2][1], mModelViewStack[mModelViewTop].m[2][2], mModelViewStack[mModelViewTop].m[2][3],
+		mModelViewStack[mModelViewTop].m[3][0], mModelViewStack[mModelViewTop].m[3][1], mModelViewStack[mModelViewTop].m[3][2], mModelViewStack[mModelViewTop].m[3][3]);
 }
 
 //*****************************************************************************
@@ -3017,6 +2980,83 @@ void PSPRenderer::Draw2DTextureR( f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2
 
 	sceGuDrawArray( GU_TRIANGLE_FAN, GU_TEXTURE_32BITF | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 4, 0, p_verts );
 }
+//*************************************************************************************
+// 
+//*************************************************************************************
+void PSPRenderer::MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address )
+{
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+	if (address + 64 > MAX_RAM_ADDRESS)
+	{
+		DBGConsole_Msg(0, "Mtx: Address invalid (0x%08x)", address);
+		return;
+	}
+#endif
+
+#if 1 //1->looped, 0->unrolled //Corn
+	const f32 fRecip = 1.0f / 65536.0f;
+	const u8 *ptr( g_pu8RamBase + address );
+	s16 hi;
+	u16 lo;
+
+
+	for (u32 i = 0; i < 4; i++)
+	{
+		hi = *(s16 *)(ptr + (i<<3) + ((0     )^0x2));
+		lo = *(u16 *)(ptr + (i<<3) + ((0 + 32)^0x2));
+		mat.m[i][0] = ((hi<<16) | (lo)) * fRecip;
+
+		hi = *(s16 *)(ptr + (i<<3) + ((2     )^0x2));
+		lo = *(u16 *)(ptr + (i<<3) + ((2 + 32)^0x2));
+		mat.m[i][1] = ((hi<<16) | (lo)) * fRecip;
+
+		hi = *(s16 *)(ptr + (i<<3) + ((4     )^0x2));
+		lo = *(u16 *)(ptr + (i<<3) + ((4 + 32)^0x2));
+		mat.m[i][2] = ((hi<<16) | (lo)) * fRecip;
+
+		hi = *(s16 *)(ptr + (i<<3) + ((6     )^0x2));
+		lo = *(u16 *)(ptr + (i<<3) + ((6 + 32)^0x2));
+		mat.m[i][3] = ((hi<<16) | (lo)) * fRecip;
+	}
+
+#else
+	struct N64Fmat
+	{
+		s16	mh01;	s16	mh00;	s16	mh03;	s16	mh02;
+		s16	mh11;	s16	mh10;	s16	mh13;	s16	mh12;
+		s16	mh21;	s16	mh20;	s16	mh23;	s16	mh22;
+		s16	mh31;	s16	mh30;	s16	mh33;	s16	mh32;
+
+		u16	ml01;	u16	ml00;	u16	ml03;	u16	ml02;
+		u16	ml11;	u16	ml10;	u16	ml13;	u16	ml12;
+		u16	ml21;	u16	ml20;	u16	ml23;	u16	ml22;
+		u16	ml31;	u16	ml30;	u16	ml33;	u16	ml32;
+	};
+
+	const N64Fmat *Imat = (N64Fmat *)( g_pu8RamBase + address );
+	const f32 fRecip = 1.0f / 65536.0f;
+
+	mat.m[0][0] = (f32)((Imat->mh00 << 16) | (Imat->ml00)) * fRecip;
+	mat.m[0][1] = (f32)((Imat->mh01 << 16) | (Imat->ml01)) * fRecip;
+	mat.m[0][2] = (f32)((Imat->mh02 << 16) | (Imat->ml02)) * fRecip;
+	mat.m[0][3] = (f32)((Imat->mh03 << 16) | (Imat->ml03)) * fRecip;
+
+	mat.m[1][0] = (f32)((Imat->mh10 << 16) | (Imat->ml10)) * fRecip;
+	mat.m[1][1] = (f32)((Imat->mh11 << 16) | (Imat->ml11)) * fRecip;
+	mat.m[1][2] = (f32)((Imat->mh12 << 16) | (Imat->ml12)) * fRecip;
+	mat.m[1][3] = (f32)((Imat->mh13 << 16) | (Imat->ml13)) * fRecip;
+
+	mat.m[2][0] = (f32)((Imat->mh20 << 16) | (Imat->ml20)) * fRecip;
+	mat.m[2][1] = (f32)((Imat->mh21 << 16) | (Imat->ml21)) * fRecip;
+	mat.m[2][2] = (f32)((Imat->mh22 << 16) | (Imat->ml22)) * fRecip;
+	mat.m[2][3] = (f32)((Imat->mh23 << 16) | (Imat->ml23)) * fRecip;
+
+	mat.m[3][0] = (f32)((Imat->mh30 << 16) | (Imat->ml30)) * fRecip;
+	mat.m[3][1] = (f32)((Imat->mh31 << 16) | (Imat->ml31)) * fRecip;
+	mat.m[3][2] = (f32)((Imat->mh32 << 16) | (Imat->ml32)) * fRecip;
+	mat.m[3][3] = (f32)((Imat->mh33 << 16) | (Imat->ml33)) * fRecip;
+#endif
+}
 //*****************************************************************************
 //Modify the WorldProject matrix, used by Kirby & SSB //Corn
 //*****************************************************************************
@@ -3062,28 +3102,9 @@ void PSPRenderer::InsertMatrix(u32 w0, u32 w1)
 //*****************************************************************************
 //Replaces the WorldProject matrix //Corn
 //*****************************************************************************
-void PSPRenderer::ForceMatrix(const Matrix4x4 & mat)
+void PSPRenderer::ForceMatrix(const u32 address)
 {
-#if 0	//1-> show matrix, 0-> skip
-	for(u32 i=0;i<4;i++) printf("%+9.3f ",mat.mRaw[i]);
-	printf("\n");
-	for(u32 i=4;i<8;i++) printf("%+9.3f ",mat.mRaw[i]);
-	printf("\n");
-	for(u32 i=8;i<12;i++) printf("%+9.3f ",mat.mRaw[i]);
-	printf("\n");
-	for(u32 i=12;i<16;i++) printf("%+9.3f ",mat.mRaw[i]);
-	printf("\n\n");
-#endif
-
-	DL_PF(
-		"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-		"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-		"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
-		"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n",
-		mat.m[0][0], mat.m[0][1], mat.m[0][2], mat.m[0][3],
-		mat.m[1][0], mat.m[1][1], mat.m[1][2], mat.m[1][3],
-		mat.m[2][0], mat.m[2][1], mat.m[2][2], mat.m[2][3],
-		mat.m[3][0], mat.m[3][1], mat.m[3][2], mat.m[3][3]);
+	MatrixFromN64FixedPoint( mWorldProject, address );
 
 	//Some games have permanent project matrixes so we can save CPU by storing the inverse
 	//If that fails we invert the top project matrix to figure out the model matrix //Corn
@@ -3097,7 +3118,7 @@ void PSPRenderer::ForceMatrix(const Matrix4x4 & mat)
 									0.0f, 0.0f, 0.0f, -0.009950865175186414f,
 									0.0f, 0.0f, 1.0f, 0.010049104096541923f );
 
-		mModelViewStack[mModelViewTop] = mat * invTarzan;
+		mModelViewStack[mModelViewTop] = mWorldProject * invTarzan;
 	}
 	else if( g_ROM.GameHacks == DONALD )
 	{
@@ -3108,7 +3129,7 @@ void PSPRenderer::ForceMatrix(const Matrix4x4 & mat)
 									0.0f, 0.0f, -0.01532359917019646f, -0.01532359917019646f,
 									0.0f, 0.0f, -0.9845562638123093f, 0.015443736187690802f );
 
-		mModelViewStack[mModelViewTop] = mat * invDonald;
+		mModelViewStack[mModelViewTop] = mWorldProject * invDonald;
 	}
 	else
 	{
@@ -3120,9 +3141,18 @@ void PSPRenderer::ForceMatrix(const Matrix4x4 & mat)
 			mInvProjection = mProjectionStack[mProjectionTop].Inverse();
 		}
 
-		mModelViewStack[mModelViewTop] = mat * mInvProjection;
+		mModelViewStack[mModelViewTop] = mWorldProject * mInvProjection;
 	}
 	
-	mWorldProject = mat;
 	mWorldProjectValid = true;
+
+	DL_PF(
+		"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
+		"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
+		"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n"
+		"    %#+12.5f %#+12.5f %#+12.5f %#+12.5f\n",
+		mWorldProject.m[0][0], mWorldProject.m[0][1], mWorldProject.m[0][2], mWorldProject.m[0][3],
+		mWorldProject.m[1][0], mWorldProject.m[1][1], mWorldProject.m[1][2], mWorldProject.m[1][3],
+		mWorldProject.m[2][0], mWorldProject.m[2][1], mWorldProject.m[2][2], mWorldProject.m[2][3],
+		mWorldProject.m[3][0], mWorldProject.m[3][1], mWorldProject.m[3][2], mWorldProject.m[3][3]);
 }

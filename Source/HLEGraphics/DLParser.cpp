@@ -56,8 +56,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <vector>
 
-const u32	MAX_RAM_ADDRESS = (8*1024*1024);
-
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 const char *	gDisplayListRootPath = "DisplayLists";
 const char *	gDisplayListDumpPathFormat = "dl%04d.txt";
@@ -119,7 +117,6 @@ const char *	gDisplayListDumpPathFormat = "dl%04d.txt";
 //
 //*****************************************************************************
 
-void RDP_Force_Matrix(u32 address);
 void RDP_MoveMemViewport(u32 address);
 void MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address );
 void DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 data_size );
@@ -373,7 +370,6 @@ bool DLParser_Initialise()
 	gFirstCall = true;
 
 	// Reset scissor to default
-	//
 	scissors.top = 0;
 	scissors.left = 0;
 	scissors.right = 320;
@@ -381,9 +377,8 @@ bool DLParser_Initialise()
 
 #ifndef DAEDALUS_TMEM
 	//Clear pointers in TMEM block //Corn
-	memset(&gTextureMemory[0] ,0 , 1024);
-#endif	
-
+	memset(&gTextureMemory[0] ,0 , 1024);  
+#endif
 	return true;
 }
 
@@ -594,10 +589,10 @@ void DLParser_InitMicrocode( u32 code_base, u32 code_size, u32 data_base, u32 da
 
 	// Used for fetching ucode names (Debug Only)
 #if defined(DAEDALUS_DEBUG_DISPLAYLIST) || defined(DAEDALUS_ENABLE_PROFILING)
-	gUcodeName = (ucode <= GBI_1_S2DEX) ? (char **)gNormalInstructionName[ ucode ] : gCustomInstructionName;
+	gUcodeName = (ucode <= GBI_2_S2DEX) ? (char **)gNormalInstructionName[ ucode ] : gCustomInstructionName;
 #endif
 
-	if( ucode <= GBI_1_S2DEX  )
+	if( ucode <= GBI_2_S2DEX  )
 	{
 		// If this a normal ucode, just fetch the correct uCode table and name
 		gUcodeFunc = gNormalInstruction[ ucode ];
@@ -807,16 +802,16 @@ void RDP_MoveMemLight(u32 light_idx, u32 address)
 	}
 #endif
 	s8 * pcBase = g_ps8RamBase + address;
-	u32 * pdwBase = (u32 *)pcBase;
+	u32 * pBase = (u32 *)pcBase;
 
-	g_N64Lights[light_idx].Colour     = pdwBase[0];
-	g_N64Lights[light_idx].ColourCopy = pdwBase[1];
+	g_N64Lights[light_idx].Colour     = pBase[0];
+	g_N64Lights[light_idx].ColourCopy = pBase[1];
 	g_N64Lights[light_idx].x			= f32(pcBase[8 ^ 0x3]);
 	g_N64Lights[light_idx].y			= f32(pcBase[9 ^ 0x3]);
 	g_N64Lights[light_idx].z			= f32(pcBase[10 ^ 0x3]);
 					
 	DL_PF("    %s %s light[%d] RGBA[0x%08x] RGBACopy[0x%08x] x[%0.0f] y[%0.0f] z[%0.0f]", 
-		pdwBase[2]? "Valid" : "Invalid",
+		pBase[2]? "Valid" : "Invalid",
 		(light_idx == gAmbientLightIdx)? "Ambient" : "Normal",
 		light_idx,
 		g_N64Lights[light_idx].Colour,
@@ -829,19 +824,16 @@ void RDP_MoveMemLight(u32 light_idx, u32 address)
 	{
 		//Ambient Light
 		u32 n64col( g_N64Lights[light_idx].Colour );
-		v4 pspcol;
-		pspcol.x = N64COL_GETR_F(n64col);
-		pspcol.y = N64COL_GETG_F(n64col);
-		pspcol.z = N64COL_GETB_F(n64col);
-		pspcol.w = 1.0f;
-		PSPRenderer::Get()->SetAmbientLight( pspcol );
+		v3 col( N64COL_GETR_F(n64col), N64COL_GETG_F(n64col), N64COL_GETB_F(n64col) );
+
+		PSPRenderer::Get()->SetAmbientLight( col );
 	}
 	else
 	{
 		//Normal Light
 		PSPRenderer::Get()->SetLightCol(light_idx, g_N64Lights[light_idx].Colour);
 
-		if (pdwBase[2] != 0)	// if Direction is 0 its invalid!
+		if (pBase[2] != 0)	// if Direction is 0 its invalid!
 		{
 			PSPRenderer::Get()->SetLightDirection(light_idx, g_N64Lights[light_idx].x, g_N64Lights[light_idx].y, g_N64Lights[light_idx].z );
 		}
@@ -1324,14 +1316,22 @@ void DLParser_FillRect( MicroCodeCommand command )
 	// For some reason it draws a large rect over the entire
 	// display, right at the end of the dlist. It sets the primitive
 	// colour just before, so maybe I'm missing something??
+	// Problem was that we can only clear screen in fill mode
 
 	if ( gRDPOtherMode.cycle_type == CYCLE_FILL )
 	{
-		PixelFormats::N64::Pf5551	c( (u16)gFillColor );
-		colour = PixelFormats::convertPixelFormat< c32, PixelFormats::N64::Pf5551 >( c );
+		if(g_CI.Size == G_IM_SIZ_16b)
+		{
+			PixelFormats::N64::Pf5551	c( (u16)gFillColor );
+			colour = PixelFormats::convertPixelFormat< c32, PixelFormats::N64::Pf5551 >( c );
+		}
+		else
+		{
+			// Errg G_IM_SIZ_32b, can't really handle since we don't support FB emulation, can't ignore neither.. see Super Man..
+			colour = c32(gFillColor);
+		}
 
 		// Clear color buffer (screen clear)
-		//if ( command.fillrect.x0 == 0 && command.fillrect.y0 == 0 && command.fillrect.y1 == uViHeight && command.fillrect.x1 == uViWidth )
 		if( (s32)uViWidth == (command.fillrect.x1 - command.fillrect.x0) && (s32)uViHeight == (command.fillrect.y1 - command.fillrect.y0) )
 		{
 			CGraphicsContext::Get()->ClearColBuffer( colour.GetColour() );
@@ -1346,10 +1346,9 @@ void DLParser_FillRect( MicroCodeCommand command )
 	}
 	//
 	// (1) Removes annoying rect that appears in Conker etc
-	// (2) Unless we support fb emulation, we can safetly ignore this fillrect
-	// (3) This blend mode is mem*0 + mem*1, so we don't need to render it... Very odd! (Wave Racer - Menu fix)
+	// (2) This blend mode is mem*0 + mem*1, so we don't need to render it... Very odd! (Wave Racer - Menu fix)
 	//
-	if( bIsOffScreen || (g_CI.Size != G_IM_SIZ_16b) || (gRDPOtherMode.blender == 0x5f50) )	
+	if( bIsOffScreen | (gRDPOtherMode.blender == 0x5f50) )	
 	{
 		DL_PF("    Ignoring Fillrect ");
 		return;
@@ -1358,22 +1357,15 @@ void DLParser_FillRect( MicroCodeCommand command )
 	DL_PF("    Filling Rectangle (%d,%d)->(%d,%d)", command.fillrect.x0, command.fillrect.y0, command.fillrect.x1, command.fillrect.y1);
 
 	v2 xy0( command.fillrect.x0, command.fillrect.y0 );
-	v2 xy1;
+	v2 xy1( command.fillrect.x1, command.fillrect.y1 );
 
 	//
 	// In Fill/Copy mode the coordinates are inclusive (i.e. add 1.0f to the w/h)
 	//
-	switch ( gRDPOtherMode.cycle_type )
+	if ( gRDPOtherMode.cycle_type >= CYCLE_COPY )
 	{
-		case CYCLE_COPY:
-		case CYCLE_FILL:
-			xy1.x = command.fillrect.x1 + 1;
-			xy1.y = command.fillrect.y1 + 1;
-			break;
-		default:
-			xy1.x = command.fillrect.x1;
-			xy1.y = command.fillrect.y1;
-			break;
+		xy1.x++;
+		xy1.y++;
 	}
 
 	// TODO - In 1/2cycle mode, skip bottom/right edges!?
@@ -1548,131 +1540,3 @@ void DLParser_SetInstructionCountLimit( u32 limit )
 //In HLE emulation you NEVER see this commands !
 //*****************************************************************************
 void DLParser_TriRSP( MicroCodeCommand command ){ DL_PF("    RSP Tri: (Ignored)"); }
-
-//*************************************************************************************
-// 
-//*************************************************************************************
-#if 0 //1->unrolled, 0->looped //Corn
-void MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address )
-{
-	struct N64Fmat
-	{
-		s16	mh01;
-		s16	mh00;
-		s16	mh03;
-		s16	mh02;
-
-		s16	mh11;
-		s16	mh10;
-		s16	mh13;
-		s16	mh12;
-
-		s16	mh21;
-		s16	mh20;
-		s16	mh23;
-		s16	mh22;
-
-		s16	mh31;
-		s16	mh30;
-		s16	mh33;
-		s16	mh32;
-
-		u16	ml01;
-		u16	ml00;
-		u16	ml03;
-		u16	ml02;
-
-		u16	ml11;
-		u16	ml10;
-		u16	ml13;
-		u16	ml12;
-
-		u16	ml21;
-		u16	ml20;
-		u16	ml23;
-		u16	ml22;
-
-		u16	ml31;
-		u16	ml30;
-		u16	ml33;
-		u16	ml32;
-	};
-
-	const u8 * base( g_pu8RamBase );
-	const N64Fmat * Imat = (N64Fmat *)(base + address);
-	const f32 fRecip = 1.0f / 65536.0f;
-
-	mat.m[0][0] = (f32)((Imat->mh00 << 16) | (Imat->ml00)) * fRecip;
-	mat.m[0][1] = (f32)((Imat->mh01 << 16) | (Imat->ml01)) * fRecip;
-	mat.m[0][2] = (f32)((Imat->mh02 << 16) | (Imat->ml02)) * fRecip;
-	mat.m[0][3] = (f32)((Imat->mh03 << 16) | (Imat->ml03)) * fRecip;
-
-	mat.m[1][0] = (f32)((Imat->mh10 << 16) | (Imat->ml10)) * fRecip;
-	mat.m[1][1] = (f32)((Imat->mh11 << 16) | (Imat->ml11)) * fRecip;
-	mat.m[1][2] = (f32)((Imat->mh12 << 16) | (Imat->ml12)) * fRecip;
-	mat.m[1][3] = (f32)((Imat->mh13 << 16) | (Imat->ml13)) * fRecip;
-
-	mat.m[2][0] = (f32)((Imat->mh20 << 16) | (Imat->ml20)) * fRecip;
-	mat.m[2][1] = (f32)((Imat->mh21 << 16) | (Imat->ml21)) * fRecip;
-	mat.m[2][2] = (f32)((Imat->mh22 << 16) | (Imat->ml22)) * fRecip;
-	mat.m[2][3] = (f32)((Imat->mh23 << 16) | (Imat->ml23)) * fRecip;
-
-	mat.m[3][0] = (f32)((Imat->mh30 << 16) | (Imat->ml30)) * fRecip;
-	mat.m[3][1] = (f32)((Imat->mh31 << 16) | (Imat->ml31)) * fRecip;
-	mat.m[3][2] = (f32)((Imat->mh32 << 16) | (Imat->ml32)) * fRecip;
-	mat.m[3][3] = (f32)((Imat->mh33 << 16) | (Imat->ml33)) * fRecip;
-}
-#else
-void MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address )
-{
-	const f32	fRecip = 1.0f / 65536.0f;
-	const u8 *	base( g_pu8RamBase );
-	s16 hi;
-	u16 lo;
-
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
-	if (address + 64 > MAX_RAM_ADDRESS)
-	{
-		DBGConsole_Msg(0, "Mtx: Address invalid (0x%08x)", address);
-		return;
-	}
-#endif
-
-	for (u32 i = 0; i < 4; i++)
-	{
-		hi = *(s16 *)(base + address+(i<<3)+(((0)     )^0x2));
-		lo = *(u16 *)(base + address+(i<<3)+(((0) + 32)^0x2));
-		mat.m[i][0] = ((hi<<16) | (lo)) * fRecip;
-
-		hi = *(s16 *)(base + address+(i<<3)+(((2)     )^0x2));
-		lo = *(u16 *)(base + address+(i<<3)+(((2) + 32)^0x2));
-		mat.m[i][1] = ((hi<<16) | (lo)) * fRecip;
-
-		hi = *(s16 *)(base + address+(i<<3)+(((4)     )^0x2));
-		lo = *(u16 *)(base + address+(i<<3)+(((4) + 32)^0x2));
-		mat.m[i][2] = ((hi<<16) | (lo)) * fRecip;
-
-		hi = *(s16 *)(base + address+(i<<3)+(((6)     )^0x2));
-		lo = *(u16 *)(base + address+(i<<3)+(((6) + 32)^0x2));
-		mat.m[i][3] = ((hi<<16) | (lo)) * fRecip;
-	}
-}
-#endif
-//*************************************************************************************
-//
-//*************************************************************************************
-// Rayman 2, Donald Duck, Tarzan, all wrestling games use this
-//
-void RDP_Force_Matrix(u32 address)
-{
-
-	Matrix4x4 mat;
-	MatrixFromN64FixedPoint(mat,address);
-
-#if 1	//1->Proper, 0->Hacky way :)
-	PSPRenderer::Get()->ForceMatrix(mat);
-#else
-	//WWF games dont like proper way need to figure out why...
-	PSPRenderer::Get()->SetProjection(mat, true, true);
-#endif
-}

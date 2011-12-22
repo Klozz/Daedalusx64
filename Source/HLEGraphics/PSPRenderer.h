@@ -42,8 +42,8 @@ class CBlendStates;
 
 struct ViewportInfo
 {
-	f32  ViWidth;
-	f32  ViHeight;
+	u32  ViWidth;
+	u32  ViHeight;
 
 	bool Update;
 	bool Rumble;
@@ -197,7 +197,7 @@ public:
 	inline void			SetNumLights(u32 num)					{ mTnL.NumLights = num; }
 	inline void			SetLightCol(u32 l, u32 col)				{ mTnL.Lights[l].Colour.x=((col>>24)&0xFF)/255.0f; mTnL.Lights[l].Colour.y=((col>>16)&0xFF)/255.0f; mTnL.Lights[l].Colour.z=((col>>8)&0xFF)/255.0f; mTnL.Lights[l].Colour.w=1.0f; }
 	inline void			SetLightDirection(u32 l, f32 x, f32 y, f32 z)			{ v3 n; n.x=x; n.y=y; n.z=z; n.Normalise(); mTnL.Lights[l].Direction.x=n.x; mTnL.Lights[l].Direction.y=n.y; mTnL.Lights[l].Direction.z=n.z; mTnL.Lights[l].Padding0=0.0f; }
-	inline void			SetAmbientLight( const v4 & colour )	{ mTnL.Ambient = colour; }
+	inline void			SetAmbientLight( const v3 & colour )	{ mTnL.Ambient.x = colour.x, mTnL.Ambient.y = colour.y, mTnL.Ambient.z = colour.z, mTnL.Ambient.w = 1.0f; }
 
 	inline void			SetMux( u64 mux )						{ mMux = mux; }
 	inline void			SetAlphaRef(u32 alpha)					{ mAlphaThreshold = alpha; }
@@ -215,13 +215,15 @@ public:
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	void				PrintActive();
 #endif
+	void				MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address );
+	inline Matrix4x4*	DKRMtxPtr( u32 idx ) { return &mProjectionStack[idx]; }
 	void				ResetMatrices();
-	void				SetProjection(const Matrix4x4 & mat, bool bPush, bool bReplace);
-	void				SetWorldView(const Matrix4x4 & mat, bool bPush, bool bReplace);
+	void				SetProjection(const u32 address, bool bPush, bool bReplace);
+	void				SetWorldView(const u32 address, bool bPush, bool bReplace);
 	inline void			PopProjection() {if (mProjectionTop > 0) --mProjectionTop;	mWorldProjectValid = false;}
 	inline void			PopWorldView()	{if (mModelViewTop > 0)	 --mModelViewTop;	mWorldProjectValid = false;}
 	void				InsertMatrix(u32 w0, u32 w1);
-	void				ForceMatrix(const Matrix4x4 & mat);
+	void				ForceMatrix(const u32 address);
 	inline void			Mtxchanged()	{mWPmodified = true;}
 
 	// Vertex stuff	

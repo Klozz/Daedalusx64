@@ -54,7 +54,13 @@ struct TextureVtx
 	v2  t0;
 	v3  pos;
 };
-
+/*
+struct LineVtx
+{
+	c32	colour;
+	v3  pos;
+};
+*/
 //Cant be used for DKR since pointer start as odd and even addresses //Corn
 struct FiddledVtxDKR
 {
@@ -132,13 +138,14 @@ DAEDALUS_STATIC_ASSERT( sizeof( DaedalusLight ) == 32 );
 
 ALIGNED_TYPE(struct, TnLParams, 16)
 {
-	v4			Ambient;
-    float		FogMult;
-	float		FogOffset;
-	float		TextureScaleX;
-	float		TextureScaleY;
+	v4				Ambient;
+	TnLPSP			Flags;
+	u32				NumLights;
+	float			TextureScaleX;
+	float			TextureScaleY;
+	DaedalusLight	Lights[16];	//Conker uses more than 8
 };
-DAEDALUS_STATIC_ASSERT( sizeof( TnLParams ) == 32 );
+//DAEDALUS_STATIC_ASSERT( sizeof( TnLParams ) == 32 );
 
 // Bits for clipping
 // +-+-+-
@@ -171,33 +178,32 @@ public:
 	void				Reset();
 
 	// Various rendering states
-	inline void			SetTnLMode(u32 mode)					{ mTnLModeFlags._u32 = (mTnLModeFlags._u32 & TNL_TEXTURE) | mode; if(gFogEnabled) (mTnLModeFlags.Fog)? sceGuEnable(GU_FOG) : sceGuDisable(GU_FOG); sceGuShadeModel( mTnLModeFlags.Shade ? GU_SMOOTH : GU_FLAT ); }
-	inline void			SetTextureEnable(bool enable)			{ mTnLModeFlags.Texture = enable; }
+	inline void			SetTnLMode(u32 mode)					{ mTnL.Flags._u32 = (mTnL.Flags._u32 & TNL_TEXTURE) | mode; if(gFogEnabled) (mTnL.Flags.Fog)? sceGuEnable(GU_FOG) : sceGuDisable(GU_FOG); sceGuShadeModel( mTnL.Flags.Shade ? GU_SMOOTH : GU_FLAT ); }
+	inline void			SetTextureEnable(bool enable)			{ mTnL.Flags.Texture = enable; }
 	inline void			SetTextureTile(u32 tile)				{ mTextureTile = tile; }
-	inline u32			GetTextureTile() const						{ return mTextureTile; }
-	inline void			SetCullMode(bool enable, bool mode)		{ mTnLModeFlags.TriCull = enable; mTnLModeFlags.CullBack = mode; }
+	inline u32			GetTextureTile() const					{ return mTextureTile; }
+	inline void			SetCullMode(bool enable, bool mode)		{ mTnL.Flags.TriCull = enable; mTnL.Flags.CullBack = mode; }
 
 	// Fog stuff
 	inline void			SetFogMinMax(float fMin, float fMax)	{ sceGuFog(fMin, fMax, mFogColour.GetColour()); }
 	inline void			SetFogColour( c32 colour )				{ mFogColour = colour; }
-	//inline void			SetFogMult( float fFogMult )			{ mTnLParams.FogMult = fFogMult; }
-	//inline void			SetFogOffset( float fFogOffset )		{ mTnLParams.FogOffset = fFogOffset; }
 
 	// PrimDepth will replace the z value if depth_source=1 (z range 32767-0 while PSP depthbuffer range 0-65535)//Corn
 	inline void			SetPrimitiveDepth( u32 z )				{ mPrimDepth = (f32)( ( ( 32767 - z ) << 1) + 1 ); }
 	inline void			SetPrimitiveColour( c32 colour )		{ mPrimitiveColour = colour; }
+	inline c32			GetPrimitiveColour()					{ return mPrimitiveColour; }
 	inline void			SetEnvColour( c32 colour )				{ mEnvColour = colour; }
 
-	inline void			SetNumLights(u32 num)					{ mNumLights = num; }
-	inline void			SetLightCol(u32 light, u32 colour)		{ mLights[light].Colour = v4( (((colour >> 24)&0xFF)/255.0f), (((colour >> 16)&0xFF)/255.0f), (((colour >> 8)&0xFF)/255.0f), 1.0f); }
-	inline void			SetLightDirection(u32 l, v3 n)			{ n.Normalise(); mLights[l].Direction.x = n.x; mLights[l].Direction.y = n.y; mLights[l].Direction.z = n.z; mLights[l].Padding0 = 0.0f; }
-	inline void			SetAmbientLight( const v4 & colour )	{ mTnLParams.Ambient = colour; }
+	inline void			SetNumLights(u32 num)					{ mTnL.NumLights = num; }
+	inline void			SetLightCol(u32 l, u32 col)				{ mTnL.Lights[l].Colour.x=((col>>24)&0xFF)/255.0f; mTnL.Lights[l].Colour.y=((col>>16)&0xFF)/255.0f; mTnL.Lights[l].Colour.z=((col>>8)&0xFF)/255.0f; mTnL.Lights[l].Colour.w=1.0f; }
+	inline void			SetLightDirection(u32 l, f32 x, f32 y, f32 z)			{ v3 n; n.x=x; n.y=y; n.x=z; n.Normalise(); mTnL.Lights[l].Direction.x=n.x; mTnL.Lights[l].Direction.y=n.y; mTnL.Lights[l].Direction.z=n.z; mTnL.Lights[l].Padding0=0.0f; }
+	inline void			SetAmbientLight( const v4 & colour )	{ mTnL.Ambient = colour; }
 
 	inline void			SetMux( u64 mux )						{ mMux = mux; }
 	inline void			SetAlphaRef(u32 alpha)					{ mAlphaThreshold = alpha; }
 
 	// Texture stuff
-	inline void			SetTextureScale(float fScaleX, float fScaleY)	{ mTnLParams.TextureScaleX = fScaleX; mTnLParams.TextureScaleY = fScaleY; }
+	inline void			SetTextureScale(float fScaleX, float fScaleY)	{ mTnL.TextureScaleX = fScaleX; mTnL.TextureScaleY = fScaleY; }
 	void                Draw2DTexture(float, float, float, float, float, float, float, float);
 	void				Draw2DTextureR( f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2, f32 x3, f32 y3, f32 s, f32 t);
 
@@ -205,14 +211,7 @@ public:
 	// Viewport stuff
 	void				SetN64Viewport( const v3 & scale, const v3 & trans );
 	void				SetScissor( u32 x0, u32 y0, u32 x1, u32 y1 );
-/*
-	// Matrix stuff
-	enum EMatrixLoadStyle
-	{
-		MATRIX_LOAD,
-		MATRIX_MUL,
-	};
-*/
+
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	void				PrintActive();
 #endif
@@ -247,6 +246,8 @@ public:
 
 	// Render our current triangle list to screen
 	void				FlushTris();
+
+	void				Line3D( u32 v0, u32 v1, u32 width );
 	
 	// Returns true if bounding volume is visible within NDC box, false if culled
 	inline bool			TestVerts( u32 v0, u32 vn ) const		{ u32 f=mVtxProjected[v0].ClipFlags; for( u32 i=v0+1; i<=vn; i++ ) f&=mVtxProjected[i].ClipFlags; return f==0; }
@@ -297,13 +298,7 @@ private:
 	void				UpdateViewport();
 
 	v2					ConvertN64ToPsp( const v2 & n64_coords ) const;
-/*
-	enum ERenderMode
-	{
-		RM_RENDER_2D,
-		RM_RENDER_3D,
-	};
-*/
+
 	void				RenderUsingRenderSettings( const CBlendStates * states, DaedalusVtx * p_vertices, u32 num_vertices, u32 triangle_mode, u32 render_flags );
 	void				RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num_vertices, u32 triangle_mode, u32 render_mode, bool disable_zbuffer );
 // Old code, kept for reference
@@ -333,7 +328,7 @@ private:
 private:
 	enum { MAX_VERTS = 80 };		// F3DLP.Rej supports up to 80 verts!
 
-	TnLParams			mTnLParams;
+	TnLParams			mTnL;
 
 	v2					mN64ToPSPScale;
 	v2					mN64ToPSPTranslate;
@@ -343,9 +338,6 @@ private:
 
 	u64					mMux;
 
-	TnLPSP				mTnLModeFlags;
-
-	u32					mNumLights;
 	u32					mTextureTile;
 
 	u32					mAlphaThreshold;
@@ -355,8 +347,6 @@ private:
 	c32					mFogColour;
 	c32					mPrimitiveColour;
 	c32					mEnvColour;
-
-	DaedalusLight		mLights[16];	//Conker uses more than 8
 
 	// Texturing
 	static const u32 NUM_N64_TEXTURES = 2;

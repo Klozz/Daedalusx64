@@ -528,6 +528,7 @@ void DLParser_SetCustom( u32 ucode )
 		case GBI_SE:
 			SetCommand( 0x04, DLParser_GBI0_Vtx_SOTE, "G_Vtx_SOTE" );
 			SetCommand( 0x06, DLParser_GBI0_DL_SOTE,  "G_DL_SOTE" );
+			SetCommand( 0xfd, DLParser_SetTImg_SOTE,  "G_SetTImg_SOTE" );
 			break;
 		case GBI_LL:
 			SetCommand( 0x80, DLParser_Last_Legion_0x80, "G_Last_Legion_0x80" );
@@ -1115,7 +1116,7 @@ void DLParser_LoadTLut( MicroCodeCommand command )
 
 #ifndef DAEDALUS_TMEM
 	//Store address of PAL (assuming PAL is only stored in upper half of TMEM) //Corn
-	gTextureMemory[ rdp_tile.tmem & 0xFF ] = (u32*)address;
+	gTextureMemory[ (rdp_tile.tmem>>2) & 0x3F ] = (u32*)address;
 #else
 	//Copy PAL to the PAL memory
 	u16 * p_source = (u16*)address;
@@ -1134,7 +1135,7 @@ void DLParser_LoadTLut( MicroCodeCommand command )
 
 	// This code dumps the palette colors
 	//
-	/*
+	#if 0
 	if (gDisplayListFile != NULL)
 	{
 		char str[300] = "";
@@ -1161,7 +1162,7 @@ void DLParser_LoadTLut( MicroCodeCommand command )
 		}
 		DL_PF(str);
 	}
-	*/
+	#endif
 #endif
 }
 
@@ -1336,14 +1337,13 @@ void DLParser_FillRect( MicroCodeCommand command )
 	}
 	else
 	{
-		//colour = PSPRenderer::Get()->GetPrimitiveColour(); MK64 doesn't like it..
-		colour = c32::Black;
+		// Should we use Prim or Blend colour? Doesn't work well see Mk64 transition before a race
+		colour = c32(0); 
 	}
 	//
 	// (1) Removes annoying rect that appears in Conker etc
-	// (2) This blend mode is mem*0 + mem*1, so we don't need to render it... Very odd! (Wave Racer - Menu fix)
 	//
-	if( bIsOffScreen | (gRDPOtherMode.blender == 0x5f50) )	
+	if( bIsOffScreen )	
 	{
 		DL_PF("    Ignoring Fillrect ");
 		return;

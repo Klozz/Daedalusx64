@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "stdafx.h"
 #include "ROM.h"
+#include "Cheats.h"
 #include "CPU.h"
 #include "RSP.h"
 #include "PIF.h"		// CController
@@ -60,7 +61,6 @@ const char *gGameHackNames[ MAX_HACK_NAMES ] =
 	"Zelda OOT Hacks", 
 	"Zelda MM Hacks",
 	"Flat Shade Disabled Hack",
-	"S2DEX Palette Hack",
 	"Tarzan Misc Hacks",
 	"Disable LW MemAcces Optimisation",
 	"Gex Depth Hack",
@@ -454,7 +454,7 @@ void SpecificGameHacks( const ROMHeader & id )
 	printf("ROM ID[%04X]\n", id.CartID);
 
 	g_ROM.HACKS_u32 = 0;	//Default to no game hacks
-	
+
 	switch( id.CartID )
 	{
 	case 0x324a: g_ROM.GameHacks = WONDER_PROJECTJ2;	break;
@@ -471,13 +471,17 @@ void SpecificGameHacks( const ROMHeader & id )
 	case 0x5944: g_ROM.GameHacks = DKR;					break;
 	case 0x4450: g_ROM.GameHacks = PERFECT_DARK;		break;
 	case 0x3247: g_ROM.GameHacks = EXTREME_G2;			break;
+	case 0x5753: g_ROM.GameHacks = SOTE;				break;
 	case 0x5359: g_ROM.GameHacks = YOSHI;				break;
 	case 0x5941:
 		g_ROM.ALPHA_HACK = true;
 		g_ROM.GameHacks = AIDYN_CRONICLES;
 		break;
+	case 0x4A54:	//Tom and Jerry
 	case 0x5144:	//Donald Duck
 	case 0x3259:	//Rayman2
+	case 0x4d4a:	//Earthworm Jim
+	//case 0x5150:	//PowerPuff Girls
 		g_ROM.T1_HACK = true;
 		break;
 	case 0x3358:	//GEX3
@@ -493,6 +497,10 @@ void SpecificGameHacks( const ROMHeader & id )
 		g_ROM.ZELDA_HACK = true;
 		g_ROM.GameHacks = ZELDA_MM;
 		break;
+	case 0x3653:	//Star soldier - vanishing earth
+	case 0x324C:	//Top Gear Rally 2
+	case 0x5247:	//Top Gear Rally
+	case 0x4552:	//Resident Evil 2	
 	case 0x5547:	//Sin and punishment		
 	case 0x4446:	//Flying Dragon	
 	case 0x5653:	//SSV
@@ -599,6 +607,15 @@ bool ROM_LoadFile(const RomID & rom_id, const RomSettings & settings, const SRom
 	// Read and apply preferences from preferences.ini
 	//
 	preferences.Apply();
+
+	// Parse cheat file this rom, if cheat feature is enabled
+	// This is also done when accessing the cheat menu
+	// But we do this when ROM is loaded too, to allow any forced enabled cheats to work.
+	//
+	if( gCheatsEnabled )
+	{
+		CheatCodes_Read( (char*)g_ROM.settings.GameName.c_str(), (char*)"Daedalus.cht", g_ROM.rh.CountryID );
+	}
 
 	DBGConsole_Msg(0, "[G%s]",  g_ROM.settings.GameName.c_str());
 	DBGConsole_Msg(0, "This game has been certified as [G%s] (%s)", g_ROM.settings.Comment.c_str(), g_ROM.settings.Info.c_str());

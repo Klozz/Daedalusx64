@@ -268,7 +268,7 @@ bool IRomSettingsDB::OpenSettingsFile( const char * filename )
 		{
 			settings.SaveType = SaveTypeFromString( p_property->GetValue() );
 		}
-			if( p_section->FindProperty( "PatchesEnabled", &p_property ) )
+		if( p_section->FindProperty( "PatchesEnabled", &p_property ) )
 		{
 			settings.PatchesEnabled = p_property->GetBooleanValue( true );
 		}
@@ -282,7 +282,7 @@ bool IRomSettingsDB::OpenSettingsFile( const char * filename )
 		}
 		if( p_section->FindProperty( "DynarecLoopOptimisation", &p_property ) )
 		{
-			settings.DynarecLoopOptimisation = p_property->GetBooleanValue( true );
+			settings.DynarecLoopOptimisation = p_property->GetBooleanValue( false );
 		}
 		if( p_section->FindProperty( "DoubleDisplayEnabled", &p_property ) )
 		{
@@ -299,6 +299,10 @@ bool IRomSettingsDB::OpenSettingsFile( const char * filename )
 		if( p_section->FindProperty( "AudioRateMatch", &p_property ) ) 	 
 		{ 	 
 			settings.AudioRateMatch = p_property->GetBooleanValue( false ); 	 
+		}
+		if( p_section->FindProperty( "VideoRateMatch", &p_property ) ) 	 
+		{ 	 
+			settings.VideoRateMatch = p_property->GetBooleanValue( false ); 	 
 		}
 		if( p_section->FindProperty( "FogEnabled", &p_property ) ) 	 
 		{ 	 
@@ -425,11 +429,12 @@ void IRomSettingsDB::OutputSectionDetails( const RomID & id, const RomSettings &
 	if( !settings.PatchesEnabled )				fprintf(fh, "PatchesEnabled=no\n");
 	if( !settings.SpeedSyncEnabled )			fprintf(fh, "SpeedSyncEnabled=%d\n", settings.SpeedSyncEnabled);
 	if( !settings.DynarecSupported )			fprintf(fh, "DynarecSupported=no\n");
-	if( !settings.DynarecLoopOptimisation )		fprintf(fh, "DynarecLoopOptimisation=no\n");
+	if( !settings.DynarecLoopOptimisation )		fprintf(fh, "DynarecLoopOptimisation=yes\n");
 	if( !settings.DoubleDisplayEnabled )		fprintf(fh, "DoubleDisplayEnabled=no\n");
 	if( settings.SimulateDoubleDisabled )		fprintf(fh, "SimulateDoubleDisabled=yes\n");
 	if( settings.CleanSceneEnabled )			fprintf(fh, "CleanSceneEnabled=yes\n");	
 	if( settings.AudioRateMatch )				fprintf(fh, "AudioRateMatch=yes\n"); 
+	if( settings.VideoRateMatch )				fprintf(fh, "VideoRateMatch=yes\n");
 	if( settings.FogEnabled )					fprintf(fh, "FogEnabled=yes\n"); 
 	if( settings.MemoryAccessOptimisation )		fprintf(fh, "MemoryAccessOptimisation=yes\n");
 	if( settings.CheatsEnabled )				fprintf(fh, "CheatsEnabled=yes\n");
@@ -485,11 +490,12 @@ RomSettings::RomSettings()
 ,	PatchesEnabled( true )
 ,	SpeedSyncEnabled( 0 )
 ,	DynarecSupported( true )
-,	DynarecLoopOptimisation( true )
+,	DynarecLoopOptimisation( false )
 ,	DoubleDisplayEnabled( true )
 ,	SimulateDoubleDisabled( false )
 ,	CleanSceneEnabled( false )
 ,	AudioRateMatch( false )
+,	VideoRateMatch( false )
 ,	FogEnabled( false )
 ,   MemoryAccessOptimisation( false )
 ,   CheatsEnabled( false )
@@ -517,11 +523,12 @@ void	RomSettings::Reset()
 	PatchesEnabled = true;
 	SpeedSyncEnabled = 0;
 	DynarecSupported = true;
-	DynarecLoopOptimisation = true;
+	DynarecLoopOptimisation = false;
 	DoubleDisplayEnabled = true;
 	SimulateDoubleDisabled = false;
 	CleanSceneEnabled = false;
 	AudioRateMatch = false;
+	VideoRateMatch = false;
 	FogEnabled = false;
 	CheatsEnabled = false;
 	MemoryAccessOptimisation = false;

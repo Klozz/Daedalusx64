@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility/FramerateLimiter.h"
 #include "Utility/Preferences.h"
 #include "Utility/IO.h"
+#include "Utility/Translate.h"
 
 #include "Input/InputManager.h"
 
@@ -130,6 +131,35 @@ namespace
 			}
 			DAEDALUS_ERROR( "Unhandled TV type" );
 			return "?";
+		}
+	};
+
+	class CLanguage : public CUISetting
+	{
+	public:
+		CLanguage(  const char * name, const char * description )
+			:	CUISetting( name, description )
+		{
+		}
+
+		virtual	void		OnNext()		{ (gGlobalPreferences.Language >= GetLanguageNum() ) ? 0 : gGlobalPreferences.Language++; }
+		virtual	void		OnPrevious()	{ (gGlobalPreferences.Language <= 0) ? 0 : gGlobalPreferences.Language--; }
+
+		virtual	void			OnSelected()
+		{
+			u32 index = gGlobalPreferences.Language;
+			if( index )
+				Translate_Read( index, DAEDALUS_PSP_PATH("Translation/") );
+			else
+			{	// ToDo:
+				//Translate_Clear();
+			}
+		}
+
+		virtual const char *	GetSettingName() const
+		{
+			u32 index = gGlobalPreferences.Language;
+			return index ? GetLanguageName( index ) : "English";
 		}
 	};
 
@@ -364,6 +394,7 @@ IGlobalSettingsComponent::IGlobalSettingsComponent( CUIContext * p_context )
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.BatteryWarning, "Low Battery Warning",	"Whether to allow Daedalus to notify when the battery is low.", "Yes", "No" ) );
 	mElements.Add( new CGuiType( "Gui Style",	"Select Gui Type either CoverFlow Style or Classic Style" ) );
 	mElements.Add( new CColorSetting( "GUI Color", "Change GUI Color" ) );
+	mElements.Add( new CLanguage( "Language", "Select Language" ) );
 	mElements.Add( new CResetSetting( mpContext, "Reset Settings", "Will guide you to reset preferences to default, and hle cache files. Note : emulator will exit if resetting settings" ) );
 
 }

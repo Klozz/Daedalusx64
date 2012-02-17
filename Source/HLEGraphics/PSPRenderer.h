@@ -296,7 +296,7 @@ private:
 	void				SetPSPViewport( s32 x, s32 y, u32 w, u32 h );
 	void				UpdateViewport();
 
-	v2					ConvertN64ToPsp( const v2 & n64_coords ) const;
+	void				ConvertN64ToPsp( const v2 & n64_coords, v2 & answ ) const;
 
 	void				RenderUsingRenderSettings( const CBlendStates * states, DaedalusVtx * p_vertices, u32 num_vertices, u32 triangle_mode, u32 render_flags );
 	void				RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num_vertices, u32 triangle_mode, u32 render_mode, bool disable_zbuffer );
@@ -370,7 +370,7 @@ private:
 	bool				mReloadProj;
 	bool				mWPmodified;
 		
-	static const u32 	MAX_VERTICES = 128;	
+	static const u32 	MAX_VERTICES = 256;	//we need at least 80 verts * 3 = 240? //Corn	
 	u16					m_swIndexBuffer[MAX_VERTICES];
 	u32					m_dwNumIndices;
 

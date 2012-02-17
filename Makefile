@@ -75,7 +75,6 @@ DAED_UTILITY_SRCS =	Source/Utility/CRC.cpp \
 			Source/Utility/Stream.cpp \
 			Source/Utility/Timer.cpp \
 			Source/Utility/Translate.cpp \
-			Source/Utility/unzip.cpp \
 			Source/Utility/ZLibWrapper.cpp \
 			Source/Utility/PrintOpCode.cpp \
 			Source/Math/Matrix4x4.cpp
@@ -124,7 +123,6 @@ DAED_PSP_SRCS =		Source/SysPSP/Graphics/DrawText.cpp \
 			Source/SysPSP/KernelButtonsPrx/imposectrl.S \
 			Source/SysPSP/Utility/Buttons.cpp \
 			Source/SysPSP/Utility/ModulePSP.cpp \
-			Source/SysPSP/SysEventPRX/sysevent.S \
 			Source/SysPSP/Utility/VolatileMemPSP.cpp \
 			Source/SysPSP/UI/Dialogs.cpp \
 			Source/SysPSP/Utility/exception.cpp
@@ -191,7 +189,7 @@ ifdef DEBUG
 
 	SRCS			= $(CORE_SRCS) $(ADDITIONAL_SYNC_SRCS)
 else 
-	CFLAGS			= -O2 -G0 -DNDEBUG -Wall -MD -ffast-math -fsingle-precision-constant
+	CFLAGS			= -O2 -G0 -DNDEBUG -Wall -MD -ffast-math -fsingle-precision-constant -fpredictive-commoning
 					#-Wextra
 					#-fno-builtin
 					#-fgcse-after-reload
@@ -224,7 +222,7 @@ LIBDIR = $(PSPDEV)/SDK/lib ./SDK/lib
 
 LIBS = -lstdc++ -lpsppower -lpspgu -lpspaudiolib -lpspaudio -lpsprtc -lc -lpng -lz -lg -lm -lpspfpu -lpspkubridge
 
-EXTRA_TARGETS = EBOOT.PBP dvemgr.prx exception.prx mediaengine.prx imposectrl.prx sysevent.prx
+EXTRA_TARGETS = EBOOT.PBP dvemgr.prx exception.prx mediaengine.prx imposectrl.prx
 
 PSP_EBOOT_TITLE = DaedalusX64 Beta 3 Update
 PSP_EBOOT_ICON  = icon0.png
@@ -326,19 +324,12 @@ Source/SysPSP/KernelButtonsPrx/imposectrl.o:
 
 imposectrl.prx:
 	$(MAKE) -C Source/SysPSP/KernelButtonsPrx all
-	
-Source/SysPSP/SysEventPRX/sysevent.o:
-	$(MAKE) -C Source/SysPSP/SysEventPRX sysevent.o
-	
-sysevent.prx:
-	$(MAKE) -C Source/SysPSP/SysEventPRX all
 
 allclean: clean
 	$(MAKE) -C Source/SysPSP/ExceptionHandler/prx clean
 	$(MAKE) -C Source/SysPSP/MediaEnginePRX clean
 	$(MAKE) -C Source/SysPSP/DveMgr clean
 	$(MAKE) -C Source/SysPSP/KernelButtonsPrx clean
-	$(MAKE) -C Source/SysPSP/SysEventPRX clean
 
 -include $(DEP_FILES)
 

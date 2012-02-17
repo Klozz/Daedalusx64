@@ -24,12 +24,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __DAEDALUS_ROMFILECOMPRESSED_H__
 #define __DAEDALUS_ROMFILECOMPRESSED_H__
 
-#ifdef DAEDALUS_ZLIB_SUPPORT
+#ifdef DAEDALUS_COMPRESSED_ROM_SUPPORT
 
 // This is required so that the linker doesn't expect __fastcall unzXYZ functions.
 #define ZEXPORT DAEDALUS_ZLIB_CALL_TYPE
 
-#include "unzip.h"
+#include "Utility/Zip/unzip.h"
 
 #include "ROMFile.h"
 
@@ -59,6 +59,6 @@ private:
 
 };
 
-#endif // DAEDALUS_ZLIB_SUPPORT
+#endif // DAEDALUS_COMPRESSED_ROM_SUPPORT
 
 #endif // __DAEDALUS_ROMFILECOMPRESSED_H__

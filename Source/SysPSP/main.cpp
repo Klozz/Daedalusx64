@@ -305,7 +305,7 @@ extern bool bNeedStartME;
 //*************************************************************************************
 static bool	Initialize()
 {
-
+	
 	printf( "Cpu was: %dMHz, Bus: %dMHz\n", scePowerGetCpuClockFrequency(), scePowerGetBusClockFrequency() );
 	if (scePowerSetClockFrequency(333, 333, 166) != 0)
 	{
@@ -379,7 +379,6 @@ static bool	Initialize()
 
 	HAVE_DVE = (HAVE_DVE < 0) ? 0 : 1; // 0 == no dvemgr, 1 == dvemgr
 
-    //setup Pad
     sceCtrlSetSamplingCycle(0);
     sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
 

@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Translate.h"
 #include "IO.h"
 
+#include "SysPSP/Utility/VolatileMemPSP.h"
+
 #include <vector>
 #include <string>
 //*****************************************************************************
@@ -32,14 +34,14 @@ struct pTranslate
 	char	*translated;	// Translated string
 };
 
-pTranslate				 text[148];
+pTranslate				 text[180];
 std::vector<std::string> gLanguage;
 //*****************************************************************************
 //
 //*****************************************************************************
-u32 HashString(const char* s, u32 seed = 0)
+u32 HashString(const char* s)
 {
-    u32 hash = seed;
+    u32 hash = 0;
     while (*s)
     {
         hash = hash * 101  +  *s++;
@@ -50,9 +52,15 @@ u32 HashString(const char* s, u32 seed = 0)
 //*****************************************************************************
 //
 //*****************************************************************************
-const char * Translate(const char *original)
+const char * Translate_String(const char *original)
 {
-	u32 hash = HashString( original );
+	//if( gLanguage.empty() )	return original;
+
+	u32 hash = HashString(original);
+
+	if( hash == 0 )	/*{ printf("Unable to hash this string %s\n",original); } */
+		return original;
+
 	for( u32 i=0; i < ARRAYSIZE(text); i++ )
 	{
 		if( text[i].hash == hash )
@@ -63,19 +71,21 @@ const char * Translate(const char *original)
 				return original;
 		}
 	}
+	//printf("%08x,%s\n",hash,original);
 	return original;
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-void Translate_Clear()
+void Translate_Unload()
 {
 	// Clear translations
-	memset(text, 0, sizeof(text));	
-
-	// Clear languages
-	gLanguage.clear();
+	for( u32 i = 0; i < ARRAYSIZE(text); ++i )
+	{
+		free_volatile(text[i].translated);
+		text[i].translated = NULL;
+	}
 }
 
 //*****************************************************************************
@@ -83,9 +93,11 @@ void Translate_Clear()
 //*****************************************************************************
 void	Translate_Load( const char * p_dir )
 {
-	// Reserve first entry, this will be replaced by our default language "English"
-	// We could append our default language here, but we clear all language/translation contents to avoid wasting memory
-	gLanguage.push_back( "" );
+	// Always clear Language list
+	gLanguage.clear();
+
+	// Set default language
+	gLanguage.push_back( "English" );
 
 	IO::FindHandleT		find_handle;
 	IO::FindDataT		find_data;
@@ -128,12 +140,57 @@ u32 GetLanguageNum()
 	return gLanguage.size()-1;			
 }
 
+
+//*****************************************************************************
+// Borrowed from 1964 to handle special chars as \n newline etc
+// We need to do this since we chop off all newlines when parsing the language file
+//*****************************************************************************
+char* ConvertSpecialChars(char *str, u32 len)
+{
+	char temp[1024];
+	u32 i,j;
+	temp[0]=0;
+
+	for(i=0,j=0; i<len; i++)
+	{
+		switch(str[i])
+		{
+		case '\\':
+			if( str[i+1] == 'n' )
+			{
+				temp[j++]='\n';
+				i++;
+			}
+			else if( str[i+1] == '\\' )
+			{
+				temp[j++]='\\';
+				i++;
+			}
+			else if( str[i+1] == 't')
+			{
+				temp[j++]='\t';
+				i++;
+			}
+			break;
+		default:
+			temp[j++]=str[i];
+			break;
+		}
+	}
+
+	temp[j]=0;
+
+	strcpy(str,temp);
+	return str;
+}
+
 //*****************************************************************************
 //
 //*****************************************************************************
 
 bool Translate_Read(u32 idx, const char * dir)
 {
+	static char last_path[MAX_PATH+1];
 	const char * ext( ".lng" );
 	char line[1024];
 	char path[MAX_PATH];
@@ -142,11 +199,22 @@ bool Translate_Read(u32 idx, const char * dir)
 
 	u32 count = 0;
 	u32 hash  = 0;
+	u32	len;
 
 	// Build path where we'll load the translation file(s)
 	strcpy(path, dir);
 	strcat(path, gLanguage[ idx ].c_str());
 	strcat(path, ext);
+
+	// Do not parse again, if we already parsed for this ROM
+	if(strcmp(path, last_path) == 0)
+	{
+		return true;
+	}
+	strcpy(last_path, path);
+
+	// Always unload previous language file
+	Translate_Unload();
 
 	stream = fopen(path,"r");
 	if( stream == NULL )
@@ -156,35 +224,27 @@ bool Translate_Read(u32 idx, const char * dir)
 
 	while( fgets(line, 1023, stream) )
 	{
-		IO::Path::Tidy(line);			// Strip spaces from end of lines
+		// Strip spaces from end of lines
+		IO::Path::Tidy(line);
 
 		// Handle comments
 		if (line[0] == '/')
 			continue;
 
 		string = strchr(line,',');
-		sscanf( line,"%08x", &hash );
 		if( string != NULL )
 		{
 			string++;
-			if( count <= ARRAYSIZE(text) )
+			len = strlen( string );
+			ConvertSpecialChars( string, len );
+
+			sscanf( line,"%08x", &hash );
+			if( count < ARRAYSIZE(text) )
 			{
 				// Write translated id/hash to array
 				text[count].hash = hash;
-				text[count].translated = (char*)malloc(strlen(string)+2);
-				if(text[count].translated == NULL)
-				{
-					printf("Cannot allocate memory to load translated strings");
-					return false;
-				}
+				text[count].translated = (char*)malloc_volatile(len+1); // Leave space for terminator
 				strcpy(text[count].translated, string);
-				/*FILE * fh = fopen( "hash.txt", "a" );
-				if ( fh )
-				{
-					fprintf( fh,  "%08x, \"%s\"\n", text[count].hash, text[count].translated );
-					fclose(fh);
-				}
-				*/
 				count++;
 			}
 		}

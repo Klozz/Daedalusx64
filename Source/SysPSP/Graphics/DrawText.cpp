@@ -26,6 +26,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../../Math/Vector2.h"
 #include "../../Math/Vector3.h"
 
+#include "SysPSP/Utility/PathsPSP.h"
+
+#include "Utility/Preferences.h"
+#include "Utility/Translate.h"
+
 #include <stdarg.h>
 #include <pspgu.h>
 #include <pspdebug.h>
@@ -37,7 +42,6 @@ intraFont *	gFonts[] =
 };
 DAEDALUS_STATIC_ASSERT( ARRAYSIZE( gFonts ) == CDrawText::NUM_FONTS );
 
-int gFontIdx = 8;
 //*************************************************************************************
 //
 //*************************************************************************************
@@ -45,13 +49,16 @@ void	CDrawText::Initialise()
 {
     intraFontInit();
 
-	gFonts[ F_REGULAR ] = intraFontLoad( "flash0:/font/ltn8.pgf", INTRAFONT_CACHE_ASCII );			// Regular/sans-serif
-	gFonts[ F_LARGE_BOLD ] = intraFontLoad( "flash0:/font/ltn4.pgf", INTRAFONT_CACHE_ASCII );		// Large/sans-serif/bold
+	gFonts[ F_REGULAR ] = intraFontLoad( "flash0:/font/ltn8.pgf", INTRAFONT_CACHE_ALL | INTRAFONT_STRING_UTF8 );			// Regular/sans-serif
+	gFonts[ F_LARGE_BOLD ] = intraFontLoad( "flash0:/font/ltn4.pgf", INTRAFONT_CACHE_ALL | INTRAFONT_STRING_UTF8 );		// Large/sans-serif/bold
 
 	for( u32 i = 0; i < NUM_FONTS; ++i )
 	{
 		DAEDALUS_ASSERT( gFonts[ i ] != NULL, "Unable to load font (or forgot!)" );
 	}
+
+	// Init translations if available
+	Translate_Load( DAEDALUS_PSP_PATH("Languages/") );
 }
 
 //*************************************************************************************
@@ -69,12 +76,32 @@ void	CDrawText::Destroy()
 //*************************************************************************************
 //
 //*************************************************************************************
+const char * CDrawText::Translate( const char * dest, u32 * length )
+{
+	u32 index		= gGlobalPreferences.Language;
+	if( index == 0 || length == NULL )	return dest;
+
+	// Check translation file
+	Translate_Read( index, DAEDALUS_PSP_PATH("Languages/") );
+
+	// Check if string length was previously calc'd
+	bool t_len = ( strlen( dest ) == * length );
+
+	dest = Translate_String( dest );
+
+	// There has to be a better way than this?
+	if( t_len ) * length = strlen( dest );
+
+	return dest;
+}
+
+//*************************************************************************************
+//
+//*************************************************************************************
 u32	CDrawText::Render( EFont font, s32 x, s32 y, float scale, const char * p_str, u32 length, c32 colour )
 {
 	return Render( font, x, y, scale, p_str, length, colour, c32( 0,0,0,160 ) );
 }
-
-const u32 CHARACTER_HEIGHT_I= 16;
 
 //*************************************************************************************
 //
@@ -88,9 +115,8 @@ u32	CDrawText::Render( EFont font_type, s32 x, s32 y, float scale, const char * 
 	{
 		sceGuEnable(GU_BLEND);
 		sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
-
 		intraFontSetStyle( font, scale, colour.GetColour(), drop_colour.GetColour(), INTRAFONT_ALIGN_LEFT );
-		return s32( intraFontPrintEx( font,  x, y, p_str, length) ) - x;
+		return s32( intraFontPrintEx( font,  x, y, Translate( p_str, &length ), length) ) - x;
 	}
 
 	return strlen( p_str ) * 16;		// Guess. Better off just returning 0?
@@ -109,6 +135,8 @@ f32	CDrawText::IntrPrintf( f32 x, f32 y, f32 scale, c32 colour, const char * p_t
 		// Was borrowed from intrafont.c to simulate our own intraFontPrintf..
 		char buffer[256];
 		va_list ap;
+
+		p_text = Translate( p_text, NULL );
 		
 		va_start(ap, p_text);
 		vsnprintf(buffer, 256, p_text, ap);
@@ -131,7 +159,7 @@ s32		CDrawText::GetTextWidth( EFont font_type, const char * p_str, u32 length )
 	if( font )
 	{
 		intraFontSetStyle( font, 1.0f, 0xffffffff, 0xffffffff, INTRAFONT_ALIGN_LEFT );
-		return s32( intraFontMeasureTextEx( font, p_str, length ) );
+		return s32( intraFontMeasureTextEx( font, Translate( p_str, &length ), length ) );
 	}
 
 	return strlen( p_str ) * 16;		// Return a reasonable value. Better off just returning 0?
@@ -185,10 +213,32 @@ namespace DrawTextUtilities
 		return NULL;
 	}
 
-	void	WrapText( CDrawText::EFont font, s32 width, const char * p_str, u32 length, std::vector<u32> & lengths )
+	void	WrapText( CDrawText::EFont font, s32 width, const char * p_str, u32 length, std::vector<u32> & lengths, bool & match )
 	{
 		lengths.clear();
 
+		// Manual line breaking (Used for translations)
+		if(gGlobalPreferences.Language != 0)
+		{
+			u32 i, j;
+			for (i = 0, j = 0; i < length; i++) 
+			{
+				match = true;
+				if (p_str[i] == '\n')
+				{
+					j++;
+					lengths.push_back( match );
+				}
+			}
+			if( match )
+			{
+				lengths.push_back( match );
+			}
+
+			return;
+		}
+
+		// Auto-linebreaking 
 		const char *	p_line_str( p_str );
 		const char *	p_str_end( p_str + length );
 

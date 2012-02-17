@@ -40,6 +40,7 @@ class CDrawText
 		static u32		Render( EFont font, s32 x, s32 y, float scale, const char * p_str, u32 length, c32 colour, c32 drop_colour );
 		static s32		GetTextWidth( EFont font, const char * p_str, u32 length );
 		static f32		IntrPrintf( f32 x, f32 y, f32 scale, c32 colour, const char * p_text, ... );
+		static const char *	Translate( const char * dest, u32 * length );
 
 		// Versions of above functions which implicitly calc string length
 		static u32		Render( EFont font, s32 x, s32 y, float scale, const char * p_str, c32 colour )						{ return Render( font, x, y, scale, p_str, strlen( p_str ), colour ); }
@@ -60,8 +61,8 @@ namespace DrawTextUtilities
 	extern const c32	TextRed;
 	extern const c32	TextRedDisabled;
 
-	void			WrapText( CDrawText::EFont font, s32 width, const char * p_str, u32 length, std::vector<u32> & lengths );
-	inline void		WrapText( CDrawText::EFont font, s32 width, const char * p_str, std::vector<u32> & lengths )			{ WrapText( font, width, p_str, strlen( p_str ), lengths ); }
+	void			WrapText( CDrawText::EFont font, s32 width, const char * p_str, u32 length, std::vector<u32> & lengths, bool & match );
+	//inline void		WrapText( CDrawText::EFont font, s32 width, const char * p_str, std::vector<u32> & lengths )			{ WrapText( font, width, p_str, strlen( p_str ), lengths ); }
 }
 
 #endif	// DRAWTEXT_H_

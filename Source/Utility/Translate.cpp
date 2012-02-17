@@ -54,11 +54,9 @@ u32 HashString(const char* s)
 //*****************************************************************************
 const char * Translate_String(const char *original)
 {
-	//if( gLanguage.empty() )	return original;
 
 	u32 hash = HashString(original);
-
-	if( hash == 0 )	/*{ printf("Unable to hash this string %s\n",original); } */
+	if( hash == 0 )
 		return original;
 
 	for( u32 i=0; i < ARRAYSIZE(text); i++ )
@@ -71,7 +69,7 @@ const char * Translate_String(const char *original)
 				return original;
 		}
 	}
-	//printf("%08x,%s\n",hash,original);
+
 	return original;
 }
 
@@ -93,11 +91,11 @@ void Translate_Unload()
 //*****************************************************************************
 void	Translate_Load( const char * p_dir )
 {
-	// Always clear Language list
-	gLanguage.clear();
+	if( !gLanguage.empty() )
+		return;
 
 	// Set default language
-	gLanguage.push_back( "English" );
+	gLanguage.push_back("English");
 
 	IO::FindHandleT		find_handle;
 	IO::FindDataT		find_data;
@@ -127,7 +125,7 @@ void	Translate_Load( const char * p_dir )
 //*****************************************************************************
 //
 //*****************************************************************************
-const char * GetLanguageName(u32 idx)		
+const char * Translate_Name(u32 idx)		
 {	
 	return gLanguage[ idx ].c_str();	
 }
@@ -135,53 +133,34 @@ const char * GetLanguageName(u32 idx)
 //*****************************************************************************
 //
 //*****************************************************************************
-u32 GetLanguageNum()			
+u32 Translate_Number()			
 {	
 	return gLanguage.size()-1;			
 }
 
-
 //*****************************************************************************
-// Borrowed from 1964 to handle special chars as \n newline etc
-// We need to do this since we chop off all newlines when parsing the language file
+// Restores escape characters which were removed when parsing
+// Which are needed by line-breaking and back-slash
 //*****************************************************************************
-char* ConvertSpecialChars(char *str, u32 len)
+const char * Restore(char *s, u32 len)
 {
-	char temp[1024];
-	u32 i,j;
-	temp[0]=0;
-
-	for(i=0,j=0; i<len; i++)
+	for (u32 i = 0; i < len; i++) 
 	{
-		switch(str[i])
+		if (s[i] == '\\') 
 		{
-		case '\\':
-			if( str[i+1] == 'n' )
+			if( s[i+1] == 'n' )
 			{
-				temp[j++]='\n';
+				s[i+1] = '\b';	s[i] = '\n';
 				i++;
 			}
-			else if( str[i+1] == '\\' )
-			{
-				temp[j++]='\\';
+			else if( s[i+1] == '\\' )
+			{	
+				s[i+1] = '\b';	s[i] = '\\';
 				i++;
 			}
-			else if( str[i+1] == 't')
-			{
-				temp[j++]='\t';
-				i++;
-			}
-			break;
-		default:
-			temp[j++]=str[i];
-			break;
 		}
 	}
-
-	temp[j]=0;
-
-	strcpy(str,temp);
-	return str;
+	return s;
 }
 
 //*****************************************************************************
@@ -190,12 +169,15 @@ char* ConvertSpecialChars(char *str, u32 len)
 
 bool Translate_Read(u32 idx, const char * dir)
 {
-	static char last_path[MAX_PATH+1];
+	static u32 temp = 0;
 	const char * ext( ".lng" );
 	char line[1024];
 	char path[MAX_PATH];
 	char *string;
 	FILE *stream;
+
+	// Do not parse again if the same language
+	if( temp == idx )	return true;	temp = idx;
 
 	u32 count = 0;
 	u32 hash  = 0;
@@ -205,13 +187,6 @@ bool Translate_Read(u32 idx, const char * dir)
 	strcpy(path, dir);
 	strcat(path, gLanguage[ idx ].c_str());
 	strcat(path, ext);
-
-	// Do not parse again, if we already parsed for this ROM
-	if(strcmp(path, last_path) == 0)
-	{
-		return true;
-	}
-	strcpy(last_path, path);
 
 	// Always unload previous language file
 	Translate_Unload();
@@ -236,15 +211,13 @@ bool Translate_Read(u32 idx, const char * dir)
 		{
 			string++;
 			len = strlen( string );
-			ConvertSpecialChars( string, len );
-
 			sscanf( line,"%08x", &hash );
 			if( count < ARRAYSIZE(text) )
 			{
 				// Write translated id/hash to array
 				text[count].hash = hash;
 				text[count].translated = (char*)malloc_volatile(len+1); // Leave space for terminator
-				strcpy(text[count].translated, string);
+				strcpy( text[count].translated, Restore( string, len ) );
 				count++;
 			}
 		}

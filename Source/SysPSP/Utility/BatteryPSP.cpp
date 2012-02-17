@@ -19,36 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "stdafx.h"
 
-#include "SysPSP/Graphics/DrawText.h"
-
 #include <pspdebug.h>
 #include <psprtc.h>
 #include <psppower.h>
-//*****************************************************************************
-//
-//*****************************************************************************
-void battery_info()
-{	
-    pspTime time;
-    sceRtcGetCurrentClockLocalTime(&time);
-	s32 bat = scePowerGetBatteryLifePercent();
-
-	CDrawText::IntrPrintf( 22, 43, 0.9f, DrawTextUtilities::TextWhite,"Time:  %d:%02d%c%02d", time.hour, time.minutes, (time.seconds&1?':':' '), time.seconds );
-
-	if(!scePowerIsBatteryCharging())
-	{
-		s32 batteryLifeTime = scePowerGetBatteryLifeTime();
-
-		CDrawText::IntrPrintf( 140, 43, 0.9f, DrawTextUtilities::TextWhite,"Battery:  %d%% | %0.2fV | %dC", bat, (f32) scePowerGetBatteryVolt() / 1000.0f, scePowerGetBatteryTemp());
-		CDrawText::IntrPrintf( 335, 43, 0.9f, DrawTextUtilities::TextWhite,"Remaining: %2dh %2dm", batteryLifeTime / 60, batteryLifeTime - 60 * (batteryLifeTime / 60));
-	}
-	else
-	{
-		CDrawText::IntrPrintf( 210, 43, 0.9f, DrawTextUtilities::TextWhite,"Charging...");
-		CDrawText::IntrPrintf( 335, 43, 0.9f, DrawTextUtilities::TextWhite,"Remaining: --h--m");
-	}
-}
-
 //*****************************************************************************
 //
 //*****************************************************************************

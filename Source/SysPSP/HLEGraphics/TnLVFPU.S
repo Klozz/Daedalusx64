@@ -3,9 +3,8 @@
 
 #include "as_reg_compat.h"
 
-#define PARAMS_AMBIENT		0x00
-#define PARAMS_FLAGS_NLIGHT_TXSCAL	0x10
-#define PARAMS_LIGHTS		0x20
+#define PARAMS_FLAGS_NLIGHT_TXSCAL	0x00
+#define PARAMS_LIGHTS		0x10
 
 #define	TNL_LIGHT			0x0001
 #define	TNL_TEXTURE			0x0002
@@ -62,20 +61,21 @@ _TnLVFPU:
 	lv.q		R102, 32($a1)
 	lv.q		R103, 48($a1)
 	
-	lv.q		R700, PARAMS_AMBIENT($t1)		// Load ambient
 	lv.q		R701, PARAMS_FLAGS_NLIGHT_TXSCAL($t1)	// Load params [Flags, Num_lights, tscale_x, tscale_y]
-	mfv			$v0, S701						// TnL flags
+	vmov.p		R721, R721[y,x]					// Swizzle texture X&Y scale 
 	mfv			$t7, S711						// Num_lights
-	addiu		$t6, $t1, PARAMS_LIGHTS			// pointer to first_light = p_lights
 	
 # Calculate the last light index
+	addiu		$t6, $t1, PARAMS_LIGHTS			// pointer to first_light = p_lights
 	sll			$t7, $t7, 5			// num_lights*32
+	addu		$t7, $t6, $t7		// last_light = p_lights + num_lights*32
+	lv.q		R700, 16($t7)		// Load ambient color
 	
 	sll			$t0, $t0, 4			// count = count * 16
 	addu		$t0, $a2, $t0		// end_ptr = start_ptr + count * 16
 	beq			$a2, $t0, finished_
-	addu		$t7, $t6, $t7		// last_light = p_lights + num_lights*32
-
+	mfv			$v0, S701						// TnL flags
+	
 next_vertex_:
 # Load and transform this vertex position
  	lv.s		S200, 0($a2)				// load word [y,x,?,z]
@@ -84,7 +84,7 @@ next_vertex_:
 	vi2f.q		R200, R200, 16				// int -> float
 	vmov.q		R200, R200[y,x,w,1]
 	vtfm4.q		R201, M000, R200			// World transform
-	vtfm4.q		R202, M100, R200			// Projection transform
+	vtfm4.q		R202, M100, R200			// World*Projection transform
 	sv.q		R201, 0x00($a3)				// Store world transform
 	sv.q		R202, 0x10($a3)				// Store projection transform
 	
@@ -157,10 +157,9 @@ done_lighting_:
 		
 do_texgen_:
 # EnvMapped G_TEXTURE_GEN_LINEAR Cheap way to do acos(x)/PI -> 0.5f - 0.25f * absf(x) - 0.25f * absf(x) * absf(x) * absf(x) //Corn
-	vmov.p		R202, R202[|x|,|y|]					// absf(x), absf(y)
-	vmov.p		R203, R200[1/2,1/2]					// result = 0.5
+	vabs.p		R202, R202							// absf(x), absf(y)
 	vmul.p		R222, R202[1/4,1/4], R202			// X * 0.25, Y * 0.25
-	vsub.p		R203, R203, R222					// result -= X * 0.25
+	vsub.p		R203, R202[1/2,1/2], R222			// result = 0.5 - X * 0.25
 	vmul.p		R222, R202, R222					// X * X * 0.25, Y * Y * 0.25
 	vmul.p		R222, R202, R222					// X * X * X * 0.25, Y * Y * Y * 0.25
 	vsub.p		R203, R203, R222					// result -= X * X * X * 0.25
@@ -179,7 +178,7 @@ do_texture_:
 	lv.s		S202, 8($a2)				// load texture word [tv,tu] (N.B. due to swizzling these are 'backwards' from what you might expect)
 	vs2i.s		R202, S202
 	vi2f.p		R202, R202, 16				// int -> float
-	vmul.p		R202, R202, R721[y,x]		// multiply by mTextureScale
+	vmul.p		R202, R202, R721			// multiply by mTextureScale
 	sv.s		S212, 0x30($a3)				// Store Texture.x
 	sv.s		S202, 0x34($a3)				// Store Texture.y
 
@@ -230,6 +229,7 @@ _TnLVFPUCBFD:
 	lv.q		R103, 48($a1)
 	
 	lv.q		R701, PARAMS_FLAGS_NLIGHT_TXSCAL($t1)	// Load params [Flags, Num_lights, tscale_x, tscale_y]
+	vmov.p		R721, R721[y,x]					// Swizzle texture X&Y scale 
 	
 # Calculate the last vertex index
 	sll			$t0, $t0, 4			// count = count * 16
@@ -241,12 +241,12 @@ next_vertex_CBFD:
 # Load and transform this vertex position
  	lv.s		S200, 0($a2)				// load word [y,x,?,z]
  	lv.s		S210, 4($a2)				// should align this to 16 bytes so we can do a single load?
- 	lb			$v1, 4($a2)					// Get vert_norm z
 	vs2i.p		R200, R200					// R200 = [?,z,y,x]
 	vi2f.q		R200, R200, 16				// int -> float
 	vmov.q		R200, R200[y,x,w,1]
 	vtfm4.q		R201, M000, R200			// World transform
-	vtfm4.q		R202, M100, R200			// Projection transform
+ 	lb			$v1, 4($a2)					// Get vert_norm z
+	vtfm4.q		R202, M100, R201			// Projection transform
 	sv.q		R201, 0x00($a3)				// Store world transform
 	sv.q		R202, 0x10($a3)				// Store projection transform
 	
@@ -290,10 +290,9 @@ next_vertex_CBFD:
 	beqz		$t4, do_texgen_CBFD
 	vscl.p		R202, R202, S201					// R202 = v.normalise() (x & y).
 
-# EnvMapped G_TEXTURE_GEN_LINEAR Cheap way to do acos(x)/PI -> 0.5f - 0.25f * absf(x) - 0.25f * absf(x) * absf(x) * absf(x) //Corn
-	vmov.p		R203, R200[1/2,1/2]					// result = 0.5
+# EnvMapped G_TEXTURE_GEN_LINEAR Cheap way to do acos(x)/PI -> 0.5f - 0.25f * x - 0.25f * x * x * x //Corn
 	vmul.p		R222, R202[1/4,1/4], R202			// X * 0.25, Y * 0.25
-	vsub.p		R203, R203, R222					// result -= X * 0.25
+	vsub.p		R203, R202[1/2,1/2], R222			// result = 0.5 - X * 0.25
 	vmul.p		R222, R202, R222					// X * X * 0.25, Y * Y * 0.25
 	vmul.p		R222, R202, R222					// X * X * X * 0.25, Y * Y * Y * 0.25
 	vsub.p		R203, R203, R222					// result -= X * X * X * 0.25
@@ -314,7 +313,7 @@ do_texture_CBFD:
 	lv.s		S202, 8($a2)				// load texture word [tv,tu] (N.B. due to swizzling these are 'backwards' from what you might expect)
 	vs2i.s		R202, S202
 	vi2f.p		R202, R202, 16				// int -> float
-	vmul.p		R202, R202, R721[y,x]		// multiply by mTextureScale
+	vmul.p		R202, R202, R721			// multiply by mTextureScale
 	sv.s		S212, 0x30($a3)				// Store Texture.x
 	sv.s		S202, 0x34($a3)				// Store Texture.y
 
@@ -377,33 +376,34 @@ _TnLVFPUPD:
 	lv.q		R102, 32($a1)
 	lv.q		R103, 48($a1)
 	
-	lv.q		R700, PARAMS_AMBIENT($t1)		// Load ambient
 	lv.q		R701, PARAMS_FLAGS_NLIGHT_TXSCAL($t1)	// Load params [Flags, Num_lights, tscale_x, tscale_y]
-	mfv			$v0, S701						// TnL flags
+	vmov.p		R721, R721[y,x]					// Swizzle texture X&Y scale 
 	mfv			$t7, S711						// Num_lights
-	addiu		$t6, $t1, PARAMS_LIGHTS			// pointer to first_light = p_lights
 	
 # Calculate the last light index
+	addiu		$t6, $t1, PARAMS_LIGHTS			// pointer to first_light = p_lights
 	sll			$t7, $t7, 5			// num_lights*32
+	addu		$t7, $t6, $t7		// last_light = p_lights + num_lights*32
+	lv.q		R700, 16($t7)		// Load ambient
 	
 	sll			$v1, $t0, 2			// count * 4
 	sll			$t0, $t0, 3			// count * 8
 	addu		$t0, $v1, $t0		// count = count * 12
 	addu		$t0, $a2, $t0		// end_ptr = start_ptr + count * 12
 	beq			$a2, $t0, finished_PD
-	addu		$t7, $t6, $t7		// last_light = p_lights + num_lights*32
+	mfv			$v0, S701						// TnL flags
 
 next_vertex_PD:
 # Load and transform this vertex position
  	lv.s		S200, 0($a2)				// load word [y,x,?,z]
  	lv.s		S210, 4($a2)				// should align this to 16 bytes so we can do a single load?
 	vs2i.p		R200, R200					// R200 = [?,z,y,x]
- 	lbu			$v1, 4($a2)					// Get Cindx
-	addu		$v1, $v1, $t2				// pointer = base vector + Cindx
 	vi2f.q		R200, R200, 16				// int -> float
 	vmov.q		R200, R200[y,x,w,1]
 	vtfm4.q		R201, M000, R200			// World transform
-	vtfm4.q		R202, M100, R200			// Projection transform
+ 	lbu			$v1, 4($a2)					// Get Cindx
+	addu		$v1, $v1, $t2				// pointer = base vector + Cindx
+	vtfm4.q		R202, M100, R201			// Projection transform
 	sv.q		R201, 0x00($a3)				// Store world transform
 	sv.q		R202, 0x10($a3)				// Store projection transform
 	
@@ -462,10 +462,9 @@ done_lighting_PD:
 	beqz		$t4, do_texgen_PD
 	nop
 	
-# EnvMapped G_TEXTURE_GEN_LINEAR  Cheap way to do acos(x)/PI -> 0.5f - 0.25f * absf(x) - 0.25f * absf(x) * absf(x) * absf(x) //Corn
-	vmov.p		R203, R200[1/2,1/2]					// result = 0.5
-	vmul.p		R222, R202[1/4,1/4], R200			// X * 0.25, Y * 0.25
-	vsub.p		R203, R203, R222					// result -= X * 0.25
+# EnvMapped G_TEXTURE_GEN_LINEAR  Cheap way to do acos(x)/PI -> 0.5f - 0.25f * x - 0.25f * x * x * x //Corn
+	vmul.p		R222, R202[1/4,1/4], R202			// X * 0.25, Y * 0.25
+	vsub.p		R203, R202[1/2,1/2], R222			// result = 0.5 - X * 0.25
 	vmul.p		R222, R200, R222					// X * X * 0.25, Y * Y * 0.25
 	vmul.p		R222, R200, R222					// X * X * X * 0.25, Y * Y * Y * 0.25
 	vsub.p		R203, R203, R222					// result -= X * X * X * 0.25
@@ -492,7 +491,7 @@ do_texture_PD:
 	lv.s		S202, 8($a2)				// load texture word [tv,tu] (N.B. due to swizzling these are 'backwards' from what you might expect)
 	vs2i.s		R202, S202
 	vi2f.p		R202, R202, 16				// int -> float
-	vmul.p		R202, R202, R721[y,x]		// multiply by mTextureScale
+	vmul.p		R202, R202, R721			// multiply by mTextureScale
 	sv.s		S212, 0x30($a3)				// Store Texture.x
 	sv.s		S202, 0x34($a3)				// Store Texture.y
 

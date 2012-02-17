@@ -54,7 +54,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 	#define CATCH_NAN_EXCEPTION(op, valX, valY)
 #endif
 
-#ifndef DAEDALUS_SILENT
+#if 1
 inline void CHECK_R0( u32 op )
 {
 	if(gGPR[0]._u64 != 0) 

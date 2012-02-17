@@ -41,7 +41,7 @@ void DLParser_GBI1_Vtx( MicroCodeCommand command )
 
 	DL_PF("    Address 0x%08x, v0: %d, Num: %d, Length: 0x%04x", addr, v0, n, command.vtx1.len);
 
-	// Only game that sets this is Quake II, anyways this ends up crashing since it tries to clip too many vertices..
+	// Only games that set this are Flying Dragon and Quake II, anyways they end up crashing due overflowing vtx indices or cliping too many vertices..
 	DAEDALUS_ASSERT( (v0 + n) < 64, "Warning, attempting to load into invalid vertex positions");
 	DAEDALUS_ASSERT( addr < MAX_RAM_ADDRESS, "Address out of range (0x%08x)", addr );
 
@@ -146,7 +146,7 @@ void DLParser_GBI1_MoveMem( MicroCodeCommand command )
 				DL_PF("		Force Matrix(1): addr=%08X", address);
 				// Rayman 2, Donald Duck, Tarzan, all wrestling games use this
 				PSPRenderer::Get()->ForceMatrix( address );
-				// Next 3 MATRIX cmds are part of ForceMtx, skip 'em
+				// ForceMatrix takes four cmds
 				gDlistStack[gDlistStackPointer].pc += 24;
 			}
 			break;
@@ -199,8 +199,6 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 			u32 num_lights = ((value - 0x80000000) >> 5) - 1;
 
 			DL_PF("    G_MW_NUMLIGHT: Val:%d", num_lights);
-
-			gAmbientLightIdx = num_lights;
 			PSPRenderer::Get()->SetNumLights(num_lights);
 
 		}
@@ -249,16 +247,8 @@ void DLParser_GBI1_MoveWord( MicroCodeCommand command )
 
 			if (field_offset == 0)
 			{
-				// Light col, not the copy
-				if (light_idx == gAmbientLightIdx)
-				{
-					v3 col( N64COL_GETR_F(value), N64COL_GETG_F(value), N64COL_GETB_F(value) );
-					PSPRenderer::Get()->SetAmbientLight( col );
-				}
-				else
-				{
-					PSPRenderer::Get()->SetLightCol(light_idx, value);
-				}
+				// Light col
+				PSPRenderer::Get()->SetLightCol(light_idx, value);
 			}
 		}
 		break;

@@ -138,7 +138,6 @@ DAEDALUS_STATIC_ASSERT( sizeof( DaedalusLight ) == 32 );
 
 ALIGNED_TYPE(struct, TnLParams, 16)
 {
-	v4				Ambient;
 	TnLPSP			Flags;
 	u32				NumLights;
 	float			TextureScaleX;
@@ -197,7 +196,6 @@ public:
 	inline void			SetNumLights(u32 num)					{ mTnL.NumLights = num; }
 	inline void			SetLightCol(u32 l, u32 col)				{ mTnL.Lights[l].Colour.x=((col>>24)&0xFF)/255.0f; mTnL.Lights[l].Colour.y=((col>>16)&0xFF)/255.0f; mTnL.Lights[l].Colour.z=((col>>8)&0xFF)/255.0f; mTnL.Lights[l].Colour.w=1.0f; }
 	inline void			SetLightDirection(u32 l, f32 x, f32 y, f32 z)			{ v3 n(x, y, z); n.Normalise(); mTnL.Lights[l].Direction.x=n.x; mTnL.Lights[l].Direction.y=n.y; mTnL.Lights[l].Direction.z=n.z; mTnL.Lights[l].Padding0=0.0f; }
-	inline void			SetAmbientLight( const v3 & colour )	{ mTnL.Ambient.x = colour.x, mTnL.Ambient.y = colour.y, mTnL.Ambient.z = colour.z, mTnL.Ambient.w = 1.0f; }
 
 	inline void			SetMux( u64 mux )						{ mMux = mux; }
 	inline void			SetAlphaRef(u32 alpha)					{ mAlphaThreshold = alpha; }
@@ -209,7 +207,7 @@ public:
 
 
 	// Viewport stuff
-	void				SetN64Viewport( const v3 & scale, const v3 & trans );
+	void				SetN64Viewport( const v2 & scale, const v2 & trans );
 	void				SetScissor( u32 x0, u32 y0, u32 x1, u32 y1 );
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
@@ -334,8 +332,8 @@ private:
 	v2					mN64ToPSPScale;
 	v2					mN64ToPSPTranslate;
 
-	v3					mVpScale;
-	v3					mVpTrans;
+	v2					mVpScale;
+	v2					mVpTrans;
 
 	u64					mMux;
 
@@ -358,7 +356,7 @@ private:
 	u32					mTexWrap[ NUM_N64_TEXTURES ][ 2 ];
 	
 	//Max is 18 according to the manual //Corn
-	static const u32 MATRIX_STACK_SIZE = 18; 
+	static const u32 MATRIX_STACK_SIZE = 20; 
 
 	inline Matrix4x4 &	GetWorldProject();
 
@@ -372,7 +370,7 @@ private:
 	bool				mReloadProj;
 	bool				mWPmodified;
 		
-	static const u32 	MAX_VERTICES = 500;	
+	static const u32 	MAX_VERTICES = 128;	
 	u16					m_swIndexBuffer[MAX_VERTICES];
 	u32					m_dwNumIndices;
 

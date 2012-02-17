@@ -107,9 +107,8 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 			// 0x30 = 48 = 2 lights
 
 			u32 num_lights = command.mw2.value / 24;
-			DL_PF("    G_MW_NUMLIGHT: %d", num_lights);
 
-			gAmbientLightIdx = num_lights;
+			DL_PF("    G_MW_NUMLIGHT: %d", num_lights);
 			PSPRenderer::Get()->SetNumLights(num_lights);
 		}
 		break;
@@ -160,16 +159,7 @@ void DLParser_GBI2_MoveWord( MicroCodeCommand command )
 
 			if (field_offset == 0)
 			{
-				// Light col, not the copy
-				if (light_idx == gAmbientLightIdx)
-				{
-					v3 col( N64COL_GETR_F(command.mw2.value), N64COL_GETG_F(command.mw2.value), N64COL_GETB_F(command.mw2.value) );
-					PSPRenderer::Get()->SetAmbientLight( col );
-				}
-				else
-				{
-					PSPRenderer::Get()->SetLightCol(light_idx, command.mw2.value);
-				}
+				PSPRenderer::Get()->SetLightCol(light_idx, command.mw2.value);
 			}
 		}
 		break;
@@ -295,6 +285,8 @@ void DLParser_GBI2_MoveMem( MicroCodeCommand command )
 			DL_PF("    Force Matrix(2): addr=%08X", address);
 			// Rayman 2, Donald Duck, Tarzan, all wrestling games use this
 			PSPRenderer::Get()->ForceMatrix( address );
+			// ForceMatrix takes two cmds
+			gDlistStack[gDlistStackPointer].pc += 8;
 		}
 		break;
 /*

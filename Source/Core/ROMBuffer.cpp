@@ -23,6 +23,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ROM.h"
 #include "DMA.h"
 
+#include "Graphics/GraphicsContext.h"
+#include "../Graphics/intraFont/intraFont.h"
+
 #include "Math/MathUtil.h"
 
 #include "Debug/DBGConsole.h"
@@ -30,10 +33,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility/Preferences.h"
 #include "Utility/ROMFile.h"
 #include "Utility/ROMFileCache.h"
+#include "Utility/ROMFileMemory.h"
 #include "Utility/Stream.h"
 #include "Utility/IO.h"
 
-#include "SysPSP/Graphics/RomMemoryManger.h"
+extern bool PSP_IS_SLIM;
 
 namespace
 {
@@ -52,7 +56,7 @@ namespace
 
 	bool		ShouldLoadAsFixed( u32 rom_size )
 	{
-		if (CRomMemoryManager::Get()->IsAvailable() && !gGlobalPreferences.LargeROMBuffer)
+		if (PSP_IS_SLIM && !gGlobalPreferences.LargeROMBuffer)
 			return rom_size <= 32 * 1024 * 1024;
 		else
 			return rom_size <= 2 * 1024 * 1024;
@@ -151,7 +155,9 @@ namespace
 //*****************************************************************************
 bool RomBuffer::Create()
 {
-	CRomMemoryManager::Create();
+	// Create memory heap used for either ROM Cache or ROM buffer
+	// We do this to avoid memory fragmentation
+	CROMFileMemory::Create();
 	return true;
 }
 
@@ -186,19 +192,46 @@ void RomBuffer::Open( )
 
 	if( ShouldLoadAsFixed( sRomSize ) )
 	{
-		// Set rom size to 0 to indicate all of file should be read
-		u8 *	p_bytes;
-		u32		buffer_size;
-		u32		rom_size;
-		if( !p_rom_file->LoadEntireRom( &p_bytes, &buffer_size, &rom_size, messages ) )
+		// Now, allocate memory for rom - round up to a 4 byte boundry
+		u32		size_aligned( AlignPow2( sRomSize, 4 ) );
+		u8 *	p_bytes( (u8*)CROMFileMemory::Get()->Alloc( size_aligned ) );
+
+#if 0
+		if( !p_rom_file->LoadData( sRomSize, p_bytes, messages ) )
 		{
+			CROMFileMemory::Get()->Free( p_bytes );
 			delete p_rom_file;
 			return;
 		}
+#else
+		u32 offset( 0 );
+		u32 length_remaining( sRomSize );
+		const u32 TEMP_BUFFER_SIZE = 128 * 1024;
 
-		DAEDALUS_ASSERT( rom_size == sRomSize, "Why is the returned size from the rom?" );
-		DAEDALUS_ASSERT( buffer_size == sRomSize, "Why is the buffer a different size from the rom?" );
+		intraFont* ltn8  = intraFontLoad( "flash0:/font/ltn8.pgf", INTRAFONT_CACHE_ASCII);
+		intraFontSetStyle( ltn8, 1.5f, 0xFF000000, 0xFFFFFFFF, INTRAFONT_ALIGN_CENTER );
 
+		while( offset < sRomSize )
+		{
+			u32 length_to_process( Min( length_remaining, TEMP_BUFFER_SIZE ) );
+
+			if( !p_rom_file->ReadChunk( offset, p_bytes + offset, length_to_process ) )
+			{
+				break;
+			}
+
+			offset += length_to_process;
+			length_remaining -= length_to_process;
+
+			CGraphicsContext::Get()->BeginFrame();
+			CGraphicsContext::Get()->Clear(true,true);
+			intraFontPrintf( ltn8, 480/2, (272>>1), "Buffering ROM %d%%...", offset * 100 / sRomSize );
+			CGraphicsContext::Get()->EndFrame();
+			CGraphicsContext::Get()->UpdateFrame( false );
+		}
+
+		intraFontUnload( ltn8 );
+#endif
 		spRomData = p_bytes;
 		sRomFixed = true;
 
@@ -263,22 +296,22 @@ void RomBuffer::Open( )
 //*****************************************************************************
 void	RomBuffer::Close()
 {
-	if( CRomMemoryManager::Get()->IsAvailable() )
+	if( IsRomAddressFixed() )
 	{
-		CRomMemoryManager::Get()->Free( spRomData );
+		CROMFileMemory::Get()->Free( spRomData );
 		spRomData = NULL;
 	}
-
-	sRomSize = 0;
-	
-	if (spRomFileCache != NULL)
+	else
 	{
-		 spRomFileCache->Close();
-		 delete spRomFileCache;
-		 spRomFileCache = NULL;
+		DAEDALUS_ASSERT( spRomFileCache != NULL, "How come we have no file cache?" );
+		spRomFileCache->Close();
+		delete spRomFileCache;
+		spRomFileCache = NULL;
 	}
-	
+
+	sRomSize   = 0;
 	sRomLoaded = false;
+	sRomFixed  = false;
 }
 
 //*****************************************************************************

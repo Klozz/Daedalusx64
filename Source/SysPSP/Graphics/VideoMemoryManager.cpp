@@ -4,10 +4,13 @@
 #include "VideoMemoryManager.h"
 
 #include "Utility/MemoryHeap.h"
+#include "Math/MathUtil.h"
 
 #include <pspge.h>
 
-extern bool PSP_IS_SLIM;
+//extern bool PSP_IS_SLIM;
+extern void* malloc_volatile(size_t size);
+const u32 ERAM(3 * 512 * 1024);	//Amount of extra (volatile)RAM to use for textures in addition to VRAM //Corn
 
 //*****************************************************************************
 //
@@ -52,15 +55,11 @@ template<> bool CSingleton< CVideoMemoryManager >::Create()
 //*****************************************************************************
 IVideoMemoryManager::IVideoMemoryManager()
 :	mVideoMemoryHeap( CMemoryHeap::Create( MAKE_UNCACHED_PTR( sceGeEdramGetAddr() ), sceGeEdramGetSize() ) )
+,	mRamMemoryHeap( CMemoryHeap::Create( MAKE_UNCACHED_PTR( (void*)(((u32)malloc_volatile(ERAM + 0xF) + 0xF) & ~0xF) ), ERAM ) )
 //,	mRamMemoryHeap( CMemoryHeap::Create( 1 * 1024 * 1024 ) )
 {
 	printf( "vram base: %p\n", sceGeEdramGetAddr() );
 	printf( "vram size: %d KB\n", sceGeEdramGetSize() / 1024 );
-	  	 
-	if (PSP_IS_SLIM) 	 
-		 mRamMemoryHeap = CMemoryHeap::Create( 4 * 1024 * 1024 ); 	 
-	else 	 
-		 mRamMemoryHeap = CMemoryHeap::Create( 1 * 1024 * 1024 );
 }
 
 //*****************************************************************************
@@ -78,6 +77,9 @@ IVideoMemoryManager::~IVideoMemoryManager()
 bool IVideoMemoryManager::Alloc( u32 size, void ** data, bool * isvidmem )
 {
 	void * mem;
+
+	// Ensure that all memory is 16-byte aligned
+	size = AlignPow2( size, 16 );
 
 	// Try to alloc fast VRAM
 	mem = mVideoMemoryHeap->Alloc( size );

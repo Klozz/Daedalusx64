@@ -178,8 +178,7 @@ void * IMemoryHeap::InsertNew( u32 idx, u8 * adr, u32 size )
 //*****************************************************************************
 void* IMemoryHeap::Alloc( u32 size )
 {
-	// Ensure that all memory is 16-byte aligned
-	size = AlignPow2( size, 16 );
+
 
 	u8 * adr = mBasePtr;
 	u32 i;

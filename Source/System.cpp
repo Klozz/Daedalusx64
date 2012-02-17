@@ -134,8 +134,8 @@ SysEntityEntry SysInitTable[] =
 	{"Preference", CPreferences::Create, CPreferences::Destroy},
 	{"Memory", Memory_Init, Memory_Fini},
 	{"Controller", CController::Create, CController::Destroy},
-	{"RomBuffer", RomBuffer::Create, RomBuffer::Destroy},
 	{"VideoMemory", CVideoMemoryManager::Create, NULL},
+	{"RomBuffer", RomBuffer::Create, RomBuffer::Destroy},
 	{"GraphicsContext", CGraphicsContext::Create,   CGraphicsContext::Destroy},
 };
 

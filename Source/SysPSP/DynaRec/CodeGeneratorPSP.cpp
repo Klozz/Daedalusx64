@@ -43,9 +43,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 using namespace AssemblyUtils;
 
-//Enable to pass floats directly to FPU
+//Enable to load/store floats directly to/from FPU //Corn
 #define ENABLE_LWC1
 #define ENABLE_SWC1
+
+//Define to handle full 64bit checks for SLT,SLTU,SLTI & SLTIU //Corn
+//#define ENABLE_64BIT
 
 #define NOT_IMPLEMENTED( x )	DAEDALUS_ERROR( x )
 
@@ -1498,20 +1501,19 @@ CJumpLocation	CCodeGeneratorPSP::GenerateOpCode( const STraceEntry& ti, bool bra
 
 	mPrevious_rt = rt;
 
+	//	Default handling - call interpreting function
+	//
 	if( !handled )
 	{
-		
-		bool mBranchDelaySet = false;
-		/*
+#if 0 //1->Show not handled OP codes (Require that DAEDALUS_SILENT flag is undefined)	
+	  // Note: Cop1Op_DInstr is not handled, make sure to comment it out to see their OP codes here!
 		char msg[100];
 		SprintOpCodeInfo( msg, address, op_code );
 		printf( "Unhandled: 0x%08x %s\n", address, msg );
-		*/
+#endif
 
-		//
-		//	Default handling - call interpreting function
-		//
-		bool	need_pc( R4300_InstructionHandlerNeedsPC( op_code ) );
+		bool BranchDelaySet = false;
+		bool need_pc( R4300_InstructionHandlerNeedsPC( op_code ) );
 
 		if( !need_pc )
 		{
@@ -1524,7 +1526,7 @@ CJumpLocation	CCodeGeneratorPSP::GenerateOpCode( const STraceEntry& ti, bool bra
 			if( branch_delay_slot )
 			{
 				SetVar( &gCPUState.Delay, EXEC_DELAY );
-				mBranchDelaySet = true;
+				BranchDelaySet = true;
 			}
 
 			GenerateGenericR4300( op_code, R4300_GetInstructionHandler( op_code ) );
@@ -1535,7 +1537,6 @@ CJumpLocation	CCodeGeneratorPSP::GenerateOpCode( const STraceEntry& ti, bool bra
 
 			JAL( CCodeLabel( reinterpret_cast< const void * >( _ReturnFromDynaRecIfStuffToDo ) ), false );
 			ORI( PspReg_A0, PspReg_R0, 0 );
-
 		}
 
 		// Check whether we want to invert the status of this branch
@@ -1570,10 +1571,9 @@ CJumpLocation	CCodeGeneratorPSP::GenerateOpCode( const STraceEntry& ti, bool bra
 			}
 		}
 
-		if( mBranchDelaySet )
+		if( BranchDelaySet )
 		{
 			SetVar( &gCPUState.Delay, NO_DELAY );
-			mBranchDelaySet = false;
 		}
 	}
 
@@ -1785,25 +1785,15 @@ void	CCodeGeneratorPSP::GenerateLoad( u32 current_pc,
 
 	mKeepPreviousLoadBase = false;
 
-#ifdef ENABLE_LWC1
-	//Save actual float reg for later if we need it and use V0 for tmp reg when loading to FPU
-	const EPspFloatReg psp_ft( (EPspFloatReg)psp_dst );
-	OpCodeValue tmp_op( load_op );
-	if( load_op == OP_LWC1 ) 
-	{
-		load_op = OP_LW;
-		psp_dst = PspReg_V0;
-	}
-#endif
-
-	if( offset != 0 )
-	{
-		ADDIU( PspReg_A0, reg_address, offset );
-		reg_address = PspReg_A0;
-	}
-
 	if( swizzle != 0 )
 	{
+		if( offset != 0 )
+		{
+			ADDIU( PspReg_A0, reg_address, offset );
+			reg_address = PspReg_A0;
+			offset = 0;
+		}
+
 		XORI( PspReg_A0, reg_address, swizzle );
 		reg_address = PspReg_A0;
 	}
@@ -1824,7 +1814,7 @@ void	CCodeGeneratorPSP::GenerateLoad( u32 current_pc,
 		SLT( PspReg_T0, reg_address, gMemUpperBoundReg );	// t1 = upper < address
 		CJumpLocation branch( BEQ( PspReg_T0, PspReg_R0, CCodeLabel( NULL ), false ) );		// branch to jump to handler
 		ADDU( PspReg_A1, reg_address, gMemoryBaseReg );
-		CAssemblyWriterPSP::LoadRegister( psp_dst, load_op, PspReg_A1, 0 );
+		CAssemblyWriterPSP::LoadRegister( psp_dst, load_op, PspReg_A1, offset );
 
 		CCodeLabel		continue_location( GetAssemblyBuffer()->GetLabel() );
 
@@ -1834,7 +1824,23 @@ void	CCodeGeneratorPSP::GenerateLoad( u32 current_pc,
 		CAssemblyWriterPSP::SetBufferB();
 
 		CCodeLabel		handler_label( GetAssemblyBuffer()->GetLabel() );
-		GenerateSlowLoad( current_pc, psp_dst, reg_address, p_read_memory );
+		if( offset != 0 )
+		{
+			ADDIU( PspReg_A0, reg_address, offset );
+			reg_address = PspReg_A0;
+		}
+#ifdef ENABLE_LWC1
+		if( load_op == OP_LWC1 ) 
+		{
+			GenerateSlowLoad( current_pc, PspReg_V0, reg_address, p_read_memory );
+			// Copy return value to the FPU destination register
+			MTC1( (EPspFloatReg)psp_dst, PspReg_V0 );
+		}
+		else 
+#endif
+		{
+			GenerateSlowLoad( current_pc, psp_dst, reg_address, p_read_memory );
+		}
 
 		CJumpLocation	ret_handler( J( continue_location, true ) );
 		CAssemblyWriterPSP::SetBufferA();
@@ -1855,20 +1861,29 @@ void	CCodeGeneratorPSP::GenerateLoad( u32 current_pc,
 		SLT( PspReg_T0, reg_address, gMemUpperBoundReg );	// t1 = upper < address
 		ADDU( PspReg_A1, reg_address, gMemoryBaseReg );
 		CJumpLocation branch( BNEL( PspReg_T0, PspReg_R0, CCodeLabel( NULL ), false ) );
-		CAssemblyWriterPSP::LoadRegister( psp_dst, load_op, PspReg_A1, 0 );
+		CAssemblyWriterPSP::LoadRegister( psp_dst, load_op, PspReg_A1, offset );
 
-		GenerateSlowLoad( current_pc, psp_dst, reg_address, p_read_memory );
+		if( offset != 0 )
+		{
+			ADDIU( PspReg_A0, reg_address, offset );
+			reg_address = PspReg_A0;
+		}
+#ifdef ENABLE_LWC1
+		if( load_op == OP_LWC1 ) 
+		{
+			GenerateSlowLoad( current_pc, PspReg_V0, reg_address, p_read_memory );
+			// Copy return value to the FPU destination register
+			MTC1( (EPspFloatReg)psp_dst, PspReg_V0 );
+		}
+		else 
+#endif
+		{
+			GenerateSlowLoad( current_pc, psp_dst, reg_address, p_read_memory );
+		}
 
 		PatchJumpLong( branch, GetAssemblyBuffer()->GetLabel() );
 	}
 
-#ifdef ENABLE_LWC1
-	if( tmp_op == OP_LWC1 )
-	{
-		// Copy return value to the FPU destination register
-		MTC1( psp_ft, PspReg_V0 );
-	}
-#endif
 }
 
 //*****************************************************************************
@@ -2081,23 +2096,15 @@ void	CCodeGeneratorPSP::GenerateStore( u32 current_pc,
 
 	mKeepPreviousStoreBase = false;
 
-#ifdef ENABLE_SWC1
-	if( store_op == OP_SWC1 )
-	{	//Move value from FPU to CPU
-		store_op = OP_SW;
-		MFC1( PspReg_A1, (EPspFloatReg)psp_src );
-		psp_src = PspReg_A1;
-	}
-#endif
-
-	if( offset != 0 )
-	{
-		ADDIU( PspReg_A0, reg_address, offset );
-		reg_address = PspReg_A0;
-	}
-
 	if( swizzle != 0 )
 	{
+		if( offset != 0 )
+		{
+			ADDIU( PspReg_A0, reg_address, offset );
+			reg_address = PspReg_A0;
+			offset = 0;
+		}
+
 		XORI( PspReg_A0, reg_address, swizzle );
 		reg_address = PspReg_A0;
 	}
@@ -2107,7 +2114,7 @@ void	CCodeGeneratorPSP::GenerateStore( u32 current_pc,
 		SLT( PspReg_T0, reg_address, gMemUpperBoundReg );	// t1 = upper < address
 		CJumpLocation branch( BEQ( PspReg_T0, PspReg_R0, CCodeLabel( NULL ), false ) );
 		ADDU( PspReg_T1, reg_address, gMemoryBaseReg );
-		CAssemblyWriterPSP::StoreRegister( psp_src, store_op, PspReg_T1, 0 );
+		CAssemblyWriterPSP::StoreRegister( psp_src, store_op, PspReg_T1, offset );
 
 		CCodeLabel		continue_location( GetAssemblyBuffer()->GetLabel() );
 
@@ -2117,6 +2124,18 @@ void	CCodeGeneratorPSP::GenerateStore( u32 current_pc,
 		CAssemblyWriterPSP::SetBufferB();
 
 		CCodeLabel		handler_label( GetAssemblyBuffer()->GetLabel() );
+		if( offset != 0 )
+		{
+			ADDIU( PspReg_A0, reg_address, offset );
+			reg_address = PspReg_A0;
+		}
+#ifdef ENABLE_SWC1
+		if( store_op == OP_SWC1 )
+		{	//Move value from FPU to CPU
+			MFC1( PspReg_A1, (EPspFloatReg)psp_src );
+			psp_src = PspReg_A1;
+		}
+#endif
 		GenerateSlowStore( current_pc, psp_src, reg_address, p_write_memory );
 
 		CJumpLocation	ret_handler( J( continue_location, true ) );
@@ -2133,14 +2152,25 @@ void	CCodeGeneratorPSP::GenerateStore( u32 current_pc,
 		SLT( PspReg_T0, reg_address, gMemUpperBoundReg );	// t1 = upper < address
 		ADDU( PspReg_T1, reg_address, gMemoryBaseReg );
 		CJumpLocation branch( BNEL( PspReg_T0, PspReg_R0, CCodeLabel( NULL ), false ) );
-		CAssemblyWriterPSP::StoreRegister( psp_src, store_op, PspReg_T1, 0 );
+		CAssemblyWriterPSP::StoreRegister( psp_src, store_op, PspReg_T1, offset );
 
+		if( offset != 0 )
+		{
+			ADDIU( PspReg_A0, reg_address, offset );
+			reg_address = PspReg_A0;
+		}
+#ifdef ENABLE_SWC1
+		if( store_op == OP_SWC1 )
+		{	//Move value from FPU to CPU
+			MFC1( PspReg_A1, (EPspFloatReg)psp_src );
+			psp_src = PspReg_A1;
+		}
+#endif
 		GenerateSlowStore( current_pc, psp_src, reg_address, p_write_memory );
 
 		PatchJumpLong( branch, GetAssemblyBuffer()->GetLabel() );
 	}
 }
-
 
 //*****************************************************************************
 //
@@ -2203,8 +2233,6 @@ inline void	CCodeGeneratorPSP::GenerateJR( EN64Reg rs, const SBranchDetails * p_
 	SetVar( &gCPUState.TargetPC, reg_lo );
 	//SetVar( &gCPUState.Delay, DO_DELAY );
 	*p_branch_jump = GenerateBranchIfNotEqual( reg_lo, p_branch->TargetAddress, CCodeLabel() );
-
-
 }
 
 //*****************************************************************************
@@ -2228,10 +2256,7 @@ inline void	CCodeGeneratorPSP::GenerateJALR( EN64Reg rs, EN64Reg rd, u32 address
 	EPspReg reg_lo( GetRegisterAndLoadLo( rs, PspReg_T0 ) );
 	SetVar( &gCPUState.TargetPC, reg_lo );
 	*p_branch_jump = GenerateBranchIfNotEqual( reg_lo, p_branch->TargetAddress, CCodeLabel() );
-
-
 }
-
 
 //*****************************************************************************
 //
@@ -2696,21 +2721,24 @@ inline void	CCodeGeneratorPSP::GenerateSLT( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 		reg_lo_d = PspReg_T0;
 	}
 
+#ifdef ENABLE_64BIT
 	EPspReg	reg_hi_a( GetRegisterAndLoadHi( rs, PspReg_T0 ) );
 	EPspReg	reg_hi_b( GetRegisterAndLoadHi( rt, PspReg_T1 ) );
 
 	CJumpLocation	branch( BNE( reg_hi_a, reg_hi_b, CCodeLabel(NULL), false ) );
 	SLT( reg_lo_d, reg_hi_a, reg_hi_b );		// In branch delay slot
-
 	// If the branch was not taken, it means that the high part of the registers was equal, so compare bottom half
+#endif
 
 	EPspReg	reg_lo_a( GetRegisterAndLoadLo( rs, PspReg_T0 ) );
 	EPspReg	reg_lo_b( GetRegisterAndLoadLo( rt, PspReg_T1 ) );
 
 	SLT( reg_lo_d, reg_lo_a, reg_lo_b );
 
+#ifdef ENABLE_64BIT
 	// Patch up the branch
 	PatchJumpLong( branch, GetAssemblyBuffer()->GetLabel() );
+#endif
 
 	UpdateRegister( rd, reg_lo_d, URO_HI_CLEAR, PspReg_T0 );
 }
@@ -2736,21 +2764,24 @@ inline void	CCodeGeneratorPSP::GenerateSLTU( EN64Reg rd, EN64Reg rs, EN64Reg rt 
 		reg_lo_d = PspReg_T0;
 	}
 
+#ifdef ENABLE_64BIT
 	EPspReg	reg_hi_a( GetRegisterAndLoadHi( rs, PspReg_T0 ) );
 	EPspReg	reg_hi_b( GetRegisterAndLoadHi( rt, PspReg_T1 ) );
 
 	CJumpLocation	branch( BNE( reg_hi_a, reg_hi_b, CCodeLabel(NULL), false ) );
 	SLTU( reg_lo_d, reg_hi_a, reg_hi_b );		// In branch delay slot
-
 	// If the branch was not taken, it means that the high part of the registers was equal, so compare bottom half
+#endif
 
 	EPspReg	reg_lo_a( GetRegisterAndLoadLo( rs, PspReg_T0 ) );
 	EPspReg	reg_lo_b( GetRegisterAndLoadLo( rt, PspReg_T1 ) );
 
 	SLTU( reg_lo_d, reg_lo_a, reg_lo_b );
 
+#ifdef ENABLE_64BIT
 	// Patch up the branch
 	PatchJumpLong( branch, GetAssemblyBuffer()->GetLabel() );
+#endif
 
 	UpdateRegister( rd, reg_lo_d, URO_HI_CLEAR, PspReg_T0 );
 }
@@ -2907,6 +2938,7 @@ inline void	CCodeGeneratorPSP::GenerateSLTI( EN64Reg rt, EN64Reg rs, s16 immedia
 		reg_lo_d = PspReg_T0;
 	}
 
+#ifdef ENABLE_64BIT
 	CJumpLocation	branch;
 
 	EPspReg		reg_hi_a( GetRegisterAndLoadHi( rs, PspReg_T0 ) );
@@ -2923,14 +2955,17 @@ inline void	CCodeGeneratorPSP::GenerateSLTI( EN64Reg rt, EN64Reg rs, s16 immedia
 		branch = BNE( reg_hi_a, PspReg_T1, CCodeLabel(NULL), false );
 		SLTI( reg_lo_d, reg_hi_a, 0xffff );		// In branch delay slot
 	}
+#endif
 
 	// If the branch was not taken, it means that the high part of the registers was equal, so compare bottom half
 	EPspReg	reg_lo_a( GetRegisterAndLoadLo( rs, PspReg_T0 ) );
 
 	SLTI( reg_lo_d, reg_lo_a, immediate );
 
+#ifdef ENABLE_64BIT
 	// Patch up the branch
 	PatchJumpLong( branch, GetAssemblyBuffer()->GetLabel() );
+#endif
 
 	UpdateRegister( rt, reg_lo_d, URO_HI_CLEAR, PspReg_T0 );
 }
@@ -2955,6 +2990,7 @@ inline void	CCodeGeneratorPSP::GenerateSLTIU( EN64Reg rt, EN64Reg rs, s16 immedi
 		reg_lo_d = PspReg_T0;
 	}
 
+#ifdef ENABLE_64BIT
 	CJumpLocation	branch;
 
 	EPspReg		reg_hi_a( GetRegisterAndLoadHi( rs, PspReg_T0 ) );
@@ -2971,14 +3007,17 @@ inline void	CCodeGeneratorPSP::GenerateSLTIU( EN64Reg rt, EN64Reg rs, s16 immedi
 		branch = BNE( reg_hi_a, PspReg_T1, CCodeLabel(NULL), false );
 		SLTIU( reg_lo_d, reg_hi_a, 0xffff );		// In branch delay slot
 	}
+#endif
 
 	// If the branch was not taken, it means that the high part of the registers was equal, so compare bottom half
 	EPspReg	reg_lo_a( GetRegisterAndLoadLo( rs, PspReg_T0 ) );
 
 	SLTIU( reg_lo_d, reg_lo_a, immediate );
 
+#ifdef ENABLE_64BIT
 	// Patch up the branch
 	PatchJumpLong( branch, GetAssemblyBuffer()->GetLabel() );
+#endif
 
 	UpdateRegister( rt, reg_lo_d, URO_HI_CLEAR, PspReg_T0 );
 }

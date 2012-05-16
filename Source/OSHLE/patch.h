@@ -160,8 +160,6 @@ extern PatchVariable * g_PatchVariables[];
 
 #endif
 
-extern u32  nPatchSymbols;
-
 inline OpCode GetCorrectOp( OpCode op_code )
 {
 #ifdef DAEDALUS_BREAKPOINTS_ENABLED
@@ -181,9 +179,11 @@ extern u32 gNumOfOSFunctions;
 void Patch_Reset();
 void Patch_ApplyPatches();
 void Patch_PatchAll();
+
+#ifndef DAEDALUS_SILENT
 const char * Patch_GetJumpAddressName(u32 jump);
 u32 Patch_GetSymbolAddress(const char * szName);
-
+#endif
 #ifdef DUMPOSFUNCTIONS
 void Patch_DumpOsThreadInfo();
 void Patch_DumpOsQueueInfo();

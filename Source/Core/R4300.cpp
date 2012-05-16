@@ -70,15 +70,6 @@ inline void CHECK_R0( u32 op )
 	inline void CHECK_R0( u32 op ) {}
 #endif
 
-#define CHECK_COP1_UNUSUABLE \
-{ \
-	if (!(gCPUState.CPUControl[C0_SR]._u32_0 & SR_CU1)) \
-	{ \
-		DBGConsole_Msg(0, "Thread accessing Cop1, throwing COP1 unusuable exception"); \
-		R4300_Exception_CopUnusuable(); \
-		return; \
-	} \
-}
 //
 //	Abstract away the different rounding modes between targets
 //
@@ -407,7 +398,7 @@ static void R4300_CALL_TYPE R4300_Cop1_WInstr( R4300_CALL_SIGNATURE );
 static void R4300_CALL_TYPE R4300_Cop1_LInstr( R4300_CALL_SIGNATURE );
 static void R4300_CALL_TYPE R4300_CoPro0( R4300_CALL_SIGNATURE );
 static void R4300_CALL_TYPE R4300_CoPro1( R4300_CALL_SIGNATURE );
-//static void R4300_CALL_TYPE R4300_CoPro1_Disabled( R4300_CALL_SIGNATURE );
+static void R4300_CALL_TYPE R4300_CoPro1_Disabled( R4300_CALL_SIGNATURE );
 static void R4300_CALL_TYPE R4300_Special( R4300_CALL_SIGNATURE );
 static void R4300_CALL_TYPE R4300_RegImm( R4300_CALL_SIGNATURE );
 static void R4300_CALL_TYPE R4300_Cop0_TLB( R4300_CALL_SIGNATURE );
@@ -542,20 +533,27 @@ void R4300_CALL_TYPE R4300_SetSR( u32 new_value )
 
 	bool interrupts_enabled_after = (gCPUState.CPUControl[C0_SR]._u32_0 & SR_IE) != 0;
 
-	/*
--	Really important note :
--	Disabling this flag fixes some games ex : Extreme-G XG2 and Tom and Jerry.
--	Also fixes Wayne Gretzky's 3D Hockey '98 to be zoomed in too far (really nasty glitch)
--	Still needs a bit of work, but so far we are on the right path now.
-	*/
-
-	// Too hackish.. disabling this check causes several games ex SSB to go crazy..
-	// Also you need to restart the emu to restore the interrupts correctly
-	/*if(!gCheckN64FPUsageDisable)	// Check FP usage
+	// CHECK COP1 UNUSUABLE
+	if( (gCPUState.CPUControl[C0_SR]._u32_0 & SR_CU1) == 0 )
 	{
-		R4300_SetCop1Enable( (gCPUState.CPUControl[C0_SR]._u64 & SR_CU1) != 0 );
-	}*/
+		// Switch flow control to COP1 unusuable exception handler
+		R4300Instruction[OP_COPRO1] = R4300_CoPro1_Disabled;
+		R4300Instruction[OP_LWC1] = R4300_CoPro1_Disabled;
+		R4300Instruction[OP_LDC1] = R4300_CoPro1_Disabled;
+		R4300Instruction[OP_SWC1] = R4300_CoPro1_Disabled;
+		R4300Instruction[OP_SDC1] = R4300_CoPro1_Disabled;
+	}
+	else
+	{
+		// Return flow control
+		R4300Instruction[OP_COPRO1] = R4300_CoPro1;
+		R4300Instruction[OP_LWC1] = R4300_LWC1;
+		R4300Instruction[OP_LDC1] = R4300_LDC1;
+		R4300Instruction[OP_SWC1] = R4300_SWC1;
+		R4300Instruction[OP_SDC1] = R4300_SDC1;
+	}
 
+	// Serve any pending interrupts
 	if ( !interrupts_enabled_before && interrupts_enabled_after )
 	{
 		if (gCPUState.CPUControl[C0_SR]._u32_0 & gCPUState.CPUControl[C0_CAUSE]._u32_0 & CAUSE_IPMASK)
@@ -572,7 +570,7 @@ void R4300_CALL_TYPE R4300_SetSR( u32 new_value )
 #define WARN_NOIMPL(op)		{ DAEDALUS_ASSERT( false, "Instruction Not Implemented" ); }
 
 static void R4300_CALL_TYPE R4300_Unk( R4300_CALL_SIGNATURE )     { WARN_NOEXIST("R4300_Unk"); }
-/*
+
 static void R4300_CALL_TYPE R4300_CoPro1_Disabled( R4300_CALL_SIGNATURE )
 {
 	// Cop1 Unusable
@@ -582,7 +580,7 @@ static void R4300_CALL_TYPE R4300_CoPro1_Disabled( R4300_CALL_SIGNATURE )
 
 	R4300_Exception_CopUnusuable();
 }
-*/
+
 // These are the only unimplemented R4300 instructions now:
 static void R4300_CALL_TYPE R4300_LL( R4300_CALL_SIGNATURE ) { WARN_NOIMPL("LL"); }
 static void R4300_CALL_TYPE R4300_LLD( R4300_CALL_SIGNATURE ) {  WARN_NOIMPL("LLD"); }
@@ -1328,7 +1326,7 @@ static void R4300_CALL_TYPE R4300_CACHE( R4300_CALL_SIGNATURE )
 
 static void R4300_CALL_TYPE R4300_LWC1( R4300_CALL_SIGNATURE ) 				// Load Word to Copro 1 (FPU)
 {
-	R4300_CALL_MAKE_OP( op_code );	CHECK_COP1_UNUSUABLE
+	R4300_CALL_MAKE_OP( op_code );
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	StoreFPR_Word( op_code.ft, Read32Bits(address) );
@@ -1337,7 +1335,7 @@ static void R4300_CALL_TYPE R4300_LWC1( R4300_CALL_SIGNATURE ) 				// Load Word 
 
 static void R4300_CALL_TYPE R4300_LDC1( R4300_CALL_SIGNATURE )				// Load Doubleword to Copro 1 (FPU)
 {
-	R4300_CALL_MAKE_OP( op_code );	CHECK_COP1_UNUSUABLE
+	R4300_CALL_MAKE_OP( op_code );
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 
@@ -1358,7 +1356,7 @@ static void R4300_CALL_TYPE R4300_LD( R4300_CALL_SIGNATURE ) 				// Load Doublew
 
 static void R4300_CALL_TYPE R4300_SWC1( R4300_CALL_SIGNATURE ) 			// Store Word From Copro 1
 {
-	R4300_CALL_MAKE_OP( op_code );	CHECK_COP1_UNUSUABLE
+	R4300_CALL_MAKE_OP( op_code );
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 	//Write32Bits(address, (u32)gCPUState.FPU[dwFT]);
@@ -1367,7 +1365,7 @@ static void R4300_CALL_TYPE R4300_SWC1( R4300_CALL_SIGNATURE ) 			// Store Word 
 
 static void R4300_CALL_TYPE R4300_SDC1( R4300_CALL_SIGNATURE )		// Store Doubleword From Copro 1
 {
-	R4300_CALL_MAKE_OP( op_code );	CHECK_COP1_UNUSUABLE
+	R4300_CALL_MAKE_OP( op_code );
 
 	u32 address = (u32)( gGPR[op_code.base]._s32_0 + (s32)(s16)op_code.immediate );
 
@@ -2367,9 +2365,9 @@ static void R4300_CALL_TYPE R4300_Cop1_CTC1( R4300_CALL_SIGNATURE ) 		// move Co
 	//else if ( op_code.fs == 31 )
 	if ( op_code.fs == 31 )
 	{
-		gCPUState.FPUControl[ op_code.fs ] = gGPR[ op_code.rt ];
+		gCPUState.FPUControl[ 31 ]._u32_0 = gGPR[ op_code.rt ]._u32_0;
 
-		u32		fpcr( gCPUState.FPUControl[ op_code.fs ]._u32_0 );
+		u32		fpcr( gCPUState.FPUControl[ 31 ]._u32_0 );
 
 		switch ( fpcr & FPCSR_RM_MASK )
 		{
@@ -2393,7 +2391,7 @@ static void R4300_CALL_TYPE R4300_BC1_BC1F( R4300_CALL_SIGNATURE )		// Branch on
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	if ( !(gCPUState.FPUControl[31]._u64 & FPCSR_C) )
+	if ( !(gCPUState.FPUControl[31]._u32_0 & FPCSR_C) )
 	{
 		u32	new_pc( gCPUState.CurrentPC + (s32)(s16)op_code.immediate*4 + 4 );
 		CPU_TakeBranch( new_pc );
@@ -2404,7 +2402,7 @@ static void R4300_CALL_TYPE R4300_BC1_BC1T( R4300_CALL_SIGNATURE )	// Branch on 
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	if ( gCPUState.FPUControl[31]._u64 & FPCSR_C )
+	if ( gCPUState.FPUControl[31]._u32_0 & FPCSR_C )
 	{
 		u32	new_pc( gCPUState.CurrentPC + (s32)(s16)op_code.immediate*4 + 4 );
 		CPU_TakeBranch( new_pc );
@@ -2415,7 +2413,7 @@ static void R4300_CALL_TYPE R4300_BC1_BC1FL( R4300_CALL_SIGNATURE )	// Branch on
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	if ( !(gCPUState.FPUControl[31]._u64 & FPCSR_C) )
+	if ( !(gCPUState.FPUControl[31]._u32_0 & FPCSR_C) )
 	{
 		u32	new_pc( gCPUState.CurrentPC + (s32)(s16)op_code.immediate*4 + 4 );
 		CPU_TakeBranch( new_pc );
@@ -2431,7 +2429,7 @@ static void R4300_CALL_TYPE R4300_BC1_BC1TL( R4300_CALL_SIGNATURE )		// Branch o
 {
 	R4300_CALL_MAKE_OP( op_code );
 
-	if ( gCPUState.FPUControl[31]._u64 & FPCSR_C )
+	if ( gCPUState.FPUControl[31]._u32_0 & FPCSR_C )
 	{
 		u32	new_pc( gCPUState.CurrentPC + (s32)(s16)op_code.immediate*4 + 4 );
 		CPU_TakeBranch( new_pc );
@@ -2779,9 +2777,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_EQ( R4300_CALL_SIGNATURE ) 				// Compa
 	f32 fY = LoadFPR_Single( op_code.ft );
 
 	if ( fX == fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 
 //*****************************************************************************
@@ -2796,9 +2794,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_LT( R4300_CALL_SIGNATURE ) 				// Compa
 	f32 fY = LoadFPR_Single( op_code.ft );
 
 	if ( fX < fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 
 //*****************************************************************************
@@ -2814,9 +2812,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_NGE( R4300_CALL_SIGNATURE )
 	CATCH_NAN_EXCEPTION( "R4300_Cop1_S_NGE", fX, fY );
 
 	if(fX < fY)
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 
 }
 
@@ -2834,9 +2832,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_LE( R4300_CALL_SIGNATURE ) 				// Compa
 	CATCH_NAN_EXCEPTION( "R4300_Cop1_S_LE", fX, fY );
 
 	if ( fX <= fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 
 }
 
@@ -2853,9 +2851,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_SEQ( R4300_CALL_SIGNATURE )
 	CATCH_NAN_EXCEPTION( "R4300_Cop1_S_SEQ", fX, fY );
 
 	if(fX == fY)
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 
 //*****************************************************************************
@@ -2872,9 +2870,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_UEQ( R4300_CALL_SIGNATURE )
 
 	if( pspFpuIsNaN(fX + fY) || fX == fY )
 	//if( fX == fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 
 //*****************************************************************************
@@ -2891,7 +2889,7 @@ static void R4300_CALL_TYPE R4300_Cop1_S_NGLE( R4300_CALL_SIGNATURE )
 	CATCH_NAN_EXCEPTION( "R4300_Cop1_S_NGLE", fX, fY );
 #endif
 
-	gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+	gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 
 //*****************************************************************************
@@ -2908,9 +2906,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_OLE( R4300_CALL_SIGNATURE )
 
 	if (!pspFpuIsNaN(fX + fY) && fX <= fY )
 	//if ( fX <= fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 
 //*****************************************************************************
@@ -2924,9 +2922,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_ULE( R4300_CALL_SIGNATURE )
 	f32 fY = LoadFPR_Single( op_code.ft );
 
 	if(pspFpuIsNaN(fX + fY) || fX <= fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 
 //*****************************************************************************
@@ -2940,9 +2938,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_UN( R4300_CALL_SIGNATURE )
 	f32 fY = LoadFPR_Single( op_code.ft );
 
 	if( pspFpuIsNaN(fX + fY) )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 
 //*****************************************************************************
@@ -2952,7 +2950,7 @@ static void R4300_CALL_TYPE R4300_Cop1_S_F( R4300_CALL_SIGNATURE )
 {
 	//R4300_CALL_MAKE_OP( op_code );
 
-	gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+	gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 
 //*****************************************************************************
@@ -2969,9 +2967,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_NGT( R4300_CALL_SIGNATURE )
 	CATCH_NAN_EXCEPTION( "R4300_Cop1_S_NGT", fX, fY );
 
 	if ( fX <= fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 
 //*****************************************************************************
@@ -2985,9 +2983,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_ULT( R4300_CALL_SIGNATURE )
 	f32 fY = LoadFPR_Single( op_code.ft );
 
 	if( pspFpuIsNaN(fX + fY) || fX < fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 
 //*****************************************************************************
@@ -3004,7 +3002,7 @@ static void R4300_CALL_TYPE R4300_Cop1_S_SF( R4300_CALL_SIGNATURE )
 	CATCH_NAN_EXCEPTION( "R4300_Cop1_S_SF", fX, fY );
 #endif
 
-	gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+	gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 
 //*****************************************************************************
@@ -3020,9 +3018,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_NGL( R4300_CALL_SIGNATURE )
 	CATCH_NAN_EXCEPTION( "R4300_Cop1_S_NGL", fX, fY );
 
 	if ( fX == fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 
 //*****************************************************************************
@@ -3039,9 +3037,9 @@ static void R4300_CALL_TYPE R4300_Cop1_S_OLT( R4300_CALL_SIGNATURE )
 
 	if (!pspFpuIsNaN(fX + fY) && fX < fY )
 	//if ( fX < fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 
 
@@ -3324,9 +3322,9 @@ static void R4300_CALL_TYPE R4300_Cop1_D_EQ( R4300_CALL_SIGNATURE )				// Compar
 	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( fX == fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 //*****************************************************************************
 //
@@ -3340,9 +3338,9 @@ static void R4300_CALL_TYPE R4300_Cop1_D_LE( R4300_CALL_SIGNATURE )				// Compar
 	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( fX <= fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 
 }
 
@@ -3358,9 +3356,9 @@ static void R4300_CALL_TYPE R4300_Cop1_D_LT( R4300_CALL_SIGNATURE )
 	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( fX < fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 
 }
 //*****************************************************************************
@@ -3370,7 +3368,7 @@ static void R4300_CALL_TYPE R4300_Cop1_D_F( R4300_CALL_SIGNATURE )
 {
 	//R4300_CALL_MAKE_OP( op_code );
 
-	gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+	gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 //*****************************************************************************
 //
@@ -3383,9 +3381,9 @@ static void R4300_CALL_TYPE R4300_Cop1_D_UN( R4300_CALL_SIGNATURE )
 	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( pspFpuIsNaN(fX + fY) )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 //*****************************************************************************
 //
@@ -3398,9 +3396,9 @@ static void R4300_CALL_TYPE R4300_Cop1_D_UEQ( R4300_CALL_SIGNATURE )
 	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( pspFpuIsNaN(fX + fY) || fX == fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 //*****************************************************************************
 //
@@ -3413,9 +3411,9 @@ static void R4300_CALL_TYPE R4300_Cop1_D_OLT( R4300_CALL_SIGNATURE )
 	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( !pspFpuIsNaN(fX + fY) && fX < fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 //*****************************************************************************
 //
@@ -3428,9 +3426,9 @@ static void R4300_CALL_TYPE R4300_Cop1_D_ULT( R4300_CALL_SIGNATURE )
 	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( pspFpuIsNaN(fX + fY) || fX < fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 //*****************************************************************************
 //
@@ -3443,9 +3441,9 @@ static void R4300_CALL_TYPE R4300_Cop1_D_OLE( R4300_CALL_SIGNATURE )
 	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( !pspFpuIsNaN(fX + fY) && fX <= fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 //*****************************************************************************
 //
@@ -3458,9 +3456,9 @@ static void R4300_CALL_TYPE R4300_Cop1_D_ULE( R4300_CALL_SIGNATURE )
 	d64 fY = LoadFPR_Double( op_code.ft );
 
 	if( pspFpuIsNaN(fX + fY) || fX <= fY )
-		gCPUState.FPUControl[31]._u64 |= FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 |= FPCSR_C;
 	else
-		gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+		gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 //*****************************************************************************
 //
@@ -3476,7 +3474,7 @@ static void R4300_CALL_TYPE R4300_Cop1_D_SF( R4300_CALL_SIGNATURE )
 	CATCH_NAN_EXCEPTION( "R4300_Cop1_D_SF", fX, fY );
 #endif
 
-	gCPUState.FPUControl[31]._u64 &= ~FPCSR_C;
+	gCPUState.FPUControl[31]._u32_0 &= ~FPCSR_C;
 }
 //*****************************************************************************
 // Same as above..
@@ -3611,16 +3609,13 @@ CPU_Instruction	R4300_GetInstructionHandler( OpCode op_code )
 //*****************************************************************************
 void R4300_Init()
 {
-	// ToDo : Make these game specific? and get rid off gSimulateDoubleDisabled?
-	if(gSimulateDoubleDisabled)
+	if(g_ROM.GameHacks == CONKER)
 	{
-		R4300Cop1DInstruction[Cop1OpFunc_MOV]	= R4300_Cop1_D_MOV_2;   // Conker
-		R4300Cop1SInstruction[Cop1OpFunc_CVT_D] = R4300_Cop1_S_CVT_D_2; // Mario Party Draft mini game, Earth Worm Jim, Tom and Jerry, Power Puff Girls
+		R4300Cop1DInstruction[Cop1OpFunc_MOV]	= R4300_Cop1_D_MOV_2; 
 	}
 	else
 	{
 		R4300Cop1DInstruction[Cop1OpFunc_MOV]	= R4300_Cop1_D_MOV;
-		R4300Cop1SInstruction[Cop1OpFunc_CVT_D] = R4300_Cop1_S_CVT_D;
 	}
 
 	if(g_ROM.GameHacks == BUCK_BUMBLE)
@@ -3630,6 +3625,16 @@ void R4300_Init()
 	else
 	{
 		R4300Cop1DInstruction[Cop1OpFunc_ADD]	= R4300_Cop1_D_ADD;
+	}
+
+	// Mario Party Draft mini game, Earth Worm Jim, Tom and Jerry, Power Puff Girls
+	if(g_ROM.DISABLE_SIMDOUBLES == true)
+	{
+		R4300Cop1SInstruction[Cop1OpFunc_CVT_D] = R4300_Cop1_S_CVT_D_2;
+	}
+	else
+	{
+		R4300Cop1SInstruction[Cop1OpFunc_CVT_D] = R4300_Cop1_S_CVT_D;
 	}
 
 }

@@ -95,7 +95,6 @@ static const char * g_szEventStrings[23] =
 };
 #endif	// DUMPOSFUNCTIONS
 
-bool applied = false;
 u32 gCurrentLength;
 u32 gNumOfOSFunctions;
 
@@ -108,9 +107,9 @@ u32 gNumOfOSFunctions;
 #define PATCH_RET_ERET RET_JR_ERET()
 
 // Increase this number every time we changed the symbol table
-static const u32 MAGIC_HEADER = 0x80000129;
+static const u32 MAGIC_HEADER = 0x80000130;
 
-bool gPatchesInstalled = false;
+bool gPatchesApplied = false;
 
 //u32 g_dwOSStart = 0x00240000;
 //u32 g_dwOSEnd   = 0x00380000;
@@ -130,8 +129,7 @@ static u32  nPatchVariables;
 
 void Patch_Reset()
 {
-	applied = false;
-	gPatchesInstalled = false;
+	gPatchesApplied = false;
 	gCurrentLength = 0;
 	gNumOfOSFunctions = 0;
 	Patch_ResetSymbolTable();
@@ -158,7 +156,7 @@ void Patch_ResetSymbolTable()
 
 void Patch_ApplyPatches()
 {
-	applied = true;
+	gPatchesApplied = true;
 
 	if (!gOSHooksEnabled)
 		return;
@@ -173,15 +171,12 @@ void Patch_ApplyPatches()
 
 	// Do this every time or just when originally patched
 	/*result = */OS_Reset();
-
-	// This may already be set if this function has been called before
-	gPatchesInstalled = true;
 }
 
 
 void Patch_PatchAll()
 {
-	if (!applied)
+	if (!gPatchesApplied)
 	{
 		Patch_ApplyPatches();
 	}
@@ -1088,7 +1083,7 @@ static u32 RET_NOT_PROCESSED(PatchSymbol* ps)
 	return 1;
 }
 
-static u32 inline RET_JR_RA()
+inline u32 RET_JR_RA()
 {
 		gCPUState.TargetPC = gGPR[REG_ra]._u32_0;
 		return 1;

@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 //	In public releases, just use the standard memory allocators
 //
-#ifndef DAEDALUS_PUBLIC_RELEASE
+#ifndef DAEDALUS_SILENT
 
 #if defined( DAEDALUS_LOG_ALLOCATIONS ) || defined( _DEBUG )
 
@@ -115,7 +115,9 @@ void * operator new[]( size_t count )
 //*****************************************************************************
 void operator delete[]( void * p_mem )
 {
+	#ifdef DAEDALUS_LOG_ALLOCATIONS
 	SAVE_RA( ra );
+	#endif
 
 	if( p_mem != NULL )
 	{
@@ -131,7 +133,9 @@ void operator delete[]( void * p_mem )
 //*****************************************************************************
 void operator delete( void * p_mem )
 {
+	#ifdef DAEDALUS_LOG_ALLOCATIONS
 	SAVE_RA( ra );
+	#endif
 
 	if( p_mem != NULL )
 	{
@@ -142,4 +146,4 @@ void operator delete( void * p_mem )
 	}
 }
 
-#endif //DAEDALUS_PUBLIC_RELEASE
+#endif //DAEDALUS_SILENT

@@ -80,7 +80,7 @@ std::vector< DBG_BreakPoint > g_BreakPoints;
 
 
 
-static bool		gCPURunning				= false;			// CPU is actively running
+static bool			gCPURunning				= false;			// CPU is actively running
 //static u32		gLastPC = 0xffffffff;
 //static u8 *		gLastAddress = NULL;
 
@@ -407,9 +407,10 @@ void CPU_Reset( )
 void CPU_Finalise()
 {
 #ifdef DAEDALUS_ENABLE_DYNAREC
-#ifdef DAEDALUS_DEBUG_DYNAREC
-	CPU_DumpFragmentCache();
-#endif
+	#ifdef DAEDALUS_DEBUG_DYNAREC
+		//This will dump the fragment cache on exit to ROMs menu
+		//CPU_DumpFragmentCache();
+	#endif
 #endif
 }
 
@@ -516,7 +517,6 @@ bool CPU_Run()
 //*****************************************************************************
 void CPU_SelectCore()
 {
-
 	if (gDynarecEnabled)
 		Dynamo_SelectCore();
 	else

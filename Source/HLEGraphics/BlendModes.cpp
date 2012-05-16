@@ -1860,7 +1860,7 @@ bool	IsInexactDefault( OverrideBlendModeFn Fn )
 //*****************************************************************************
 OverrideBlendModeFn		LookupOverrideBlendModeForced( u64 mux )
 {
-#ifndef DAEDALUS_PUBLIC_RELEASE
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	if(!gGlobalPreferences.CustomBlendModes) return NULL;
 #endif
 	switch(mux)

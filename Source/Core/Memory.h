@@ -92,7 +92,10 @@ void			Memory_Cleanup();
 
 typedef void * (*MemFastFunction )( u32 address );
 typedef void (*MemWriteValueFunction )( u32 address, u32 value );
+
+#ifndef DAEDALUS_SILENT
 typedef bool (*InternalMemFastFunction)( u32 address, void ** p_translated );
+#endif
 
 /* Modified by Lkb (24/8/2001)
    These tables were declared as pointers and dynamically allocated.
@@ -119,7 +122,9 @@ typedef bool (*InternalMemFastFunction)( u32 address, void ** p_translated );
 extern MemFastFunction				g_ReadAddressLookupTable[0x4000];
 extern MemFastFunction				g_WriteAddressLookupTable[0x4000];
 extern MemWriteValueFunction		g_WriteAddressValueLookupTable[0x4000];
+#ifndef DAEDALUS_SILENT
 extern InternalMemFastFunction		InternalReadFastTable[0x4000];
+#endif
 extern void*						g_ReadAddressPointerLookupTable[0x4000];
 extern void*						g_WriteAddressPointerLookupTable[0x4000];
 
@@ -131,9 +136,9 @@ ALIGNED_TYPE(struct, memory_tables_struct_t, PAGE_ALIGN)
 	MemFastFunction					_g_ReadAddressLookupTable[0x4000];
 	MemFastFunction					_g_WriteAddressLookupTable[0x4000];
 	MemWriteValueFunction			_g_WriteAddressValueLookupTable[0x4000];
-
+#ifndef DAEDALUS_SILENT
 	InternalMemFastFunction			_InternalReadFastTable[0x4000];
-
+#endif
 	void*							_g_ReadAddressPointerLookupTable[0x4000];
 	void*							_g_WriteAddressPointerLookupTable[0x4000];
 };
@@ -233,15 +238,6 @@ pointer_null_x:
 #define WriteValueAddress FuncTableWriteValueAddress
 #else
 
-
-inline u8 FastRead8bits(u32 address)
-{
-
-	return(*((u8 *)(g_ReadAddressLookupTable)[address>>18](address)));
-}
-
-#define FastWrite32Bits( address,  data)		*(u32 *)(g_WriteAddressValueLookupTable[address>>18](address, data)) = data;
-
 inline void* ReadAddress( u32 address )
 {
 	s32 tableEntry = reinterpret_cast< s32 >( g_ReadAddressPointerLookupTable[address >> 18] ) + address;
@@ -283,10 +279,12 @@ inline void WriteValueAddress( u32 address, u32 value )
 }
 #endif /* 0 */
 
+#ifndef DAEDALUS_SILENT
 inline bool Memory_GetInternalReadAddress(u32 address, void ** p_translated)
 {
 	return (InternalReadFastTable)[(address)>>18](address, p_translated);
 }
+#endif
 
 //#define MEMORY_CHECK_ALIGN( address, align )	DAEDALUS_ASSERT( (address & ~(align-1)) == 0, "Unaligned memory access" )
 #define MEMORY_CHECK_ALIGN( address, align )	

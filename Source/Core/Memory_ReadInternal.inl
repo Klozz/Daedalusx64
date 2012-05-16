@@ -17,8 +17,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+//
+// InternalRead is only used for debug puposes
+//
 
-
+#ifndef DAEDALUS_SILENT
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -168,3 +171,4 @@ static bool InternalRead_9FC0_9FCF( u32 address, void ** p_translated )
 		return InternalReadInvalid( address, p_translated );
 	} 
 }
+#endif

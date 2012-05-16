@@ -118,6 +118,7 @@ void Flash_DoCommand(u32);
 #include "Memory_WriteValue.inl"
 #include "Memory_ReadInternal.inl"
 
+#ifndef DAEDALUS_SILENT
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -157,7 +158,7 @@ InternalMemMapEntry InternalMemMapEntries[] =
 
 	{ ~0,  ~0, NULL}
 };
-
+#endif
 
 //*****************************************************************************
 //
@@ -168,8 +169,8 @@ struct MemMapEntry
 	MemFastFunction ReadFastFunction;
 	MemFastFunction WriteFastFunction;
 	MemWriteValueFunction WriteValueFunction;
-	unsigned int ReadRegion;
-	unsigned int WriteRegion;
+	u32 ReadRegion;
+	u32 WriteRegion;
 };
 
 MemMapEntry MemMapEntries[] =
@@ -238,7 +239,9 @@ MemMapEntry MemMapEntries[] =
 MemFastFunction g_ReadAddressLookupTable[0x4000];
 MemFastFunction g_WriteAddressLookupTable[0x4000];
 MemWriteValueFunction g_WriteAddressValueLookupTable[0x4000];
+#ifndef DAEDALUS_SILENT
 InternalMemFastFunction InternalReadFastTable[0x4000];
+#endif
 void* g_ReadAddressPointerLookupTable[0x4000];
 void* g_WriteAddressPointerLookupTable[0x4000];
 
@@ -455,7 +458,9 @@ void Memory_InitTables()
 	memset(g_ReadAddressLookupTable, 0, sizeof(MemFastFunction) * 0x4000);
 	memset(g_WriteAddressLookupTable, 0, sizeof(MemFastFunction) * 0x4000);
 	memset(g_WriteAddressValueLookupTable, 0, sizeof(MemWriteValueFunction) * 0x4000);
+#ifndef DAEDALUS_SILENT
 	memset(InternalReadFastTable, 0, sizeof(InternalMemFastFunction) * 0x4000);
+#endif
 	memset(g_ReadAddressPointerLookupTable, 0, sizeof(void*) * 0x4000);
 	memset(g_WriteAddressPointerLookupTable, 0, sizeof(void*) * 0x4000);
 
@@ -493,6 +498,7 @@ void Memory_InitTables()
 		entry++;
 	}
 
+#ifndef DAEDALUS_SILENT
 	entry = 0;
 	while (InternalMemMapEntries[entry].mStartAddr != u32(~0))
 	{
@@ -506,7 +512,7 @@ void Memory_InitTables()
 
 		entry++;
 	}
-
+#endif
 	// Check the tables
 	/*for (i = 0; i < 0x4000; i++)
 	{
@@ -527,9 +533,9 @@ void Memory_InitTables()
 	MemFastFunction pReadRam;
 	MemFastFunction pWriteRam;
 	MemWriteValueFunction pWriteValueRam;
-
+#ifndef DAEDALUS_SILENT
 	InternalMemFastFunction pInternalReadRam;
-
+#endif
 	void* pointerLookupTableEntry;
 
 	if (ram_size == MEMORY_4_MEG)
@@ -538,8 +544,9 @@ void Memory_InitTables()
 		pReadRam = Read_RAM_4Mb_8000_803F;
 		pWriteRam = Write_RAM_4Mb_8000_803F;
 		pWriteValueRam = WriteValue_RAM_4Mb_8000_803F;
-
+#ifndef DAEDALUS_SILENT
 		pInternalReadRam = InternalRead_4Mb_8000_803F;
+#endif
 	}
 	else
 	{
@@ -547,8 +554,9 @@ void Memory_InitTables()
 		pReadRam = Read_RAM_8Mb_8000_807F;
 		pWriteRam = Write_RAM_8Mb_8000_807F;
 		pWriteValueRam = WriteValue_RAM_8Mb_8000_807F;
-
+#ifndef DAEDALUS_SILENT
 		pInternalReadRam = InternalRead_8Mb_8000_807F;
+#endif
 	}
 
 	// "Real"
@@ -562,9 +570,9 @@ void Memory_InitTables()
 		g_ReadAddressLookupTable[i]  = pReadRam;
 		g_WriteAddressLookupTable[i] = pWriteRam;
 		g_WriteAddressValueLookupTable[i] = pWriteValueRam;
-
+#ifndef DAEDALUS_SILENT
 		InternalReadFastTable[i]  = pInternalReadRam;
-
+#endif
 		g_ReadAddressPointerLookupTable[i] = pointerLookupTableEntry;
 		g_WriteAddressPointerLookupTable[i] = pointerLookupTableEntry;
 	}
@@ -576,16 +584,18 @@ void Memory_InitTables()
 		pReadRam = Read_RAM_4Mb_A000_A03F;
 		pWriteRam = Write_RAM_4Mb_A000_A03F;
 		pWriteValueRam = WriteValue_RAM_4Mb_A000_A03F;
-
+#ifndef DAEDALUS_SILENT
 		pInternalReadRam = InternalRead_4Mb_8000_803F;
+#endif
 	}
 	else
 	{
 		pReadRam = Read_RAM_8Mb_A000_A07F;
 		pWriteRam = Write_RAM_8Mb_A000_A07F;
 		pWriteValueRam = WriteValue_RAM_8Mb_A000_A07F;
-
+#ifndef DAEDALUS_SILENT
 		pInternalReadRam = InternalRead_8Mb_8000_807F;
+#endif
 	}
 
 
@@ -599,9 +609,9 @@ void Memory_InitTables()
 		g_ReadAddressLookupTable[i]  = pReadRam;
 		g_WriteAddressLookupTable[i] = pWriteRam;
 		g_WriteAddressValueLookupTable[i] = pWriteValueRam;
-
+#ifndef DAEDALUS_SILENT
 		InternalReadFastTable[i]  = pInternalReadRam;
-
+#endif
 		g_ReadAddressPointerLookupTable[i] = pointerLookupTableEntry;
 		g_WriteAddressPointerLookupTable[i] = pointerLookupTableEntry;
 	}

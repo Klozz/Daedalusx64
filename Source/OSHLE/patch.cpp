@@ -107,7 +107,7 @@ u32 gNumOfOSFunctions;
 #define PATCH_RET_ERET RET_JR_ERET()
 
 // Increase this number every time we changed the symbol table
-static const u32 MAGIC_HEADER = 0x80000135;
+static const u32 MAGIC_HEADER = 0x80000136;
 
 bool gPatchesApplied = false;
 
@@ -462,13 +462,14 @@ bool Patch_Hacks( PatchSymbol * ps )
 	case ZELDA_OOT:
 	case ANIMAL_CROSSING:
 	case CLAY_FIGHTER_63:
+
 		if( strcmp("osSendMesg",ps->szName) == 0) 
 		{
 			bfound = true;
 			break;
-			
 		}
 		break;
+
 	//
 	// osRestoreInt causes Ridge Racer to BSOD when quick race is about to start
 	//
@@ -1117,13 +1118,9 @@ static u32 RET_JR_ERET()
 
 static u32 ConvertToPhysics(u32 addr)
 {
-	if (IS_KSEG0(addr))
+	if( IS_SEG_A000_8000(addr) )
 	{
-		return K0_TO_PHYS(addr);
-	}
-	else if (IS_KSEG1(addr))
-	{
-		return  K1_TO_PHYS(addr);
+		return SEG_TO_PHYS(addr);
 	}
 	else
 	{

@@ -144,8 +144,6 @@ u32	gsceENV=0;
 
 u32	gTXTFUNC=0;	//defaults to MODULATE_RGB
 
-u32	gNumCyc=3;	//defaults All cycles
-
 u32 gForceRGB=0;    //defaults to OFF
 
 #define BLEND_MODE_MAKER \
@@ -163,55 +161,52 @@ u32 gForceRGB=0;    //defaults to OFF
 		GU_TCC_RGB, \
 		GU_TCC_RGBA \
 	}; \
-	if( num_cycles & gNumCyc ) \
+	switch( gForceRGB ) \
 	{ \
-		switch( gForceRGB ) \
-		{ \
-			case 1: details.ColourAdjuster.SetRGB( c32::White ); break; \
-			case 2: details.ColourAdjuster.SetRGB( c32::Black ); break; \
-			case 3: details.ColourAdjuster.SetRGB( c32::Red ); break; \
-			case 4: details.ColourAdjuster.SetRGB( c32::Green ); break; \
-			case 5: details.ColourAdjuster.SetRGB( c32::Blue ); break; \
-			case 6: details.ColourAdjuster.SetRGB( c32::Magenta ); break; \
-			case 7: details.ColourAdjuster.SetRGB( c32::Gold ); break; \
-		} \
-		switch( gSetRGB ) \
-		{ \
-			case 1: details.ColourAdjuster.SetRGB( details.PrimColour ); break; \
-			case 2: details.ColourAdjuster.SetRGB( details.PrimColour.ReplicateAlpha() ); break; \
-			case 3: details.ColourAdjuster.SetRGB( details.EnvColour ); break; \
-			case 4: details.ColourAdjuster.SetRGB( details.EnvColour.ReplicateAlpha() ); break; \
-		} \
-		switch( gSetA ) \
-		{ \
-			case 1: details.ColourAdjuster.SetA( details.PrimColour ); break; \
-			case 2: details.ColourAdjuster.SetA( details.PrimColour.ReplicateAlpha() ); break; \
-			case 3: details.ColourAdjuster.SetA( details.EnvColour ); break; \
-			case 4: details.ColourAdjuster.SetA( details.EnvColour.ReplicateAlpha() ); break; \
-		} \
-		switch( gSetRGBA ) \
-		{ \
-			case 1: details.ColourAdjuster.SetRGBA( details.PrimColour ); break; \
-			case 2: details.ColourAdjuster.SetRGBA( details.PrimColour.ReplicateAlpha() ); break; \
-			case 3: details.ColourAdjuster.SetRGBA( details.EnvColour ); break; \
-			case 4: details.ColourAdjuster.SetRGBA( details.EnvColour.ReplicateAlpha() ); break; \
-		} \
-		switch( gModA ) \
-		{ \
-			case 1: details.ColourAdjuster.ModulateA( details.PrimColour ); break; \
-			case 2: details.ColourAdjuster.ModulateA( details.PrimColour.ReplicateAlpha() ); break; \
-			case 3: details.ColourAdjuster.ModulateA( details.EnvColour ); break; \
-			case 4: details.ColourAdjuster.ModulateA( details.EnvColour.ReplicateAlpha() ); break; \
-		} \
-		if( gAOpaque ) details.ColourAdjuster.SetAOpaque(); \
-		switch( gsceENV ) \
-		{ \
-			case 1: sceGuTexEnvColor( details.EnvColour.GetColour() ); break; \
-			case 2: sceGuTexEnvColor( details.PrimColour.GetColour() ); break; \
-		} \
-		details.InstallTexture = gTexInstall; \
-		sceGuTexFunc( PSPtxtFunc[ (gTXTFUNC >> 1) % 6 ], PSPtxtA[ gTXTFUNC & 1 ] ); \
+		case 1: details.ColourAdjuster.SetRGB( c32::White ); break; \
+		case 2: details.ColourAdjuster.SetRGB( c32::Black ); break; \
+		case 3: details.ColourAdjuster.SetRGB( c32::Red ); break; \
+		case 4: details.ColourAdjuster.SetRGB( c32::Green ); break; \
+		case 5: details.ColourAdjuster.SetRGB( c32::Blue ); break; \
+		case 6: details.ColourAdjuster.SetRGB( c32::Magenta ); break; \
+		case 7: details.ColourAdjuster.SetRGB( c32::Gold ); break; \
 	} \
+	switch( gSetRGB ) \
+	{ \
+		case 1: details.ColourAdjuster.SetRGB( details.PrimColour ); break; \
+		case 2: details.ColourAdjuster.SetRGB( details.PrimColour.ReplicateAlpha() ); break; \
+		case 3: details.ColourAdjuster.SetRGB( details.EnvColour ); break; \
+		case 4: details.ColourAdjuster.SetRGB( details.EnvColour.ReplicateAlpha() ); break; \
+	} \
+	switch( gSetA ) \
+	{ \
+		case 1: details.ColourAdjuster.SetA( details.PrimColour ); break; \
+		case 2: details.ColourAdjuster.SetA( details.PrimColour.ReplicateAlpha() ); break; \
+		case 3: details.ColourAdjuster.SetA( details.EnvColour ); break; \
+		case 4: details.ColourAdjuster.SetA( details.EnvColour.ReplicateAlpha() ); break; \
+	} \
+	switch( gSetRGBA ) \
+	{ \
+		case 1: details.ColourAdjuster.SetRGBA( details.PrimColour ); break; \
+		case 2: details.ColourAdjuster.SetRGBA( details.PrimColour.ReplicateAlpha() ); break; \
+		case 3: details.ColourAdjuster.SetRGBA( details.EnvColour ); break; \
+		case 4: details.ColourAdjuster.SetRGBA( details.EnvColour.ReplicateAlpha() ); break; \
+	} \
+	switch( gModA ) \
+	{ \
+		case 1: details.ColourAdjuster.ModulateA( details.PrimColour ); break; \
+		case 2: details.ColourAdjuster.ModulateA( details.PrimColour.ReplicateAlpha() ); break; \
+		case 3: details.ColourAdjuster.ModulateA( details.EnvColour ); break; \
+		case 4: details.ColourAdjuster.ModulateA( details.EnvColour.ReplicateAlpha() ); break; \
+	} \
+	if( gAOpaque ) details.ColourAdjuster.SetAOpaque(); \
+	switch( gsceENV ) \
+	{ \
+		case 1: sceGuTexEnvColor( details.EnvColour.GetColour() ); break; \
+		case 2: sceGuTexEnvColor( details.PrimColour.GetColour() ); break; \
+	} \
+	details.InstallTexture = gTexInstall; \
+	sceGuTexFunc( PSPtxtFunc[ (gTXTFUNC >> 1) % 6 ], PSPtxtA[ gTXTFUNC & 1 ] ); \
 } \
 
 #endif
@@ -844,7 +839,6 @@ bool PSPRenderer::DebugBlendmode( DaedalusVtx * p_vertices, u32 num_vertices, u3
 		details.EnvColour = mEnvColour;
 		details.PrimColour = mPrimitiveColour;
 		details.ColourAdjuster.Reset();
-		details.RecolourTextureWhite = false;
 
 		//Insert the Blend Explorer
 		BLEND_MODE_MAKER
@@ -855,16 +849,7 @@ bool PSPRenderer::DebugBlendmode( DaedalusVtx * p_vertices, u32 num_vertices, u3
 		{
 			if( mpTexture[ 0 ] != NULL )
 			{
-				CRefPtr<CNativeTexture> texture;
-
-				if(details.RecolourTextureWhite)
-				{
-					texture = mpTexture[ 0 ]->GetRecolouredTexture( c32::White );
-				}
-				else
-				{
-					texture = mpTexture[ 0 ]->GetTexture();
-				}
+				const CRefPtr<CNativeTexture> texture( mpTexture[ 0 ]->GetTexture() );
 
 				if(texture != NULL)
 				{
@@ -1060,7 +1045,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		details.InstallTexture = true;
 		details.ColourAdjuster.Reset();
 
-		blend_entry.OverrideFunction( cycle_mode == CYCLE_2CYCLE ? 2 : 1, details );
+		blend_entry.OverrideFunction( details );
 
 		bool installed_texture( false );
 
@@ -1068,7 +1053,7 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		{
 			if( mpTexture[ g_ROM.T1_HACK ] != NULL )
 			{
-				const CRefPtr<CNativeTexture> texture = mpTexture[ g_ROM.T1_HACK ]->GetTexture();
+				const CRefPtr<CNativeTexture> texture( mpTexture[ g_ROM.T1_HACK ]->GetTexture() );
 
 				if(texture != NULL)
 				{

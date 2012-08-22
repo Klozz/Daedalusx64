@@ -69,7 +69,8 @@ private:
 
 				//void				UpdateAddressAndDelay( u32 address, bool set_branch_delay );
 
-				bool				IgnoreHighBitsLogic( int immediate, int logic );
+				bool				NeedLoadHi( int value, int logic );
+				bool				NeedLoadHi( bool known, int value, int logic )	{ if(!known) return true;	return NeedLoadHi( value, logic );	}
 
 				void				GenerateCACHE( EN64Reg base, s16 offset, u32 cache_op );
 
@@ -133,7 +134,18 @@ private:
 				void				GenerateCTC1( u32 fs, EN64Reg rt );
 
 				void				GenerateADD_Sim( u32 fd, u32 fs, u32 ft );
+				void				GenerateSUB_Sim( u32 fd, u32 fs, u32 ft );
 				void				GenerateMUL_Sim( u32 fd, u32 fs, u32 ft );
+				void				GenerateDIV_Sim( u32 fd, u32 fs, u32 ft );
+				void				GenerateSQRT_Sim( u32 fd, u32 fs );
+				void				GenerateABS_Sim( u32 fd, u32 fs );
+				void				GenerateMOV_Sim( u32 fd, u32 fs );
+				void				GenerateNEG_Sim( u32 fd, u32 fs );
+
+				void				GenerateTRUNC_W_Sim( u32 fd, u32 fs );
+				void				GenerateCVT_W_Sim( u32 fd, u32 fs );
+
+				void				GenerateCMP_Sim( u32 fs, ECop1OpFunction cmp_op, u32 ft );
 
 				void				GenerateADD_S( u32 fd, u32 fs, u32 ft );
 				void				GenerateSUB_S( u32 fd, u32 fs, u32 ft );
@@ -227,6 +239,8 @@ private:
 				EPspFloatReg		GetFloatRegisterAndLoad( EN64FloatReg n64_reg );
 				void				UpdateFloatRegister( EN64FloatReg n64_reg );
 
+				EPspFloatReg		GetSimFloatRegisterAndLoad( EN64FloatReg n64_reg );
+				void				UpdateSimFloatRegister( EN64FloatReg n64_reg );
 
 				const CN64RegisterCachePSP & GetRegisterCacheFromHandle( RegisterSnapshotHandle snapshot ) const;
 

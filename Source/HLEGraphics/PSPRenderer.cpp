@@ -1771,41 +1771,6 @@ void PSPRenderer::PrepareTrisUnclipped( DaedalusVtx ** p_p_vertices, u32 * p_num
 	*p_p_vertices = p_vertices;
 	*p_num_vertices = num_vertices;
 }
-
-//*****************************************************************************
-//
-//*****************************************************************************
-v4 PSPRenderer::LightVert( const v3 & norm ) const
-{
-	
-	u32 num = mTnL.NumLights;
-
-	v4 result( mTnL.Lights[num].Colour.x, 
-			   mTnL.Lights[num].Colour.y, 
-			   mTnL.Lights[num].Colour.z,
-			   mTnL.Lights[num].Colour.w ); // 1.0f
-
-
-	for ( u32 l = 0; l < num; l++ )
-	{
-		f32 fCosT = norm.Dot( mTnL.Lights[l].Direction );
-		if (fCosT > 0.0f)
-		{
-			result.x += mTnL.Lights[l].Colour.x * fCosT;
-			result.y += mTnL.Lights[l].Colour.y * fCosT;
-			result.z += mTnL.Lights[l].Colour.z * fCosT;
-		}
-	}
-
-	//Clamp to 1.0
-	if( result.x > 1.0f ) result.x = 1.0f;
-	if( result.y > 1.0f ) result.y = 1.0f;
-	if( result.z > 1.0f ) result.z = 1.0f;
-	//result.w = 1.0f;
-
-	return result;
-}
-
 //
 //Transform using VFPU(fast)
 //
@@ -1919,6 +1884,42 @@ void PSPRenderer::SetNewVertexInfo(u32 address, u32 v0, u32 n)
 //
 
 #else
+
+//*****************************************************************************
+//
+//*****************************************************************************
+v4 PSPRenderer::LightVert( const v3 & norm ) const
+{
+	
+	u32 num = mTnL.NumLights;
+
+	v4 result( mTnL.Lights[num].Colour.x, 
+			   mTnL.Lights[num].Colour.y, 
+			   mTnL.Lights[num].Colour.z,
+			   mTnL.Lights[num].Colour.w ); // 1.0f
+
+
+	for ( u32 l = 0; l < num; l++ )
+	{
+		f32 fCosT = norm.Dot( mTnL.Lights[l].Direction );
+		if (fCosT > 0.0f)
+		{
+			result.x += mTnL.Lights[l].Colour.x * fCosT;
+			result.y += mTnL.Lights[l].Colour.y * fCosT;
+			result.z += mTnL.Lights[l].Colour.z * fCosT;
+		}
+	}
+
+	//Clamp to 1.0
+	if( result.x > 1.0f ) result.x = 1.0f;
+	if( result.y > 1.0f ) result.y = 1.0f;
+	if( result.z > 1.0f ) result.z = 1.0f;
+	//result.w = 1.0f;
+
+	return result;
+}
+
+
 //*****************************************************************************
 // Standard rendering pipeline using FPU/CPU
 //*****************************************************************************
@@ -2809,7 +2810,6 @@ void PSPRenderer::Draw2DTextureR( f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2
 //*****************************************************************************
 void PSPRenderer::Draw2DTextureBlit( f32 x, f32 y, f32 width ,f32 height, f32 u0, f32 v0, f32 u1, f32 v1, CNativeTexture * texture) 
 {
-
 	sceGuDisable(GU_DEPTH_TEST);
 	sceGuDepthMask( GL_TRUE );
 	sceGuShadeModel( GU_FLAT );
@@ -2821,10 +2821,10 @@ void PSPRenderer::Draw2DTextureBlit( f32 x, f32 y, f32 width ,f32 height, f32 u0
 	sceGuEnable(GU_BLEND);
 	sceGuTexWrap(GU_CLAMP, GU_CLAMP);
 
-	x		*= mN64ToPSPScale.x + mN64ToPSPTranslate.x;
-	y		*= mN64ToPSPScale.y + mN64ToPSPTranslate.y;
-	width	*= mN64ToPSPScale.x + mN64ToPSPTranslate.x;
-	height	*= mN64ToPSPScale.y + mN64ToPSPTranslate.y;
+	x		= x * mN64ToPSPScale.x + mN64ToPSPTranslate.x;
+	y		= y * mN64ToPSPScale.y + mN64ToPSPTranslate.y;
+	width	= width * mN64ToPSPScale.x;
+	height	= height * mN64ToPSPScale.y;
 
 // 0 Simpler blit algorithm, but doesn't handle big textures as good? (see StarSoldier)
 // 1 More complex algorithm. used in newer versions of TriEngine, fixes the main screen in StarSoldier
@@ -2925,7 +2925,8 @@ void PSPRenderer::Draw2DTextureBlit( f32 x, f32 y, f32 width ,f32 height, f32 u0
 			}
 			TextureVtx *p_verts = (TextureVtx*)sceGuGetMemory(2*sizeof(TextureVtx));
 
-			f32 poly_width = ((cur_x+xstep) > x_end) ? (x_end-cur_x) : xstep;
+			//f32 poly_width = ((cur_x+xstep) > x_end) ? (x_end-cur_x) : xstep;
+			f32 poly_width = xstep;
 			f32 source_width = ustep;
 
 			// support negative usteps

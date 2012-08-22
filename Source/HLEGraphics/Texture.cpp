@@ -71,6 +71,7 @@ namespace
 	bool	GenerateTexels( void ** p_texels, void ** p_palette, const TextureInfo & texture_info, ETextureFormat texture_format, u32 pitch, u32 buffer_size )
 	{
 		TextureDestInfo dst( texture_format );
+
 		if( gTexelBuffer.size() < buffer_size ) //|| gTexelBuffer.size() > (128 * 1024))//Cut off for downsizing may need to be adjusted to prevent some thrashing
 		{
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
@@ -81,7 +82,7 @@ namespace
 
 		void *		texels( &gTexelBuffer[0] );
 		Pf8888 *	palette( IsTextureFormatPalettised( dst.Format ) ? gPaletteBuffer : NULL );
-
+		
 		//memset( texels, 0, buffer_size );
 
 		// Return a temporary buffer to use

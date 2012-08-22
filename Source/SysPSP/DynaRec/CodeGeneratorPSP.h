@@ -70,7 +70,7 @@ private:
 				//void				UpdateAddressAndDelay( u32 address, bool set_branch_delay );
 
 				bool				NeedLoadHi( s32 value );
-				bool				NeedLoadHi( bool known, s32 value )	{ if(!known) return true;	return NeedLoadHi( value );	}
+				bool				NeedLoadHi( EN64Reg reg );
 
 
 				void				GenerateCACHE( EN64Reg base, s16 offset, u32 cache_op );
@@ -121,6 +121,8 @@ private:
 				void				GenerateLD ( u32 current_pc, bool set_branch_delay, EN64Reg rt, EN64Reg base, s16 offset );
 				void				GenerateLWC1( u32 current_pc, bool set_branch_delay, u32 ft, EN64Reg base, s32 offset );
 				void				GenerateLDC1( u32 current_pc, bool set_branch_delay, u32 ft, EN64Reg base, s32 offset );
+				void				GenerateLWL( u32 current_pc, bool set_branch_delay, EN64Reg rt, EN64Reg base, s16 offset );
+				void				GenerateLWR( u32 current_pc, bool set_branch_delay, EN64Reg rt, EN64Reg base, s16 offset );
 
 				void				GenerateSB( u32 current_pc, bool set_branch_delay, EN64Reg rt, EN64Reg base, s32 offset );
 				void				GenerateSH( u32 current_pc, bool set_branch_delay, EN64Reg rt, EN64Reg base, s32 offset );
@@ -238,7 +240,7 @@ private:
 					URO_HI_CLEAR,			// Clear hi bits
 				};
 				*/
-				void				UpdateRegister( EN64Reg n64_reg, EPspReg psp_reg, bool options, EPspReg scratch_reg );
+				void				UpdateRegister( EN64Reg n64_reg, EPspReg psp_reg, bool options );
 	
 
 				EPspFloatReg		GetFloatRegisterAndLoad( EN64FloatReg n64_reg );

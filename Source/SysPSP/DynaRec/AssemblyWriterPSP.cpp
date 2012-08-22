@@ -500,15 +500,15 @@ void	CAssemblyWriterPSP::SLTIU( EPspReg reg_dst, EPspReg reg_src, s16 value )
 //*****************************************************************************
 //EXTract bit field. 0 >= pos/size <= 31  //Corn
 //*****************************************************************************
-void	CAssemblyWriterPSP::EXT( EPspReg reg_dst, EPspReg reg_src, u32 pos, u32 size )
+void	CAssemblyWriterPSP::EXT( EPspReg reg_dst, EPspReg reg_src, u32 size, u32 lsb )
 {
 	PspOpCode	op_code;
 	op_code._u32 = 0;
 	op_code.op = 0x1F;
 	op_code.rt = reg_dst;
 	op_code.rs = reg_src;
-	op_code.rd = size;
-	op_code.sa = pos;
+	op_code.rd = size;	// = MSB - LSB
+	op_code.sa = lsb;	// = LSB
 	op_code.spec_op = 0;
 	AppendOp( op_code );
 }
@@ -516,15 +516,15 @@ void	CAssemblyWriterPSP::EXT( EPspReg reg_dst, EPspReg reg_src, u32 pos, u32 siz
 //*****************************************************************************
 //INSert bit field. 0 >= pos/size <= 31 //Corn
 //*****************************************************************************
-void	CAssemblyWriterPSP::INS( EPspReg reg_dst, EPspReg reg_src, u32 pos, u32 size )
+void	CAssemblyWriterPSP::INS( EPspReg reg_dst, EPspReg reg_src, u32 msb, u32 lsb )
 {
 	PspOpCode	op_code;
 	op_code._u32 = 0;
 	op_code.op = 0x1F;
 	op_code.rt = reg_dst;
 	op_code.rs = reg_src;
-	op_code.rd = size;
-	op_code.sa = pos;
+	op_code.rd = msb;	// = MSB
+	op_code.sa = lsb;	// = LSB
 	op_code.spec_op = 4;
 	AppendOp( op_code );
 }
@@ -632,7 +632,7 @@ void	CAssemblyWriterPSP::SpecOpLogical( EPspReg rd, EPspReg rs, ESpecOp op, EPsp
 }
 
 //*****************************************************************************
-//
+//RD = RT << RS
 //*****************************************************************************
 void	CAssemblyWriterPSP::SLLV( EPspReg rd, EPspReg rs, EPspReg rt )
 {
@@ -640,7 +640,7 @@ void	CAssemblyWriterPSP::SLLV( EPspReg rd, EPspReg rs, EPspReg rt )
 }
 
 //*****************************************************************************
-//
+//RD = RT >> RS
 //*****************************************************************************
 void	CAssemblyWriterPSP::SRLV( EPspReg rd, EPspReg rs, EPspReg rt )
 {
@@ -648,7 +648,7 @@ void	CAssemblyWriterPSP::SRLV( EPspReg rd, EPspReg rs, EPspReg rt )
 }
 
 //*****************************************************************************
-//
+//RD = RT >> RS
 //*****************************************************************************
 void	CAssemblyWriterPSP::SRAV( EPspReg rd, EPspReg rs, EPspReg rt )
 {

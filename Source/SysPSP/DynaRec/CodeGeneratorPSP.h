@@ -67,7 +67,9 @@ private:
 				void				GetFloatVar( EPspFloatReg dst_reg, const f32 * p_var );
 				void				GetBaseRegisterAndOffset( const void * p_address, EPspReg * p_reg, s16 * p_offset );
 
-				void				UpdateAddressAndDelay( u32 address, bool set_branch_delay );
+				//void				UpdateAddressAndDelay( u32 address, bool set_branch_delay );
+
+				bool				IgnoreHighBitsLogic( int immediate, int logic );
 
 				void				GenerateCACHE( EN64Reg base, s16 offset, u32 cache_op );
 
@@ -94,6 +96,9 @@ private:
 				void				GenerateSLTU( EN64Reg rd, EN64Reg rs, EN64Reg rt );
 
 				void				GenerateDADDU( EN64Reg rd, EN64Reg rs, EN64Reg rt );
+				void				GenerateDADDIU( EN64Reg rt, EN64Reg rs, s16 immediate );
+				void				GenerateDSRA32( EN64Reg rd, EN64Reg rt, u32 sa );
+				void				GenerateDSLL32( EN64Reg rd, EN64Reg rt, u32 sa );
 
 				void				GenerateADDIU( EN64Reg rt, EN64Reg rs, s16 immediate );
 				void				GenerateANDI( EN64Reg rt, EN64Reg rs, u16 immediate );
@@ -111,17 +116,24 @@ private:
 				void				GenerateLH ( u32 current_pc, bool set_branch_delay, EN64Reg rt, EN64Reg base, s32 offset );
 				void				GenerateLHU( u32 current_pc, bool set_branch_delay, EN64Reg rt, EN64Reg base, s32 offset );
 				void				GenerateLW ( u32 current_pc, bool set_branch_delay, EN64Reg rt, EN64Reg base, s16 offset );
+				void				GenerateLD ( u32 current_pc, bool set_branch_delay, EN64Reg rt, EN64Reg base, s16 offset );
 				void				GenerateLWC1( u32 current_pc, bool set_branch_delay, u32 ft, EN64Reg base, s32 offset );
+				void				GenerateLDC1( u32 current_pc, bool set_branch_delay, u32 ft, EN64Reg base, s32 offset );
 
 				void				GenerateSB( u32 current_pc, bool set_branch_delay, EN64Reg rt, EN64Reg base, s32 offset );
 				void				GenerateSH( u32 current_pc, bool set_branch_delay, EN64Reg rt, EN64Reg base, s32 offset );
 				void				GenerateSW( u32 current_pc, bool set_branch_delay, EN64Reg rt, EN64Reg base, s32 offset );
+				void				GenerateSD( u32 current_pc, bool set_branch_delay, EN64Reg rt, EN64Reg base, s32 offset );
 				void				GenerateSWC1( u32 current_pc, bool set_branch_delay, u32 ft, EN64Reg base, s32 offset );
+				void				GenerateSDC1( u32 current_pc, bool set_branch_delay, u32 ft, EN64Reg base, s32 offset );
 
 				void				GenerateMFC1( EN64Reg rt, u32 fs );
 				void				GenerateMTC1( u32 fs, EN64Reg rt );
 				void				GenerateCFC1( EN64Reg rt, u32 fs );
 				void				GenerateCTC1( u32 fs, EN64Reg rt );
+
+				void				GenerateADD_Sim( u32 fd, u32 fs, u32 ft );
+				void				GenerateMUL_Sim( u32 fd, u32 fs, u32 ft );
 
 				void				GenerateADD_S( u32 fd, u32 fs, u32 ft );
 				void				GenerateSUB_S( u32 fd, u32 fs, u32 ft );

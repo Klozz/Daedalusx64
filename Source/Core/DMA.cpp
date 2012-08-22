@@ -51,6 +51,8 @@ bool gDMAUsed = false;
 bool gLogSpDMA = false;
 #endif
 
+// Little Endian
+#define SWAP_PIF(x) (x >> 24) | ((x >> 8) & 0xFF00) | ((x & 0xFF00) << 8) | (x << 24)
 //*****************************************************************************
 // 
 //*****************************************************************************
@@ -128,7 +130,8 @@ void DMA_SI_CopyFromDRAM( )
 	u8 * p_src = g_pu8RamBase + mem;
 
 	DPF( DEBUG_MEMORY_PIF, "DRAM (0x%08x) -> PIF Transfer ", mem );
-	DAEDALUS_ASSERT( Memory_SI_GetRegister(SI_PIF_ADDR_WR64B_REG) == 0x1FC007C0, "Invalid SI Write")
+	// OSHLE bug!
+	//DAEDALUS_ASSERT( Memory_SI_GetRegister(SI_PIF_ADDR_WR64B_REG) == 0x1FC007C0, "Invalid SI Write")
 	
 	u32* p_dst32=(u32*)p_dst;
 	u32* p_scr32=(u32*)p_src;
@@ -137,7 +140,7 @@ void DMA_SI_CopyFromDRAM( )
 	for(u32 i = 0; i < 16; i++)
 	{
  		const u32 tmp = *p_scr32++;
- 		*p_dst32++ = (tmp >> 24) | ((tmp >> 8) & 0xFF00) | ((tmp & 0xFF00) << 8) | ((tmp & 0x00FF) << 24);
+ 		*p_dst32++ = SWAP_PIF(tmp);
 	}
 
 	Memory_SI_SetRegisterBits(SI_STATUS_REG, SI_STATUS_INTERRUPT);
@@ -158,7 +161,8 @@ void DMA_SI_CopyToDRAM( )
 	u8 * p_dst = g_pu8RamBase + mem;
 
 	DPF( DEBUG_MEMORY_PIF, "PIF -> DRAM (0x%08x) Transfer ", mem );
-	DAEDALUS_ASSERT( Memory_SI_GetRegister(SI_PIF_ADDR_RD64B_REG) == 0x1FC007C0, "Invalid SI Read")
+	// OSHLE bug!
+	//DAEDALUS_ASSERT( Memory_SI_GetRegister(SI_PIF_ADDR_RD64B_REG) == 0x1FC007C0, "Invalid SI Read")
 
 	u32* p_dst32=(u32*)p_dst;
 	u32* p_scr32=(u32*)p_src;
@@ -167,8 +171,9 @@ void DMA_SI_CopyToDRAM( )
 	for(u32 i = 0; i < 16; i++)
 	{
  		const u32 tmp = *p_scr32++;
- 		*p_dst32++ = (tmp >> 24) | ((tmp >> 8) & 0xFF00) | ((tmp & 0xFF00) << 8) | ((tmp & 0x00FF) << 24);
+ 		*p_dst32++ = SWAP_PIF(tmp);
 	}
+
 
 	Memory_SI_SetRegisterBits(SI_STATUS_REG, SI_STATUS_INTERRUPT);
 	Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_SI);
@@ -179,8 +184,6 @@ void DMA_SI_CopyToDRAM( )
 	if (g_ROM.GameHacks != BODY_HARVEST) 
 		R4300_Interrupt_UpdateCause3();
 }
-
-
 
 /*
 #define PI_DOM2_ADDR1		0x05000000	// to 0x05FFFFFF

@@ -69,10 +69,6 @@ private:
 
 				//void				UpdateAddressAndDelay( u32 address, bool set_branch_delay );
 
-				bool				NeedLoadHi( s32 value );
-				bool				NeedLoadHi( EN64Reg reg );
-
-
 				void				GenerateCACHE( EN64Reg base, s16 offset, u32 cache_op );
 
 				void				GenerateJAL( u32 address );
@@ -130,6 +126,8 @@ private:
 				void				GenerateSD( u32 current_pc, bool set_branch_delay, EN64Reg rt, EN64Reg base, s32 offset );
 				void				GenerateSWC1( u32 current_pc, bool set_branch_delay, u32 ft, EN64Reg base, s32 offset );
 				void				GenerateSDC1( u32 current_pc, bool set_branch_delay, u32 ft, EN64Reg base, s32 offset );
+				void				GenerateSWL( u32 current_pc, bool set_branch_delay, EN64Reg rt, EN64Reg base, s32 offset );
+				void				GenerateSWR( u32 current_pc, bool set_branch_delay, EN64Reg rt, EN64Reg base, s32 offset );
 
 				void				GenerateMFC1( EN64Reg rt, u32 fs );
 				void				GenerateMTC1( u32 fs, EN64Reg rt );

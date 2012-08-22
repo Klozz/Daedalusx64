@@ -53,6 +53,9 @@ using namespace AssemblyUtils;
 //Define to check for DIV / 0 //Corn
 //#define DIVZEROCHK
 
+//Define to enable exceptions for interpreter calls from DYNAREC
+//#define ALLOW_INTERPRETER_EXCEPTIONS
+
 #define NOT_IMPLEMENTED( x )	DAEDALUS_ERROR( x )
 
 extern "C" { const void * g_ReadAddressLookupTableForDynarec = g_ReadAddressLookupTable; }
@@ -274,7 +277,8 @@ void	CCodeGeneratorPSP::Initialise( u32 entry_address, u32 exit_address, u32 * h
 
 	mKeepPreviousLoadBase = false;
 	mKeepPreviousStoreBase = false;
-	
+	mFloatCMPIsValid = false;
+
 	if( hit_counter != NULL )
 	{
 		GetVar( PspReg_T0, hit_counter );
@@ -806,6 +810,8 @@ void CCodeGeneratorPSP::FlushRegister( CN64RegisterCachePSP & cache, EN64Reg n64
 //*****************************************************************************
 void	CCodeGeneratorPSP::FlushAllRegisters( CN64RegisterCachePSP & cache, bool invalidate )
 {
+	mFloatCMPIsValid = false;	//invalidate float compare register
+
 	// Skip r0
 	for( u32 i = 1; i < NUM_N64_REGS; i++ )
 	{
@@ -1531,12 +1537,14 @@ CJumpLocation	CCodeGeneratorPSP::GenerateOpCode( const STraceEntry& ti, bool bra
 
 			GenerateGenericR4300( op_code, R4300_GetInstructionHandler( op_code ) );
 
+#ifdef ALLOW_INTERPRETER_EXCEPTIONS			
 			// Make sure all dirty registers are flushed. NB - we don't invalidate them
 			// to avoid reloading the contents if no exception was thrown.
 			FlushAllRegisters( mRegisterCache, false );
 
 			JAL( CCodeLabel( reinterpret_cast< const void * >( _ReturnFromDynaRecIfStuffToDo ) ), false );
 			ORI( PspReg_A0, PspReg_R0, 0 );
+#endif
 		}
 		else
 		{
@@ -2791,6 +2799,13 @@ inline void	CCodeGeneratorPSP::GenerateSLT( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 	PatchJumpLong( branch, GetAssemblyBuffer()->GetLabel() );
 
 #else
+	/*
+	if (mRegisterCache.IsKnownValue(rs, 0) & mRegisterCache.IsKnownValue(rt, 0))
+	{
+		SetRegister32s(rd, (mRegisterCache.GetKnownValue(rs, 0)._s32 < mRegisterCache.GetKnownValue(rt, 0)._s32) );
+		return;
+	}
+	*/
 	EPspReg reg_lo_d( GetRegisterNoLoadLo( rd, PspReg_T0 ) );
 	EPspReg	reg_lo_a( GetRegisterAndLoadLo( rs, PspReg_T0 ) );
 	EPspReg	reg_lo_b( GetRegisterAndLoadLo( rt, PspReg_T1 ) );
@@ -2840,6 +2855,13 @@ inline void	CCodeGeneratorPSP::GenerateSLTU( EN64Reg rd, EN64Reg rs, EN64Reg rt 
 	PatchJumpLong( branch, GetAssemblyBuffer()->GetLabel() );
 
 #else
+	/*
+	if (mRegisterCache.IsKnownValue(rs, 0) & mRegisterCache.IsKnownValue(rt, 0))
+	{
+		SetRegister32s(rd, (mRegisterCache.GetKnownValue(rs, 0)._u32 < mRegisterCache.GetKnownValue(rt, 0)._u32) );
+		return;
+	}
+	*/
 	EPspReg reg_lo_d( GetRegisterNoLoadLo( rd, PspReg_T0 ) );
 	EPspReg	reg_lo_a( GetRegisterAndLoadLo( rs, PspReg_T0 ) );
 	EPspReg	reg_lo_b( GetRegisterAndLoadLo( rt, PspReg_T1 ) );
@@ -3025,6 +3047,13 @@ inline void	CCodeGeneratorPSP::GenerateSLTI( EN64Reg rt, EN64Reg rs, s16 immedia
 	PatchJumpLong( branch, GetAssemblyBuffer()->GetLabel() );
 
 #else
+	/*
+	if (mRegisterCache.IsKnownValue(rs, 0))
+	{
+		SetRegister32s( rt, (mRegisterCache.GetKnownValue(rs, 0)._s32 < (s32)immediate) );
+		return;
+	}
+	*/
 	EPspReg reg_lo_d( GetRegisterNoLoadLo( rt, PspReg_T0 ) );
 	EPspReg	reg_lo_a( GetRegisterAndLoadLo( rs, PspReg_T0 ) );
 
@@ -3081,6 +3110,13 @@ inline void	CCodeGeneratorPSP::GenerateSLTIU( EN64Reg rt, EN64Reg rs, s16 immedi
 	PatchJumpLong( branch, GetAssemblyBuffer()->GetLabel() );
 
 #else
+	/*
+	if (mRegisterCache.IsKnownValue(rs, 0))
+	{
+		SetRegister32s( rt, (mRegisterCache.GetKnownValue(rs, 0)._u32 < (u32)immediate) );
+		return;
+	}
+	*/
 	EPspReg reg_lo_d( GetRegisterNoLoadLo( rt, PspReg_T0 ) );
 	EPspReg	reg_lo_a( GetRegisterAndLoadLo( rs, PspReg_T0 ) );
 
@@ -3579,18 +3615,34 @@ inline void	CCodeGeneratorPSP::GenerateBC1F( const SBranchDetails * p_branch, CJ
 	DAEDALUS_ASSERT( p_branch != NULL, "No branch details?" );
 	DAEDALUS_ASSERT( p_branch->Direct, "Indirect branch for BC1F?" );
 
-	GetVar( PspReg_T0, &gCPUState.FPUControl[31]._u32_0 );
-	LoadConstant( PspReg_T1, FPCSR_C );
-	AND( PspReg_T0, PspReg_T0, PspReg_T1 );
-
-	if( p_branch->ConditionalBranchTaken )
+	//If compare was done in current fragment then use BC1T or BC1F directly //Corn
+	if( mFloatCMPIsValid )
 	{
-		// Flip the sign of the test -
-		*p_branch_jump = BNE( PspReg_T0, PspReg_R0, CCodeLabel(NULL), true );
+		if( p_branch->ConditionalBranchTaken )
+		{
+			// Flip the sign of the test -
+			*p_branch_jump = BC1T( CCodeLabel(NULL), true );
+		}
+		else
+		{
+			*p_branch_jump = BC1F( CCodeLabel(NULL), true );
+		}
 	}
 	else
 	{
-		*p_branch_jump = BEQ( PspReg_T0, PspReg_R0, CCodeLabel(NULL), true );
+		GetVar( PspReg_T0, &gCPUState.FPUControl[31]._u32_0 );
+		LoadConstant( PspReg_T1, FPCSR_C );
+		AND( PspReg_T0, PspReg_T0, PspReg_T1 );
+
+		if( p_branch->ConditionalBranchTaken )
+		{
+			// Flip the sign of the test -
+			*p_branch_jump = BNE( PspReg_T0, PspReg_R0, CCodeLabel(NULL), true );
+		}
+		else
+		{
+			*p_branch_jump = BEQ( PspReg_T0, PspReg_R0, CCodeLabel(NULL), true );
+		}
 	}
 }
 
@@ -3602,18 +3654,34 @@ inline void	CCodeGeneratorPSP::GenerateBC1T( const SBranchDetails * p_branch, CJ
 	DAEDALUS_ASSERT( p_branch != NULL, "No branch details?" );
 	DAEDALUS_ASSERT( p_branch->Direct, "Indirect branch for BC1T?" );
 
-	GetVar( PspReg_T0, &gCPUState.FPUControl[31]._u32_0 );
-	LoadConstant( PspReg_T1, FPCSR_C );
-	AND( PspReg_T0, PspReg_T0, PspReg_T1 );
-
-	if( p_branch->ConditionalBranchTaken )
+	//If compare was done in current fragment then use BC1T or BC1F directly //Corn
+	if( mFloatCMPIsValid )
 	{
-		// Flip the sign of the test -
-		*p_branch_jump = BEQ( PspReg_T0, PspReg_R0, CCodeLabel(NULL), true );
+		if( p_branch->ConditionalBranchTaken )
+		{
+			// Flip the sign of the test -
+			*p_branch_jump = BC1F( CCodeLabel(NULL), true );
+		}
+		else
+		{
+			*p_branch_jump = BC1T( CCodeLabel(NULL), true );
+		}
 	}
 	else
 	{
-		*p_branch_jump = BNE( PspReg_T0, PspReg_R0, CCodeLabel(NULL), true );
+		GetVar( PspReg_T0, &gCPUState.FPUControl[31]._u32_0 );
+		LoadConstant( PspReg_T1, FPCSR_C );
+		AND( PspReg_T0, PspReg_T0, PspReg_T1 );
+
+		if( p_branch->ConditionalBranchTaken )
+		{
+			// Flip the sign of the test -
+			*p_branch_jump = BEQ( PspReg_T0, PspReg_R0, CCodeLabel(NULL), true );
+		}
+		else
+		{
+			*p_branch_jump = BNE( PspReg_T0, PspReg_R0, CCodeLabel(NULL), true );
+		}
 	}
 }
 
@@ -3810,6 +3878,9 @@ inline void	CCodeGeneratorPSP::GenerateCVT_W_S( u32 fd, u32 fs )
 //*****************************************************************************
 inline void	CCodeGeneratorPSP::GenerateCMP_S( u32 fs, ECop1OpFunction cmp_op, u32 ft )
 {
+	//Improved version with only one branch //Corn
+	mFloatCMPIsValid = true;
+
 	EN64FloatReg	n64_fs = EN64FloatReg( fs );
 	EN64FloatReg	n64_ft = EN64FloatReg( ft );
 
@@ -3817,42 +3888,18 @@ inline void	CCodeGeneratorPSP::GenerateCMP_S( u32 fs, ECop1OpFunction cmp_op, u3
 	EPspFloatReg	psp_ft( GetFloatRegisterAndLoad( n64_ft ) );
 
 	CMP_S( psp_fs, cmp_op, psp_ft );
+
 	GetVar( PspReg_T0, &gCPUState.FPUControl[31]._u32_0 );
+	LoadConstant( PspReg_T1, FPCSR_C );
+	CJumpLocation	test_condition( BC1T( CCodeLabel( NULL ), false ) );
+	OR( PspReg_T0, PspReg_T0, PspReg_T1 );		// flag |= c
 
-	CCodeLabel	no_target( NULL );
-
-	PspOpCode		op1;
-	PspOpCode		op2;
-
-	GetLoadConstantOps( PspReg_T1, FPCSR_C, &op1, &op2 );
-
-	// Insert a test to check the branch condition flag. Use the delay slot to load the constant
-	CJumpLocation	test_condition ( BC1F( no_target, false ) );
-
-	if( op2._u32 == 0 )
-	{
-		AppendOp( op1 );
-	}
-	else
-	{
-		AppendOp( op1 );
-		AppendOp( op2 );
-	}
-
-	CJumpLocation	branch_exit( BEQ( PspReg_R0, PspReg_R0, no_target, false ) );
-	OR( PspReg_T0, PspReg_T0, PspReg_T1 );		// flat |= c
-
-	CCodeLabel		condition_false( GetAssemblyBuffer()->GetLabel() );
 	NOR( PspReg_T1, PspReg_T1, PspReg_R0 );		// c = !c
 	AND( PspReg_T0, PspReg_T0, PspReg_T1 );		// flag &= !c
 
-	CCodeLabel		exit_label( GetAssemblyBuffer()->GetLabel() );
-
+	CCodeLabel		condition_true( GetAssemblyBuffer()->GetLabel() );
 	SetVar( &gCPUState.FPUControl[31]._u32_0, PspReg_T0 );
-
-	PatchJumpLong( test_condition, condition_false );
-	PatchJumpLong( branch_exit, exit_label );
-
+	PatchJumpLong( test_condition, condition_true );
 }
 
 //*****************************************************************************

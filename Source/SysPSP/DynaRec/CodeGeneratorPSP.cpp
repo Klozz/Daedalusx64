@@ -677,6 +677,8 @@ void CCodeGeneratorPSP::SetRegister64( EN64Reg n64_reg, s32 lo_value, s32 hi_val
 {
 	SetRegister( n64_reg, 0, lo_value );
 	SetRegister( n64_reg, 1, hi_value );
+
+	mRegisterCache.Set32bit( n64_reg, lo_value, hi_value );
 }
 
 //*****************************************************************************
@@ -740,7 +742,9 @@ EPspFloatReg	CCodeGeneratorPSP::GetFloatRegisterAndLoad( EN64FloatReg n64_reg )
 		GetFloatVar( psp_reg, &gCPUState.FPU[n64_reg]._f32_0 );
 		mRegisterCache.MarkFPAsValid( n64_reg, true );
 	}
-
+	
+	mRegisterCache.MarkFPAsSim( n64_reg, false );
+	
 	return psp_reg;
 }
 
@@ -751,10 +755,11 @@ inline void CCodeGeneratorPSP::UpdateFloatRegister( EN64FloatReg n64_reg )
 {
 	mRegisterCache.MarkFPAsDirty( n64_reg, true );
 	mRegisterCache.MarkFPAsValid( n64_reg, true );
+	mRegisterCache.MarkFPAsSim( n64_reg, false );
 }
 
 //*****************************************************************************
-//
+//Get Double or SimDouble and add code to convert to simulated double if needed //Corn
 //*****************************************************************************
 #define SIMULATESIG 0x1234	//Reduce signature to load value with one OP
 EPspFloatReg	CCodeGeneratorPSP::GetSimFloatRegisterAndLoad( EN64FloatReg n64_reg )
@@ -774,15 +779,20 @@ EPspFloatReg	CCodeGeneratorPSP::GetSimFloatRegisterAndLoad( EN64FloatReg n64_reg
 	{
 		MFC1( PspReg_A0, psp_reg_sig );	//Get lo part of double 
 		LoadConstant( PspReg_A1, SIMULATESIG );	//Get signature
-		CJumpLocation test_reg( BEQ( PspReg_A0, PspReg_A1, CCodeLabel(NULL), true ) );	//compare float to signature
-		MTC1( psp_reg_sig , PspReg_A1 );	//Write back signature to float reg
+		CJumpLocation test_reg( BEQ( PspReg_A0, PspReg_A1, CCodeLabel(NULL), false ) );	//compare float to signature
+		MTC1( psp_reg_sig , PspReg_A1 );	//Always write back signature to float reg
+
 		JAL( CCodeLabel( reinterpret_cast< const void * >( _DoubleToFloat ) ), false );	//Convert Double to Float
 		MFC1( PspReg_A1, psp_reg );	//Get hi part of double 
 
 		MTC1( psp_reg , PspReg_V0 ); //store converted float
 		PatchJumpLong( test_reg, GetAssemblyBuffer()->GetLabel() );
 
+		mRegisterCache.MarkFPAsValid( n64_reg, true );
+		mRegisterCache.MarkFPAsDirty( n64_reg, true );
 		mRegisterCache.MarkFPAsSim( n64_reg, true );
+		mRegisterCache.MarkFPAsValid( EN64FloatReg(n64_reg + 1), true );
+		mRegisterCache.MarkFPAsDirty( EN64FloatReg(n64_reg + 1), true );
 	}
 
 	return psp_reg;
@@ -791,7 +801,7 @@ EPspFloatReg	CCodeGeneratorPSP::GetSimFloatRegisterAndLoad( EN64FloatReg n64_reg
 //*****************************************************************************
 //
 //*****************************************************************************
-inline void CCodeGeneratorPSP::UpdateSimFloatRegister( EN64FloatReg n64_reg )
+inline void CCodeGeneratorPSP::UpdateSimDoubleRegister( EN64FloatReg n64_reg )
 {
 	mRegisterCache.MarkFPAsValid( n64_reg, true );
 	mRegisterCache.MarkFPAsDirty( n64_reg, true );
@@ -1507,36 +1517,37 @@ CJumpLocation	CCodeGeneratorPSP::GenerateOpCode( const STraceEntry& ti, bool bra
 			{
 				switch( op_code.cop1_funct )
 				{
-					case Cop1OpFunc_ADD:	GenerateADD_Sim( op_code.fd, op_code.fs, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_SUB:	GenerateSUB_Sim( op_code.fd, op_code.fs, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_MUL:	GenerateMUL_Sim( op_code.fd, op_code.fs, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_DIV:	GenerateDIV_Sim( op_code.fd, op_code.fs, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_SQRT:	GenerateSQRT_Sim( op_code.fd, op_code.fs ); handled = true; break;
-					case Cop1OpFunc_ABS:	GenerateABS_Sim( op_code.fd, op_code.fs ); handled = true; break;
-					case Cop1OpFunc_MOV:	GenerateMOV_Sim( op_code.fd, op_code.fs ); handled = true; break;
-					case Cop1OpFunc_NEG:	GenerateNEG_Sim( op_code.fd, op_code.fs ); handled = true; break;
+					case Cop1OpFunc_ADD:	GenerateADD_D_Sim( op_code.fd, op_code.fs, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_SUB:	GenerateSUB_D_Sim( op_code.fd, op_code.fs, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_MUL:	GenerateMUL_D_Sim( op_code.fd, op_code.fs, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_DIV:	GenerateDIV_D_Sim( op_code.fd, op_code.fs, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_SQRT:	GenerateSQRT_D_Sim( op_code.fd, op_code.fs ); handled = true; break;
+					case Cop1OpFunc_ABS:	GenerateABS_D_Sim( op_code.fd, op_code.fs ); handled = true; break;
+					case Cop1OpFunc_MOV:	GenerateMOV_D_Sim( op_code.fd, op_code.fs ); handled = true; break;
+					case Cop1OpFunc_NEG:	GenerateNEG_D_Sim( op_code.fd, op_code.fs ); handled = true; break;
 
-					case Cop1OpFunc_TRUNC_W:	GenerateTRUNC_W_Sim( op_code.fd, op_code.fs ); handled = true; break;
+					case Cop1OpFunc_TRUNC_W:	GenerateTRUNC_W_D_Sim( op_code.fd, op_code.fs ); handled = true; break;
 
-					case Cop1OpFunc_CVT_W:		GenerateCVT_W_Sim( op_code.fd, op_code.fs ); handled = true; break;
+					case Cop1OpFunc_CVT_W:		GenerateCVT_W_D_Sim( op_code.fd, op_code.fs ); handled = true; break;
+					case Cop1OpFunc_CVT_S:		GenerateCVT_S_D_Sim( op_code.fd, op_code.fs ); handled = true; break;
 
-					case Cop1OpFunc_CMP_F:		GenerateCMP_Sim( op_code.fs, Cop1OpFunc_CMP_F, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_CMP_UN:		GenerateCMP_Sim( op_code.fs, Cop1OpFunc_CMP_UN, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_CMP_EQ:		GenerateCMP_Sim( op_code.fs, Cop1OpFunc_CMP_EQ, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_CMP_UEQ:	GenerateCMP_Sim( op_code.fs, Cop1OpFunc_CMP_UEQ, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_CMP_OLT:	GenerateCMP_Sim( op_code.fs, Cop1OpFunc_CMP_OLT, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_CMP_ULT:	GenerateCMP_Sim( op_code.fs, Cop1OpFunc_CMP_ULT, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_CMP_OLE:	GenerateCMP_Sim( op_code.fs, Cop1OpFunc_CMP_OLE, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_CMP_ULE:	GenerateCMP_Sim( op_code.fs, Cop1OpFunc_CMP_ULE, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_CMP_F:		GenerateCMP_D_Sim( op_code.fs, Cop1OpFunc_CMP_F, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_CMP_UN:		GenerateCMP_D_Sim( op_code.fs, Cop1OpFunc_CMP_UN, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_CMP_EQ:		GenerateCMP_D_Sim( op_code.fs, Cop1OpFunc_CMP_EQ, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_CMP_UEQ:	GenerateCMP_D_Sim( op_code.fs, Cop1OpFunc_CMP_UEQ, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_CMP_OLT:	GenerateCMP_D_Sim( op_code.fs, Cop1OpFunc_CMP_OLT, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_CMP_ULT:	GenerateCMP_D_Sim( op_code.fs, Cop1OpFunc_CMP_ULT, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_CMP_OLE:	GenerateCMP_D_Sim( op_code.fs, Cop1OpFunc_CMP_OLE, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_CMP_ULE:	GenerateCMP_D_Sim( op_code.fs, Cop1OpFunc_CMP_ULE, op_code.ft ); handled = true; break;
 
-					case Cop1OpFunc_CMP_SF:		GenerateCMP_Sim( op_code.fs, Cop1OpFunc_CMP_SF, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_CMP_NGLE:	GenerateCMP_Sim( op_code.fs, Cop1OpFunc_CMP_NGLE, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_CMP_SEQ:	GenerateCMP_Sim( op_code.fs, Cop1OpFunc_CMP_SEQ, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_CMP_NGL:	GenerateCMP_Sim( op_code.fs, Cop1OpFunc_CMP_NGL, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_CMP_LT:		GenerateCMP_Sim( op_code.fs, Cop1OpFunc_CMP_LT, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_CMP_NGE:	GenerateCMP_Sim( op_code.fs, Cop1OpFunc_CMP_NGE, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_CMP_LE:		GenerateCMP_Sim( op_code.fs, Cop1OpFunc_CMP_LE, op_code.ft ); handled = true; break;
-					case Cop1OpFunc_CMP_NGT:	GenerateCMP_Sim( op_code.fs, Cop1OpFunc_CMP_NGT, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_CMP_SF:		GenerateCMP_D_Sim( op_code.fs, Cop1OpFunc_CMP_SF, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_CMP_NGLE:	GenerateCMP_D_Sim( op_code.fs, Cop1OpFunc_CMP_NGLE, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_CMP_SEQ:	GenerateCMP_D_Sim( op_code.fs, Cop1OpFunc_CMP_SEQ, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_CMP_NGL:	GenerateCMP_D_Sim( op_code.fs, Cop1OpFunc_CMP_NGL, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_CMP_LT:		GenerateCMP_D_Sim( op_code.fs, Cop1OpFunc_CMP_LT, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_CMP_NGE:	GenerateCMP_D_Sim( op_code.fs, Cop1OpFunc_CMP_NGE, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_CMP_LE:		GenerateCMP_D_Sim( op_code.fs, Cop1OpFunc_CMP_LE, op_code.ft ); handled = true; break;
+					case Cop1OpFunc_CMP_NGT:	GenerateCMP_D_Sim( op_code.fs, Cop1OpFunc_CMP_NGT, op_code.ft ); handled = true; break;
 					default:
 					GenerateGenericR4300( op_code, R4300_GetDInstructionHandler( op_code ) ); handled = true; break;	// Need branch delay?
 				}
@@ -1562,6 +1573,10 @@ CJumpLocation	CCodeGeneratorPSP::GenerateOpCode( const STraceEntry& ti, bool bra
 			case Cop1OpFunc_TRUNC_W:	GenerateTRUNC_W_S( op_code.fd, op_code.fs ); handled = true; break;
 
 			case Cop1OpFunc_CVT_W:		GenerateCVT_W_S( op_code.fd, op_code.fs ); handled = true; break;
+			case Cop1OpFunc_CVT_D:		if( gDynarecDoublesOptimisation ) GenerateCVT_D_S_Sim( op_code.fd, op_code.fs );	 //MK64 have some minor issues with this together with simDoubles
+										else GenerateCVT_D_S( op_code.fd, op_code.fs );
+										handled = true;
+										break;
 
 			case Cop1OpFunc_CMP_F:		GenerateCMP_S( op_code.fs, Cop1OpFunc_CMP_F, op_code.ft ); handled = true; break;
 			case Cop1OpFunc_CMP_UN:		GenerateCMP_S( op_code.fs, Cop1OpFunc_CMP_UN, op_code.ft ); handled = true; break;
@@ -1586,6 +1601,12 @@ CJumpLocation	CCodeGeneratorPSP::GenerateOpCode( const STraceEntry& ti, bool bra
 			switch( op_code.cop1_funct )
 			{
 			case Cop1OpFunc_CVT_S:	GenerateCVT_S_W( op_code.fd, op_code.fs ); handled = true; break;
+			case Cop1OpFunc_CVT_D:	if( gDynarecDoublesOptimisation )
+									{
+										GenerateCVT_D_W_Sim( op_code.fd, op_code.fs );
+										handled = true;
+										break;
+									}
 			}
 			break;
 
@@ -2300,9 +2321,9 @@ void	CCodeGeneratorPSP::GenerateStore( u32 current_pc,
 #define LOGIC_AND (LOGIC_32BIT | LOGIC_HI_IGNORE_IF_NEGATIVE)
 
 // Returns false if hi part can be ignored
-bool CCodeGeneratorPSP::NeedLoadHi( int value, int logic )
+inline bool CCodeGeneratorPSP::NeedLoadHi( int value, int logic )
 {
-	if (value & 0x80000000) //negative
+	if (value < 0) //negative
 	{
 		if (logic & LOGIC_HI_IGNORE_IF_NEGATIVE)
 			return false;
@@ -2650,38 +2671,61 @@ inline void	CCodeGeneratorPSP::GenerateADDU( EN64Reg rd, EN64Reg rs, EN64Reg rt 
 			+ mRegisterCache.GetKnownValue(rt, 0)._s32);
 		return;
 	}	
-	else if( rs == N64Reg_R0 )
+
+	// Check if we really need the high bits
+	bool NeedRegisterHi = (NeedLoadHi(mRegisterCache.IsKnownValue(rt, 1), mRegisterCache.GetKnownValue(rt, 1)._u32, LOGIC_ADD)) &&
+						   (NeedLoadHi(mRegisterCache.IsKnownValue(rs, 1), mRegisterCache.GetKnownValue(rs, 1)._u32, LOGIC_ADD));
+	
+	if( rs == N64Reg_R0 )
 	{
+		if(mRegisterCache.IsKnownValue(rt, 0))
+		{
+			SetRegister32s(rd, mRegisterCache.GetKnownValue(rt, 0)._s32);
+			return;
+		}
+
 		// As RS is zero, the ADD is just a copy of RT to RD.
 		// Try to avoid loading into a temp register if the dest is cached
 		EPspReg reg_lo_d( GetRegisterNoLoadLo( rd, PspReg_T0 ) );
 		LoadRegisterLo( reg_lo_d, rt );
 		StoreRegisterLo( rd, reg_lo_d );
-
-		EPspReg reg_hi_d( GetRegisterNoLoadHi( rd, PspReg_T0 ) );
-		LoadRegisterHi( reg_hi_d, rt );
-		StoreRegisterHi( rd, reg_hi_d );
+		if(NeedRegisterHi)
+		{
+			EPspReg reg_hi_d( GetRegisterNoLoadHi( rd, PspReg_T0 ) );
+			LoadRegisterHi( reg_hi_d, rt );
+			StoreRegisterHi( rd, reg_hi_d );
+		}
 	}
 	else if( rt == N64Reg_R0 )
 	{
+		if(mRegisterCache.IsKnownValue(rs, 0))
+		{
+			SetRegister32s(rd, mRegisterCache.GetKnownValue(rs, 0)._s32);
+			return;
+		}
+		
 		// As RT is zero, the ADD is just a copy of RS to RD.
 		// Try to avoid loading into a temp register if the dest is cached
 		EPspReg reg_lo_d( GetRegisterNoLoadLo( rd, PspReg_T0 ) );
 		LoadRegisterLo( reg_lo_d, rs );
 		StoreRegisterLo( rd, reg_lo_d );
-
-		EPspReg reg_hi_d( GetRegisterNoLoadHi( rd, PspReg_T0 ) );
-		LoadRegisterHi( reg_hi_d, rs );
-		StoreRegisterHi( rd, reg_hi_d );
+		if(NeedRegisterHi)
+		{
+			EPspReg reg_hi_d( GetRegisterNoLoadHi( rd, PspReg_T0 ) );
+			LoadRegisterHi( reg_hi_d, rs );
+			StoreRegisterHi( rd, reg_hi_d );
+		}
 	}
 	else
 	{
-	//gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rs ]._s32_0 + gGPR[ op_code.rt ]._s32_0 );
-	EPspReg	reg_lo_d( GetRegisterNoLoadLo( rd, PspReg_T0 ) );
-	EPspReg	reg_lo_a( GetRegisterAndLoadLo( rs, PspReg_T0 ) );
-	EPspReg	reg_lo_b( GetRegisterAndLoadLo( rt, PspReg_T1 ) );
-	ADDU( reg_lo_d, reg_lo_a, reg_lo_b );
-	UpdateRegister( rd, reg_lo_d, URO_HI_SIGN_EXTEND, PspReg_T0 );
+	
+		// ToDO: NeedRegisterHi can be aplied here as well?
+		//gGPR[ op_code.rd ]._s64 = (s64)(s32)( gGPR[ op_code.rs ]._s32_0 + gGPR[ op_code.rt ]._s32_0 );
+		EPspReg	reg_lo_d( GetRegisterNoLoadLo( rd, PspReg_T0 ) );
+		EPspReg	reg_lo_a( GetRegisterAndLoadLo( rs, PspReg_T0 ) );
+		EPspReg	reg_lo_b( GetRegisterAndLoadLo( rt, PspReg_T1 ) );
+		ADDU( reg_lo_d, reg_lo_a, reg_lo_b );
+		UpdateRegister( rd, reg_lo_d, URO_HI_SIGN_EXTEND, PspReg_T0 );
 	}
 }
 
@@ -2771,9 +2815,7 @@ inline void	CCodeGeneratorPSP::GenerateDADDU( EN64Reg rd, EN64Reg rs, EN64Reg rt
 inline void	CCodeGeneratorPSP::GenerateAND( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 {
 	//gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 & gGPR[ op_code.rt ]._u64;
-	//Note for some reason Banjo Kazooie doesn't like this... @Kreationz
 
-	// Errrg Banjo seems fine, maybe something else caused the reported freezes? -Salvy
 	//if (mRegisterCache.IsKnownValue(rs, 0) && mRegisterCache.IsKnownValue(rs, 1)
 	//&&	mRegisterCache.IsKnownValue(rt, 0) && mRegisterCache.IsKnownValue(rt, 1))
 	if (mRegisterCache.IsKnownValue(rs, 0) & mRegisterCache.IsKnownValue(rt, 0))
@@ -2789,25 +2831,31 @@ inline void	CCodeGeneratorPSP::GenerateAND( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 	}
 	else
 	{
+		// Check if we really need the high bits
+		bool NeedRegisterHi = (NeedLoadHi(mRegisterCache.IsKnownValue(rt, 1), mRegisterCache.GetKnownValue(rt, 1)._u32, LOGIC_AND)) &&
+							  (NeedLoadHi(mRegisterCache.IsKnownValue(rs, 1), mRegisterCache.GetKnownValue(rs, 1)._u32, LOGIC_AND));
+
 		// XXXX or into dest register
 		EPspReg	reg_lo_d( GetRegisterNoLoadLo( rd, PspReg_T0 ) );
 		EPspReg	reg_lo_a( GetRegisterAndLoadLo( rs, PspReg_T0 ) );
 		EPspReg	reg_lo_b( GetRegisterAndLoadLo( rt, PspReg_T1 ) );
 		AND( reg_lo_d, reg_lo_a, reg_lo_b );
 		StoreRegisterLo( rd, reg_lo_d );
-
-		EPspReg	reg_hi_d( GetRegisterNoLoadHi( rd, PspReg_T0 ) );
-		EPspReg	reg_hi_a( GetRegisterAndLoadHi( rs, PspReg_T0 ) );
-		EPspReg	reg_hi_b( GetRegisterAndLoadHi( rt, PspReg_T1 ) );
-		AND( reg_hi_d, reg_hi_a, reg_hi_b );
-		StoreRegisterHi( rd, reg_hi_d );
+		if(NeedRegisterHi)
+		{
+			EPspReg	reg_hi_d( GetRegisterNoLoadHi( rd, PspReg_T0 ) );
+			EPspReg	reg_hi_a( GetRegisterAndLoadHi( rs, PspReg_T0 ) );
+			EPspReg	reg_hi_b( GetRegisterAndLoadHi( rt, PspReg_T1 ) );
+			AND( reg_hi_d, reg_hi_a, reg_hi_b );
+			StoreRegisterHi( rd, reg_hi_d );
+		}
 	}
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-inline void	CCodeGeneratorPSP::GenerateOR( EN64Reg rd, EN64Reg rs, EN64Reg rt )
+void	CCodeGeneratorPSP::GenerateOR( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 {
 	//gGPR[ op_code.rd ]._u64 = gGPR[ op_code.rs ]._u64 | gGPR[ op_code.rt ]._u64;
 	//if (mRegisterCache.IsKnownValue(rs, 0) && mRegisterCache.IsKnownValue(rs, 1) 
@@ -2817,17 +2865,30 @@ inline void	CCodeGeneratorPSP::GenerateOR( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 		SetRegister64(rd, 
 			mRegisterCache.GetKnownValue(rs, 0)._u32 | mRegisterCache.GetKnownValue(rt, 0)._u32,
 			mRegisterCache.GetKnownValue(rs, 1)._u32 | mRegisterCache.GetKnownValue(rt, 1)._u32);
+		return;
 	}
-	else if( rs == N64Reg_R0 )
+
+	// Check if we really need the high bits, If this fails we then check if these registers are mapped as 32bit
+	// If rs or rt is r0 this is more efective as we only check one register
+	bool NeedRegisterHi = (NeedLoadHi(mRegisterCache.IsKnownValue(rt, 0), mRegisterCache.GetKnownValue(rt, 0)._u32, LOGIC_OR)) &&
+						  (NeedLoadHi(mRegisterCache.IsKnownValue(rs, 0), mRegisterCache.GetKnownValue(rs, 0)._u32, LOGIC_OR));
+
+	if( rs == N64Reg_R0 )
 	{
+		if(mRegisterCache.IsKnownValue(rt, 0))
+		{
+			SetRegister64(rd, 
+				mRegisterCache.GetKnownValue(rt, 0)._u32, mRegisterCache.GetKnownValue(rt, 1)._u32);
+			return;
+		}
+
 		// This case rarely seems to happen...
 		// As RS is zero, the OR is just a copy of RT to RD.
 		// Try to avoid loading into a temp register if the dest is cached
 		EPspReg reg_lo_d( GetRegisterNoLoadLo( rd, PspReg_T0 ) );
 		LoadRegisterLo( reg_lo_d, rt );
 		StoreRegisterLo( rd, reg_lo_d );
-		if( (NeedLoadHi(mRegisterCache.IsKnownValue(rt, 1), mRegisterCache.GetKnownValue(rt, 1)._u32, LOGIC_OR)) ||
-			(NeedLoadHi(mRegisterCache.IsKnownValue(rs, 1), mRegisterCache.GetKnownValue(rs, 1)._u32, LOGIC_OR)) )
+		if(NeedRegisterHi && !mRegisterCache.Is32bit(rt))
 		{
 			EPspReg reg_hi_d( GetRegisterNoLoadHi( rd, PspReg_T0 ) );
 			LoadRegisterHi( reg_hi_d, rt );
@@ -2836,13 +2897,19 @@ inline void	CCodeGeneratorPSP::GenerateOR( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 	}
 	else if( rt == N64Reg_R0 )
 	{
+		if(mRegisterCache.IsKnownValue(rs, 0))
+		{
+			SetRegister64(rd, mRegisterCache.GetKnownValue(rs, 0)._u32, 
+				mRegisterCache.GetKnownValue(rs, 1)._u32);
+			return;
+		}
+
 		// As RT is zero, the OR is just a copy of RS to RD.
 		// Try to avoid loading into a temp register if the dest is cached
 		EPspReg reg_lo_d( GetRegisterNoLoadLo( rd, PspReg_T0 ) );
 		LoadRegisterLo( reg_lo_d, rs );
 		StoreRegisterLo( rd, reg_lo_d );
-		if( (NeedLoadHi(mRegisterCache.IsKnownValue(rt, 1), mRegisterCache.GetKnownValue(rt, 1)._u32, LOGIC_OR)) ||
-			(NeedLoadHi(mRegisterCache.IsKnownValue(rs, 1), mRegisterCache.GetKnownValue(rs, 1)._u32, LOGIC_OR)) )
+		if(NeedRegisterHi && !mRegisterCache.Is32bit(rs))
 		{
 			EPspReg reg_hi_d( GetRegisterNoLoadHi( rd, PspReg_T0 ) );
 			LoadRegisterHi( reg_hi_d, rs );
@@ -2851,13 +2918,15 @@ inline void	CCodeGeneratorPSP::GenerateOR( EN64Reg rd, EN64Reg rs, EN64Reg rt )
 	}
 	else
 	{
+		if(NeedRegisterHi && mRegisterCache.Is32bit(rs) && mRegisterCache.Is32bit(rt))
+			NeedRegisterHi = false;
+
 		EPspReg	reg_lo_d( GetRegisterNoLoadLo( rd, PspReg_T0 ) );
 		EPspReg	reg_lo_a( GetRegisterAndLoadLo( rs, PspReg_T0 ) );
 		EPspReg	reg_lo_b( GetRegisterAndLoadLo( rt, PspReg_T1 ) );
 		OR( reg_lo_d, reg_lo_a, reg_lo_b );
 		StoreRegisterLo( rd, reg_lo_d );
-		if( (NeedLoadHi(mRegisterCache.IsKnownValue(rt, 1), mRegisterCache.GetKnownValue(rt, 1)._u32, LOGIC_OR)) ||
-			(NeedLoadHi(mRegisterCache.IsKnownValue(rs, 1), mRegisterCache.GetKnownValue(rs, 1)._u32, LOGIC_OR)) )
+		if(NeedRegisterHi)
 		{
 			EPspReg	reg_hi_d( GetRegisterNoLoadHi( rd, PspReg_T0 ) );
 			EPspReg	reg_hi_a( GetRegisterAndLoadHi( rs, PspReg_T0 ) );
@@ -3058,6 +3127,7 @@ inline void	CCodeGeneratorPSP::GenerateADDIU( EN64Reg rt, EN64Reg rs, s16 immedi
 	}
 	else
 	{
+
 		EPspReg dst_reg( GetRegisterNoLoadLo( rt, PspReg_T0 ) );
 		EPspReg	src_reg( GetRegisterAndLoadLo( rs, PspReg_T1 ) );
 		ADDIU( dst_reg, src_reg, immediate );
@@ -3665,13 +3735,51 @@ inline void	CCodeGeneratorPSP::GenerateSWC1( u32 current_pc, bool set_branch_del
 //*****************************************************************************
 inline void	CCodeGeneratorPSP::GenerateSDC1( u32 current_pc, bool set_branch_delay, u32 ft, EN64Reg base, s32 offset )
 {
+#if 1
+	EN64FloatReg	n64_ft_sig = EN64FloatReg( ft );
+	EPspFloatReg	psp_ft_sig = GetFloatRegisterAndLoad( n64_ft_sig );
 	EN64FloatReg	n64_ft = EN64FloatReg( ft + 1 );
-	EPspFloatReg	psp_ft( GetFloatRegisterAndLoad( n64_ft ) );
-	GenerateStore( current_pc, (EPspReg)psp_ft, base, offset, OP_SWC1, 0, set_branch_delay ? WriteBitsDirectBD_u32 : WriteBitsDirect_u32 );
+	EPspFloatReg	psp_ft( GetFloatRegisterAndLoad( EN64FloatReg(n64_ft + 1) ) );
 
-	n64_ft = EN64FloatReg( ft );
-	psp_ft = GetFloatRegisterAndLoad( n64_ft );
-	GenerateStore( current_pc, (EPspReg)psp_ft, base, offset + 4, OP_SWC1, 0, set_branch_delay ? WriteBitsDirectBD_u32 : WriteBitsDirect_u32 );
+	if( !mRegisterCache.IsFPSim( n64_ft_sig ) )
+	{	//Add signature test 
+		MFC1( PspReg_A0, psp_ft_sig );
+		LoadConstant( PspReg_A1, SIMULATESIG );	//Get signature
+		CJumpLocation test_reg( BNE( PspReg_A0, PspReg_A1, CCodeLabel(NULL), true ) );	//compare float to signature
+
+		JAL( CCodeLabel( reinterpret_cast< const void * >( _FloatToDouble ) ), false );	//Convert Float to Double
+		MFC1( PspReg_A0, psp_ft );	//Get float to convert
+
+		//Store from CPU after conversion
+		GenerateStore( current_pc, PspReg_V1, base, offset, OP_SW, 0, set_branch_delay ? WriteBitsDirectBD_u32 : WriteBitsDirect_u32 );
+		GenerateStore( current_pc, PspReg_V0, base, offset + 4, OP_SW, 0, set_branch_delay ? WriteBitsDirectBD_u32 : WriteBitsDirect_u32 );
+		CJumpLocation branch( BEQ( PspReg_R0, PspReg_R0, CCodeLabel(NULL), true ) );	//always branch
+
+		//Store directly from float regs
+		PatchJumpLong( test_reg, GetAssemblyBuffer()->GetLabel() );
+		GenerateStore( current_pc, (EPspReg)psp_ft, base, offset, OP_SWC1, 0, set_branch_delay ? WriteBitsDirectBD_u32 : WriteBitsDirect_u32 );
+		GenerateStore( current_pc, (EPspReg)psp_ft_sig, base, offset + 4, OP_SWC1, 0, set_branch_delay ? WriteBitsDirectBD_u32 : WriteBitsDirect_u32 );
+
+		PatchJumpLong( branch, GetAssemblyBuffer()->GetLabel() );
+	}
+	else
+	{	//If we know its a sim double we can convert it directly
+		JAL( CCodeLabel( reinterpret_cast< const void * >( _FloatToDouble ) ), false );	//Convert Float to Double
+		MFC1( PspReg_A0, psp_ft );	//Get float to convert
+
+		GenerateStore( current_pc, PspReg_V1, base, offset, OP_SW, 0, set_branch_delay ? WriteBitsDirectBD_u32 : WriteBitsDirect_u32 );
+		GenerateStore( current_pc, PspReg_V0, base, offset + 4, OP_SW, 0, set_branch_delay ? WriteBitsDirectBD_u32 : WriteBitsDirect_u32 );
+	}
+
+#else
+	EN64FloatReg	n64_ft_sig = EN64FloatReg( ft );
+	EPspFloatReg	psp_ft_sig = GetFloatRegisterAndLoad( n64_ft_sig );
+	EN64FloatReg	n64_ft = EN64FloatReg( ft + 1 );
+	EPspFloatReg	psp_ft( GetFloatRegisterAndLoad( EN64FloatReg(n64_ft + 1) ) );
+
+	GenerateStore( current_pc, (EPspReg)psp_ft, base, offset, OP_SWC1, 0, set_branch_delay ? WriteBitsDirectBD_u32 : WriteBitsDirect_u32 );
+	GenerateStore( current_pc, (EPspReg)psp_ft_sig, base, offset + 4, OP_SWC1, 0, set_branch_delay ? WriteBitsDirectBD_u32 : WriteBitsDirect_u32 );
+#endif
 }
 
 //*****************************************************************************
@@ -3686,6 +3794,8 @@ inline void	CCodeGeneratorPSP::GenerateMFC1( EN64Reg rt, u32 fs )
 	EPspFloatReg	psp_fs( GetFloatRegisterAndLoad( n64_fs ) );
 
 	MFC1( reg_dst, psp_fs );
+
+	//Needs to be sign extended(or breaks DKR)
 	UpdateRegister( rt, reg_dst, URO_HI_SIGN_EXTEND, PspReg_T0 );
 }
 
@@ -3974,7 +4084,7 @@ inline void	CCodeGeneratorPSP::GenerateBC1T( const SBranchDetails * p_branch, CJ
 //*****************************************************************************
 //
 //*****************************************************************************
-inline void	CCodeGeneratorPSP::GenerateADD_Sim( u32 fd, u32 fs, u32 ft )
+inline void	CCodeGeneratorPSP::GenerateADD_D_Sim( u32 fd, u32 fs, u32 ft )
 {
 	EN64FloatReg	n64_fs = EN64FloatReg( fs );
 	EN64FloatReg	n64_ft = EN64FloatReg( ft );
@@ -3989,13 +4099,13 @@ inline void	CCodeGeneratorPSP::GenerateADD_Sim( u32 fd, u32 fs, u32 ft )
 	ADD_S( psp_fd, psp_fs, psp_ft );
 	if( (fd != fs) & (fd != ft) ) MOV_S( psp_fd_sig, EPspFloatReg( fs ));	//Copy signature as well if needed
 
-	UpdateSimFloatRegister( (EN64FloatReg)psp_fd_sig );
+	UpdateSimDoubleRegister( n64_fd );
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-inline void	CCodeGeneratorPSP::GenerateSUB_Sim( u32 fd, u32 fs, u32 ft )
+inline void	CCodeGeneratorPSP::GenerateSUB_D_Sim( u32 fd, u32 fs, u32 ft )
 {
 	EN64FloatReg	n64_fs = EN64FloatReg( fs );
 	EN64FloatReg	n64_ft = EN64FloatReg( ft );
@@ -4010,13 +4120,13 @@ inline void	CCodeGeneratorPSP::GenerateSUB_Sim( u32 fd, u32 fs, u32 ft )
 	SUB_S( psp_fd, psp_fs, psp_ft );
 	if( (fd != fs) & (fd != ft) ) MOV_S( psp_fd_sig, EPspFloatReg( fs ));	//Copy signature as well if needed
 
-	UpdateSimFloatRegister( (EN64FloatReg)psp_fd_sig );
+	UpdateSimDoubleRegister( n64_fd );
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-inline void	CCodeGeneratorPSP::GenerateMUL_Sim( u32 fd, u32 fs, u32 ft )
+inline void	CCodeGeneratorPSP::GenerateMUL_D_Sim( u32 fd, u32 fs, u32 ft )
 {
 	EN64FloatReg	n64_fs = EN64FloatReg( fs );
 	EN64FloatReg	n64_ft = EN64FloatReg( ft );
@@ -4031,13 +4141,13 @@ inline void	CCodeGeneratorPSP::GenerateMUL_Sim( u32 fd, u32 fs, u32 ft )
 	MUL_S( psp_fd, psp_fs, psp_ft );
 	if( (fd != fs) & (fd != ft) ) MOV_S( psp_fd_sig, EPspFloatReg( fs ));	//Copy signature as well if needed
 
-	UpdateSimFloatRegister( (EN64FloatReg)psp_fd_sig );
+	UpdateSimDoubleRegister( n64_fd );
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-inline void	CCodeGeneratorPSP::GenerateDIV_Sim( u32 fd, u32 fs, u32 ft )
+inline void	CCodeGeneratorPSP::GenerateDIV_D_Sim( u32 fd, u32 fs, u32 ft )
 {
 	EN64FloatReg	n64_fs = EN64FloatReg( fs );
 	EN64FloatReg	n64_ft = EN64FloatReg( ft );
@@ -4052,13 +4162,13 @@ inline void	CCodeGeneratorPSP::GenerateDIV_Sim( u32 fd, u32 fs, u32 ft )
 	DIV_S( psp_fd, psp_fs, psp_ft );
 	if( (fd != fs) & (fd != ft) ) MOV_S( psp_fd_sig, EPspFloatReg( fs ));	//Copy signature as well if needed
 
-	UpdateSimFloatRegister( (EN64FloatReg)psp_fd_sig );
+	UpdateSimDoubleRegister( n64_fd );
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-inline void	CCodeGeneratorPSP::GenerateSQRT_Sim( u32 fd, u32 fs )
+inline void	CCodeGeneratorPSP::GenerateSQRT_D_Sim( u32 fd, u32 fs )
 {
 	EN64FloatReg	n64_fs = EN64FloatReg( fs );
 	EN64FloatReg	n64_fd = EN64FloatReg( fd );
@@ -4071,13 +4181,13 @@ inline void	CCodeGeneratorPSP::GenerateSQRT_Sim( u32 fd, u32 fs )
 	SQRT_S( psp_fd, psp_fs );
 	if( fd != fs ) MOV_S( psp_fd_sig, EPspFloatReg( fs ));	//Copy signature as well if needed
 
-	UpdateSimFloatRegister( (EN64FloatReg)psp_fd_sig );
+	UpdateSimDoubleRegister( n64_fd );
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-inline void	CCodeGeneratorPSP::GenerateABS_Sim( u32 fd, u32 fs )
+inline void	CCodeGeneratorPSP::GenerateABS_D_Sim( u32 fd, u32 fs )
 {
 	EN64FloatReg	n64_fs = EN64FloatReg( fs );
 	EN64FloatReg	n64_fd = EN64FloatReg( fd );
@@ -4090,13 +4200,13 @@ inline void	CCodeGeneratorPSP::GenerateABS_Sim( u32 fd, u32 fs )
 	ABS_S( psp_fd, psp_fs );
 	if( fd != fs ) MOV_S( psp_fd_sig, EPspFloatReg( fs ));	//Copy signature as well if needed
 
-	UpdateSimFloatRegister( (EN64FloatReg)psp_fd_sig );
+	UpdateSimDoubleRegister( n64_fd );
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-inline void	CCodeGeneratorPSP::GenerateMOV_Sim( u32 fd, u32 fs )
+inline void	CCodeGeneratorPSP::GenerateMOV_D_Sim( u32 fd, u32 fs )
 {
 	EN64FloatReg	n64_fs = EN64FloatReg( fs );
 	EN64FloatReg	n64_fd = EN64FloatReg( fd );
@@ -4110,13 +4220,13 @@ inline void	CCodeGeneratorPSP::GenerateMOV_Sim( u32 fd, u32 fs )
 	MOV_S( psp_fd, psp_fs );
 	MOV_S( psp_fd_sig, psp_fs_sig);	//Copy signature as well
 
-	UpdateSimFloatRegister( (EN64FloatReg)psp_fd_sig );
+	UpdateSimDoubleRegister( n64_fd );
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-inline void	CCodeGeneratorPSP::GenerateNEG_Sim( u32 fd, u32 fs )
+inline void	CCodeGeneratorPSP::GenerateNEG_D_Sim( u32 fd, u32 fs )
 {
 	EN64FloatReg	n64_fs = EN64FloatReg( fs );
 	EN64FloatReg	n64_fd = EN64FloatReg( fd );
@@ -4129,13 +4239,13 @@ inline void	CCodeGeneratorPSP::GenerateNEG_Sim( u32 fd, u32 fs )
 	NEG_S( psp_fd, psp_fs );
 	if( fd != fs ) MOV_S( psp_fd_sig, EPspFloatReg( fs ));	//Copy signature as well if needed
 
-	UpdateSimFloatRegister( (EN64FloatReg)psp_fd_sig );
+	UpdateSimDoubleRegister( n64_fd );
 }
 
 //*****************************************************************************
-//
+//Convert Double to s32(TRUNC)
 //*****************************************************************************
-inline void	CCodeGeneratorPSP::GenerateTRUNC_W_Sim( u32 fd, u32 fs )
+inline void	CCodeGeneratorPSP::GenerateTRUNC_W_D_Sim( u32 fd, u32 fs )
 {
 	EN64FloatReg	n64_fs = EN64FloatReg( fs );
 	EN64FloatReg	n64_fd = EN64FloatReg( fd );
@@ -4146,14 +4256,14 @@ inline void	CCodeGeneratorPSP::GenerateTRUNC_W_Sim( u32 fd, u32 fs )
 
 	//Use float now instead of double :)
 	TRUNC_W_S( psp_fd_sig, psp_fs );
-	//MTC1( psp_fd , PspReg_R0 ); //Zero hi (or should this be sign extended?)
 
-	UpdateSimFloatRegister( (EN64FloatReg)psp_fd_sig );
+	UpdateFloatRegister( n64_fd );
 }
+
 //*****************************************************************************
-//
+//Convert Double to s32
 //*****************************************************************************
-inline void	CCodeGeneratorPSP::GenerateCVT_W_Sim( u32 fd, u32 fs )
+inline void	CCodeGeneratorPSP::GenerateCVT_W_D_Sim( u32 fd, u32 fs )
 {
 	EN64FloatReg	n64_fs = EN64FloatReg( fs );
 	EN64FloatReg	n64_fd = EN64FloatReg( fd );
@@ -4164,15 +4274,32 @@ inline void	CCodeGeneratorPSP::GenerateCVT_W_Sim( u32 fd, u32 fs )
 
 	//Use float now instead of double :)
 	CVT_W_S( psp_fd_sig, psp_fs );
-	//MTC1( psp_fd , PspReg_R0 ); //Zero hi (or should this be sign extended?)
 
-	UpdateSimFloatRegister( (EN64FloatReg)psp_fd_sig );
+	UpdateFloatRegister( n64_fd );
+}
+
+//*****************************************************************************
+//Convert Double to Float
+//*****************************************************************************
+inline void	CCodeGeneratorPSP::GenerateCVT_S_D_Sim( u32 fd, u32 fs )
+{
+	EN64FloatReg	n64_fs = EN64FloatReg( fs );
+	EN64FloatReg	n64_fd = EN64FloatReg( fd );
+
+	EPspFloatReg	psp_fd_sig = EPspFloatReg( n64_fd );//1:1 Mapping
+	//EPspFloatReg	psp_fd = EPspFloatReg( n64_fd + 1 );//1:1 Mapping
+	EPspFloatReg	psp_fs( GetSimFloatRegisterAndLoad( n64_fs ) );
+
+	//Use float now instead of double :)
+	MOV_S( psp_fd_sig, psp_fs );
+
+	UpdateFloatRegister( n64_fd );
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-inline void	CCodeGeneratorPSP::GenerateCMP_Sim( u32 fs, ECop1OpFunction cmp_op, u32 ft )
+inline void	CCodeGeneratorPSP::GenerateCMP_D_Sim( u32 fs, ECop1OpFunction cmp_op, u32 ft )
 {
 	mFloatCMPIsValid = true;
 
@@ -4360,7 +4487,7 @@ inline void	CCodeGeneratorPSP::GenerateNEG_S( u32 fd, u32 fs )
 }
 
 //*****************************************************************************
-//
+//Convert Float to s32
 //*****************************************************************************
 inline void	CCodeGeneratorPSP::GenerateTRUNC_W_S( u32 fd, u32 fs )
 {
@@ -4378,7 +4505,7 @@ inline void	CCodeGeneratorPSP::GenerateTRUNC_W_S( u32 fd, u32 fs )
 }
 
 //*****************************************************************************
-//
+//Convert Float to s32
 //*****************************************************************************
 inline void	CCodeGeneratorPSP::GenerateCVT_W_S( u32 fd, u32 fs )
 {
@@ -4393,6 +4520,72 @@ inline void	CCodeGeneratorPSP::GenerateCVT_W_S( u32 fd, u32 fs )
 	CVT_W_S( psp_fd, psp_fs );
 
 	UpdateFloatRegister( n64_fd );
+}
+
+//*****************************************************************************
+//Convert s32 to (simulated)Double
+//*****************************************************************************
+inline void	CCodeGeneratorPSP::GenerateCVT_D_W_Sim( u32 fd, u32 fs )
+{
+	EN64FloatReg	n64_fs = EN64FloatReg( fs );
+	EN64FloatReg	n64_fd = EN64FloatReg( fd );
+
+	EPspFloatReg	psp_fd_sig = EPspFloatReg( n64_fd );
+	EPspFloatReg	psp_fd = EPspFloatReg( n64_fd + 1 );
+	EPspFloatReg	psp_fs( GetFloatRegisterAndLoad( n64_fs ) );
+
+	CVT_S_W( psp_fd, psp_fs );
+	LoadConstant( PspReg_A0, SIMULATESIG );	//Get signature
+	MTC1( psp_fd_sig , PspReg_A0 );	//Write signature to float reg
+
+	UpdateSimDoubleRegister( n64_fd );
+}
+
+//*****************************************************************************
+//Convert Float to (simulated)Double
+//*****************************************************************************
+inline void	CCodeGeneratorPSP::GenerateCVT_D_S_Sim( u32 fd, u32 fs )
+{
+	EN64FloatReg	n64_fs = EN64FloatReg( fs );
+	EN64FloatReg	n64_fd = EN64FloatReg( fd );
+
+	EPspFloatReg	psp_fd_sig = EPspFloatReg( n64_fd );
+	EPspFloatReg	psp_fd = EPspFloatReg( n64_fd + 1 );
+	EPspFloatReg	psp_fs( GetFloatRegisterAndLoad( n64_fs ) );
+
+	MOV_S( psp_fd, psp_fs );
+	LoadConstant( PspReg_A0, SIMULATESIG );	//Get signature
+	MTC1( psp_fd_sig , PspReg_A0 );	//Write signature to float reg
+
+	//SetFloatVar( &gCPUState.FPU[fd + 0]._f32_0, psp_fd_sig );
+	//SetFloatVar( &gCPUState.FPU[fd + 1]._f32_0, psp_fd );
+
+	UpdateSimDoubleRegister( n64_fd );
+}
+
+//*****************************************************************************
+//Convert Float to Double
+//*****************************************************************************
+inline void	CCodeGeneratorPSP::GenerateCVT_D_S( u32 fd, u32 fs )
+{
+	EN64FloatReg	n64_fs = EN64FloatReg( fs );
+	EN64FloatReg	n64_fd = EN64FloatReg( fd );
+
+	EPspFloatReg	psp_fd_sig = EPspFloatReg( n64_fd );//1:1 Mapping
+	EPspFloatReg	psp_fd = EPspFloatReg( n64_fd + 1 );//1:1 Mapping
+	EPspFloatReg	psp_fs( GetFloatRegisterAndLoad( n64_fs ) );
+
+	JAL( CCodeLabel( reinterpret_cast< const void * >( _FloatToDouble ) ), false );	//Convert Float to Double
+	MFC1( PspReg_A0, psp_fs );	//Get float to convert
+
+	MTC1( psp_fd_sig , PspReg_V0 );	//Copy converted Double lo to FPU
+	MTC1( psp_fd , PspReg_V1 ); //Copy converted Double hi to FPU
+
+	mRegisterCache.MarkFPAsValid( n64_fd, true );
+	mRegisterCache.MarkFPAsDirty( n64_fd, true );
+	mRegisterCache.MarkFPAsSim( n64_fd, false );	//Dont flag as simulated its a real Double!!!
+	mRegisterCache.MarkFPAsValid( EN64FloatReg(n64_fd + 1), true );
+	mRegisterCache.MarkFPAsDirty( EN64FloatReg(n64_fd + 1), true );
 }
 
 //*****************************************************************************
@@ -4491,7 +4684,7 @@ inline void	CCodeGeneratorPSP::GenerateNEG_D( u32 fd, u32 fs )
 
 
 //*****************************************************************************
-//
+//Convert s32 to Float
 //*****************************************************************************
 inline void	CCodeGeneratorPSP::GenerateCVT_S_W( u32 fd, u32 fs )
 {

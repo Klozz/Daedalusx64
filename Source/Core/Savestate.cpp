@@ -253,16 +253,16 @@ bool SaveState_SaveToFile( const char * filename )
 	u32 i;
 	for(i = 0; i < 32; i++)
 	{
-		stream << gCPUState.FPU[i]._u32_0;
+		stream << gCPUState.FPU[i]._u32;
 	}
 	stream.skip(0x80); // used when FPU is in 64-bit mode
 	for(i = 0; i < 32; i++)
 	{
-		stream << gCPUState.CPUControl[i]._u32_0;
+		stream << gCPUState.CPUControl[i]._u32;
 	}
 	for(i = 0; i < 32; i++)
 	{
-		stream << gCPUState.FPUControl[i]._u32_0;
+		stream << gCPUState.FPUControl[i]._u32;
 	}
 	stream << gCPUState.MultHi._u64;
 	stream << gCPUState.MultLo._u64;
@@ -372,7 +372,7 @@ bool SaveState_LoadFromFile( const char * filename )
 	for(i = 0; i < 32; i++)
 	{
 		stream >> value;
-		gCPUState.FPU[i]._u64 = value;
+		gCPUState.FPU[i]._u32 = value;
 	}
 	stream.skip(0x80); // used when FPU is in 64-bit mode
 	u32 g_dwNewCPR0[32];
@@ -383,7 +383,7 @@ bool SaveState_LoadFromFile( const char * filename )
 	for(i = 0; i < 32; i++)
 	{
 		stream >> value;
-		gCPUState.FPUControl[i]._u64 = value;
+		gCPUState.FPUControl[i]._u32 = value;
 	}
 	stream >> gCPUState.MultHi._u64;
 	stream >> gCPUState.MultLo._u64;

@@ -45,15 +45,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <algorithm>
 #ifdef DAEDALUS_ENABLE_DYNAREC
 
-static const	u32					gMaxFragmentCacheSize = 9000; //3K is way too low... many games hit it too often - Kreationz
-//static const	u32					gMaxHotTraceMapSize = 3000; //Need to find the best value for this to have few clears and fast code... //Is needed?
-static const	u32					gMaxHotTraceMapSize = 2500;
-static const u32					gHotTraceThreshold = 20;
+static const u32					gMaxFragmentCacheSize = 8192; //Maximum amount of fragments in the cache 
+static const u32					gMaxHotTraceMapSize = 2048;
+static const u32					gHotTraceThreshold = 16;	//How many times it has to loop a trace before it becomes hot and sent to dynarec
 
 //typedef CMemoryPoolAllocator< std::pair< const u32, u32 > > MyAllocator;
 //std::map< u32, u32, std::less<u32>, MyAllocator >				gHotTraceCountMap;
-std::map< u32, u32 >				gHotTraceCountMap;
 //std::map< u32, u32, std::less<u32>, boost::pool_allocator<std::pair< const u32, u32 > > >				gHotTraceCountMap;
+std::map< u32, u32 >				gHotTraceCountMap;
 CFragmentCache						gFragmentCache;
 static bool							gResetFragmentCache = false;
 
@@ -132,7 +131,7 @@ template< bool TraceEnabled > __forceinline void CPU_EXECUTE_OP()
 	SYNCH_POINT( DAED_SYNC_REG_PC, gCPUState.CurrentPC, "Program Counter doesn't match" );
 	SYNCH_POINT( DAED_SYNC_FRAGMENT_PC, gCPUState.CurrentPC + gCPUState.Delay, "Program Counter/Delay doesn't match while interpreting" );
 
-	SYNCH_POINT( DAED_SYNC_REG_PC, gCPUState.CPUControl[C0_COUNT]._u32_0, "Count doesn't match" );
+	SYNCH_POINT( DAED_SYNC_REG_PC, gCPUState.CPUControl[C0_COUNT]._u32, "Count doesn't match" );
 
 #ifdef DAEDALUS_ENABLE_DYNAREC
 	if( TraceEnabled )
@@ -164,7 +163,7 @@ template< bool TraceEnabled > __forceinline void CPU_EXECUTE_OP()
 	SYNCH_POINT( DAED_SYNC_REGS, CPU_ProduceRegisterHash(), "Registers don't match" );
 
 	// Increment count register
-	gCPUState.CPUControl[C0_COUNT]._u32_0 = gCPUState.CPUControl[C0_COUNT]._u32_0 + COUNTER_INCREMENT_PER_OP;
+	gCPUState.CPUControl[C0_COUNT]._u32 = gCPUState.CPUControl[C0_COUNT]._u32 + COUNTER_INCREMENT_PER_OP;
 
 	if (CPU_ProcessEventCycles( COUNTER_INCREMENT_PER_OP ) )
 	{
@@ -417,7 +416,7 @@ void CPU_HandleDynaRecOnBranch( bool backwards, bool trace_already_enabled )
 	{
 		DAEDALUS_ASSERT( gCPUState.Delay == NO_DELAY, "Why are we entering with a delay slot active?" );
 #ifdef DAEDALUS_ENABLE_DYNAREC_PROFILE
-		u32			entry_count( gCPUState.CPUControl[C0_COUNT]._u32_0 ); // Just used DYNAREC_PROFILE_ENTEREXIT
+		u32			entry_count( gCPUState.CPUControl[C0_COUNT]._u32 ); // Just used DYNAREC_PROFILE_ENTEREXIT
 #endif
 		u32			entry_address( gCPUState.CurrentPC );
 #ifdef DAEDALUS_DEBUG_DYNAREC
@@ -443,7 +442,7 @@ void CPU_HandleDynaRecOnBranch( bool backwards, bool trace_already_enabled )
 
 			p_fragment->Execute();
 
-			DYNAREC_PROFILE_ENTEREXIT( entry_address, gCPUState.CurrentPC, gCPUState.CPUControl[C0_COUNT]._u32_0 - entry_count );
+			DYNAREC_PROFILE_ENTEREXIT( entry_address, gCPUState.CurrentPC, gCPUState.CPUControl[C0_COUNT]._u32 - entry_count );
 
 			start_of_trace = true;
 		}
@@ -468,7 +467,7 @@ void CPU_HandleDynaRecOnBranch( bool backwards, bool trace_already_enabled )
 							Patch_PatchAll();
 #endif
 						}
-#ifndef DAEDALUS_SILENT
+#ifdef DAEDALUS_DEBUG_CONSOLE
 						else
 						{
 							DBGConsole_Msg(0, "Safely skipped one flush");

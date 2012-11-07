@@ -138,7 +138,7 @@ enum EN64Button
 	N64Button_CLeft,
 	N64Button_CRight,
 	N64Button_Start,
-	NUM_N64_BUTTONS,
+	NUM_N64_BUTTONS
 };
 
 const u32 gN64ButtonMasks[NUM_N64_BUTTONS] =
@@ -156,7 +156,7 @@ const u32 gN64ButtonMasks[NUM_N64_BUTTONS] =
 	D_CBUTTONS,		//N64Button_CDown,
 	L_CBUTTONS,		//N64Button_CLeft,
 	R_CBUTTONS,		//N64Button_CRight,
-	START_BUTTON,	//N64Button_Start,
+	START_BUTTON	//N64Button_Start,
 };
 
 const char * const gN64ButtonNames[NUM_N64_BUTTONS] =
@@ -174,7 +174,7 @@ const char * const gN64ButtonNames[NUM_N64_BUTTONS] =
 	"N64.CDown",		//N64Button_CDown,
 	"N64.CLeft",		//N64Button_CLeft,
 	"N64.CRight",		//N64Button_CRight,
-	"N64.Start",		//N64Button_Start,
+	"N64.Start"			//N64Button_Start,
 };
 
 const char * GetN64ButtonName( EN64Button button )
@@ -194,9 +194,11 @@ class CControllerConfig
 	public:
 		void				SetName( const char * name )		{ mName = name; }
 		void				SetDescription( const char * desc )	{ mDescription = desc; }
+		void				SetJoySwap( const char * swap )		{ mJoySwap = swap[0]; }	//Save only first char which should be A|B|C for the joystick swapping
 
 		const char *		GetName() const						{ return mName.c_str(); }
 		const char *		GetDescription() const				{ return mDescription.c_str(); }
+		char				GetJoySwap() const					{ return mJoySwap; }
 
 		void				SetButtonMapping( EN64Button button, CButtonMapping * p_mapping );
 		u32					GetN64ButtonsState( u32 psp_button_mask ) const;
@@ -204,6 +206,7 @@ class CControllerConfig
 	private:
 		std::string			mName;
 		std::string			mDescription;
+		char				mJoySwap;
 
 		CButtonMapping *	mButtonMappings[ NUM_N64_BUTTONS ];
 };
@@ -273,9 +276,9 @@ class IInputManager : public CInputManager
 		virtual u32							GetConfigurationFromName( const char * name ) const;
 
 	private:
-				void						LoadControllerConfigs( const char * p_dir );
-				CControllerConfig *			BuildDefaultConfig();
-				CControllerConfig *			BuildControllerConfig( const char * filename );
+		void								LoadControllerConfigs( const char * p_dir );
+		CControllerConfig *					BuildDefaultConfig();
+		CControllerConfig *					BuildControllerConfig( const char * filename );
 
 	private:
 		CControllerConfig *					mpControllerConfig;
@@ -324,31 +327,25 @@ bool	IInputManager::Initialise()
 //*****************************************************************************
 bool IInputManager::GetState( OSContPad pPad[4] )
 {
-	// Clear the initial state
-	for(u32 cont = 0; cont < 4; cont++)
-	{
-		pPad[cont].button = 0;
-		pPad[cont].stick_x = 0;
-		pPad[cont].stick_y = 0;
-	}
+	// Clear the initial state of the four controllers
+	memset(pPad, 0, sizeof(pPad));
 
 	SceCtrlData pad;
 
-	sceCtrlPeekBufferPositive(&pad, 1);
+	sceCtrlPeekBufferPositive(&pad, 1);	//Get PSP button inputs
 
 	static const s32	N64_ANALOGUE_STICK_RANGE( 80 );
 	static const s32	PSP_ANALOGUE_STICK_RANGE( 128 );
 
-	//
 	//	'Normalise' from 0..255 -> -128..+127
 	//
-	s32			normalised_x( pad.Lx - PSP_ANALOGUE_STICK_RANGE );
-	s32			normalised_y( pad.Ly - PSP_ANALOGUE_STICK_RANGE );
+	s32 normalised_x( pad.Lx - PSP_ANALOGUE_STICK_RANGE );
+	s32 normalised_y( pad.Ly - PSP_ANALOGUE_STICK_RANGE );
 
 	//
 	//	Now scale from -128..+127 -> -80..+80 (y is inverted from PSP coords)
 	//
-	v2			stick( f32( normalised_x ) / PSP_ANALOGUE_STICK_RANGE, f32( normalised_y ) / PSP_ANALOGUE_STICK_RANGE );
+	v2 stick( f32( normalised_x ) / PSP_ANALOGUE_STICK_RANGE, f32( normalised_y ) / PSP_ANALOGUE_STICK_RANGE );
 
 	stick = ApplyDeadzone( stick, gGlobalPreferences.StickMinDeadzone, gGlobalPreferences.StickMaxDeadzone );
 
@@ -357,9 +354,60 @@ bool IInputManager::GetState( OSContPad pPad[4] )
 
 	DAEDALUS_ASSERT( mpControllerConfig != NULL, "We should always have a valid controller" );
 
-	pPad[ 0 ].button = mpControllerConfig->GetN64ButtonsState( pad.Buttons );
+	switch( mpControllerConfig->GetJoySwap() )
+	{
+		case 'B':	//Swap Joystick with PSP Dpad
+			{
+			u32 tmp = pad.Buttons;	//Save a copy
 
-	// Stick
+			// Make a digital version of the Analogue stick that can be mapped to N64 buttons //Corn
+			pad.Buttons &= ~(PSP_CTRL_UP | PSP_CTRL_DOWN | PSP_CTRL_RIGHT | PSP_CTRL_LEFT);	//Clear out original DPAD
+			if(pPad[0].stick_x > 40) pad.Buttons |= PSP_CTRL_RIGHT;
+			else if(pPad[0].stick_x < -40) pad.Buttons |= PSP_CTRL_LEFT;
+
+			if(pPad[0].stick_y > 40) pad.Buttons |= PSP_CTRL_UP;
+			else if(pPad[0].stick_y < -40) pad.Buttons |= PSP_CTRL_DOWN;
+
+			//Set Stick
+			if( tmp & PSP_CTRL_RIGHT ) pPad[0].stick_x = s8(N64_ANALOGUE_STICK_RANGE);
+			else if( tmp & PSP_CTRL_LEFT ) pPad[0].stick_x = -s8(N64_ANALOGUE_STICK_RANGE);
+			else pPad[0].stick_x = 0;
+
+			if( tmp & PSP_CTRL_UP ) pPad[0].stick_y = s8(N64_ANALOGUE_STICK_RANGE);
+			else if( tmp & PSP_CTRL_DOWN ) pPad[0].stick_y = -s8(N64_ANALOGUE_STICK_RANGE);
+			else pPad[0].stick_y = 0;
+			}
+			break;
+
+		case 'C':	//Swap Joystick with PSP buttons
+			{
+			u32 tmp = pad.Buttons;	//Save a copy
+
+			// Make a digital version of the Analogue stick that can be mapped to N64 buttons //Corn
+			pad.Buttons &= ~(PSP_CTRL_TRIANGLE | PSP_CTRL_CROSS | PSP_CTRL_CIRCLE | PSP_CTRL_SQUARE);	//Clear out original buttons
+			if(pPad[0].stick_x > 40) pad.Buttons |= PSP_CTRL_CIRCLE;
+			else if(pPad[0].stick_x < -40) pad.Buttons |= PSP_CTRL_SQUARE;
+
+			if(pPad[0].stick_y > 40) pad.Buttons |= PSP_CTRL_TRIANGLE;
+			else if(pPad[0].stick_y < -40) pad.Buttons |= PSP_CTRL_CROSS;
+
+			//Set Stick
+			if( tmp & PSP_CTRL_CIRCLE ) pPad[0].stick_x = s8(N64_ANALOGUE_STICK_RANGE);
+			else if( tmp & PSP_CTRL_SQUARE ) pPad[0].stick_x = -s8(N64_ANALOGUE_STICK_RANGE);
+			else pPad[0].stick_x = 0;
+
+			if( tmp & PSP_CTRL_TRIANGLE ) pPad[0].stick_y = s8(N64_ANALOGUE_STICK_RANGE);
+			else if( tmp & PSP_CTRL_CROSS ) pPad[0].stick_y = -s8(N64_ANALOGUE_STICK_RANGE);
+			else pPad[0].stick_y = 0;
+			}
+			break;
+
+		case 'A':	//No swap (default)
+		default:
+			break;
+	}
+
+	pPad[0].button = mpControllerConfig->GetN64ButtonsState( pad.Buttons );
 
 	// Synchronise the input - this will overwrite the real pad data when playing back input
 	for(u32 cont = 0; cont < 4; cont++)
@@ -401,7 +449,6 @@ struct SButtonNameMapping
 	u32			 ButtonMask;
 };
 
-
 const SButtonNameMapping	gButtonNameMappings[] =
 {
 	{ "PSP.Start",		PSP_CTRL_START },
@@ -415,6 +462,8 @@ const SButtonNameMapping	gButtonNameMappings[] =
 	{ "PSP.Down",		PSP_CTRL_DOWN },
 	{ "PSP.Left",		PSP_CTRL_LEFT },
 	{ "PSP.Right",		PSP_CTRL_RIGHT },
+	{ "PSP.Select",		PSP_CTRL_SELECT },
+	{ "PSP.Note",		PSP_CTRL_NOTE }
 };
 
 u32 GetOperatorPrecedence( char op )
@@ -725,6 +774,7 @@ CControllerConfig *	IInputManager::BuildDefaultConfig()
 
 	p_config->SetName( "Default" );
 	p_config->SetDescription( "The default Daedalus controller configuration. The Circle button toggles the PSP DPad between the N64 DPad and CButtons." );
+	p_config->SetJoySwap( "A" );
 
 	CButtonMappingExpressionEvaluator	eval;
 
@@ -775,6 +825,14 @@ CControllerConfig *	IInputManager::BuildControllerConfig( const char * filename 
 	if( p_default_section->FindProperty( "Description", &p_property ) )
 	{
 		p_config->SetDescription( p_property->GetValue() );
+	}
+	if( p_default_section->FindProperty( "JoystickSwap", &p_property ) )
+	{
+		p_config->SetJoySwap( p_property->GetValue() );
+	}
+	else
+	{
+		p_config->SetJoySwap( "A" );
 	}
 
 	//

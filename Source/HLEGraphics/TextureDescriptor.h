@@ -25,20 +25,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 struct TextureInfo
 {
 private:
-	u32			LoadAddress;				// Corresponds to Address in Tile
+	u32			LoadAddress;		// Corresponds to Address in Tile
+	u32			TlutAddress;		// Address to Palette
 	//s16		Left;
 	//s16		Top;
 	u32			Width;
 	u32			Height;
-	u32			Pitch;
+	u32			Pitch;				// Number of bytes in a texture row
 
-	u32			TmemAddress;
-	u32			TlutAddress;	// ATM only used when DAEDALUS_TMEM is defined
-	u32			TLutIndex : 4;
-	u32			Format : 3;		// e.g. RGBA, YUV, CI, IA, I...
-	u32			Size : 2;		// e.g. 16bpp
-	u32			TLutFmt : 2;
-	bool		Swapped : 1;	// Are odd lines word swapped?
+	u32			TmemAddress : 9;	// Tile TMEM address (0x000 - 0x1FF)
+	u32			TLutIndex : 4;		// Palette index (0-15)
+	u32			Format : 3;			// e.g. RGBA, YUV, CI, IA, I...
+	u32			Size : 2;			// e.g. 4bpp, 8bpp, 16bpp, 32bpp
+	u32			TLutFmt : 2;		// e.g. ?, ?, RGBA16, IA16
+	u32			Tile : 3;			// e.g. Tile number (0-7)
+	bool		Swapped : 1;		// Are odd lines word swapped?
 	bool		MirrorS : 1;
 	bool		MirrorT : 1;
 
@@ -48,10 +49,10 @@ public:
 	TextureInfo( const TextureInfo & rhs )					{ memcpy( this, &rhs, sizeof( TextureInfo ) ); }
 	TextureInfo & operator=( const TextureInfo & rhs )		{ memcpy( this, &rhs, sizeof( TextureInfo ) ); return *this; }
 
+	inline u32				GetHashCode() const				{ u8 *ptr( (u8*)this ); u8 *end_ptr( ptr + sizeof( TextureInfo ) ); u32 hash(0); while( ptr < end_ptr ) hash = ((hash << 9) | (hash >> 0x17)) ^ *ptr++; return hash; }
 	//inline u32				GetHashCode() const				{ return murmur2_neutral_hash( reinterpret_cast< const u8 * >( this ), sizeof( TextureInfo ), 0 ); }
-	inline u32				GetHashCode() const				{ u8 *ptr( (u8*)this ); u8 *end_ptr( ptr + sizeof( TextureInfo ) ); u32 hash(0); while( ptr < end_ptr ) hash = (hash << 4) + hash + *ptr++; return hash; }
 
-	// Compute a hash of the contents of the texture data. Not to be confused with GetHashCode()!
+	// Compute a hash of the contents of the texture data. Not to be confused with GetHashCode() that hashes the Textureinfo!
 	u32						GenerateHashValue() const;
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
@@ -72,7 +73,8 @@ public:
 	inline u32				GetPitch() const				{ return Pitch; }
 	u32						GetTLutFormat() const;
 	inline u32				GetTLutIndex() const			{ return TLutIndex; }
-	inline u32				GetTLut() const			{ return TLutFmt; }
+	inline u32				GetTile() const					{ return Tile; }
+	inline u32				GetTLut() const					{ return TLutFmt; }
 	inline bool				IsSwapped() const				{ return Swapped; }
 	inline bool				GetMirrorS() const				{ return MirrorS; }
 	inline bool				GetMirrorT() const				{ return MirrorT; }
@@ -87,6 +89,7 @@ public:
 	inline void				SetPitch( u32 pitch )			{ Pitch = pitch; }
 	void					SetTLutFormat( u32 format );
 	inline void				SetTLutIndex( u32 index )		{ TLutIndex = index; }
+	inline void				SetTile( u32 tile )				{ Tile = tile; }
 	inline void				SetSwapped( bool swapped )		{ Swapped = swapped; }
 	inline void				SetMirrorS( bool mirror_s )		{ MirrorS = mirror_s; }
 	inline void				SetMirrorT( bool mirror_t )		{ MirrorT = mirror_t; }

@@ -379,12 +379,13 @@ void SpecificGameHacks( const ROMHeader & id )
 	case 0x3247: g_ROM.GameHacks = EXTREME_G2;			break;
 	case 0x5359: g_ROM.GameHacks = YOSHI;				break;
 	case 0x4C42: g_ROM.GameHacks = BUCK_BUMBLE;			break;
+	case 0x4441: g_ROM.GameHacks = WORMS_ARMAGEDDON;	break;
 	//case 0x5750:	//PilotWings64
 	case 0x4B42:	//Banjo-Kazooie
 	case 0x4450:	//Perfect Dark
 		g_ROM.DISABLE_LBU_OPT = true;
 		break;
-	case 0x5941:
+	case 0x5941:	//AIDYN_CRONICLES
 		g_ROM.ALPHA_HACK = true;
 		g_ROM.GameHacks = AIDYN_CRONICLES;
 		break;
@@ -394,29 +395,37 @@ void SpecificGameHacks( const ROMHeader & id )
 	case 0x4A54:	//Tom and Jerry
 	case 0x4d4a:	//Earthworm Jim
 		g_ROM.DISABLE_SIMDOUBLES = true;
+		g_ROM.LOAD_T1_HACK = true;
 		g_ROM.T1_HACK = true;
 		break;
 	case 0x5150:	//PowerPuff Girls
 		g_ROM.DISABLE_SIMDOUBLES = true;
+		//g_ROM.LOAD_T1_HACK = true;
 		//g_ROM.T1_HACK = true;
 		break;
 	case 0x5144:	//Donald Duck
 	case 0x3259:	//Rayman2
+		g_ROM.LOAD_T1_HACK = true;
 		g_ROM.T1_HACK = true;
 		break;
 	case 0x3358:	//GEX3
 	case 0x3258:	//GEX64
 		g_ROM.GameHacks = GEX_GECKO;
 		break;
-	case 0x4c5a:
+	case 0x4c5a:	//ZELDA_OOT
 		g_ROM.ZELDA_HACK = true;
 		g_ROM.GameHacks = ZELDA_OOT;
 		break;
-	case 0x535a:
+	case 0x535a:	//ZELDA_MM
 		g_ROM.TLUT_HACK = true;
 		g_ROM.ZELDA_HACK = true;
 		g_ROM.GameHacks = ZELDA_MM;
 		break;
+	case 0x5653:	//SSV
+		g_ROM.LOAD_T1_HACK = true;
+		g_ROM.TLUT_HACK = true;
+		break;
+
 	case 0x5544:	//Duck Dodgers
 	case 0x3653:	//Star soldier - vanishing earth
 	case 0x324C:	//Top Gear Rally 2
@@ -424,8 +433,7 @@ void SpecificGameHacks( const ROMHeader & id )
 	case 0x4552:	//Resident Evil 2	
 	case 0x5547:	//Sin and punishment		
 	case 0x4446:	//Flying Dragon	
-	case 0x5653:	//SSV
-	case 0x534E:	// Beetle Racing
+	case 0x534E:	//Beetle Racing
 		g_ROM.TLUT_HACK = true;
 		break;
 	case 0x4641:	//Animal crossing
@@ -437,7 +445,7 @@ void SpecificGameHacks( const ROMHeader & id )
 	case 0x5543:	//Cruisn' USA
 		g_ROM.GameHacks = BODY_HARVEST;
 		break;
-	case 0x5546:	// Conker BFD
+	case 0x5546:	//Conker BFD
 		g_ROM.GameHacks = CONKER;
 		break;
 	default:

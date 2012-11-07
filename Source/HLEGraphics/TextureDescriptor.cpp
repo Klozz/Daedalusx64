@@ -80,9 +80,6 @@ u32	TextureInfo::GetTLutFormat() const
 //*************************************************************************************
 const void *	TextureInfo::GetPalettePtr() const
 {
-	// Want to advance 16x16bpp palette entries in TMEM(i.e. 32 bytes into tmem for each palette), i.e. <<5.
-	// some games uses <<7 like in MM but breaks Aerogauge //Corn
-#ifndef DAEDALUS_TMEM
 	//Debug Palette pointers
 	#if 0 
 		printf("0x%02x\n",TLutIndex << (g_ROM.TLUT_HACK? 4:2));
@@ -92,30 +89,7 @@ const void *	TextureInfo::GetPalettePtr() const
 		printf("\n\n");
 	#endif
 
-	if ( g_ROM.TLUT_HACK )
-	{
-		if(gTextureMemory[ TLutIndex << 2 ] == NULL)
-		{	//If TMEM PAL address is NULL then assume that the base address is stored in
-			//TMEM address 0x100 and calculate offset from there with TLutIndex
-			//Flying Dragon returns NULL here //Corn
-			return (void *)((u32)gTextureMemory[ 0 ] + ( TLutIndex << 7 ));
-		}
-		else return (void *)gTextureMemory[ TLutIndex << 2 ];
-	}
-	else
-	{
-		if(gTextureMemory[ TLutIndex ] == NULL)
-		{	//If TMEM PAL address is NULL then assume that the base address is stored in
-			//TMEM address 0x100 and calculate offset from there with TLutIndex
-			//Extreme-G returns NULL here //Corn
-			return (void *)((u32)gTextureMemory[ 0 ] + ( TLutIndex << 5 ));
-		}
-		else return (void *)gTextureMemory[ TLutIndex ];
-	}
-#else
-	// Proper way, doesn't need TLUT hack, Can't return NULL, and can be modified by Sprite2D and S2DEX
 	return (void *)TlutAddress;
-#endif
 }
 
 //*************************************************************************************
@@ -127,9 +101,8 @@ inline u32	TextureInfo::GetWidthInBytes() const
 }
 
 //*************************************************************************************
-//
+//Fast hash for checking is data in a texture source has changed //Corn
 //*************************************************************************************
-#if 1 //1->new hash(fast), 0-> old hash(expensive)
 u32 TextureInfo::GenerateHashValue() const
 {
 	//Rewritten to use less recources //Corn
@@ -144,14 +117,31 @@ u32 TextureInfo::GenerateHashValue() const
 	//Number of places to do fragment hash from in texture
 	//More rows will use more CPU...
 	u32 CHK_ROW = 5;
-
-	if( g_ROM.GameHacks == YOSHI ) CHK_ROW = 49;
-
-	u8 *ptr_u8 = g_pu8RamBase + GetLoadAddress();
 	u32 hash_value = 0;
+	u8 *ptr_u8 = g_pu8RamBase + GetLoadAddress();
 
-	//u32 step = Height * Width * (1<<Size) >> 1;	//Get size in bytes
-	u32 step = Height * Pitch;	//Get size in bytes, seems to be more accurate
+	if( g_ROM.GameHacks == YOSHI )
+	{
+		CHK_ROW = 49;
+		if (GetFormat() == G_IM_FMT_CI)  
+		{
+			//Check palette changes too but only first 16 palette values//Corn
+			const u32* ptr_u32 = (u32*)GetPalettePtr();
+			for (u32 z = 0; z < 8; z++) hash_value = ((hash_value << 1) | (hash_value >> 0x1F)) ^ *ptr_u32++;
+		}
+	}
+	else if( g_ROM.GameHacks == WORMS_ARMAGEDDON )
+	{
+		CHK_ROW = 1000;
+		if (GetFormat() == G_IM_FMT_CI)  
+		{
+			//Check palette changes too but only first 16 palette values//Corn
+			const u32* ptr_u32 = (u32*)GetPalettePtr();
+			for (u32 z = 0; z < 8; z++) hash_value = ((hash_value << 1) | (hash_value >> 0x1F)) ^ *ptr_u32++;
+		}
+	}
+
+	u32 step = Height * Pitch;	//Get size in bytes, seems to be more accurate (alternative -> Height * Width * (1<<Size) >> 1;)
 
 	if((u32)ptr_u8 & 0x3)	//Check if aligned to 4 bytes if not then align
 	{
@@ -167,7 +157,7 @@ u32 TextureInfo::GenerateHashValue() const
 	{
 		for (u32 z = 0; z < step; z++) 
 		{
-			hash_value = (hash_value << 4) + hash_value + ptr_u32[z];
+			hash_value = ((hash_value << 1) | (hash_value >> 0x1F)) ^ ptr_u32[z];
 		}
 	}
 	else	//if texture is big, hash only some parts inside it
@@ -175,10 +165,10 @@ u32 TextureInfo::GenerateHashValue() const
 		step = (step - 4) / CHK_ROW;
 		for (u32 y = 0; y < CHK_ROW; y++)
 		{
-			hash_value = (hash_value << 4) + hash_value + ptr_u32[0];
-			hash_value = (hash_value << 4) + hash_value + ptr_u32[1];
-			hash_value = (hash_value << 4) + hash_value + ptr_u32[2];
-			hash_value = (hash_value << 4) + hash_value + ptr_u32[3];
+			hash_value = ((hash_value << 1) | (hash_value >> 0x1F)) ^ ptr_u32[0];
+			hash_value = ((hash_value << 1) | (hash_value >> 0x1F)) ^ ptr_u32[1];
+			hash_value = ((hash_value << 1) | (hash_value >> 0x1F)) ^ ptr_u32[2];
+			hash_value = ((hash_value << 1) | (hash_value >> 0x1F)) ^ ptr_u32[3];
 			ptr_u32 += step;
 		}
 	}
@@ -191,55 +181,12 @@ u32 TextureInfo::GenerateHashValue() const
 	/*if (GetFormat() == G_IM_FMT_CI)  
 	{
 		const u32* ptr_u32 = (u32*)GetPalettePtr();
-		for (u32 z = 0; z < ((GetSize() == G_IM_SIZ_4b)? 16 : 256); z++) hash_value ^= *ptr_u32++;
+		for (u32 z = 0; z < ((GetSize() == G_IM_SIZ_4b)? 8 : 128); z++) hash_value ^= *ptr_u32++;
 	}*/
 
 	//printf("%08X %d S%d P%d H%d W%d B%d\n", hash_value, step, Size, Pitch, Height, Width, Height * Pitch);
 	return hash_value;
 }
-
-#else
-u32 TextureInfo::GenerateHashValue() const
-{
-	DAEDALUS_PROFILE( "TextureInfo::GenerateHashValue" );
-
-	// If CRC checking is disabled, always return 0
-	if ( gCheckTextureHashFrequency == 0 )
-		return 0;
-	
-	u32 bytes_per_line( GetWidthInBytes() );
-
-	//DBGConsole_Msg(0, "BytesPerLine: %d", bytes_per_line);
-	
-	// A very simple crc - just summation
-	u32 hash_value( 0 );
-
-	//DAEDALUS_ASSERT( (GetLoadAddress() + Height * Pitch) < 4*1024*1024, "Address of texture is out of bounds" );
-
-	const u8 * p_bytes( g_pu8RamBase + GetLoadAddress() );
-	u32 step;
-	if (Height > 4)
-	{
-		step = (Height/2)-1;
-	}else{
-		step = 1;
-	}
-
-	for (u32 y = 0; y < Height; y+=step)		// Hash 3 Lines per texture
-	{
-		// Byte fiddling won't work, but this probably doesn't matter
-		hash_value = murmur2_neutral_hash( p_bytes, bytes_per_line, hash_value );
-		p_bytes += (Pitch * step);
-	}
-
-	if (GetFormat() == G_IM_FMT_CI)
-	{
-		hash_value = murmur2_neutral_hash( GetPalettePtr(), (GetSize() == G_IM_SIZ_4b)? 16*4 : 256*4, hash_value );
-	}
-
-	return hash_value;
-}
-#endif
 
 //*************************************************************************************
 //
@@ -259,10 +206,23 @@ const ETextureFormat TFmt[ 32 ] =
 	DEFTEX,				DEFTEX,				DEFTEX,				DEFTEX				// ?			
 };
 
+const ETextureFormat TFmt_hack[ 32 ] = 
+{
+//	4bpp				8bpp				16bpp				32bpp
+	DEFTEX,				DEFTEX,				TexFmt_4444,		TexFmt_8888,		// RGBA
+	DEFTEX,				DEFTEX,				DEFTEX,				DEFTEX,				// YUV 
+	TexFmt_CI4_8888,	TexFmt_CI8_8888,	DEFTEX,				DEFTEX,				// CI
+	TexFmt_4444,		TexFmt_4444,		TexFmt_8888,		DEFTEX,				// IA
+	TexFmt_4444,		TexFmt_4444,		DEFTEX,				DEFTEX,				// I
+	DEFTEX,				DEFTEX,				DEFTEX,				DEFTEX,				// ?
+	DEFTEX,				DEFTEX,				DEFTEX,				DEFTEX,				// ?
+	DEFTEX,				DEFTEX,				DEFTEX,				DEFTEX				// ?			
+};
+
 //*************************************************************************************
 //
 //*************************************************************************************
 ETextureFormat	TextureInfo::SelectNativeFormat() const
 {
-	return (g_ROM.T1_HACK && ((Format << 2) | Size) == 2) ? TexFmt_4444 : TFmt[(Format << 2) | Size];
+	return g_ROM.LOAD_T1_HACK ? TFmt_hack[(Format << 2) | Size] : TFmt[(Format << 2) | Size];
 }

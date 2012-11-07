@@ -256,7 +256,7 @@ void Load_ObjSprite( uObjSprite *sprite, uObjTxtr *txtr )
 	{
 		ti.SetFormat           (sprite->imageFmt);
 		ti.SetSize             (sprite->imageSiz);
-		ti.SetLoadAddress      (RDPSegAddr(txtr->block.image) + (sprite->imageAdrs<<3) ;
+		ti.SetLoadAddress      (RDPSegAddr(txtr->block.image) + (sprite->imageAdrs<<3) );
 
 		switch( txtr->block.type )
 		{
@@ -276,7 +276,11 @@ void Load_ObjSprite( uObjSprite *sprite, uObjTxtr *txtr )
 
 		ti.SetSwapped          (0);
 		ti.SetTLutIndex        (sprite->imagePal);
-		ti.SetTlutAddress	   ((u32)(&gTextureMemory[0]));
+#ifndef DAEDALUS_TMEM
+	ti.SetTlutAddress	   ((u32)(gTextureMemory[0]));
+#else
+	ti.SetTlutAddress	   ((u32)(&gTextureMemory[0]));
+#endif
 		ti.SetTLutFormat       (2 << 14);  //RGBA16 
 	}
 
@@ -342,23 +346,20 @@ void Draw_ObjSprite( uObjSprite *sprite, ESpriteMode mode )
 		x1 = objW - 1.0f;
 		y1 = objH - 1.0f;
 
-		// Worms sets this, but for some reason it doesn't fix the sprite being flippped :/
-		/*if( sprite->imageFlags&1 )
+		// Used by Worms
+		if( sprite->imageFlags & 0x01 )	//Flip X
 		{
-			float temp = x0;
-			x0 = x1;
-			x1 = temp;
+			PSPRenderer::Get()->Draw2DTextureR(x1, y0, x0, y0, x0, y1, x1, y1, imageW, imageH);
+		}
+		else if( sprite->imageFlags & 0x10 )	//Flip Y(?)
+		{
+			PSPRenderer::Get()->Draw2DTexture(x1, y1, x0, y0, 0, 0, imageW, imageH);
+		}
+		else	//No Flip
+		{
+			PSPRenderer::Get()->Draw2DTexture(x0, y0, x1, y1, 0, 0, imageW, imageH);
 		}
 
-		if( sprite->imageFlags&0x10 )
-		{
-			float temp = y0;
-			y0 = y1;
-			y1 = temp;
-		}*/
-
-
-		PSPRenderer::Get()->Draw2DTexture(x0, y0, x1, y1, 0, 0, imageW, imageH);
 		break;
 	}
 }
@@ -476,18 +477,15 @@ void DLParser_S2DEX_ObjLoadTxtr( MicroCodeCommand command )
 	uObjTxtr* ObjTxtr = (uObjTxtr*)(g_pu8RamBase + RDPSegAddr(command.inst.cmd1));
 	if( ObjTxtr->block.type == S2DEX_OBJLT_TLUT )
 	{
+		uObjTxtrTLUT *ObjTlut = (uObjTxtrTLUT*)ObjTxtr;
 #ifndef DAEDALUS_TMEM
 		// Store TLUT pointer
-		gTextureMemory[ (ObjTxtr->tlut.phead>>2) & 0x3F ] = (u32*)(g_pu8RamBase + RDPSegAddr(ObjTxtr->tlut.image));
+		gTextureMemory[ (ObjTxtr->tlut.phead>>2) & 0x3F ] = (u32*)(g_pu8RamBase + RDPSegAddr(ObjTlut->image));
 #else
-		uObjTxtrTLUT *ObjTlut = (uObjTxtrTLUT*)ObjTxtr;
 		u32 ObjTlutAddr = (u32)(RDPSegAddr(ObjTlut->image));
 
 		// Copy TLUT
-		//u32 size = (ObjTlut->pnum & 0xFF) + 1;
-		//u32 offset = ObjTlut->phead;
-
-		u32 addr	= ObjTlutAddr;
+		u16* src	= (u16*)(ObjTlutAddr + g_pu8RamBase);
 		u32 size	= ObjTlut->pnum+1;
 		u32 offset  = ObjTlut->phead-0x100;
 
@@ -495,8 +493,7 @@ void DLParser_S2DEX_ObjLoadTxtr( MicroCodeCommand command )
 
 		for( u32 i=offset; i<offset+size; i++ )
 		{
-			gTextureMemory[i^1] = (*(u16 *)(((addr)^2)+g_pu8RamBase));
-			addr += 2;
+			gTextureMemory[ i ] = *src++;
 		}
 
 		//memcpy_vfpu_BE((void *)&gTextureMemory[ (offset << 1) & 0x3FF ], (void *)ObjTlutAddr, (size << 1));
@@ -641,7 +638,11 @@ void DLParser_S2DEX_BgCopy( MicroCodeCommand command )
 	ti.SetSwapped          (0);
 
 	ti.SetTLutIndex        (objBg->imagePal);
+#ifndef DAEDALUS_TMEM
+	ti.SetTlutAddress	   ((u32)(gTextureMemory[0]));
+#else
 	ti.SetTlutAddress	   ((u32)(&gTextureMemory[0]));
+#endif
 	ti.SetTLutFormat       (2 << 14);  //RGBA16 
 
 
@@ -700,7 +701,11 @@ void DLParser_S2DEX_Bg1cyc( MicroCodeCommand command )
 	ti.SetSwapped          (0);
 
 	ti.SetTLutIndex        (objBg->imagePal);
+#ifndef DAEDALUS_TMEM
+	ti.SetTlutAddress	   ((u32)(gTextureMemory[0]));
+#else
 	ti.SetTlutAddress	   ((u32)(&gTextureMemory[0]));
+#endif
 	ti.SetTLutFormat       (2 << 14);  //RGBA16 >> (2 << G_MDSFT_TEXTLUT)
 
 

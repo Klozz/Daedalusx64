@@ -31,35 +31,46 @@ TEST_DISABLE_SP_FUNCS
 	u32 VAddr  = gGPR[REG_a2]._u32_0;
 	u32 len    = gGPR[REG_a3]._u32_0;
 
-	u32 PAddr = ConvertToPhysics(VAddr);
-
 	/*
 	DBGConsole_Msg(0, "osSpRawStartDma(%d, 0x%08x, 0x%08x (0x%08x), %d)", 
 		RWflag,
 		SPAddr,
 		VAddr, PAddr,
 		len);
-		*/
+	*/
 
+	DAEDALUS_ASSERT( !IsSpDeviceBusy(), "Sp Device is BUSY, Need to handle!");
+	/*
 	if (IsSpDeviceBusy())
 	{
 		gGPR[REG_v0]._u32_0 = ~0;
+		return PATCH_RET_JR_RA;
+	}
+	*/
+	u32 PAddr = ConvertToPhysics(VAddr);
+
+	//FIXME
+	DAEDALUS_ASSERT( PAddr,"Address Translation necessary!");
+
+	Memory_SP_SetRegister( SP_MEM_ADDR_REG, SPAddr);
+	Memory_SP_SetRegister( SP_DRAM_ADDR_REG, PAddr);
+
+	// Decrement.. since when DMA'ing to/from SP we increase SP len by 1
+	len--;
+		
+	// This is correct - SP_WR_LEN_REG is a read (from RDRAM to device!)
+	if (RWflag == OS_READ)  
+	{
+		Memory_SP_SetRegister( SP_WR_LEN_REG, len );
+		DMA_SP_CopyToRDRAM();
 	}
 	else
 	{
-		//FIXME
-		DAEDALUS_ASSERT( PAddr,"Address Translation necessary!");
-
-		Memory_SP_SetRegister( SP_MEM_ADDR_REG, SPAddr);
-		Memory_SP_SetRegister( SP_DRAM_ADDR_REG, PAddr);
-		
-		// This is correct - SP_WR_LEN_REG is a read (from RDRAM to device!)
-		u32 flag = (RWflag == OS_READ) ? SP_WR_LEN_REG : SP_RD_LEN_REG;
-
-		Write32Bits( flag | 0xA0000000, len - 1 );
-
-		gGPR[REG_v0]._u32_0 = 0;
+		Memory_SP_SetRegister( SP_RD_LEN_REG, len );
+		DMA_SP_CopyFromRDRAM();
 	}
+
+	gGPR[REG_v0]._u32_0 = 0;
 
 	return PATCH_RET_JR_RA;
 }
@@ -116,6 +127,7 @@ TEST_DISABLE_SP_FUNCS
 	return PATCH_RET_JR_RA;
 }
 
+extern void MemoryUpdateSPStatus( u32 flags );
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -124,9 +136,7 @@ u32 Patch___osSpSetStatus_Mario()
 TEST_DISABLE_SP_FUNCS
 	u32 status = gGPR[REG_a0]._u32_0;
 
-	//Memory_SP_SetRegisterBits( SP_STATUS_REG, status ); // Breaks Gex 64 and several games
-	Write32Bits(PHYS_TO_K1( SP_STATUS_REG ), status );
-
+	MemoryUpdateSPStatus( status );
 	return PATCH_RET_JR_RA;
 }
 
@@ -138,9 +148,7 @@ u32 Patch___osSpSetStatus_Rugrats()
 TEST_DISABLE_SP_FUNCS
 	u32 status = gGPR[REG_a0]._u32_0;
 
-	//Memory_SP_SetRegisterBits( SP_STATUS_REG, status );
-	Write32Bits(PHYS_TO_K1( SP_STATUS_REG ), status );
-
+	MemoryUpdateSPStatus( status );
 	return PATCH_RET_JR_RA;
 }
 
@@ -159,9 +167,7 @@ TEST_DISABLE_SP_FUNCS
 	if (status & SP_STATUS_HALT)
 	{
 		// Halted, we can safely set the pc:
-		//Write32Bits(PHYS_TO_K1(SP_PC_REG), 0x04001000);
-		//gRSPState.CurrentPC = pc;
-		gCPUState.CurrentPC = pc;
+		Memory_PC_SetRegister(SP_PC_REG, pc);
 
 		gGPR[REG_v0]._u32_0 = 0;
 	}
@@ -192,12 +198,13 @@ TEST_DISABLE_SP_FUNCS
 	}*/
 	DAEDALUS_ASSERT( (SpGetStatus() & SP_STATUS_HALT), "Sp Device is not HALTED, Need to handle!");
 	DAEDALUS_ASSERT( !IsSpDeviceBusy(), "Sp Device is BUSY, Need to handle!");
-	
+
+	u32 temp = VAR_ADDRESS(osSpTaskLoadTempTask);
 	OSTask * pSrcTask = (OSTask *)ReadAddress(task);
-	OSTask * pDstTask = (OSTask *)ReadAddress(VAR_ADDRESS(osSpTaskLoadTempTask));
+	OSTask * pDstTask = (OSTask *)ReadAddress(temp);
 
 	// Translate virtual addresses to physical...
-	memcpy(pDstTask, pSrcTask, sizeof(OSTask));
+	memcpy_vfpu_BE(pDstTask, pSrcTask, sizeof(OSTask));
 	
 	if (pDstTask->t.ucode != 0)
 		pDstTask->t.ucode = (u64 *)ConvertToPhysics((u32)pDstTask->t.ucode);
@@ -214,8 +221,6 @@ TEST_DISABLE_SP_FUNCS
 	if (pDstTask->t.output_buff_size != 0)
 		pDstTask->t.output_buff_size = (u64 *)ConvertToPhysics((u32)pDstTask->t.output_buff_size);
 	
-
-	// Only data_ptr seems to be required, otherwise our tasks ex video will fail..
 	if (pDstTask->t.data_ptr != 0)
 		pDstTask->t.data_ptr = (u64 *)ConvertToPhysics((u32)pDstTask->t.data_ptr);
 	
@@ -232,18 +237,16 @@ TEST_DISABLE_SP_FUNCS
 	}
 
 	// Writeback the DCache for pDstTask
-	Memory_SP_SetRegister(SP_STATUS_REG, SP_CLR_SIG2|SP_CLR_SIG1|SP_CLR_SIG0|SP_SET_INTR_BREAK);
+	Memory_SP_SetRegisterBits( SP_STATUS_REG, ~(SP_STATUS_SIG2|SP_STATUS_SIG1|SP_STATUS_SIG0), SP_STATUS_INTR_BREAK );
 
 	// Set the PC
-	//Write32Bits(PHYS_TO_K1(SP_PC_REG), 0x04001000);
-	//gRSPState.CurrentPC = 0x04001000;
-	gCPUState.CurrentPC = 0x04001000;
+	Memory_PC_SetRegister(SP_PC_REG, 0x04001000);
 
 	// Copy the task info to dmem
 	Memory_SP_SetRegister(SP_MEM_ADDR_REG, 0x04000fc0);
-	Memory_SP_SetRegister(SP_DRAM_ADDR_REG, VAR_ADDRESS(osSpTaskLoadTempTask));
-
-	Write32Bits(PHYS_TO_K1(SP_RD_LEN_REG), 64 - 1);
+	Memory_SP_SetRegister(SP_DRAM_ADDR_REG, temp);
+	Memory_SP_SetRegister(SP_RD_LEN_REG, 64 - 1);
+	DMA_SP_CopyFromRDRAM();
 
 	//Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_SP);
 	//R4300_Interrupt_UpdateCause3();
@@ -260,8 +263,8 @@ TEST_DISABLE_SP_FUNCS
 	// We know that we're not busy!
 	Memory_SP_SetRegister(SP_MEM_ADDR_REG, 0x04001000);
 	Memory_SP_SetRegister(SP_DRAM_ADDR_REG, (u32)pDstTask->t.ucode_boot);//	-> Translate boot ucode to physical address!
-
-	Write32Bits(PHYS_TO_K1(SP_RD_LEN_REG), pDstTask->t.ucode_boot_size - 1);
+	Memory_SP_SetRegister(SP_RD_LEN_REG, pDstTask->t.ucode_boot_size - 1);
+	DMA_SP_CopyFromRDRAM();
 	
 	return PATCH_RET_JR_RA;
 	
@@ -285,12 +288,8 @@ TEST_DISABLE_SP_FUNCS
 	}
 	*/
 	//DBGConsole_Msg(0, "__osSpTaskStartGo()");
-
-	//Memory_SP_SetRegister(SP_STATUS_REG, (SP_SET_INTR_BREAK|SP_CLR_SSTEP|SP_CLR_BROKE|SP_CLR_HALT));
-	Write32Bits(PHYS_TO_K1(SP_STATUS_REG), (SP_SET_INTR_BREAK|SP_CLR_SSTEP|SP_CLR_BROKE|SP_CLR_HALT));
-
-
-	//RSP_HLE_ProcessTask();
+	Memory_SP_SetRegisterBits( SP_STATUS_REG, ~(SP_STATUS_SSTEP|SP_STATUS_BROKE|SP_STATUS_HALT), SP_STATUS_INTR_BREAK );
+	RSP_HLE_ProcessTask();
 
 	return PATCH_RET_JR_RA;
 }
@@ -298,10 +297,13 @@ TEST_DISABLE_SP_FUNCS
 //*****************************************************************************
 //
 //*****************************************************************************
-// ToDo Implement me
+// ToDo Implement me:
+// Doesn't seem to be documented, it seems its purpose is to initialize the OSTask structure members?
+// It's called quiet often, it can be worth to implement it
 u32 Patch___osSpTaskLoadInitTask()
 {
 TEST_DISABLE_SP_FUNCS
+	
 	return PATCH_RET_NOT_PROCESSED;
 }
 
@@ -309,16 +311,16 @@ TEST_DISABLE_SP_FUNCS
 //
 //*****************************************************************************
 //
-// This is really weird, In Mario 64 osSpTaskYield_Mario / osSpTaskYielded most of the time isn't patched..
-// There seems to be a bug in our scanning procedure? Maybe do two phase to be sure we find all the symbols / variables.
-// Actually seems when osSpTaskLoad is patched these aren't ever called?
-
+//osSpTaskYield / osSpTaskYielded
+//These shouldn't be called, these are function calls to osSpTaskStartGo/osSpTaskLoad
+// Their purpose is to yield the (GFX) task and save its state so it can be restarted by the the above functions
+// Which is already handled in Patch_osSpTaskLoad :)
+//Best example can be observed IN LoZ:OOT
+//
 u32 Patch_osSpTaskYield_Mario()
 {
 TEST_DISABLE_SP_FUNCS
-	DAEDALUS_ERROR("osSpTaskYield_Mario");
-	gGPR[REG_v0]._s64 = 0;
-
+	gGPR[REG_v0]._u32_0 = 0;
 	return PATCH_RET_JR_RA;
 }
 
@@ -328,9 +330,7 @@ TEST_DISABLE_SP_FUNCS
 u32 Patch_osSpTaskYield_Rugrats()
 {
 TEST_DISABLE_SP_FUNCS
-	DAEDALUS_ERROR("osSpTaskYield_Rugrats");
-	gGPR[REG_v0]._s64 = 0;
-
+	gGPR[REG_v0]._u32_0 = 0;
 	return PATCH_RET_JR_RA;
 }
 
@@ -340,9 +340,8 @@ TEST_DISABLE_SP_FUNCS
 u32 Patch_osSpTaskYielded()
 {
 TEST_DISABLE_SP_FUNCS
-	DAEDALUS_ERROR("SpTaskYielded");
-	gGPR[REG_v0]._s64 = 1; // OS_TASK_YIELDED
-
+	// Hack, always assume that it successfully yielded
+	gGPR[REG_v0]._u32_0 = OS_TASK_YIELDED;
 	return PATCH_RET_JR_RA;
 }
 

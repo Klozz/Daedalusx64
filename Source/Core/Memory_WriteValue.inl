@@ -141,30 +141,8 @@ static void WriteValue_8404_8404( u32 address, u32 value )
 //*****************************************************************************
 static void WriteValue_8408_8408( u32 address, u32 value )
 {
-	// We don't support LLE RSP emulation in the PSP, so is ok to skip this reg -Salvy
-	//
-	//WriteValueInvalid(address, value); // No worth the extra jump since is jsut an empty func imo
-#if 0
-	u32 offset = (address&0x1FFFFFFF) - 0x04080000;
-
-	if (offset == 0)
-	{
-		DPF( DEBUG_MEMORY_SP_REG, "Writing to SP_PC_REG: 0x%08x", value );
-
-		gRSPState.CurrentPC = value;
-	}
-	else if ( offset ==4 )
-	{
-		DPF( DEBUG_MEMORY_SP_REG, "Writing to SP_IBIST_REG: 0x%08x", value );
-		DBGConsole_Msg(0, "Writing to SP_IBIST_REG: 0x%08x", value);
-
-		//*(u32 *)((u8*)g_pMemoryBuffers[MEM_SP_PC_REG] + 0x4) = value;
-	}
-	else
-	{
-		WriteValueInvalid(address, value);
-	}
-#endif
+	DPF( DEBUG_MEMORY_SP_REG, "Writing to SP_PC_REG: 0x%08x/0x%08x", address, value );
+	*(u32 *)((u8 *)g_pMemoryBuffers[MEM_SP_PC_REG] + (address & 0xFF)) = value;
 }
 
 //*****************************************************************************
@@ -231,12 +209,12 @@ static void WriteValue_8430_843F( u32 address, u32 value )
 	DPF( DEBUG_MEMORY_MI, "Writing to MI Registers: 0x%08x", address );
 	u32 offset = address & 0xFF;
 
-	switch (MI_BASE_REG + offset)
+	switch (offset)
 	{
-	case MI_INIT_MODE_REG:
+	case 0x0:	// MI_INIT_MODE_REG
 		MemoryModeRegMI( value );
 		break;
-	case MI_INTR_MASK_REG:
+	case 0xc:	// MI_INTR_MASK_REG
 		MemoryUpdateMI( value );
 		break;
 	// Read Only
@@ -255,9 +233,17 @@ static void WriteValue_8440_844F( u32 address, u32 value )
 {
 	u32 offset = address & 0xFF;
 
-	switch (VI_BASE_REG + offset)
+	// This is out of spec but only writes to VI_CURRENT_REG do something.. /Salvy
+	if( offset == 0x10 )
 	{
-	case VI_CONTROL_REG:
+		Memory_MI_ClrRegisterBits(MI_INTR_REG, MI_INTR_VI);
+		R4300_Interrupt_UpdateCause3();
+		return;
+	}
+
+	/*switch (offset)
+	{
+	case 0x0:	// VI_CONTROL_REG
 		DPF( DEBUG_VI, "VI_CONTROL_REG set to 0x%08x", value );
 #ifdef DAEDALUS_LOG
 		DisplayVIControlInfo(value);
@@ -268,7 +254,7 @@ static void WriteValue_8440_844F( u32 address, u32 value )
 		}
 		break;
 
-	case VI_WIDTH_REG:
+	case 0x8:	// VI_WIDTH_REG
 		DPF( DEBUG_VI, "VI_WIDTH_REG set to %d pixels", value );
 		if ( gGraphicsPlugin != NULL )
 		{
@@ -276,7 +262,7 @@ static void WriteValue_8440_844F( u32 address, u32 value )
 		}
 		break;
 
-	case VI_CURRENT_REG:
+	case 0x10:	// VI_CURRENT_REG
 		DPF( DEBUG_VI, "VI_CURRENT_REG set to 0x%08x", value );
 
 		// Any write clears interrupt line...
@@ -285,10 +271,9 @@ static void WriteValue_8440_844F( u32 address, u32 value )
 		Memory_MI_ClrRegisterBits(MI_INTR_REG, MI_INTR_VI);
 		R4300_Interrupt_UpdateCause3();
 		return;
-		//break;
 	}
-
-	Memory_VI_SetRegister(VI_BASE_REG + offset, value);
+	*/
+	*(u32 *)((u8 *)g_pMemoryBuffers[MEM_VI_REG] + offset) = value;
 }
 
 //*****************************************************************************
@@ -372,7 +357,7 @@ static void WriteValue_8460_846F( u32 address, u32 value )
 		break;
 
 	default:
-		DAEDALUS_ERROR("Unhandled PI write");
+		*(u32 *)((u8 *)g_pMemoryBuffers[MEM_PI_REG] + offset) = value;
 		break;
 	}
 

@@ -1974,8 +1974,8 @@ PATCH_FUNCTION_ENTRY(__osEnqueueThread)
 
 #ifndef DISABLE_SP_FUNCTIONS
 PATCH_FUNCTION_ENTRY(osSpTaskStartGo) //buggy, SSB (?? Seems to work fine -Salvy)
-//PATCH_FUNCTION_ENTRY(osSpTaskYield)
-//PATCH_FUNCTION_ENTRY(osSpTaskYielded)
+PATCH_FUNCTION_ENTRY(osSpTaskYield)
+PATCH_FUNCTION_ENTRY(osSpTaskYielded)
 PATCH_FUNCTION_ENTRY(osSpTaskLoad)
 //PATCH_FUNCTION_ENTRY(__osSpTaskLoadInitTask)
 PATCH_FUNCTION_ENTRY(__osSpRawStartDma)

@@ -28,12 +28,12 @@ static void * ReadInvalid( u32 address )
 	if(address == 0xa5000508)
 	{
 		DBGConsole_Msg(0, "Reading noise (0x%08x) - sizing memory?", address);	
-		*(u32*)((u8 *)g_pMemoryBuffers[MEM_UNUSED]) = ~0;
+		*(u32*)(g_pMemoryBuffers[MEM_UNUSED]) = ~0;
 	}
 	else
 	{
 		DBGConsole_Msg(0, "Illegal Memory Access - Tried to Read From 0x%08x (PC: 0x%08x)", address, gCPUState.CurrentPC);
-		*(u32*)((u8 *)g_pMemoryBuffers[MEM_UNUSED]) = 0;
+		*(u32*)(g_pMemoryBuffers[MEM_UNUSED]) = 0;
 	}
 
 	return g_pMemoryBuffers[MEM_UNUSED];
@@ -130,7 +130,6 @@ static void *Read_8400_8400( u32 address )
 	return (u8 *)g_pMemoryBuffers[MEM_SP_MEM] + (address & 0x1FFF);
 }
 
-
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -145,30 +144,8 @@ static void *Read_8404_8404( u32 address )
 //*****************************************************************************
 static void *Read_8408_8408( u32 address )
 {
-	// We don't support LLE RSP emulation in the PSP, so is ok to skip this reg -Salvy
-	//
-	return ReadInvalid(address);
-
-	/*u32 offset = (address&0x1FFFFFFF) - 0x04080000;
-
-	// 0x04080000 to 0x04080003  SP_PC_REG
-	if (offset < 0x04)
-	{
-		DPF( DEBUG_MEMORY_SP_REG, "Reading from SP_PC_REG: 0x%08x", address );
-		return (u8 *)&gRSPState.CurrentPC + offset;
-
-	}
-	// 0x04080004 to 0x04080007  SP_IBIST_REG
-	else if (MEMORY_BOUNDS_CHECKING(offset < 0x08))
-	{
-		DPF( DEBUG_MEMORY_SP_REG, "Reading from SP_IBIST_REG: 0x%08x", address );
-		DBGConsole_Msg( 0, "Reading from SP_IBIST_REG: 0x%08x", address );
-		return ReadInvalid(address);
-	}
-	else
-	{
-		return ReadInvalid(address);
-	}*/
+	DPF( DEBUG_MEMORY_SP_REG, "Reading from SP_PC_REG: 0x%08x", address );
+	return (u8 *)g_pMemoryBuffers[MEM_SP_PC_REG] + (address & 0xFF);
 }
 
 //*****************************************************************************
@@ -206,20 +183,20 @@ static void *Read_8430_843F( u32 address )
 static void *Read_8440_844F( u32 address )
 {
 	DPF( DEBUG_MEMORY_VI, "Reading from MEM_VI_REG: 0x%08x", address );
-	if ((address & 0x1FFFFFFF) == VI_CURRENT_REG)
+	u32 offset = address & 0xFF;
+	u8* temp = (u8 *)g_pMemoryBuffers[MEM_VI_REG] + offset;
+
+	if (offset == 0x10)	// VI_CURRENT_REG
 	{
 		//u64 count_to_vbl = (VID_CLOCK-1) - (g_qwNextVBL - gCPUState.CPUControl[C0_COUNT]);
 		//vi_pos = (u32)((count_to_vbl*512)/VID_CLOCK);
 		u32 vi_pos = Memory_VI_GetRegister(VI_CURRENT_REG);
-
-		vi_pos += 2;
-		if (vi_pos >= 512)
-			vi_pos = 0;
+		vi_pos = (vi_pos + 2) % 512;
 
 		//DBGConsole_Msg(0, "Reading vi pos: %d", vi_pos);
-		Memory_VI_SetRegister(VI_CURRENT_REG, vi_pos);
+		*(u32*)temp = vi_pos;
 	}
-	return VI_REG_ADDRESS(address & 0x1FFFFFFF);
+	return temp;
 }
 
 //*****************************************************************************
@@ -227,9 +204,8 @@ static void *Read_8440_844F( u32 address )
 //*****************************************************************************
 static void *Read_8450_845F( u32 address )
 {
-	u32 offset = address & 0xFF;
 	DPF( DEBUG_MEMORY_AI, "Reading from AI Registers: 0x%08x", address );
-	return (u8 *)g_pMemoryBuffers[MEM_AI_REG] + offset;
+	return (u8 *)g_pMemoryBuffers[MEM_AI_REG] + (address & 0xFF);
 }
 
 //*****************************************************************************
@@ -297,6 +273,5 @@ static void * Read_9FC0_9FCF( u32 address )
 	DAEDALUS_ASSERT(!(address - 0x7C0 & ~0x3F), "Read to PIF RAM (0x%08x) is invalid", address);
 
 	DPF( DEBUG_MEMORY_PIF, "Reading from MEM_PIF: 0x%08x", address );
-	// ToDO: SWAP_PIF
 	return (u8 *)g_pMemoryBuffers[MEM_PIF_RAM] + (address & 0x3F);
 }

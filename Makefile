@@ -190,7 +190,7 @@ ifdef DEBUG
 
 	SRCS			= $(CORE_SRCS) $(ADDITIONAL_SYNC_SRCS)
 else 
-	CFLAGS			= -O2 -G0 -DNDEBUG -Wall -MD -ffast-math -fsingle-precision-constant -fpredictive-commoning
+	CFLAGS			= -O2 -G0 -DNDEBUG -Wall -MD -ffast-math -fsingle-precision-constant -fpredictive-commoning -mno-check-zero-division
 					#-pipe
 					#-Wextra
 					#-fno-builtin
@@ -224,7 +224,7 @@ LIBDIR = $(PSPDEV)/SDK/lib ./SDK/lib
 
 LIBS = -lstdc++ -lpsppower -lpspgu -lpspaudiolib -lpspaudio -lpsprtc -lc -lpng -lz -lg -lm -lpspfpu -lpspkubridge
 
-EXTRA_TARGETS = EBOOT.PBP dvemgr.prx exception.prx mediaengine.prx imposectrl.prx
+EXTRA_TARGETS = EBOOT.PBP dvemgr.prx exception.prx mediaengine2.prx imposectrl.prx
 
 PSP_EBOOT_TITLE = DaedalusX64 Beta 3 Update
 PSP_EBOOT_ICON  = icon0.png
@@ -306,7 +306,7 @@ zip: $(PSP_EBOOT) dvemgr.prx mediaengine.prx exception.prx kernelbuttons.prx
 	    cd tmp_build && zip -r ../tarballs/"DaedalusX64_$$REV.zip" PSP
 	rm -r $(TMP_BASE_DIR) 2>/dev/null
 
-Source/SysPSP/MediaEnginePRX/MediaEngine.S:
+Source/SysPSP/MediaEnginePRX/MediaEngine2.S:
 	$(MAKE) -C Source/SysPSP/MediaEnginePRX all
 
 Source/SysPSP/DveMgr/pspDveManager.S:

@@ -35,8 +35,6 @@ extern SImageDescriptor g_TI;		// XXXX
 //
 //*****************************************************************************
 CRDPStateManager::CRDPStateManager()
-:	mNumReused( 0 )
-,	mNumLoaded( 0 )
 {
 	InvalidateAllTileTextureInfo();
 }
@@ -122,7 +120,20 @@ void	CRDPStateManager::LoadTile( u32 idx, u32 address )
 
 	InvalidateAllTileTextureInfo();		// Can potentially invalidate all texture infos
 }
+//*****************************************************************************
+//
+//*****************************************************************************
+/*void	CRDPStateManager::LoadTlut( u32 idx, u32 address )
+{
+	u32	tmem_address( (mTiles[ idx ].tmem>>2) & 0x3F );
+	
+	SLoadDetails &	load_details( mLoadMap[ tmem_address ] );
+	load_details.Address = address;
+	load_details.Pitch = g_TI.GetPitch();
+	load_details.Swapped = false;
 
+	InvalidateAllTileTextureInfo();		// Can potentially invalidate all texture infos
+}*/
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -167,7 +178,6 @@ const TextureInfo & CRDPStateManager::GetTextureDescriptor( u32 idx ) const
 
 		LoadDetailsMap::const_iterator it( mLoadMap.find( tmem_address ) );
 
-		u32		palette( 0 );
 		u32		address( 0 );
 		u32		pitch( 0 );
 		bool	swapped( false );
@@ -205,16 +215,17 @@ const TextureInfo & CRDPStateManager::GetTextureDescriptor( u32 idx ) const
 		u32		num_bytes( pixels2bytes( num_pixels, rdp_tile.size ) );
 		DAEDALUS_DL_ASSERT( num_bytes <= 4096, "Suspiciously large texture load: %d bytes (%dx%d, %dbpp)", num_bytes, tile_width, tile_height, (1<<(rdp_tile.size+2)) );
 #endif
-		//Quick fix to correct texturing issues and missing logo in Harvest Moon 64
-		//if pixel size is 8b force palette to index 0
-		if(rdp_tile.size != G_IM_SIZ_8b)
-		{
-			palette = rdp_tile.palette;
-		}
-		
-		ti.SetTmemAddress( rdp_tile.tmem );
-		ti.SetTLutIndex( palette ); 
 
+		ti.SetTmemAddress( rdp_tile.tmem );
+#ifndef DAEDALUS_TMEM
+		// Hack for Harvest Moon 64, if pixel size is 8b force palette to index 0 (Hopefully won't mess up anything)
+		ti.SetTLutIndex( rdp_tile.size == G_IM_SIZ_8b ? 0 : rdp_tile.palette); 
+#else
+		// Proper way, doesn't need Harvest Moon hack, Nb. 4b check is for Majora's Mask
+		u32 tlut( (u32)(&gTextureMemory[0]) );
+		ti.SetTLutIndex( rdp_tile.palette ); 
+		ti.SetTlutAddress( rdp_tile.size == G_IM_SIZ_4b ? tlut + 16  * 2 * rdp_tile.palette : tlut );
+#endif
 		ti.SetLoadAddress( address );
 		ti.SetFormat( rdp_tile.format );
 		ti.SetSize( rdp_tile.size );

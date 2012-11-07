@@ -80,7 +80,8 @@ namespace
 					{
 					case VT_UNSCALED_4_3:	return "4:3 no overscan (640x448)";
 					case VT_SCALED_4_3:		return "4:3 overscan (658x460)";
-					case VT_FULLSCREEN:		return "Fullscreen (720x460)";
+					case VT_FULLSCREEN:		return "16:9 stretch (720x460)";
+					case VT_FULLSCREEN_HD:	return "16:9 (720x460)";
 					}
 					DAEDALUS_ERROR( "Unhandled viewport type" );
 					return "?";
@@ -91,7 +92,8 @@ namespace
 					{
 					case VT_UNSCALED_4_3:	return "4:3 no overscan (528x448)";
 					case VT_SCALED_4_3:		return "4:3 overscan (542x460)";
-					case VT_FULLSCREEN:		return "Fullscreen (720x460)";
+					case VT_FULLSCREEN:		return "16:9 stretch (720x460)";
+					case VT_FULLSCREEN_HD:	return "16:9 (720x460)";
 					}
 					DAEDALUS_ERROR( "Unhandled viewport type" );
 					return "?";
@@ -103,7 +105,8 @@ namespace
 				{
 				case VT_UNSCALED_4_3:	return "4:3 unscaled (320x240)";
 				case VT_SCALED_4_3:		return "4:3 scaled (362x272)";
-				case VT_FULLSCREEN:		return "Fullscreen (480x272)";
+				case VT_FULLSCREEN:		return "16:9 stretch (480x272)";
+				case VT_FULLSCREEN_HD:	return "16:9 (480x272)";
 				}
 				DAEDALUS_ERROR( "Unhandled viewport type" );
 				return "?";
@@ -349,7 +352,10 @@ IGlobalSettingsComponent::IGlobalSettingsComponent( CUIContext * p_context )
 		mElements.Add( new CTVTypeSetting( "TV Type", "The aspect ratio of the TV." ) );
 	}
 	else
+	{
 		gGlobalPreferences.TVEnable = false;
+	}
+
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.ForceLinearFilter,"Force Linear Filter", "Enable to force linear filter, this can improve the look of textures", "Yes", "No" ) );
 	mElements.Add( new CBoolSetting( &gGlobalPreferences.RumblePak,"Controller add-on", "Enable either MemPak or RumblePak.", "RumblePak", "MemPak" ) );
 	mElements.Add( new CAdjustDeadzoneSetting( mpContext, "Stick Deadzone", "Adjust the size of the deadzone applied to the PSP stick while playing. Press Start/X to edit." ) );

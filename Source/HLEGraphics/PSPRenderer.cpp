@@ -133,20 +133,9 @@ ALIGNED_GLOBAL(u32,gSelectedTexture[gPlaceholderTextureWidth * gPlaceholderTextu
 extern void		PrintMux( FILE * fh, u64 mux );
 
 //***************************************************************************
-//*General blender used for testing //Corn
+//*General blender used for blend testing //Corn
 //***************************************************************************
-u32 gTexInstall=1;	//defaults to texture on
-u32	gSetRGB=0;
-u32	gSetA=0;
-u32	gSetRGBA=0;
-u32	gModA=0;
-u32	gAOpaque=0;
-
-u32	gsceENV=0;
-
-u32	gTXTFUNC=0;	//defaults to MODULATE_RGB
-
-u32 gForceRGB=0;    //defaults to OFF
+DebugBlendSettings gDBlend;
 
 #define BLEND_MODE_MAKER \
 { \
@@ -163,7 +152,7 @@ u32 gForceRGB=0;    //defaults to OFF
 		GU_TCC_RGB, \
 		GU_TCC_RGBA \
 	}; \
-	switch( gForceRGB ) \
+	switch( gDBlend.ForceRGB ) \
 	{ \
 		case 1: details.ColourAdjuster.SetRGB( c32::White ); break; \
 		case 2: details.ColourAdjuster.SetRGB( c32::Black ); break; \
@@ -173,42 +162,77 @@ u32 gForceRGB=0;    //defaults to OFF
 		case 6: details.ColourAdjuster.SetRGB( c32::Magenta ); break; \
 		case 7: details.ColourAdjuster.SetRGB( c32::Gold ); break; \
 	} \
-	switch( gSetRGB ) \
+	switch( gDBlend.SetRGB ) \
 	{ \
 		case 1: details.ColourAdjuster.SetRGB( details.PrimColour ); break; \
 		case 2: details.ColourAdjuster.SetRGB( details.PrimColour.ReplicateAlpha() ); break; \
 		case 3: details.ColourAdjuster.SetRGB( details.EnvColour ); break; \
 		case 4: details.ColourAdjuster.SetRGB( details.EnvColour.ReplicateAlpha() ); break; \
 	} \
-	switch( gSetA ) \
+	switch( gDBlend.SetA ) \
 	{ \
 		case 1: details.ColourAdjuster.SetA( details.PrimColour ); break; \
 		case 2: details.ColourAdjuster.SetA( details.PrimColour.ReplicateAlpha() ); break; \
 		case 3: details.ColourAdjuster.SetA( details.EnvColour ); break; \
 		case 4: details.ColourAdjuster.SetA( details.EnvColour.ReplicateAlpha() ); break; \
 	} \
-	switch( gSetRGBA ) \
+	switch( gDBlend.SetRGBA ) \
 	{ \
 		case 1: details.ColourAdjuster.SetRGBA( details.PrimColour ); break; \
 		case 2: details.ColourAdjuster.SetRGBA( details.PrimColour.ReplicateAlpha() ); break; \
 		case 3: details.ColourAdjuster.SetRGBA( details.EnvColour ); break; \
 		case 4: details.ColourAdjuster.SetRGBA( details.EnvColour.ReplicateAlpha() ); break; \
 	} \
-	switch( gModA ) \
+	switch( gDBlend.ModRGB ) \
+	{ \
+		case 1: details.ColourAdjuster.ModulateRGB( details.PrimColour ); break; \
+		case 2: details.ColourAdjuster.ModulateRGB( details.PrimColour.ReplicateAlpha() ); break; \
+		case 3: details.ColourAdjuster.ModulateRGB( details.EnvColour ); break; \
+		case 4: details.ColourAdjuster.ModulateRGB( details.EnvColour.ReplicateAlpha() ); break; \
+	} \
+	switch( gDBlend.ModA ) \
 	{ \
 		case 1: details.ColourAdjuster.ModulateA( details.PrimColour ); break; \
 		case 2: details.ColourAdjuster.ModulateA( details.PrimColour.ReplicateAlpha() ); break; \
 		case 3: details.ColourAdjuster.ModulateA( details.EnvColour ); break; \
 		case 4: details.ColourAdjuster.ModulateA( details.EnvColour.ReplicateAlpha() ); break; \
 	} \
-	if( gAOpaque ) details.ColourAdjuster.SetAOpaque(); \
-	switch( gsceENV ) \
+	switch( gDBlend.ModRGBA ) \
+	{ \
+		case 1: details.ColourAdjuster.ModulateRGBA( details.PrimColour ); break; \
+		case 2: details.ColourAdjuster.ModulateRGBA( details.PrimColour.ReplicateAlpha() ); break; \
+		case 3: details.ColourAdjuster.ModulateRGBA( details.EnvColour ); break; \
+		case 4: details.ColourAdjuster.ModulateRGBA( details.EnvColour.ReplicateAlpha() ); break; \
+	} \
+	switch( gDBlend.SubRGB ) \
+	{ \
+		case 1: details.ColourAdjuster.SubtractRGB( details.PrimColour ); break; \
+		case 2: details.ColourAdjuster.SubtractRGB( details.PrimColour.ReplicateAlpha() ); break; \
+		case 3: details.ColourAdjuster.SubtractRGB( details.EnvColour ); break; \
+		case 4: details.ColourAdjuster.SubtractRGB( details.EnvColour.ReplicateAlpha() ); break; \
+	} \
+	switch( gDBlend.SubA ) \
+	{ \
+		case 1: details.ColourAdjuster.SubtractA( details.PrimColour ); break; \
+		case 2: details.ColourAdjuster.SubtractA( details.PrimColour.ReplicateAlpha() ); break; \
+		case 3: details.ColourAdjuster.SubtractA( details.EnvColour ); break; \
+		case 4: details.ColourAdjuster.SubtractA( details.EnvColour.ReplicateAlpha() ); break; \
+	} \
+	switch( gDBlend.SubRGBA ) \
+	{ \
+		case 1: details.ColourAdjuster.SubtractRGBA( details.PrimColour ); break; \
+		case 2: details.ColourAdjuster.SubtractRGBA( details.PrimColour.ReplicateAlpha() ); break; \
+		case 3: details.ColourAdjuster.SubtractRGBA( details.EnvColour ); break; \
+		case 4: details.ColourAdjuster.SubtractRGBA( details.EnvColour.ReplicateAlpha() ); break; \
+	} \
+	if( gDBlend.AOpaque ) details.ColourAdjuster.SetAOpaque(); \
+	switch( gDBlend.sceENV ) \
 	{ \
 		case 1: sceGuTexEnvColor( details.EnvColour.GetColour() ); break; \
 		case 2: sceGuTexEnvColor( details.PrimColour.GetColour() ); break; \
 	} \
-	details.InstallTexture = gTexInstall; \
-	sceGuTexFunc( PSPtxtFunc[ (gTXTFUNC >> 1) % 6 ], PSPtxtA[ gTXTFUNC & 1 ] ); \
+	details.InstallTexture = gDBlend.TexInstall; \
+	sceGuTexFunc( PSPtxtFunc[ (gDBlend.TXTFUNC >> 1) % 6 ], PSPtxtA[ gDBlend.TXTFUNC & 1 ] ); \
 } \
 
 #endif
@@ -266,8 +290,8 @@ PSPRenderer::PSPRenderer()
 		mTileTopLeft[t].y = 0.0f;
 		mTileScale[t].x = 1.0f;
 		mTileScale[t].y = 1.0f;
-		mTexWrap[t][0] = 0;
-		mTexWrap[t][1] = 0;
+		mTexWrap[t].u = 0;
+		mTexWrap[t].v = 0;
 	}
 
 	mTnL.Flags._u32 = 0;
@@ -281,6 +305,9 @@ PSPRenderer::PSPRenderer()
 
 #ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	memset( gWhiteTexture, 0xff, sizeof(gWhiteTexture) );
+
+	memset( &gDBlend.TexInstall, 0, sizeof(gDBlend) );
+	gDBlend.TexInstall = 1;
 
 	u32	texel_idx( 0 );
 	const u32	COL_MAGENTA( c32::Magenta.GetColour() );
@@ -661,8 +688,8 @@ PSPRenderer::SBlendStateEntry	PSPRenderer::LookupBlendState( u64 mux, bool two_c
 		entry.OverrideFunction = LookupOverrideBlendModeForced( mux );
 	}
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST	
-	printf( "Adding %08x%08x - %d cycles%s", u32(mux>>32), u32(mux), two_cycles ? 2 : 1, entry.States->IsInexact() ?  " - Inexact(Override|Default)\n" : " - Auto|Forced\n");
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
+	printf( "Adding %08x%08x - %d cycles - %s\n", u32(mux>>32), u32(mux), two_cycles ? 2 : 1, entry.States->IsInexact() ?  IsCombinerStateDefault(mux) ? "Inexact(Default)" : "Inexact(Override)" : entry.OverrideFunction==NULL ? "Auto" : "Forced");
 #endif
 
 	//Add blend mode to the Blend States Map
@@ -783,7 +810,7 @@ void PSPRenderer::RenderUsingRenderSettings( const CBlendStates * states, Daedal
 		// If no texture was specified, or if we couldn't load it, clear it out
 		if( !installed_texture ) sceGuDisable(GU_TEXTURE_2D);
 
-		sceGuTexWrap( mTexWrap[texture_idx][0], mTexWrap[texture_idx][1] );
+		sceGuTexWrap( mTexWrap[texture_idx].u, mTexWrap[texture_idx].v );
 
 		sceGuDrawArray( triangle_mode, render_flags, num_vertices, NULL, p_vertices );
 	}
@@ -855,12 +882,10 @@ bool PSPRenderer::DebugBlendmode( DaedalusVtx * p_vertices, u32 num_vertices, u3
 //*****************************************************************************
 void PSPRenderer::DebugMux( const CBlendStates * states, DaedalusVtx * p_vertices, u32 num_vertices, u32 triangle_mode, u32 render_flags, u64 mux)
 {
-	bool	inexact( states->IsInexact() );
-
 	// Only dump missing_mux when we awant to search for inexact blends aka HighlightInexactBlendModes is enabled.
 	// Otherwise will dump lotsa of missing_mux even though is not needed since was handled correctly by auto blendmode thing - Salvy
 	//
-	if( inexact && gGlobalPreferences.HighlightInexactBlendModes)
+	if( gGlobalPreferences.HighlightInexactBlendModes && states->IsInexact() )
 	{
 		if(mUnhandledCombinerStates.find( mux ) == mUnhandledCombinerStates.end())
 		{
@@ -996,9 +1021,9 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 
 	u32 render_flags( GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | render_mode );
 
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST	
 	// Used for Blend Explorer, or Nasty texture
 	//
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST	
 	if( DebugBlendmode( p_vertices, num_vertices, triangle_mode, render_flags, mMux ) )	return;
 #endif
 
@@ -1006,9 +1031,9 @@ void PSPRenderer::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 	// 
 	if( blend_entry.OverrideFunction != NULL )
 	{
+#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		// Used for dumping mux and highlight inexact blend
 		//
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 		DebugMux( blend_entry.States, p_vertices, num_vertices, triangle_mode, render_flags, mMux );
 #endif
 
@@ -2583,11 +2608,6 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 
 	const TextureInfo & ti( gRDPStateManager.GetTextureDescriptor( tile_idx ) );
 
-#ifndef DAEDALUS_DEBUG_DISPLAYLIST
-	// Avoid texture update, if texture is the same as last time around.
-	if( (mpTexture[ index ] != NULL) && (mpTexture[ index ]->GetTextureInfo() == ti) ) return;
-#endif
-
 	//	Initialise the wrapping/texture offset first, which can be set
 	//	independently of the actual texture.
 	//
@@ -2622,10 +2642,10 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 	}
 	if( tile_size.GetHeight() > ti.GetHeight() ) mode_v = GU_REPEAT;
 
-	mTexWrap[ index ][ 0 ] = mode_u;
-	mTexWrap[ index ][ 1 ] = mode_v;
-
 	sceGuTexWrap( mode_u, mode_v );
+
+	mTexWrap[ index ].u = mode_u;
+	mTexWrap[ index ].v = mode_v;
 
 	// XXXX Double check this
 	mTileTopLeft[ index ].x = f32(tile_size.left) / 4.0f;
@@ -2637,10 +2657,8 @@ void	PSPRenderer::EnableTexturing( u32 index, u32 tile_idx )
 			ti.GetLoadAddress(), ti.GetTlutAddress(), ti.GetHashCode(), ti.GetPitch(),
 			mTileTopLeft[ index ].x, mTileTopLeft[ index ].y, mTileScale[ index ].x, mTileScale[ index ].y );
 
-#ifdef DAEDALUS_DEBUG_DISPLAYLIST
 	// Avoid texture update, if texture is the same as last time around.
 	if( (mpTexture[ index ] != NULL) && (mpTexture[ index ]->GetTextureInfo() == ti) ) return;
-#endif
 
 	// Check for 0 width/height textures
 	if( (ti.GetWidth() == 0) || (ti.GetHeight() == 0) )
@@ -3161,69 +3179,63 @@ void PSPRenderer::MatrixFromN64FixedPoint( Matrix4x4 & mat, u32 address )
 	}
 #endif
 
-#if 1 //1->looped, 0->unrolled //Corn
 	const f32 fRecip = 1.0f / 65536.0f;
-	const u8 *ptr( g_pu8RamBase + address );
+
+	struct N64Imat
+	{
+		s16 h[4][4];
+		u16 l[4][4];
+	};
+	const N64Imat *Imat = (N64Imat *)( g_pu8RamBase + address );
+
 	s16 hi;
 	u16 lo;
-
+	s32 tmp;
 
 	for (u32 i = 0; i < 4; i++)
 	{
-		hi = *(s16 *)(ptr + (i<<3) + ((0     )^0x2));
-		lo = *(u16 *)(ptr + (i<<3) + ((0 + 32)^0x2));
-		mat.m[i][0] = ((hi<<16) | (lo)) * fRecip;
+#if 1	// Crappy compiler.. reordring is to optimize the ASM // Corn
+		hi = Imat->h[i][0 ^ U16H_TWIDDLE];
+		lo = Imat->l[i][0 ^ U16H_TWIDDLE];
+		tmp = ((hi << 16) | lo);
+		hi = Imat->h[i][1 ^ U16H_TWIDDLE];
+		mat.m[i][0] =  tmp * fRecip;
 
-		hi = *(s16 *)(ptr + (i<<3) + ((2     )^0x2));
-		lo = *(u16 *)(ptr + (i<<3) + ((2 + 32)^0x2));
-		mat.m[i][1] = ((hi<<16) | (lo)) * fRecip;
+		lo = Imat->l[i][1 ^ U16H_TWIDDLE];
+		tmp = ((hi << 16) | lo);
+		hi = Imat->h[i][2 ^ U16H_TWIDDLE];
+		mat.m[i][1] = tmp * fRecip;
 
-		hi = *(s16 *)(ptr + (i<<3) + ((4     )^0x2));
-		lo = *(u16 *)(ptr + (i<<3) + ((4 + 32)^0x2));
-		mat.m[i][2] = ((hi<<16) | (lo)) * fRecip;
+		lo = Imat->l[i][2 ^ U16H_TWIDDLE];
+		tmp = ((hi << 16) | lo);
+		hi = Imat->h[i][3 ^ U16H_TWIDDLE];
+		mat.m[i][2] = tmp * fRecip;
 
-		hi = *(s16 *)(ptr + (i<<3) + ((6     )^0x2));
-		lo = *(u16 *)(ptr + (i<<3) + ((6 + 32)^0x2));
-		mat.m[i][3] = ((hi<<16) | (lo)) * fRecip;
-	}
-
+		lo = Imat->l[i][3 ^ U16H_TWIDDLE];
+		tmp = ((hi << 16) | lo);
+		mat.m[i][3] = tmp * fRecip;
 #else
-	struct N64Imat
-	{
-		s16	H01, H00, H03, H02;
-		s16	H11, H10, H13, H12;
-		s16	H21, H20, H23, H22;
-		s16	H31, H30, H33, H32;
 
-		u16	L01, L00, L03, L02;
-		u16	L11, L10, L13, L12;
-		u16	L21, L20, L23, L22;
-		u16	L31, L30, L33, L32;
-	};
+		hi = Imat->h[i][0 ^ U16H_TWIDDLE];
+		lo = Imat->l[i][0 ^ U16H_TWIDDLE];
+		mat.m[i][0] =  ((hi << 16) | lo) * fRecip;
 
-	const N64Imat *Imat = (N64Imat *)( g_pu8RamBase + address );
-	const f32 fRecip = 1.0f / 65536.0f;
+		hi = Imat->h[i][1 ^ U16H_TWIDDLE];
+		lo = Imat->l[i][1 ^ U16H_TWIDDLE];
 
-	mat.m[0][0] = (f32)((Imat->H00 << 16) | (Imat->L00)) * fRecip;
-	mat.m[0][1] = (f32)((Imat->H01 << 16) | (Imat->L01)) * fRecip;
-	mat.m[0][2] = (f32)((Imat->H02 << 16) | (Imat->L02)) * fRecip;
-	mat.m[0][3] = (f32)((Imat->H03 << 16) | (Imat->L03)) * fRecip;
+		mat.m[i][1] = ((hi << 16) | lo) * fRecip;
 
-	mat.m[1][0] = (f32)((Imat->H10 << 16) | (Imat->L10)) * fRecip;
-	mat.m[1][1] = (f32)((Imat->H11 << 16) | (Imat->L11)) * fRecip;
-	mat.m[1][2] = (f32)((Imat->H12 << 16) | (Imat->L12)) * fRecip;
-	mat.m[1][3] = (f32)((Imat->H13 << 16) | (Imat->L13)) * fRecip;
+		hi = Imat->h[i][2 ^ U16H_TWIDDLE];
+		lo = Imat->l[i][2 ^ U16H_TWIDDLE];
 
-	mat.m[2][0] = (f32)((Imat->H20 << 16) | (Imat->L20)) * fRecip;
-	mat.m[2][1] = (f32)((Imat->H21 << 16) | (Imat->L21)) * fRecip;
-	mat.m[2][2] = (f32)((Imat->H22 << 16) | (Imat->L22)) * fRecip;
-	mat.m[2][3] = (f32)((Imat->H23 << 16) | (Imat->L23)) * fRecip;
+		mat.m[i][2] = ((hi << 16) | lo) * fRecip;
 
-	mat.m[3][0] = (f32)((Imat->H30 << 16) | (Imat->L30)) * fRecip;
-	mat.m[3][1] = (f32)((Imat->H31 << 16) | (Imat->L31)) * fRecip;
-	mat.m[3][2] = (f32)((Imat->H32 << 16) | (Imat->L32)) * fRecip;
-	mat.m[3][3] = (f32)((Imat->H33 << 16) | (Imat->L33)) * fRecip;
+		hi = Imat->h[i][3 ^ U16H_TWIDDLE];
+		lo = Imat->l[i][3 ^ U16H_TWIDDLE];
+
+		mat.m[i][3] = ((hi << 16) | lo) * fRecip;
 #endif
+	}
 }
 //*****************************************************************************
 //Modify the WorldProject matrix, used by Kirby & SSB //Corn

@@ -40,6 +40,24 @@ class CTexture;
 class CNativeTexture;
 class CBlendStates;
 
+struct DebugBlendSettings
+{
+	u32 TexInstall;	//defaults to texture installed
+	u32	SetRGB;		//defaults to OFF
+	u32	SetA;		//defaults to OFF
+	u32	SetRGBA;	//defaults to OFF
+	u32	ModRGB;		//defaults to OFF
+	u32	ModA;		//defaults to OFF
+	u32	ModRGBA;	//defaults to OFF
+	u32	SubRGB;		//defaults to OFF
+	u32	SubA;		//defaults to OFF
+	u32	SubRGBA;	//defaults to OFF
+	u32	AOpaque;	//defaults to OFF
+	u32	sceENV;		//defaults to OFF
+	u32	TXTFUNC;	//defaults to MODULATE_RGB
+	u32 ForceRGB;	//defaults to OFF
+};
+
 struct ViewportInfo
 {
 	u32  ViWidth;
@@ -348,12 +366,17 @@ private:
 	c32					mEnvColour;
 
 	// Texturing
+	struct TextureWrap
+	{
+		u32	u;
+		u32 v;
+	};
 	static const u32 NUM_N64_TEXTURES = 2;
 
 	CRefPtr<CTexture>	mpTexture[ NUM_N64_TEXTURES ];
 	v2					mTileTopLeft[ NUM_N64_TEXTURES ];
 	v2					mTileScale[ NUM_N64_TEXTURES ];
-	u32					mTexWrap[ NUM_N64_TEXTURES ][ 2 ];
+	TextureWrap			mTexWrap[ NUM_N64_TEXTURES ];
 	
 	//Max is 18 according to the manual //Corn
 	static const u32 MATRIX_STACK_SIZE = 20; 

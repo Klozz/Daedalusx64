@@ -33,6 +33,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Dynamo.h"
 #include "Interpret.h"
 #include "Save.h"
+#include "ROM.h"
+#include "ConfigOptions.h"
 #include "Cheats.h"
 
 #include "Utility/PrintOpCode.h"
@@ -52,8 +54,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "OSHLE/ultra_R4300.h"
 
-#include "ConfigOptions.h"
-#include "Core/ROM.h"
 
 #include <algorithm>
 #include <string>
@@ -81,8 +81,8 @@ std::vector< DBG_BreakPoint > g_BreakPoints;
 
 
 static bool			gCPURunning				= false;			// CPU is actively running
-//static u32		gLastPC = 0xffffffff;
-//static u8 *		gLastAddress = NULL;
+u32					gLastPC = 0xffffffff;
+u8 *				gLastAddress = NULL;
 
 namespace
 {
@@ -710,14 +710,9 @@ void CPU_HANDLE_COUNT_INTERRUPT()
 			// Apply cheatcodes, if enabled
 			if( gCheatsEnabled )
 			{
-				// Apply cheats once every XX( dpeding the user selection, 30 is the default value) VBLs, to avoid hogging the emulator
-				//
-				if ((gVerticalInterrupts & gCheatFrequency) == 0)
-				{
-					CheatCodes_Activate( IN_GAME );
-				}
-
+				CheatCodes_Activate( IN_GAME );
 			}
+
 			// Add another Interrupt at the next time:
 			CPU_AddEvent(VI_INTR_CYCLES, CPU_EVENT_VBL);
 

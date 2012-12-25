@@ -60,6 +60,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility/Profiler.h"
 #include "Utility/Preferences.h"
 #include "Utility/IO.h"
+#include "Utility/FastMemcpy.h"
 
 #include <pspgu.h>
 #include <pspgum.h>
@@ -767,11 +768,7 @@ void PSPRenderer::RenderUsingRenderSettings( const CBlendStates * states, Daedal
 			case PBM_BLEND:			tfx = GU_TFX_BLEND; sceGuTexEnvColor( out.TextureFactor.GetColour() ); break;
 			}
 
-			u32 tcc( GU_TCC_RGBA );
-			if( out.BlendAlphaMode == PBAM_RGB )
-				tcc = GU_TCC_RGB;
-
-			sceGuTexFunc( tfx, tcc );
+			sceGuTexFunc( tfx, out.BlendAlphaMode == PBAM_RGB ? GU_TCC_RGB :  GU_TCC_RGBA );
 
 			if( g_ROM.T1_HACK )
 			{
@@ -1736,7 +1733,7 @@ void PSPRenderer::PrepareTrisClipped( DaedalusVtx ** p_p_vertices, u32 * p_num_v
 
 	DaedalusVtx *p_vertices( (DaedalusVtx*)sceGuGetMemory(num_vertices * sizeof(DaedalusVtx)) );
 
-	memcpy( p_vertices, clip_vtx, num_vertices * sizeof(DaedalusVtx) );
+	memcpy( p_vertices, clip_vtx, num_vertices * sizeof(DaedalusVtx) );	//std memcpy() is as fast as VFPU here!
 
 	*p_p_vertices = p_vertices;
 	*p_num_vertices = num_vertices;

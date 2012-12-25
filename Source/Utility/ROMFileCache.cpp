@@ -68,19 +68,19 @@ ROMFileCache::ROMFileCache()
 ,	mMRUIdx( 0 )
 {
 	if( PSP_IS_SLIM )
-	{	
+	{
 		//32MB cache(SLIM)
 		CHUNK_SIZE = 16 * 1024;
-		CACHE_SIZE = 2048;	
+		CACHE_SIZE = 2048;
 	}
-	else	
-	{	
+	else
+	{
 		//2MB cache(PHAT)
 		CHUNK_SIZE = 16 * 1024;
 		CACHE_SIZE = 256;
 	}
 
-	STORAGE_BYTES = CACHE_SIZE * CHUNK_SIZE; 
+	STORAGE_BYTES = CACHE_SIZE * CHUNK_SIZE;
 
 	DAEDALUS_ASSERT( (1<<(sizeof(CacheIdx)*8)) > CACHE_SIZE, "Need to increase size of CacheIdx typedef to allow sufficient entries to be indexed" );
 
@@ -141,7 +141,7 @@ void	ROMFileCache::Close()
 //*****************************************************************************
 //
 //*****************************************************************************
-inline u32		ROMFileCache::AddressToChunkMapIndex( u32 address )
+inline u32 AddressToChunkMapIndex( u32 address )
 {
 	return address / CHUNK_SIZE;
 }
@@ -149,7 +149,7 @@ inline u32		ROMFileCache::AddressToChunkMapIndex( u32 address )
 //*****************************************************************************
 //
 //*****************************************************************************
-inline u32		ROMFileCache::GetChunkStartAddress( u32 address )
+inline u32 GetChunkStartAddress( u32 address )
 {
 	return ( address / CHUNK_SIZE ) * CHUNK_SIZE;
 }

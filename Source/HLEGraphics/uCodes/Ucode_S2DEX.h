@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	S2DEX_BGLT_LOADTILE		0xfff4
 
 //*****************************************************************************
-// 
+//
 //*****************************************************************************
 struct uObjBg
 {
@@ -65,25 +65,25 @@ struct uObjBg
 //*****************************************************************************
 struct uObjMtx
 {
-	s32	  A, B, C, D;	
+	s32	  A, B, C, D;
 
-	short Y;			
-	short X;			
+	short Y;
+	short X;
 
-	u16   BaseScaleY;	
-	u16   BaseScaleX;	
-};				
+	u16   BaseScaleY;
+	u16   BaseScaleX;
+};
 
 //*****************************************************************************
 //
 //*****************************************************************************
 struct uObjSubMtx
 {
-	short Y;			
-	short X;	
+	short Y;
+	short X;
 
-	u16   BaseScaleY;	
-	u16   BaseScaleX;	
+	u16   BaseScaleY;
+	u16   BaseScaleX;
 };
 
 //*****************************************************************************
@@ -101,32 +101,32 @@ struct Matrix2D
 //
 //*****************************************************************************
 struct	uObjScaleBg
-{	
-	u16	imageW;		
-	u16	imageX;		
+{
+	u16	imageW;
+	u16	imageX;
 
-	u16	frameW;		
-	s16	frameX;		
+	u16	frameW;
+	s16	frameX;
 
-	u16	imageH;		
-	u16	imageY; 	
+	u16	imageH;
+	u16	imageY;
 
-	u16	frameH;		
-	s16	frameY;		
+	u16	frameH;
+	s16	frameY;
 
-	u32	imagePtr;	
+	u32	imagePtr;
 
-	u8	imageSiz;	
-	u8	imageFmt;	
-	u16	imageLoad;	
+	u8	imageSiz;
+	u8	imageFmt;
+	u16	imageLoad;
 
-	u16	imageFlip;	
-	u16	imagePal; 	
+	u16	imageFlip;
+	u16	imagePal;
 
-	u16	scaleH;		
-	u16	scaleW;		
+	u16	scaleH;
+	u16	scaleW;
 
-	s32	imageYorig;	
+	s32	imageYorig;
 	u8	padding[4];
 };
 
@@ -134,18 +134,18 @@ struct	uObjScaleBg
 //
 //*****************************************************************************
 struct	uObjTxtrBlock //PSP Format
-{		
-	  u32	type;	
+{
+	  u32	type;
 	  u32	image;
-	  
-	  u16	tsize;	
-	  u16	tmem;	
-	  
-	  u16	sid;	
-	  u16	tline;	
 
-	  u32	flag;	
-	  u32	mask;	
+	  u16	tsize;
+	  u16	tmem;
+
+	  u16	sid;
+	  u16	tline;
+
+	  u32	flag;
+	  u32	mask;
 };
 
 //*****************************************************************************
@@ -153,36 +153,36 @@ struct	uObjTxtrBlock //PSP Format
 //*****************************************************************************
 struct uObjTxtrTile //PSP Format
 {
-	  u32	type;	
+	  u32	type;
 	  u32	image;
 
-	  u16	twidth;	
-	  u16	tmem;	
+	  u16	twidth;
+	  u16	tmem;
 
-	  u16	sid;	
+	  u16	sid;
 	  u16	theight;
 
-	  u32	flag;	
-	  u32	mask;	
-};	
+	  u32	flag;
+	  u32	mask;
+};
 
 //*****************************************************************************
 //
 //*****************************************************************************
 struct uObjTxtrTLUT // PSP Format
-{		
-	u32	type;	
+{
+	u32	type;
 	u32	image;
 
-	u16	pnum;	
-	u16	phead;	
+	u16	pnum;
+	u16	phead;
 
-	u16	sid;	
-	u16   zero;	
+	u16	sid;
+	u16   zero;
 
-	u32	flag;	
-	u32	mask;	
-};		
+	u32	flag;
+	u32	mask;
+};
 
 //*****************************************************************************
 //
@@ -198,27 +198,27 @@ union uObjTxtr
 //
 //*****************************************************************************
 struct uObjSprite
-{		
-	u16  scaleW;		
-	short  objX;			
+{
+	u16  scaleW;
+	short  objX;
 
-	u16  paddingX;		
-	u16  imageW;		
+	u16  paddingX;
+	u16  imageW;
 
-	u16  scaleH;		
-	short  objY;			
+	u16  scaleH;
+	short  objY;
 
-	u16  paddingY;		
-	u16  imageH;		
+	u16  paddingY;
+	u16  imageH;
 
-	u16  imageAdrs;	
-	u16  imageStride;	
+	u16  imageAdrs;
+	u16  imageStride;
 
-	u8   imageFlags;	
-	u8   imagePal;		
-	u8   imageSiz;		
-	u8   imageFmt;		
-};	
+	u8   imageFlags;
+	u8   imagePal;
+	u8   imageSiz;
+	u8   imageFmt;
+};
 
 //*****************************************************************************
 //
@@ -284,15 +284,15 @@ void Load_ObjSprite( uObjSprite *sprite, uObjTxtr *txtr )
 		ti.SetTLutFormat       (G_TT_RGBA16);
 	}
 
-	
-	if( (mpTexture != NULL) && (mpTexture->GetTextureInfo() == ti) )	
+
+	if( (mpTexture != NULL) && (mpTexture->GetTextureInfo() == ti) )
 	{
 		return;
 	}
 
 	CRefPtr<CTexture>       texture( CTextureCache::Get()->GetTexture( &ti ) );
 	mpTexture = texture;
-	
+
 	texture->GetTexture()->InstallTexture();
 	texture->UpdateIfNecessary();
 }
@@ -368,7 +368,7 @@ void Draw_ObjSprite( uObjSprite *sprite, ESpriteMode mode )
 //*****************************************************************************
 // Bomberman : Second Atatck uses this
 void DLParser_S2DEX_ObjSprite( MicroCodeCommand command )
-{	
+{
 	uObjSprite *sprite = (uObjSprite*)(g_pu8RamBase + RDPSegAddr(command.inst.cmd1));
 
 	Load_ObjSprite( sprite, NULL );
@@ -380,9 +380,9 @@ void DLParser_S2DEX_ObjSprite( MicroCodeCommand command )
 //
 //*****************************************************************************
 // Pokemon Puzzle League uses this
-// Note : This cmd loads textures from both ObjTxtr and LoadBlock/LoadTile!! 
+// Note : This cmd loads textures from both ObjTxtr and LoadBlock/LoadTile!!
 void DLParser_S2DEX_ObjRectangle( MicroCodeCommand command )
-{	
+{
 	uObjSprite *sprite = (uObjSprite*)(g_pu8RamBase + RDPSegAddr(command.inst.cmd1));
 
 	Load_ObjSprite( sprite, gObjTxtr );
@@ -394,7 +394,7 @@ void DLParser_S2DEX_ObjRectangle( MicroCodeCommand command )
 //*****************************************************************************
 // Untested.. I can't find any game that uses this.. but it should work fine
 void DLParser_S2DEX_ObjRectangleR( MicroCodeCommand command )
-{	
+{
 	uObjSprite *sprite = (uObjSprite*)(g_pu8RamBase + RDPSegAddr(command.inst.cmd1));
 
 	Load_ObjSprite( sprite, gObjTxtr );
@@ -406,7 +406,7 @@ void DLParser_S2DEX_ObjRectangleR( MicroCodeCommand command )
 //*****************************************************************************
 // Nintendo logo, shade, items, enemies & foes, sun, and pretty much everything in Yoshi
 void DLParser_S2DEX_ObjLdtxSprite( MicroCodeCommand command )
-{	
+{
 	uObjTxSprite *sprite = (uObjTxSprite*)(g_pu8RamBase + RDPSegAddr(command.inst.cmd1));
 
 	Load_ObjSprite( &sprite->sprite, &sprite->txtr );
@@ -418,7 +418,7 @@ void DLParser_S2DEX_ObjLdtxSprite( MicroCodeCommand command )
 //*****************************************************************************
 // No Rotation. Intro logo, Awesome command screens and HUD in game :)
 void DLParser_S2DEX_ObjLdtxRect( MicroCodeCommand command )
-{	
+{
 	uObjTxSprite *sprite = (uObjTxSprite*)(g_pu8RamBase + RDPSegAddr(command.inst.cmd1));
 
 	Load_ObjSprite( &sprite->sprite, &sprite->txtr );
@@ -430,7 +430,7 @@ void DLParser_S2DEX_ObjLdtxRect( MicroCodeCommand command )
 //*****************************************************************************
 // With Rotation. Text, smoke, and items in Yoshi
 void DLParser_S2DEX_ObjLdtxRectR( MicroCodeCommand command )
-{	
+{
 	uObjTxSprite *sprite = (uObjTxSprite*)(g_pu8RamBase + RDPSegAddr(command.inst.cmd1));
 
 	Load_ObjSprite( &sprite->sprite, &sprite->txtr );
@@ -442,7 +442,7 @@ void DLParser_S2DEX_ObjLdtxRectR( MicroCodeCommand command )
 //*****************************************************************************
 // Used for Sprite rotation
 void DLParser_S2DEX_ObjMoveMem( MicroCodeCommand command )
-{	
+{
 	u32 addr = RDPSegAddr(command.inst.cmd1);
 	u32 index = command.inst.cmd0 & 0xFFFF;
 
@@ -473,7 +473,7 @@ void DLParser_S2DEX_ObjMoveMem( MicroCodeCommand command )
 //*****************************************************************************
 // Kirby uses this for proper palette loading
 void DLParser_S2DEX_ObjLoadTxtr( MicroCodeCommand command )
-{	
+{
 	uObjTxtr* ObjTxtr = (uObjTxtr*)(g_pu8RamBase + RDPSegAddr(command.inst.cmd1));
 	if( ObjTxtr->block.type == S2DEX_OBJLT_TLUT )
 	{
@@ -489,7 +489,7 @@ void DLParser_S2DEX_ObjLoadTxtr( MicroCodeCommand command )
 		u32 size	= ObjTlut->pnum+1;
 		u32 offset  = ObjTlut->phead-0x100;
 
-		DAEDALUS_ASSERT( offset+size > 0x100, "Check me: TMEM" ); 
+		DAEDALUS_ASSERT( offset+size > 0x100, "Check me: TMEM" );
 
 		for( u32 i=offset; i<offset+size; i++ )
 		{
@@ -577,9 +577,9 @@ inline void DLParser_Yoshi_MemRect( MicroCodeCommand command )
 //
 //*****************************************************************************
 void DLParser_S2DEX_RDPHalf_0( MicroCodeCommand command )
-{	
+{
 	//RDP: RSP_S2DEX_RDPHALF_0 (0xe449c0a8 0x003b40a4)
-	//0x001d3c88: e449c0a8 003b40a4 RDP_TEXRECT 
+	//0x001d3c88: e449c0a8 003b40a4 RDP_TEXRECT
 	//0x001d3c90: b4000000 00000000 RSP_RDPHALF_1
 	//0x001d3c98: b3000000 04000400 RSP_RDPHALF_2
 
@@ -593,15 +593,15 @@ void DLParser_S2DEX_RDPHalf_0( MicroCodeCommand command )
 //
 //*****************************************************************************
 void DLParser_S2DEX_ObjRendermode( MicroCodeCommand command )
-{	
+{
 	DL_PF( "    S2DEX_ObjRendermode (Ignored)" );
 }
 
 //*****************************************************************************
-// 
+//
 //*****************************************************************************
 void DLParser_S2DEX_SelectDl( MicroCodeCommand command )
-{	
+{
 	DL_PF( "    S2DEX_SelectDl (Ignored)" );
 }
 
@@ -706,7 +706,7 @@ void DLParser_S2DEX_Bg1cyc( MicroCodeCommand command )
 #else
 	ti.SetTlutAddress	   ((u32)(&gTextureMemory[0]));
 #endif
-	ti.SetTLutFormat       (G_TT_RGBA16); 
+	ti.SetTLutFormat       (G_TT_RGBA16);
 
 
 	CRefPtr<CTexture>       texture( CTextureCache::Get()->GetTexture( &ti ) );

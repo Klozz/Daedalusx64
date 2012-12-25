@@ -241,7 +241,7 @@ private:
 				};
 				*/
 				void				UpdateRegister( EN64Reg n64_reg, EPspReg psp_reg, bool options );
-	
+
 
 				EPspFloatReg		GetFloatRegisterAndLoad( EN64FloatReg n64_reg );
 				void				UpdateFloatRegister( EN64FloatReg n64_reg );
@@ -307,7 +307,7 @@ private:
 				std::stack<EPspReg>	mAvailableRegisters;
 
 				bool							mQuickLoad;
-				
+
 				EN64Reg							mPrevious_base;
 				EN64Reg							mPrevious_rt;
 				bool							mKeepPreviousLoadBase;

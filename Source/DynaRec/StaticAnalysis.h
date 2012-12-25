@@ -117,7 +117,7 @@ namespace StaticAnalysis
 		inline void		Access(u32 address)
 		{
 			mAccess_8000 = IS_SEG_8000(address);
-			
+
 			/*
 			if( IS_SEG_8000(address) )
 			{
@@ -131,7 +131,7 @@ namespace StaticAnalysis
 
 			//DAEDALUS_ASSERT(!(RegBase == 1 << 29 && Memory == Segment_Unknown), "Why Stack Point to static segment: 0x%08x", address);
 		}
-			
+
 	};
 
 	void		Analyse( OpCode op_code, RegisterUsage & reg_usage );

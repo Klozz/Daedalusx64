@@ -14,7 +14,7 @@ Copyright (C) 2001 StrmnNrmn
 	You should have received a copy of the GNU General Public License
 	along with this program; if not, write to the Free Software
 	Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-	  
+
 */
 
 #include "stdafx.h"
@@ -57,7 +57,7 @@ const u8 ThreeToEight[8] =
 };
 
 
-const u8 FourToEight[16] = 
+const u8 FourToEight[16] =
 {
 	0x00, 0x11, 0x22, 0x33,
 	0x44, 0x55, 0x66, 0x77,
@@ -114,7 +114,7 @@ static void ConvertGeneric( const TextureDestInfo & dst,
 							ConvertRowFunction unswapped_fn )
 {
 	OutT *				p_dst( reinterpret_cast< OutT * >( dst.pSurface ) );
-	
+
 	const u8 *			p_src_base( g_pu8RamBase );
 	u32					base_offset( ti.GetLoadAddress() );
 	u32					src_pitch( ti.GetPitch() );
@@ -295,7 +295,7 @@ struct SConvert
 	//
 	//	This routine converts from any format which is > 1 byte to any Psp format.
 	//
-	template < typename OutT, u32 InFiddle, u32 OutFiddle > 
+	template < typename OutT, u32 InFiddle, u32 OutFiddle >
 	static inline void ConvertRow( OutT * p_dst, const u8 * p_src_base, u32 offset, u32 width )
 	{
 		DAEDALUS_DL_ASSERT( IsAligned( offset, sizeof( InT ) ), "Offset should be correctly aligned" );
@@ -354,7 +354,7 @@ struct SConvertIA4
 	enum { Fiddle = 0x3 };
 
 	template < typename OutT, u32 F >
-	static inline void ConvertRow( OutT * p_dst, const u8 * p_src_base, u32 offset, u32 width ) 
+	static inline void ConvertRow( OutT * p_dst, const u8 * p_src_base, u32 offset, u32 width )
 	{
 		// Do two pixels at a time
 		for (u32 x = 0; x < width; x+=2)
@@ -365,7 +365,7 @@ struct SConvertIA4
 			p_dst[x + 0] = OutT( ThreeToEight[(b & 0xE0) >> 5],
 								 ThreeToEight[(b & 0xE0) >> 5],
 								 ThreeToEight[(b & 0xE0) >> 5],
-								 OneToEight[(b & 0x10)   >> 4]);	
+								 OneToEight[(b & 0x10)   >> 4]);
 			// Odd
 			p_dst[x + 1] = OutT( ThreeToEight[(b & 0x0E) >> 1],
 								 ThreeToEight[(b & 0x0E) >> 1],
@@ -382,7 +382,7 @@ struct SConvertIA4
 			p_dst[width-1] = OutT( ThreeToEight[(b & 0xE0) >> 5],
 								 ThreeToEight[(b & 0xE0) >> 5],
 								 ThreeToEight[(b & 0xE0) >> 5],
-								 OneToEight[(b & 0x10)   >> 4]);	
+								 OneToEight[(b & 0x10)   >> 4]);
 		}
 	}
 
@@ -429,7 +429,7 @@ struct SConvertI4
 			p_dst[x + 0] = OutT( FourToEight[(b & 0xF0)>>4],
 								 FourToEight[(b & 0xF0)>>4],
 								 FourToEight[(b & 0xF0)>>4],
-								 FourToEight[(b & 0xF0)>>4] );	
+								 FourToEight[(b & 0xF0)>>4] );
 			// Odd
 			p_dst[x + 1] = OutT( FourToEight[(b & 0x0F)],
 								 FourToEight[(b & 0x0F)],
@@ -447,7 +447,7 @@ struct SConvertI4
 			p_dst[width-1] = OutT( FourToEight[(b & 0xF0)>>4],
 								   FourToEight[(b & 0xF0)>>4],
 								   FourToEight[(b & 0xF0)>>4],
-								   FourToEight[(b & 0xF0)>>4] );	
+								   FourToEight[(b & 0xF0)>>4] );
 
 		}
 	}
@@ -726,11 +726,11 @@ void	ConvertCI8(const TextureDestInfo & dst, const TextureInfo & ti)
 	u32 tlut_format = ti.GetTLutFormat();
 	if( tlut_format == G_TT_RGBA16 )
 	{
-		ConvertCI8_RGBA16( dst, ti );	
+		ConvertCI8_RGBA16( dst, ti );
 	}
 	else if( tlut_format == G_TT_IA16 )
 	{
-		ConvertCI8_IA16( dst, ti );					
+		ConvertCI8_IA16( dst, ti );
 	}
 }
 
@@ -742,11 +742,11 @@ void	ConvertCI4(const TextureDestInfo & dst, const TextureInfo & ti)
 	u32 tlut_format = ti.GetTLutFormat();
 	if( tlut_format == G_TT_RGBA16 )
 	{
-		ConvertCI4_RGBA16( dst, ti );	
+		ConvertCI4_RGBA16( dst, ti );
 	}
 	else if( tlut_format == G_TT_IA16 )
 	{
-		ConvertCI4_IA16( dst, ti );					
+		ConvertCI4_IA16( dst, ti );
 	}
 }
 
@@ -755,15 +755,15 @@ void	ConvertCI4(const TextureDestInfo & dst, const TextureInfo & ti)
 //*****************************************************************************
 //
 //*****************************************************************************
-const ConvertFunction	gConvertFunctions[ 32 ] = 
+const ConvertFunction	gConvertFunctions[ 32 ] =
 {
 	// 4bpp				8bpp			16bpp				32bpp
 	NULL,			NULL,			ConvertRGBA16,		ConvertRGBA32,			// RGBA
-	NULL,			NULL,			NULL,				NULL,					// YUV 
+	NULL,			NULL,			NULL,				NULL,					// YUV
 	ConvertCI4,		ConvertCI8,		NULL,				NULL,					// CI
 	ConvertIA4,		ConvertIA8,		ConvertIA16,		NULL,					// IA
 	ConvertI4,		ConvertI8,		NULL,				NULL,					// I
 	NULL,			NULL,			NULL,				NULL,					// ?
 	NULL,			NULL,			NULL,				NULL,					// ?
-	NULL,			NULL,			NULL,				NULL					// ?			
+	NULL,			NULL,			NULL,				NULL					// ?
 };

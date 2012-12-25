@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "ConfigOptions.h"
 
-#include <ctype.h> 
+#include <ctype.h>
 
 static char gDumpDir[MAX_PATH+1] = "";
 
@@ -52,7 +52,7 @@ void Dump_GetDumpDirectory(char * p_file_path, const char * p_sub_dir)
 		// Initialise
 #if defined(DAEDALUS_DEBUG_DISPLAYLIST) || !defined(DAEDALUS_SILENT)
 		IO::Path::Combine(gDumpDir, gDaedalusExePath, "Dumps");
-#else			
+#else
 		IO::Path::Combine(gDumpDir, gDaedalusExePath, "ms0:/PICTURE/");
 #endif
 	}
@@ -196,7 +196,7 @@ void Dump_Disassemble(u32 start, u32 end, const char * p_file_name)
 
 	const OpCode * op_start( reinterpret_cast< const OpCode * >( p_base ) );
 	const OpCode * op_end(   reinterpret_cast< const OpCode * >( p_base + (end-start) ) );
-	
+
 	Dump_DisassembleMIPSRange(fp, start, op_start, op_end);
 
 	fclose(fp);
@@ -256,7 +256,6 @@ void Dump_RSPDisassemble(const char * p_file_name)
 	u8 * base;
 	u32 start = 0xa4000000;
 	u32 end = 0xa4002000;
-	use(end);
 
 	if (!Memory_GetInternalReadAddress(start, (void**)&base))
 	{
@@ -277,7 +276,7 @@ void Dump_RSPDisassemble(const char * p_file_name)
 		file_path[MAX_PATH-1] = '\0';
 	}
 
-	DBGConsole_Msg(0, "Disassembling from 0x%08x to 0x%08x ([C%s])", start, end, file_path);
+	DBGConsole_Msg(0, "Disassembling from 0x%08x to 0x%08x ([C%s])", start, end, file_path); use(end);
 
 	FILE * fp( fopen(file_path, "w") );
 	if (fp == NULL)
@@ -290,7 +289,7 @@ void Dump_RSPDisassemble(const char * p_file_name)
 
 	const OpCode * op_start( reinterpret_cast< const OpCode * >( base + 0x1000 ) );
 	const OpCode * op_end(   reinterpret_cast< const OpCode * >( base + 0x2000 ) );
-	
+
 	Dump_DisassembleRSPRange( fp, start + 0x1000, op_start, op_end );
 
 	fclose(fp);

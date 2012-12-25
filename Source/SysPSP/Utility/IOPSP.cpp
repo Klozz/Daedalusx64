@@ -77,7 +77,7 @@ namespace IO
 			if ( IsDirectory(p_path) )
 				return true;
 
-			// Make sure parent exists, 
+			// Make sure parent exists,
 			char	p_path_parent[ IO::Path::MAX_PATH_LEN+1 ];
 			strncpy( p_path_parent, p_path, IO::Path::MAX_PATH_LEN );
 			p_path_parent[IO::Path::MAX_PATH_LEN-1] = '\0';
@@ -195,8 +195,8 @@ namespace IO
 			return true;
 		}
 
-		
-		int DeleteRecursive(const char * p_path, const char * p_extension) 
+
+		int DeleteRecursive(const char * p_path, const char * p_extension)
 		{
 			SceUID fh;
 
@@ -213,15 +213,15 @@ namespace IO
 					sceIoGetstat( file, &stat );
 					if( (stat.st_mode & 0x1000) == 0x1000 )
 					{
-						if(strcmp(gDirEntry.Dirent.d_name, ".") && strcmp(gDirEntry.Dirent.d_name, "..")) 
+						if(strcmp(gDirEntry.Dirent.d_name, ".") && strcmp(gDirEntry.Dirent.d_name, ".."))
 						{
 							//printf("Found directory\n");
 						}
-					} 
-					else 
+					}
+					else
 					{
 						if (_strcmpi(FindExtension( file ), p_extension) == 0)
-						{ 
+						{
 							//DBGConsole_Msg(0, "Deleting [C%s]",file);
 							sceIoRemove( file );
 						}
@@ -237,31 +237,12 @@ namespace IO
 
 			return 0;
 		}
-
-		//*****************************************************************************
-		// (STRMNNRMN - Strip spaces from end of names)
-		//*****************************************************************************
-		char * Tidy(char * s)
-		{
-			if (s == NULL || *s == '\0')
-				return s;
-			
-			char * p = s + strlen(s);
-
-			p--;
-			while (p >= s && (*p == ' ' || *p == '\r' || *p == '\n'))
-			{
-				*p = 0;
-				p--;
-			}
-			return s;
-		}
 	}
 
 	bool	FindFileOpen( const char * path, FindHandleT * handle, FindDataT & data )
 	{
 		*handle = sceIoDopen( path );
-		if( *handle >= 0 ) 
+		if( *handle >= 0 )
 		{
 			// To support findfirstfile() API we must return the first result immediately
 			if( FindFileNext( *handle, data ) )

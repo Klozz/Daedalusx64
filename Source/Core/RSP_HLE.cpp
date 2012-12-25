@@ -180,7 +180,7 @@ void RSP_HLE_Finished()
 	if( status & SP_STATUS_INTR_BREAK )
 	{
 		Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_SP);
-		R4300_Interrupt_UpdateCause3();	
+		R4300_Interrupt_UpdateCause3();
 	}
 }
 
@@ -220,14 +220,14 @@ static EProcessResult RSP_HLE_Graphics()
 #else
 		gGraphicsPlugin->ProcessDList();
 #endif
-#ifdef DAEDALUS_BATCH_TEST_ENABLED 	 
-         CBatchTestEventHandler * handler( BatchTest_GetHandler() ); 	 
-         if( handler ) 	 
-                 handler->OnDisplayListComplete(); 	 
+#ifdef DAEDALUS_BATCH_TEST_ENABLED
+         CBatchTestEventHandler * handler( BatchTest_GetHandler() );
+         if( handler )
+                 handler->OnDisplayListComplete();
 #endif
 		return PR_COMPLETED;
-	}	  	 
-		return PR_NOT_STARTED; 	 
+	}
+		return PR_NOT_STARTED;
 }
 
 //*****************************************************************************
@@ -259,7 +259,7 @@ void jpg_uncompress(OSTask *);
 static EProcessResult RSP_HLE_Jpeg(OSTask * task)
 {
 	u32 sum = 0;
-	
+
 	if (task->t.ucode_size <= 0x1000)
 	{
 		for (u32 i=0; i<(task->t.ucode_size/2); i++)
@@ -326,7 +326,7 @@ void RSP_HLE_ProcessTask()
 	}
 
 	// Started and completed. No need to change cores. [synchronously]
-	if( result == PR_COMPLETED ) 
+	if( result == PR_COMPLETED )
 		RSP_HLE_Finished();
 	//else
 	// Not started (PR_NOT_STARTED)

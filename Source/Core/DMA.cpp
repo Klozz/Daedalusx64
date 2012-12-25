@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 bool gDMAUsed = false;
 //*****************************************************************************
-// 
+//
 //*****************************************************************************
 void DMA_SP_CopyFromRDRAM()
 {
@@ -57,7 +57,7 @@ void DMA_SP_CopyFromRDRAM()
 	if((spmem_address_reg & 0x1000) == 0)
 	{
 		memcpy_vfpu_BE(&g_pu8SpMemBase[(spmem_address_reg & 0xFFF)],
-					   &g_pu8RamBase[(rdram_address_reg & 0xFFFFFF)], splen); 
+					   &g_pu8RamBase[(rdram_address_reg & 0xFFFFFF)], splen);
 	}
 
 	//Clear the DMA Busy
@@ -101,7 +101,7 @@ void DMA_SI_CopyFromDRAM( )
 	u8 * p_src = g_pu8RamBase + mem;
 
 	DPF( DEBUG_MEMORY_PIF, "DRAM (0x%08x) -> PIF Transfer ", mem );
-	
+
 	u32* p_dst32=(u32*)p_dst;
 	u32* p_scr32=(u32*)p_src;
 
@@ -145,7 +145,7 @@ void DMA_SI_CopyToDRAM( )
 	//Skipping this IRQ fixes allows Body Harvest, Nightmare Creatures and Cruisn' USA to boot but make Animal crossing fail
 	//ToDo: Delay SI
 	//
-	if (g_ROM.GameHacks != BODY_HARVEST) 
+	if (g_ROM.GameHacks != BODY_HARVEST)
 		R4300_Interrupt_UpdateCause3();
 }
 
@@ -291,20 +291,20 @@ void DMA_PI_CopyToRDRAM()
 		RomBuffer::CopyToRam( g_pu8RamBase, mem_address, gRamSize, cart_address, pi_length_reg );
 
 		if (!gDMAUsed)
-		{ 
+		{
 #ifdef DAEDALUS_ENABLE_OS_HOOKS
 			// Note the rom is only scanned when the ROM jumps to the game boot address
 			// ToDO: try to reapply patches - certain roms load in more of the OS after a number of transfers ?
 			Patch_ApplyPatches();
-#endif			
+#endif
 			gDMAUsed = true;
-			
+
 			u32 addr = (g_ROM.cic_chip != CIC_6105) ? 0x80000318 : 0x800003F0;
 			Write32Bits(addr, gRamSize);
 
 			// For reference DK64 hack : This allows DK64 to work
 			// Note1: IMEM transfers are required! (We ignore IMEM transfers for speed, see DMA_SP_*)
-			// Note2: Make sure to change EEPROM to 4k too! Otherwise DK64 hangs after the intro. 
+			// Note2: Make sure to change EEPROM to 4k too! Otherwise DK64 hangs after the intro.
 			//Write32Bits(0x802FE1C0, 0xAD170014);
 		}
 	}

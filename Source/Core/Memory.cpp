@@ -61,7 +61,6 @@ static void Memory_InitTables();
 //*****************************************************************************
 u32 MemoryRegionSizes[NUM_MEM_BUFFERS] =
 {
-//	8*1024,				// Allocate 8k bytes - a bit excessive but some of the internal functions assume it's there! (Don't need this much really)?
 	0x04,				// This seems enough (Salvy)
 	MAXIMUM_MEM_SIZE,	// RD_RAM
 	0x2000,				// SP_MEM
@@ -70,13 +69,10 @@ u32 MemoryRegionSizes[NUM_MEM_BUFFERS] =
 
 	//1*1024*1024,		// RD_REG	(Don't need this much really)?
 	0x30,				// RD_REG0
-	//0x30,				// RD_REG1	(Unused)
-	//0x30,				// RD_REG2	(Unused)
 
 	0x20,				// SP_REG
 	0x08,				// SP_PC_REG
 	0x20,				// DPC_REG
-	//0x10,				// DPS_REG	(Unhandled)
 	0x10,				// MI_REG
 	0x38,				// VI_REG
 	0x18,				// AI_REG
@@ -252,7 +248,7 @@ void Memory_Reset()
 //*****************************************************************************
 void Memory_Cleanup()
 {
-	
+
 }
 
  //*****************************************************************************
@@ -276,7 +272,7 @@ static void Memory_Tlb_Hack(const void *p_rom_address)
 	   u32 start_addr = 0x7F000000 >> 18;
 	   u32 end_addr   = 0x7FFFFFFF >> 18;
 
-	   u8 *pRead = (u8*)(reinterpret_cast< u32 >( p_rom_address) + offset - (start_addr << 18));
+	   u8 *pRead = (u8*)(reinterpret_cast< u32 >(p_rom_address) + offset - (start_addr << 18));
 
 	   for (u32 i = start_addr; i <= end_addr; i++)
 	   {
@@ -290,7 +286,7 @@ static void Memory_Tlb_Hack(const void *p_rom_address)
 //*****************************************************************************
 //
 //*****************************************************************************
-void Memory_InitFunc(u32 start, u32 size, const void * ReadRegion, const void * WriteRegion, mReadFunction ReadFunc, mWriteFunction WriteFunc)
+static void Memory_InitFunc(u32 start, u32 size, const void * ReadRegion, const void * WriteRegion, mReadFunction ReadFunc, mWriteFunction WriteFunc)
 {
 	u32	start_addr = (start >> 18);
 	u32	end_addr   = ((start + size - 1) >> 18);
@@ -315,7 +311,7 @@ void Memory_InitFunc(u32 start, u32 size, const void * ReadRegion, const void * 
 			g_MemoryLookupTableWrite[start_addr|(0x8000>>2)].pWrite = (u8*)(reinterpret_cast< u32 >(WriteRegion) - (((start>>16)|0x8000) << 16));
 			g_MemoryLookupTableWrite[start_addr|(0xA000>>2)].pWrite = (u8*)(reinterpret_cast< u32 >(WriteRegion) - (((start>>16)|0xA000) << 16));
 		}
-		
+
 		start_addr++;
 	}
 }
@@ -357,7 +353,7 @@ void Memory_InitTables()
 		g_MemoryLookupTableWrite[i].WriteFunc	= WriteValueMapped;
 	}
 
-	
+
 	bool RomBaseKnown = RomBuffer::IsRomLoaded() && RomBuffer::IsRomAddressFixed();
 
 	// This returns NULL if Rom isn't loaded or Rom base isn't fixed
@@ -371,158 +367,158 @@ void Memory_InitTables()
 	// Init RDRAM
 	// By default we init with EPAK (8Mb)
 	Memory_InitFunc
-	( 
-		MEMORY_START_RDRAM, 
+	(
+		MEMORY_START_RDRAM,
 		MEMORY_SIZE_RDRAM_DEFAULT,
 		MEMORY_RDRAM,
 		MEMORY_RDRAM,
-		Read_8000_807F, 
-		WriteValue_8000_807F 
+		Read_8000_807F,
+		WriteValue_8000_807F
 	);
 
 	// Need to turn off the EPAK
 	if (ram_size != MEMORY_8_MEG)
 	{
 		Memory_InitFunc
-		( 
+		(
 			MEMORY_START_EXRDRAM,
-			MEMORY_SIZE_EXRDRAM, 
+			MEMORY_SIZE_EXRDRAM,
 			NULL,
 			NULL,
-			ReadInvalid, 
-			WriteValueInvalid 
+			ReadInvalid,
+			WriteValueInvalid
 		);
 	}
 
 	// RDRAM Reg
 	Memory_InitFunc
-	( 
-		MEMORY_START_RAMREGS0, 
-		MEMORY_SIZE_RAMREGS0, 
-		MEMORY_RAMREGS0,	
+	(
+		MEMORY_START_RAMREGS0,
+		MEMORY_SIZE_RAMREGS0,
 		MEMORY_RAMREGS0,
-		Read_83F0_83F0, 
-		WriteValue_83F0_83F0 
+		MEMORY_RAMREGS0,
+		Read_83F0_83F0,
+		WriteValue_83F0_83F0
 	);
 
 
 	// DMEM/IMEM
 	Memory_InitFunc
-	( 
-		MEMORY_START_SPMEM, 
-		MEMORY_SIZE_SPMEM, 
-		MEMORY_SPMEM, 
+	(
+		MEMORY_START_SPMEM,
+		MEMORY_SIZE_SPMEM,
 		MEMORY_SPMEM,
-		Read_8400_8400, 
+		MEMORY_SPMEM,
+		Read_8400_8400,
 		WriteValue_8400_8400
 	);
 
 	// SP Reg
 	Memory_InitFunc
-	( 
-		MEMORY_START_SPREG_1, 
+	(
+		MEMORY_START_SPREG_1,
 		MEMORY_SIZE_SPREG_1,
-		MEMORY_SPREG_1, 
+		MEMORY_SPREG_1,
 		NULL,
 		Read_8404_8404,
-		WriteValue_8404_8404 
+		WriteValue_8404_8404
 	);
 
 	// SP PC/OBOST
 	Memory_InitFunc
 	(
 		MEMORY_START_SPREG_2,
-		MEMORY_SIZE_SPREG_2, 
+		MEMORY_SIZE_SPREG_2,
 		MEMORY_SPREG_2,
 		MEMORY_SPREG_2,
 		Read_8408_8408,
-		WriteValue_8408_8408 
+		WriteValue_8408_8408
 	);
 	// DPC Reg
 	Memory_InitFunc
-	( 
+	(
 		MEMORY_START_DPC,
-		MEMORY_SIZE_DPC, 
+		MEMORY_SIZE_DPC,
 		MEMORY_DPC,
 		NULL,
-		Read_8410_841F, 
+		Read_8410_841F,
 		WriteValue_8410_841F
-	);	
+	);
 
 	// DPS Reg
 	Memory_InitFunc
-	( 
-		MEMORY_START_DPS, 
-		MEMORY_SIZE_DPS, 
+	(
+		MEMORY_START_DPS,
+		MEMORY_SIZE_DPS,
 		NULL,
 		NULL,
 		Read_8420_842F,
-		WriteValue_8420_842F 
-	);	
-	
+		WriteValue_8420_842F
+	);
+
 	// MI reg
 	Memory_InitFunc
 	(
 		MEMORY_START_MI,
-		MEMORY_SIZE_MI, 
-		MEMORY_MI, 
+		MEMORY_SIZE_MI,
+		MEMORY_MI,
 		NULL,
-		Read_8430_843F, 
+		Read_8430_843F,
 		WriteValue_8430_843F
-	);	
+	);
 
 	// VI Reg
 	Memory_InitFunc
-	( 
-		MEMORY_START_VI, 
-		MEMORY_SIZE_VI, 
+	(
+		MEMORY_START_VI,
+		MEMORY_SIZE_VI,
 		NULL,
 		NULL,
-		Read_8440_844F, 
+		Read_8440_844F,
 		WriteValue_8440_844F
 	);
 
 	// AI Reg
 	Memory_InitFunc
-	( 
-		MEMORY_START_AI, 
-		MEMORY_SIZE_AI, 
+	(
+		MEMORY_START_AI,
+		MEMORY_SIZE_AI,
 		MEMORY_AI,
 		NULL,
-		Read_8450_845F, 
-		WriteValue_8450_845F 
+		Read_8450_845F,
+		WriteValue_8450_845F
 	);
 
 	// PI Reg
 	Memory_InitFunc
-	( 
+	(
 		MEMORY_START_PI,
 		MEMORY_SIZE_PI,
-		MEMORY_PI, 
+		MEMORY_PI,
 		NULL,
 		Read_8460_846F,
-		WriteValue_8460_846F 
+		WriteValue_8460_846F
 	);
 
 	// RI Reg
 	Memory_InitFunc
 	(
-		MEMORY_START_RI, 
+		MEMORY_START_RI,
 		MEMORY_SIZE_RI,
-		MEMORY_RI, 
 		MEMORY_RI,
-		Read_8470_847F, 
+		MEMORY_RI,
+		Read_8470_847F,
 		WriteValue_8470_847F
 	);
 
 	// SI Reg
 	Memory_InitFunc
-	( 
-		MEMORY_START_SI, 
-		MEMORY_SIZE_SI, 
+	(
+		MEMORY_START_SI,
+		MEMORY_SIZE_SI,
 		MEMORY_SI,
 		NULL,
-		Read_8480_848F, 
+		Read_8480_848F,
 		WriteValue_8480_848F
 	);
 
@@ -531,34 +527,34 @@ void Memory_InitTables()
 
 	// Cartridge Domain 2 Address 1 (SRAM)
 	/*Memory_InitFunc
-	( 
-		MEMORY_START_C2A1, 
-		MEMORY_SIZE_C2A1, 
+	(
+		MEMORY_START_C2A1,
+		MEMORY_SIZE_C2A1,
 		NULL,
 		NULL,
-		ReadInvalid, 
+		ReadInvalid,
 		WriteValueInvalid
 	);*/
-	
+
 	// Cartridge Domain 1 Address 1 (SRAM)
 	/*Memory_InitFunc
-	( 
-		MEMORY_START_C1A1, 
+	(
+		MEMORY_START_C1A1,
 		MEMORY_SIZE_C1A1,
 		NULL,
 		NULL,
-		ReadInvalid, 
+		ReadInvalid,
 		WriteValueInvalid
 	);*/
 
 	// GIO reg (basically in the same segment as C1A1..)
 	/*Memory_InitFunc
-	( 
+	(
 		MEMORY_START_GIO,
 		MEMORY_SIZE_GIO_REG,
 		NULL,
 		NULL,
-		ReadInvalid, 
+		ReadInvalid,
 		WriteValueInvalid
 	);
 	*/
@@ -566,23 +562,23 @@ void Memory_InitTables()
 	// PIF Reg
 	Memory_InitFunc
 	(
-		MEMORY_START_PIF, 
-		MEMORY_SIZE_PIF, 
+		MEMORY_START_PIF,
+		MEMORY_SIZE_PIF,
 		NULL,
 		NULL,
-		Read_9FC0_9FCF, 
+		Read_9FC0_9FCF,
 		WriteValue_9FC0_9FCF
 	);
 
-	// Cartridge Domain 2 Address 2 (FlashRam) 
+	// Cartridge Domain 2 Address 2 (FlashRam)
 	// ToDo : FlashRam Read is at 0x800, and Flash Ram Write at 0x801
 	Memory_InitFunc
-	( 
-		MEMORY_START_C2A2, 
+	(
+		MEMORY_START_C2A2,
 		MEMORY_SIZE_C2A2,
 		NULL,
 		NULL,
-		ReadFlashRam,   
+		ReadFlashRam,
 		WriteValue_FlashRam
 	);
 
@@ -591,16 +587,16 @@ void Memory_InitTables()
 	// Nb: We can do a hack if ROM address isn't fixed by allocating the first 8K bytes of the ROM, but yea I don't think is worth..
 	Memory_InitFunc
 	(
-		MEMORY_START_ROM_IMAGE, 
-		rom_size, 
+		MEMORY_START_ROM_IMAGE,
+		rom_size,
 		rom_address,
 		NULL,
-		ReadROM,	 
+		ReadROM,
 		WriteValue_ROM
 	);
 
 	// Hack the TLB Map per game
-	if (g_ROM.GameHacks == GOLDEN_EYE) 
+	if (g_ROM.GameHacks == GOLDEN_EYE)
 	{
 		Memory_Tlb_Hack( rom_address );
 	}
@@ -672,19 +668,19 @@ void MemoryUpdateSPStatus( u32 flags )
 		stop_rsp = true;
 	}
 
-	if (flags & SP_SET_INTR)	// Shouldn't ever set this?		
-	{ 
-		Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_SP); 
+	if (flags & SP_SET_INTR)	// Shouldn't ever set this?
+	{
+		Memory_MI_SetRegisterBits(MI_INTR_REG, MI_INTR_SP);
 		R4300_Interrupt_UpdateCause3();
-	}		
-	else if (flags & SP_CLR_INTR)			
-	{ 
+	}
+	else if (flags & SP_CLR_INTR)
+	{
 		Memory_MI_ClrRegisterBits(MI_INTR_REG, MI_INTR_SP);
 		R4300_Interrupt_UpdateCause3();
 	}
 
 	clr_bits |= (flags & SP_CLR_BROKE) >> 1;
-	clr_bits |= ( flags & SP_CLR_SSTEP);
+	clr_bits |= (flags & SP_CLR_SSTEP);
 	clr_bits |= (flags & SP_CLR_INTR_BREAK) >> 1;
 	clr_bits |= (flags & SP_CLR_SIG0) >> 2;
 	clr_bits |= (flags & SP_CLR_SIG1) >> 3;
@@ -771,7 +767,7 @@ void MemoryUpdateDP( u32 flags )
 
 	DBGConsole_Msg( 0, "Modified DPC_STATUS_REG - now %08x", dpc_status );
 #endif
-	
+
 	// Write back the value
 	Memory_DPC_SetRegister(DPC_STATUS_REG, dpc_status);
 
@@ -823,9 +819,9 @@ void MemoryModeRegMI( u32 value )
 	u32 mi_mode_reg = Memory_MI_GetRegister(MI_MODE_REG);
 
 	// ToDO : Avoid branching
-	if(value & MI_SET_RDRAM) 
+	if(value & MI_SET_RDRAM)
 		mi_mode_reg |= MI_MODE_RDRAM;
-	else if(value & MI_CLR_RDRAM) 
+	else if(value & MI_CLR_RDRAM)
 		mi_mode_reg &= ~MI_MODE_RDRAM;
 
 	if(value & MI_SET_INIT)
@@ -833,17 +829,17 @@ void MemoryModeRegMI( u32 value )
     else if(value & MI_CLR_INIT)
 		mi_mode_reg &= ~MI_MODE_INIT;
 
-	if(value & MI_SET_EBUS) 
+	if(value & MI_SET_EBUS)
 		mi_mode_reg |= MI_MODE_EBUS;
-    else if(value & MI_CLR_EBUS) 
+    else if(value & MI_CLR_EBUS)
 		mi_mode_reg &= ~MI_MODE_EBUS;
 
 	Memory_MI_SetRegister( MI_MODE_REG, mi_mode_reg );
 
 	if (value & MI_CLR_DP_INTR)
-	{ 
-		Memory_MI_ClrRegisterBits(MI_INTR_REG, MI_INTR_DP); 
-		R4300_Interrupt_UpdateCause3(); 
+	{
+		Memory_MI_ClrRegisterBits(MI_INTR_REG, MI_INTR_DP);
+		R4300_Interrupt_UpdateCause3();
 	}
 }
 
@@ -900,7 +896,7 @@ void MemoryUpdatePIF()
 	u8 command = pPIFRam[ 0x3F ^ U8_TWIDDLE];
 	if( command == 0x08 )
 	{
-		pPIFRam[ 0x3F ^ U8_TWIDDLE ] = 0x00; 
+		pPIFRam[ 0x3F ^ U8_TWIDDLE ] = 0x00;
 
 		DBGConsole_Msg( 0, "[GSI Interrupt control value: 0x%02x", command );
 		Memory_SI_SetRegisterBits(SI_STATUS_REG, SI_STATUS_INTERRUPT);

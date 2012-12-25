@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Core/Interrupt.h"
 #include "Core/Memory.h"
 #include "Core/ROM.h"
-#include "Core/CPU.h" 	 
+#include "Core/CPU.h"
 #include "Core/RSP_HLE.h"
 
 #include "ConfigOptions.h"
@@ -44,7 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 /* This sets default frequency what is used if rom doesn't want to change it.
-   Probably only game that needs this is Zelda: Ocarina Of Time Master Quest 
+   Probably only game that needs this is Zelda: Ocarina Of Time Master Quest
    *NOTICE* We should try to find out why Demos' frequencies are always wrong
    They tend to rely on a default frequency, apparently, never the same one ;)*/
 
@@ -176,34 +176,34 @@ u32		CAudioPluginPsp::ReadLength()
 struct SHLEStartJob : public SJob
 {
 	SHLEStartJob()
-	{ 	 
-		 InitJob = NULL; 	 
-		 DoJob = &DoHLEStartStatic; 	 
-		 FiniJob = &DoHLEFinishedStatic; 	 
-	} 	 
+	{
+		 InitJob = NULL;
+		 DoJob = &DoHLEStartStatic;
+		 FiniJob = &DoHLEFinishedStatic;
+	}
 
-	static int DoHLEStartStatic( SJob * arg ) 	 
-	{ 	 
-		 SHLEStartJob *  job( static_cast< SHLEStartJob * >( arg ) ); 	 
-		 return job->DoHLEStart(); 	 
-	} 	 
+	static int DoHLEStartStatic( SJob * arg )
+	{
+		 SHLEStartJob *  job( static_cast< SHLEStartJob * >( arg ) );
+		 return job->DoHLEStart();
+	}
 
-	static int DoHLEFinishedStatic( SJob * arg ) 	 
-	{ 	 
-		 SHLEStartJob *  job( static_cast< SHLEStartJob * >( arg ) ); 	 
-		 return job->DoHLEFinish(); 	 
-	} 	 
+	static int DoHLEFinishedStatic( SJob * arg )
+	{
+		 SHLEStartJob *  job( static_cast< SHLEStartJob * >( arg ) );
+		 return job->DoHLEFinish();
+	}
 
-	int DoHLEStart() 	 
-	{ 	 
-		 Audio_Ucode(); 	 
-		 return 0; 	 
-	} 	 
+	int DoHLEStart()
+	{
+		 Audio_Ucode();
+		 return 0;
+	}
 
-	int DoHLEFinish() 	 
-	{ 	 
-		 CPU_AddEvent(RSP_AUDIO_INTR_CYCLES, CPU_EVENT_AUDIO); 	 
-		 return 0; 	 
+	int DoHLEFinish()
+	{
+		 CPU_AddEvent(RSP_AUDIO_INTR_CYCLES, CPU_EVENT_AUDIO);
+		 return 0;
 	}
 };
 //*****************************************************************************

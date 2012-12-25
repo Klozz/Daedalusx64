@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility/Stream.h"
 #include "Utility/IO.h"
 
+#include <algorithm>
+
 //*************************************************************************************
 //
 //*************************************************************************************
@@ -88,7 +90,7 @@ ROMFile::~ROMFile()
 bool ROMFile::LoadData( u32 bytes_to_read, u8 *p_bytes, COutputStream & messages )
 {
 	if( !LoadRawData( bytes_to_read, p_bytes, messages ) )
-	{	
+	{
 		messages << "Unable to get rom info from '" << mFilename << "'";
 		return false;
 	}
@@ -149,7 +151,6 @@ void	ROMFile::CorrectSwap( u8 * p_bytes, u32 length )
 	}
 }
 
-#include <algorithm>
 //*****************************************************************************
 // Swap bytes from 37 80 40 12
 // to              40 12 37 80

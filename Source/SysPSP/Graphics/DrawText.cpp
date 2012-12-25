@@ -177,7 +177,7 @@ namespace DrawTextUtilities
 		if(gGlobalPreferences.Language != 0)
 		{
 			u32 i, j;
-			for (i = 0, j = 0; i < length; i++) 
+			for (i = 0, j = 0; i < length; i++)
 			{
 				match = true;
 				if (p_str[i] == '\n')
@@ -194,7 +194,7 @@ namespace DrawTextUtilities
 			return;
 		}
 
-		// Auto-linebreaking 
+		// Auto-linebreaking
 		const char *	p_line_str( p_str );
 		const char *	p_str_end( p_str + length );
 

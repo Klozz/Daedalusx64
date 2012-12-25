@@ -27,7 +27,7 @@ static void * ReadInvalid( u32 address )
 
 	if(address == 0xa5000508)
 	{
-		DBGConsole_Msg(0, "Reading noise (0x%08x) - sizing memory?", address);	
+		DBGConsole_Msg(0, "Reading noise (0x%08x) - sizing memory?", address);
 		*(u32*)(g_pMemoryBuffers[MEM_UNUSED]) = ~0;
 	}
 	else
@@ -57,50 +57,11 @@ static void * ReadMapped( u32 address )
 	}
 	else
 	{
-		// should be invalid
 		R4300_Exception_TLB(address, EXC_RMISS, missing ? UT_VEC : E_VEC);
 		return g_pMemoryBuffers[MEM_UNUSED];
-	}	
+	}
 }
 
-//*****************************************************************************
-//
-//*****************************************************************************
-
-// Main memory
-/*static void *Read_RAM_4Mb_8000_803F( u32 address )
-{
-	return g_pu8RamBase + (address & 0x003FFFFF);
-}
-
-static void *Read_RAM_8Mb_8000_807F( u32 address )
-{
-	return g_pu8RamBase + (address & 0x007FFFFF);
-}*/
-
-//*****************************************************************************
-//
-//*****************************************************************************
-/*static void *Read_RAM_4Mb_8000_803F( u32 address )
-{
-	return g_pu8RamBase_8000 + address;
-}
-
-static void *Read_RAM_8Mb_8000_807F( u32 address )
-{
-	return g_pu8RamBase_8000 + address;
-}
-
-static void *Read_RAM_4Mb_A000_A03F( u32 address )
-{
-	return g_pu8RamBase_A000 + address;
-}
-
-static void *Read_RAM_8Mb_A000_A07F( u32 address )
-{
-	return g_pu8RamBase_A000 + address;
-}
-*/
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -172,7 +133,7 @@ static void *Read_8420_842F( u32 address )
 // 0x0430 0000 to 0x043F FFFF MIPS Interface (MI) Registers
 //*****************************************************************************
 static void *Read_8430_843F( u32 address )
-{	
+{
 	DPF( DEBUG_MEMORY_MI, "Reading from MI Registers: 0x%08x", address );
 	return (u8 *)g_pMemoryBuffers[MEM_MI_REG] + (address & 0xFF);
 }
@@ -257,10 +218,10 @@ static void * ReadFlashRam( u32 address )
 static void * ReadROM( u32 address )
 {
 	if (g_RomWritten)
-    {
-        g_RomWritten = false;
+	{
+		g_RomWritten = false;
 		return (u8 *)&g_pWriteRom[0];
-    }
+	}
 	return RomBuffer::GetAddressRaw( (address & 0x03FFFFFF) );
 }
 

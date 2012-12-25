@@ -23,14 +23,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Core/Memory.h"
 
 #include "Debug/DBGConsole.h"
-#include "Math/Math.h"	// pspFastRand()
 
 // Limit cache ucode entries to 6
-// This is done for performance reasons and for since is known that no game can set more than this amount
-//
-// Increase this number to cache more ucode entries
-// At the expense of more time required each pass
-//
+// In theory we should never reach this max
 #define MAX_UCODE_CACHE_ENTRIES 6
 
 
@@ -49,14 +44,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //F3FLP.Rej: Like F3DLX.Rej. Vertex cache is 80
 //L3DEX: Line processing, Vertex cache is 32.
 
-//
-// Used for custom ucodes' array
-//
-struct MicrocodeData
-{
-	u32				ucode;
-	u32				code_hash;
-};
 
 //
 // Used to keep track of used ucode entries
@@ -64,36 +51,12 @@ struct MicrocodeData
 struct UcodeInfo
 {
 	u32	ucode;
-	u32	code_base;
-	u32	data_base;
+	u32	index;
 
-	bool used;
+	bool set;
 };
 
-UcodeInfo used[ MAX_UCODE_CACHE_ENTRIES ];
-//*****************************************************************************
-//
-//*****************************************************************************
-const MicrocodeData gMicrocodeData[] = 
-{
-	//
-	//	The only games that need defining are custom ucodes and incorrectly detected ones
-	//	If you believe a title should be here post the line for it from ucodes.txt @ http://www.daedalusx64.com
-	//	Note - Games are in alphabetical order by game title
-	//
-	{ GBI_CONKER,	0x60256efc	},// "RSP Gfx ucode F3DEXBG.NoN fifo 2.08  Yoshitaka Yasumoto 1999 Nintendo.", "Conker's Bad Fur Day"}, 
-	{ GBI_LL,		0x6d8bec3e	},//"", "Dark Rift"},
-	{ GBI_DKR,		0x0c10181a	},//"", "Diddy Kong Racing (v1.0)"}, 
-	{ GBI_DKR,		0x713311dc	},//"", "Diddy Kong Racing (v1.1)"}, 
-	{ GBI_GE,		0x23f92542	},//"RSP SW Version: 2.0G, 09-30-96", "GoldenEye 007"}, 
-	{ GBI_DKR,		0x169dcc9d	},//"", "Jet Force Gemini"},														
-	{ GBI_LL,		0x26da8a4c	},//"", "Last Legion UX"},							
-	{ GBI_PD,		0xcac47dc4	},//"", "Perfect Dark (v1.1)"}, 
-	{ GBI_SE,		0x6cbb521d	},//"RSP SW Version: 2.0D, 04-01-96", "Star Wars - Shadows of the Empire (v1.0)"}, 
-	{ GBI_LL,		0xdd560323	},//"", "Toukon Road - Brave Spirits"},											
-	{ GBI_WR,		0x64cc729d	},//"RSP SW Version: 2.0D, 04-01-96", "Wave Race 64"},
-};
-
+static UcodeInfo gUcodeInfo[ MAX_UCODE_CACHE_ENTRIES ];
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -134,6 +97,9 @@ static bool	GBIMicrocode_DetectVersionString( u32 data_base, u32 data_size, char
 //*****************************************************************************
 static u32 GBIMicrocode_MicrocodeHash(u32 code_base, u32 code_size)
 {
+	// Needed for Conker's Bad Fur Day
+	if( code_size == 0 ) code_size = 0x1000;
+
 	const u8 * ram( g_pu8RamBase );
 
 	u32 hash = 0;
@@ -149,18 +115,59 @@ static u32 GBIMicrocode_MicrocodeHash(u32 code_base, u32 code_size)
 //*****************************************************************************
 void GBIMicrocode_Reset()
 {
-	memset(&used, 0, sizeof(used));
+	memset(&gUcodeInfo, 0, sizeof(gUcodeInfo));
 }
 
 //*****************************************************************************
 //
 //*****************************************************************************
-static void GBIMicrocode_Cache( u32 index, u32 code_base, u32 data_base, u32 ucode_version)
+static bool GBIMicrocode_Custom( u32 code_hash, u32 &ucode_version)
 {
-	used[ index ].code_base = code_base;
-	used[ index ].data_base = data_base;
-	used[ index ].ucode 	= ucode_version;
-	used[ index ].used 		= true;
+
+	//
+	//	The only games that need defining are custom ucodes
+	//	If you believe a title should be here post the line for it from ucodes.txt @ http://www.daedalusx64.com
+	//	Note - Games are in alphabetical order by game title
+	//
+	
+	switch( code_hash )
+	{
+	case 0x60256efc:		// "RSP Gfx ucode F3DEXBG.NoN fifo 2.08  Yoshitaka Yasumoto 1999 Nintendo.", "Conker's Bad Fur Day"
+		ucode_version = GBI_CONKER;
+		return true;
+
+	case 0x6d8bec3e:		//"", "Dark Rift"
+	case 0x26da8a4c:		//"", "Last Legion UX"
+	case 0xdd560323:		//"", "Toukon Road - Brave Spirits"
+		ucode_version = GBI_LL;
+		return true;
+
+	case 0x0c10181a:		//"", "Diddy Kong Racing (v1.0)"
+	case 0x713311dc:		//"", "Diddy Kong Racing (v1.1)"
+	case 0x169dcc9d:		//"", "Jet Force Gemini"
+		ucode_version = GBI_DKR;
+		return true;
+
+	case 0x23f92542:		//"RSP SW Version: 2.0G, 09-30-96", "GoldenEye 007"
+		ucode_version = GBI_GE;
+		return true;
+
+	case 0xcac47dc4:		//"", "Perfect Dark (v1.1)"
+		ucode_version = GBI_PD;
+		return true;
+
+	case 0x6cbb521d:		//"RSP SW Version: 2.0D, 04-01-96", "Star Wars - Shadows of the Empire (v1.0)
+		ucode_version = GBI_SE;
+		return true;
+
+	case 0x64cc729d:		//"RSP SW Version: 2.0D, 04-01-96", "Wave Race 64"
+		ucode_version = GBI_WR;
+		return true;
+
+	default:
+		return false;
+	}
+
 }
 
 //*****************************************************************************
@@ -168,40 +175,23 @@ static void GBIMicrocode_Cache( u32 index, u32 code_base, u32 data_base, u32 uco
 //*****************************************************************************
 u32	GBIMicrocode_DetectVersion( u32 code_base, u32 code_size, u32 data_base, u32 data_size)
 {
-
-	u32 index;
-
-	// Needed for Conker's Bad Fur Day
-	if( code_size == 0 ) code_size = 0x1000;
-
-	DAEDALUS_ASSERT( code_base, "Warning : Last Ucode might be ignored!" );
+	u32 i;
+	u32 idx( code_base + data_base ); // I think only checking code_base should be enough..
+	//
 
 	// Cheap way to cache ucodes, don't check for strings (too slow!) but check last used ucode entries which is alot faster than string comparison.
-	// This only needed for GBI1/SDEX1 ucodes that use LoadUcode, else we only check when t.ucode changes, which most of the time only happens once :)
+	// This only needed for GBI1/2/SDEX ucodes that use LoadUcode, else we only check when code_base changes, which usually never happens
 	//
-	for( index = 0; index < MAX_UCODE_CACHE_ENTRIES; index++ )
+	for( i = 0; i < MAX_UCODE_CACHE_ENTRIES; i++ )
 	{
-		if( used[ index ].used == false )	
+		const UcodeInfo &used( gUcodeInfo[ i ] );
+
+		// If this returns false, it means this entry is free to use
+		if( used.set == false )	
 			break;
 			
-		// Check if the microcode is the same to the last used ucodes (We cache up to 6 entries)
-		//
-		if( used[ index ].code_base == code_base && used[ index ].data_base == data_base )
-		{
-			return used[ index ].ucode;
-		}
-	}
-
-	//
-	// If the max of ucode entries is reached, spread it randomly
-	// Otherwise we'll keep overriding the last entry
-	// 
-	if( index >= MAX_UCODE_CACHE_ENTRIES )
-	{
-		DBGConsole_Msg(0, "Warning : Reached max of ucode entries!");
-
-		index = pspFastRand()%MAX_UCODE_CACHE_ENTRIES;
-		DBGConsole_Msg(0, "Spreading entry to (%d)",index );
+		if( used.index == idx )
+			return used.ucode;
 	}
 
 	//
@@ -210,67 +200,54 @@ u32	GBIMicrocode_DetectVersion( u32 code_base, u32 code_size, u32 data_base, u32
 	char str[256] = "";
 	GBIMicrocode_DetectVersionString( data_base, data_size, str, 256 );
 
-	// It wasn't the same as the last time around, we'll hash it and check the array. 
-	// Don't bother checking for matches when ucode was found in array
-	// This only used for custom ucodes
+	// It wasn't the same as the last time around, we'll hash it and check if is a custom ucode. 
 	//
 	u32 code_hash( GBIMicrocode_MicrocodeHash( code_base, code_size ) );
+	u32 ucode_version( GBI_0 ); // default ucode (Fast3D)
 
-	for ( u32 i = 0; i < ARRAYSIZE(gMicrocodeData); i++ )
+	bool custom_ucode( GBIMicrocode_Custom( code_hash, ucode_version ) );
+	if( custom_ucode == false )
 	{
-		if ( code_hash == gMicrocodeData[i].code_hash )
-		{
-			//
-			// Retain used ucode info which will be cached
-			//
-			GBIMicrocode_Cache( index, code_base, data_base, gMicrocodeData[ i ].ucode);
+		//
+		// If it wasn't a custom ucode
+		// See if we can identify it by string, if no match was found
+		//
+		const char  *ucodes[] = { "F3", "L3", "S2DEX" };
+		char 		*match = 0;
 
-			DBGConsole_Msg(0, "Ucode has been Detected in Array :[M\"%s\", Ucode %d]", str, gMicrocodeData[ i ].ucode);
-			return gMicrocodeData[ i ].ucode;
+		for(u32 j = 0; j<3;j++)
+		{
+			if( (match = strstr(str, ucodes[j])) )
+				break;
 		}
-	}
-	//
-	// If it wasn't found in the array
-	// See if we can identify it by string, if no match was found. Set default ucode (Fast3D)
-	//
-	const char  *ucodes[] = { "F3", "L3", "S2DEX" };
-	char 		*match = 0;
-	u32 		ucode_version = 0;
 
-	for(u32 j = 0; j<3;j++)
-	{
-		if( (match = strstr(str, ucodes[j])) )
-			break;
-	}
-
-	if( match )
-	{
-		if( strstr(match, "fifo") || strstr(match, "xbus") )
+		if( match )
 		{
-			if( !strncmp(match, "S2DEX", 5) )
-				ucode_version = GBI_2_S2DEX;
+			if( strstr(match, "fifo") || strstr(match, "xbus") )
+			{
+				if( !strncmp(match, "S2DEX", 5) )
+					ucode_version = GBI_2_S2DEX;
+				else
+					ucode_version = GBI_2;	
+			}
 			else
-				ucode_version = GBI_2;	
+			{
+				if( !strncmp(match, "S2DEX", 5) )
+					ucode_version = GBI_1_S2DEX;
+				else
+					ucode_version = GBI_1;	
+			}
 		}
-		else
-		{
-			if( !strncmp(match, "S2DEX", 5) )
-				ucode_version = GBI_1_S2DEX;
-			else
-				ucode_version = GBI_1;	
-		}
-	}
-	else
-	{
-		ucode_version = GBI_0;
 	}
 
 	//
 	// Retain used ucode info which will be cached
 	//
-	GBIMicrocode_Cache( index, code_base, data_base, ucode_version);
+	gUcodeInfo[ i ].index = idx;
+	gUcodeInfo[ i ].ucode = ucode_version;
+	gUcodeInfo[ i ].set = true;
 
-	DBGConsole_Msg(0,"Detected Ucode is: [M Ucode %d, 0x%08x, \"%s\", \"%s\"]",ucode_version, code_hash, str, g_ROM.settings.GameName.c_str() );
+	DBGConsole_Msg(0,"Detected %s Ucode is: [M Ucode %d, 0x%08x, \"%s\", \"%s\"]",custom_ucode ? "Custom" :"", ucode_version, code_hash, str, g_ROM.settings.GameName.c_str() );
 // This is no longer needed as we now have an auto ucode detector, I'll leave it as reference ~Salvy
 //
 /*

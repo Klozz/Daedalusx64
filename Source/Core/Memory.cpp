@@ -95,11 +95,8 @@ u32			gTLBWriteHit( 0 );
 #endif
 
 // ROM write support
-u32	  g_pWriteRom[2];
+u32	  g_pWriteRom;
 bool  g_RomWritten;
-// Ram base, offset by 0x80000000 and 0xa0000000
-//u8 * g_pu8RamBase_8000 = NULL;
-//u8 * g_pu8RamBase_A000 = NULL;
 
 // Flash RAM Support
 extern u32 FlashStatus[2];
@@ -110,8 +107,10 @@ void Flash_DoCommand(u32);
 //*****************************************************************************
 #include "Memory_Read.inl"
 #include "Memory_WriteValue.inl"
-#include "Memory_ReadInternal.inl"
 
+#ifndef DAEDALUS_SILENT
+#include "Memory_ReadInternal.inl"
+#endif
 
 //*****************************************************************************
 //
@@ -534,18 +533,6 @@ void Memory_InitTables()
 		WriteValueInvalid
 	);*/
 
-	// GIO reg (basically in the same segment as C1A1..)
-	/*Memory_InitFunc
-	(
-		MEMORY_START_GIO,
-		MEMORY_SIZE_GIO_REG,
-		NULL,
-		NULL,
-		ReadInvalid,
-		WriteValueInvalid
-	);
-	*/
-
 	// PIF Reg
 	Memory_InitFunc
 	(
@@ -558,7 +545,8 @@ void Memory_InitTables()
 	);
 
 	// Cartridge Domain 2 Address 2 (FlashRam)
-	// ToDo : FlashRam Read is at 0x800, and Flash Ram Write at 0x801
+	// FlashRam Read is at 0x800, and FlashRam Write at 0x801
+	// BUT since we shift off the irrelevant bits, we can't do that, so is handled in the functions itself
 	Memory_InitFunc
 	(
 		MEMORY_START_C2A2,

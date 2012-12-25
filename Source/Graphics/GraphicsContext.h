@@ -50,6 +50,7 @@ public:
 #ifdef DAEDALUS_PSP
 	virtual void SwitchToChosenDisplay() = 0;
 	virtual void SwitchToLcdDisplay() = 0;
+	virtual void StoreSaveScreenData() = 0;
 #endif
 
 	virtual void ClearAllSurfaces() = 0;

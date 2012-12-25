@@ -271,6 +271,7 @@ static int PanicThread( SceSize args, void * argp )
 				count = 0;
 				CGraphicsContext::Get()->ClearAllSurfaces();
 				CPU_Halt("Panic");
+				ThreadSleepMs(2000);
 			}
 		}
 		else count = 0;
@@ -588,7 +589,7 @@ static void DisplayRomsAndChoose(bool show_splash)
 
 	CDrawText::Destroy();
 }
-
+#include "Utility/Translate.h"
 //*************************************************************************************
 // This is our main loop
 //*************************************************************************************
@@ -618,7 +619,8 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 #endif
-
+		printf("woot\n");
+		//Translate_Init();
 		bool show_splash = true;
 		for(;;)
 		{

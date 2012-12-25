@@ -30,6 +30,7 @@
 #include "Debug/DBGConsole.h"
 #include "Debug/Dump.h"
 
+#include "Utility/VolatileMem.h"
 #include "Utility/Profiler.h"
 #include "Utility/Preferences.h"
 #include "Utility/IO.h"
@@ -62,7 +63,6 @@ static u32 SCR_MODE	  = GU_PSM_5650;
 #define LACED_SIZE (BUF_WIDTH * LACED_HEIGHT * PIXEL_SIZE)
 
 //Get Dlist memory from malloc
-extern void* malloc_volatile(size_t size);
 static u32* list[2];
 
 //static u32 __attribute__((aligned(16))) list[2][262144];	//Some games uses huge amount here like Star Soldier - Vanishing Earth
@@ -72,6 +72,7 @@ static u32 __attribute__((aligned(16))) ilist[256];
 u32 listNum = 0;
 extern ViewportInfo	mView;
 extern bool g32bitColorMode;
+extern bool gTakeScreenshotSS;
 //////////////////////////////////////////////
 //bool CGraphicsContext::CleanScene = false;
 //////////////////////////////////////////////
@@ -113,6 +114,7 @@ public:
 
 	void				SwitchToChosenDisplay();
 	void				SwitchToLcdDisplay();
+	void				StoreSaveScreenData();
 
 	void				ClearAllSurfaces();
 
@@ -377,7 +379,18 @@ bool IGraphicsContext::UpdateFrame( bool wait_for_vbl )
 	{
 		mDumpNextScreen--;
 		if (!mDumpNextScreen)
-			DumpScreenShot();
+		{			
+			if(gTakeScreenshotSS)	// We are taking a screenshot for savestate
+			{
+				gTakeScreenshotSS = false;
+				StoreSaveScreenData();
+				
+			}
+			else
+			{
+				DumpScreenShot();
+			}
+		}
 	}
 
 	mpCurrentBackBuffer = p_back;
@@ -604,6 +617,117 @@ void IGraphicsContext::DumpScreenShot()
 	s32		display_y( (frame_height - display_height)/2 );
 
 	SaveScreenshot( unique_filename, display_x, display_y, display_width, display_height );
+}
+
+//*****************************************************************************
+//
+//*****************************************************************************
+void IGraphicsContext::StoreSaveScreenData()
+{
+	s32 bufferwidth;
+	s32 pixelformat;
+	s32 unknown = 0;
+	
+	void * buffer;
+	char pngbuffer[128*1024];
+	char pngfile[ MAX_PATH ];
+	extern std::string	gSaveStateFilename;
+
+	sprintf( pngfile,"%s.png", gSaveStateFilename.c_str() );	//Add .png to filename
+	
+	u32		display_width = 0;
+	u32		display_height= 0;
+
+	u32		frame_width = 480;
+	u32		frame_height= 272;
+
+	// Not supported yet for tv out
+	if ( PSP_TV_CABLE > 0 )	
+	{
+		//TODO
+		//frame_width = 720;
+		//frame_height=  480;
+		return;
+	}
+
+	ViewportType( &display_width, &display_height );
+
+	DAEDALUS_ASSERT( display_width != 0 && display_height != 0, "Unhandled viewport type" );
+
+	s32	x( (frame_width - display_width)/2 );
+	s32	y( (frame_height - display_height)/2 );
+
+	sceDisplayGetFrameBuf( &buffer, &bufferwidth, &pixelformat, unknown );
+
+	ETextureFormat		texture_format;
+	u32	bpp;
+	u32 pitch;
+
+	switch( pixelformat )
+	{
+	case PSP_DISPLAY_PIXEL_FORMAT_565:
+		{
+			texture_format = TexFmt_5650;
+			bpp = 2;
+			pitch = bufferwidth * bpp;
+			buffer = reinterpret_cast< u8 * >( buffer ) + (y * pitch) + (x * bpp);
+
+			//copy and reduce data to 1/4
+			for(u32 ys=0; ys<display_height; ys +=2)
+			{
+				for(u32 xs=0; xs<display_width; xs +=2)
+				{
+					u32 pix = *(u16*)((u32)buffer + ys * pitch + xs * bpp);
+					*(u16*)((u32)pngbuffer + (ys>>1) * (display_width>>1) * bpp + (xs>>1) * bpp) = pix;
+				}
+			}
+			display_width = display_width >> 1;
+			display_height = display_height >> 1;
+			pitch = display_width * bpp;
+		}
+		break;
+	case PSP_DISPLAY_PIXEL_FORMAT_5551:
+		texture_format = TexFmt_5551;
+		bpp = 2;
+		pitch = bufferwidth * bpp;
+		buffer = reinterpret_cast< u8 * >( buffer ) + (y * pitch) + (x * bpp);
+		break;
+	case PSP_DISPLAY_PIXEL_FORMAT_4444:
+		texture_format = TexFmt_4444;
+		bpp = 2;
+		pitch = bufferwidth * bpp;
+		buffer = reinterpret_cast< u8 * >( buffer ) + (y * pitch) + (x * bpp);
+		break;
+	case PSP_DISPLAY_PIXEL_FORMAT_8888:
+		{
+			texture_format = TexFmt_8888;
+			bpp = 4;
+			pitch = bufferwidth * bpp;
+			buffer = reinterpret_cast< u8 * >( buffer ) + (y * pitch) + (x * bpp);
+
+			//copy and reduce data to 1/4
+			for(u32 ys=0; ys<display_height; ys +=2)
+			{
+				for(u32 xs=0; xs<display_width; xs +=2)
+				{
+					u32 pix = *(u32*)((u32)buffer + ys * pitch + xs * bpp);
+					*(u32*)((u32)pngbuffer + (ys>>1) * (display_width>>1) * bpp + (xs>>1) * bpp) = pix;
+				}
+			}
+			display_width = display_width >> 1;
+			display_height = display_height >> 1;
+			pitch = (display_width) * bpp;
+		}
+		break;
+	default:
+		texture_format = TexFmt_8888;
+		bpp = 4;
+		pitch = bufferwidth * bpp;
+		buffer = reinterpret_cast< u8 * >( buffer ) + (y * pitch) + (x * bpp);
+		break;
+	}
+
+	PngSaveImage( pngfile, (void*)pngbuffer, NULL, texture_format, pitch, display_width, display_height, false );
 }
 
 //*****************************************************************************
